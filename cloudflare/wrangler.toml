@@ -1,0 +1,22 @@
+# SchoolOS Cloudflare Worker Configuration
+# Copy this file and fill in your values
+
+name = "schoolos-api"
+main = "src/index.ts"
+compatibility_date = "2024-01-01"
+
+# D1 Database binding
+[[d1_databases]]
+binding = "DB"
+database_name = "schoolos-db"
+database_id = "YOUR_DATABASE_ID"  # Run: npx wrangler d1 create schoolos-db
+
+# Environment variables (set via wrangler secret or dashboard)
+# GOOGLE_CLIENT_ID
+# GOOGLE_CLIENT_SECRET
+# GOOGLE_REDIRECT_URI
+# JWT_SECRET
+# FRONTEND_URL
+
+[vars]
+ENVIRONMENT = "development"
