@@ -1,22 +1,33 @@
 # SchoolOS Cloudflare Worker Configuration
-# Copy this file and fill in your values
+# ========================================
+# SETUP INSTRUCTIONS (No CLI needed!):
+#
+# 1. In Cloudflare Dashboard → D1 → Create Database → name it "schoolos-db"
+# 2. Copy the Database ID and paste it below
+# 3. Go to Workers & Pages → Create → Worker → "Import from GitHub"
+# 4. Select your repo, set "cloudflare" as the root directory
+# 5. Add secrets in Worker Settings → Variables → Secrets
+#
+# Required Secrets (add in Cloudflare Dashboard):
+# - GOOGLE_CLIENT_ID
+# - GOOGLE_CLIENT_SECRET  
+# - JWT_SECRET (generate a random 32+ character string)
+#
+# Required Variables (add in Cloudflare Dashboard):
+# - GOOGLE_REDIRECT_URI = https://your-worker.workers.dev/auth/google/callback
+# - FRONTEND_URL = https://your-app.lovable.app
 
 name = "schoolos-api"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
+compatibility_flags = ["nodejs_compat"]
 
 # D1 Database binding
 [[d1_databases]]
 binding = "DB"
 database_name = "schoolos-db"
-database_id = "YOUR_DATABASE_ID"  # Run: npx wrangler d1 create schoolos-db
-
-# Environment variables (set via wrangler secret or dashboard)
-# GOOGLE_CLIENT_ID
-# GOOGLE_CLIENT_SECRET
-# GOOGLE_REDIRECT_URI
-# JWT_SECRET
-# FRONTEND_URL
+database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+migrations_dir = "migrations"
 
 [vars]
-ENVIRONMENT = "development"
+ENVIRONMENT = "production"
