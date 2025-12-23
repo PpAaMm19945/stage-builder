@@ -1292,6 +1292,10 @@ export function getActivityById(id: string): Activity | undefined {
   return ACTIVITIES.find(a => a.id === id);
 }
 
+export function getAllActivities(): Activity[] {
+  return ACTIVITIES;
+}
+
 export function getActivitiesForAgeAndDomain(
   ageMonths: number,
   domain: EarlyYearsDomain
