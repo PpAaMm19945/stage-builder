@@ -285,7 +285,51 @@ export default function Today() {
             </div>
           </div>
         )}
+
+        {/* Family Activities - for siblings */}
+        {data?.familyActivities && data.familyActivities.length > 0 && (
+          <div className="space-y-4">
+            <div className="flex items-center gap-2">
+              <Compass className="h-5 w-5 text-accent" />
+              <h2 className="text-lg font-semibold text-foreground">Family Activities</h2>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Activities suitable for all your children to do together
+            </p>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {data.familyActivities.map((familyActivity: any) => (
+                <Card
+                  key={familyActivity.activity.id}
+                  className="cursor-pointer hover:border-accent/40 hover:shadow-md transition-all border-accent/20"
+                  onClick={() => navigate(`/early-years/activities/${familyActivity.activity.id}`)}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <div className="flex items-start justify-between gap-2">
+                      <Badge variant="outline" className={domainColors[familyActivity.activity.domain as EarlyYearsDomain]}>
+                        {DOMAIN_LABELS[familyActivity.activity.domain as EarlyYearsDomain]}
+                      </Badge>
+                      <Badge variant="secondary" className="text-xs">
+                        For Everyone
+                      </Badge>
+                    </div>
+                    <h3 className="font-medium text-foreground leading-tight">
+                      {familyActivity.activity.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {familyActivity.activity.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{familyActivity.activity.duration_minutes} mins</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </>
   );
 }
+

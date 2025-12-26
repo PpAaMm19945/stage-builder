@@ -434,7 +434,7 @@ app.get('/api/students/:studentId/today', async (c) => {
       const ageMonths = (student as any).age_in_months;
 
       // Get one activity from each domain that hasn't been completed recently
-      const domains = ['cognitive', 'motor', 'language', 'social', 'sensory'];
+      const domains = ['cognitive', 'motor', 'language', 'social-emotional', 'pre-academic'];
 
       for (let i = 0; i < domains.length; i++) {
         const domain = domains[i];
@@ -474,11 +474,65 @@ app.get('/api/students/:studentId/today', async (c) => {
       learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
     }));
 
-    return c.json({ student, activities });
+    // ========== SIBLING-AWARE RECOMMENDATIONS ==========
+    // Get all siblings for this parent
+    const { results: allChildren } = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    let familyActivities: any[] = [];
+
+    // Only compute family activities if there are multiple children
+    if (allChildren.length > 1) {
+      // Find age range that covers all children
+      const ages = allChildren.map((c: any) => c.age_in_months);
+      const oldestAge = Math.max(...ages);
+      const youngestAge = Math.min(...ages);
+
+      // Find activities where the age range overlaps with ALL children
+      // An activity is suitable for family if its range encompasses all children
+      const { results: sharedActivities } = await c.env.DB.prepare(`
+        SELECT * FROM activities 
+        WHERE min_age_months <= ? AND max_age_months >= ? AND is_active = 1
+        ORDER BY RANDOM() LIMIT 3
+      `).bind(youngestAge, oldestAge).all();
+
+      // Build family activity recommendations with variations
+      familyActivities = sharedActivities.map((activity: any) => {
+        const variations: Record<string, string> = {};
+
+        allChildren.forEach((child: any) => {
+          const childAge = child.age_in_months;
+          const activityMidpoint = (activity.min_age_months + activity.max_age_months) / 2;
+
+          if (childAge < activityMidpoint - 6) {
+            variations[child.id] = 'easier';
+          } else if (childAge > activityMidpoint + 6) {
+            variations[child.id] = 'harder';
+          } else {
+            variations[child.id] = 'standard';
+          }
+        });
+
+        return {
+          activity: {
+            ...activity,
+            materials: JSON.parse(activity.materials || '[]'),
+            instructions: JSON.parse(activity.instructions || '[]'),
+            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          },
+          suitableFor: allChildren.map((c: any) => c.id),
+          variations,
+        };
+      });
+    }
+
+    return c.json({ student, activities, familyActivities });
   } catch (error: any) {
     return c.json({ error: error.message || 'Unauthorized' }, 401);
   }
 });
+
 
 // ============ OBSERVATIONS ROUTES ============
 

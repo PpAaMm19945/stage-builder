@@ -3,7 +3,7 @@
 // ============================================
 
 // Learning Stages
-export type LearningStage = 
+export type LearningStage =
   | 'early-years'      // Ages 2-5
   | 'lower-primary'    // Grades 1-5
   | 'middle-school'    // Grades 6-8
@@ -34,7 +34,7 @@ export interface Student {
 }
 
 // Learning Domains for Early Years
-export type EarlyYearsDomain = 
+export type EarlyYearsDomain =
   | 'motor'           // Gross & fine motor skills
   | 'language'        // Speech, vocabulary, listening
   | 'cognitive'       // Problem-solving, memory
@@ -130,4 +130,18 @@ export interface DailyRecommendation {
   primary: Activity;
   alternatives: Activity[];
   reasoning?: string;
+}
+
+// Family Activity (for sibling-aware recommendations)
+export interface FamilyActivity {
+  activity: Activity;
+  suitableFor: string[];
+  variations: Record<string, 'easier' | 'standard' | 'harder'>;
+}
+
+// Today's Learning Response (extended for family activities)
+export interface TodaysLearningResponse {
+  student: Student;
+  activities: Activity[];
+  familyActivities?: FamilyActivity[];
 }
