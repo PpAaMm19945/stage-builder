@@ -50,7 +50,7 @@ export const auth = {
   
   logout: () => {
     clearAuthToken();
-    return apiRequest('/api/auth/logout', { method: 'POST' });
+    // Don't await the API call, just clear locally
   },
   
   isAuthenticated: () => !!getAuthToken(),
