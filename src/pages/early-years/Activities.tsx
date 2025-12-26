@@ -6,13 +6,15 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import {
   Search,
   Clock,
   Filter,
   X,
-  AlertCircle
+  SearchX
 } from 'lucide-react';
 import { activities as activitiesApi } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
@@ -130,18 +132,11 @@ export default function Activities() {
   // Error state
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
-        <div className="p-4 rounded-full bg-destructive/10">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Failed to load activities</h2>
-          <p className="text-muted-foreground max-w-sm">
-            {error instanceof Error ? error.message : 'Please try again later.'}
-          </p>
-        </div>
-        <Button onClick={() => refetch()}>Try Again</Button>
-      </div>
+      <ErrorState
+        title="Failed to Load Activities"
+        message={error instanceof Error ? error.message : "We couldn't load the activity library. Please try again."}
+        onRetry={() => refetch()}
+      />
     );
   }
 
@@ -263,23 +258,16 @@ export default function Activities() {
           ))}
         </div>
       ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">
-              No activities found matching your filters.
-            </p>
-            <Button
-              variant="link"
-              onClick={() => {
-                setSearch('');
-                setSelectedDomain('all');
-              }}
-              className="mt-2"
-            >
-              Clear filters
-            </Button>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={SearchX}
+          title="No Activities Found"
+          description="Try adjusting your filters or browse all activities."
+          actionLabel="Clear Filters"
+          onAction={() => {
+            setSearch('');
+            setSelectedDomain('all');
+          }}
+        />
       )}
     </div>
   );

@@ -3,6 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { EmptyState } from '@/components/ui/EmptyState';
+import { WelcomeFlow } from '@/components/onboarding/WelcomeFlow';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -11,7 +14,8 @@ import {
   Star,
   RefreshCw,
   UserPlus,
-  AlertCircle
+  Target,
+  Compass
 } from 'lucide-react';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
@@ -130,158 +134,158 @@ export default function Today() {
   // Error state
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
-        <div className="p-4 rounded-full bg-destructive/10">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Failed to load activities</h2>
-          <p className="text-muted-foreground max-w-sm">
-            {error instanceof Error ? error.message : 'Please try again later.'}
-          </p>
-        </div>
-        <Button onClick={() => refetch()}>Try Again</Button>
-      </div>
+      <ErrorState
+        title="Failed to Load Activities"
+        message={error instanceof Error ? error.message : "We couldn't load today's activities. Please try again."}
+        onRetry={() => refetch()}
+      />
     );
   }
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-display font-bold text-foreground">
-          Today's Learning
-        </h1>
-        <p className="text-muted-foreground">
-          Activities tailored for {selectedChild.name} ({selectedChild.ageInMonths} months)
-        </p>
-      </div>
+    <>
+      {/* Welcome Flow for first-time users */}
+      <WelcomeFlow />
 
-      {/* Main Recommendation */}
-      {recommendedActivity ? (
-        <Card className="overflow-hidden border-2 border-primary/30 shadow-lg shadow-primary/5">
-          <CardHeader className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
-            <div className="flex items-start justify-between gap-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Star className="h-5 w-5 text-accent fill-accent" />
-                  <span className="text-sm font-semibold text-accent uppercase tracking-wide">
-                    Today's Pick
-                  </span>
+      <div className="space-y-8 max-w-4xl">
+        {/* Header */}
+        <div className="space-y-2">
+          <h1 className="text-3xl font-display font-bold text-foreground">
+            Today's Learning
+          </h1>
+          <p className="text-muted-foreground">
+            Activities tailored for {selectedChild.name} ({selectedChild.ageInMonths} months)
+          </p>
+        </div>
+
+        {/* Main Recommendation */}
+        {recommendedActivity ? (
+          <Card className="overflow-hidden border-2 border-primary/30 shadow-lg shadow-primary/5">
+            <CardHeader className="bg-gradient-to-br from-primary/10 via-primary/5 to-transparent">
+              <div className="flex items-start justify-between gap-4">
+                <div className="space-y-2">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-5 w-5 text-accent fill-accent" />
+                    <span className="text-sm font-semibold text-accent uppercase tracking-wide">
+                      Today's Pick
+                    </span>
+                  </div>
+                  <CardTitle className="text-2xl">{recommendedActivity.title}</CardTitle>
+                  <CardDescription className="text-base">
+                    {recommendedActivity.description}
+                  </CardDescription>
                 </div>
-                <CardTitle className="text-2xl">{recommendedActivity.title}</CardTitle>
-                <CardDescription className="text-base">
-                  {recommendedActivity.description}
-                </CardDescription>
+                <Badge className={`${domainColors[recommendedActivity.domain]} shrink-0`}>
+                  {DOMAIN_LABELS[recommendedActivity.domain]}
+                </Badge>
               </div>
-              <Badge className={`${domainColors[recommendedActivity.domain]} shrink-0`}>
-                {DOMAIN_LABELS[recommendedActivity.domain]}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="pt-6 space-y-6">
-            {/* Activity Details */}
-            <div className="flex flex-wrap items-center gap-6 text-sm">
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <Clock className="h-4 w-4" />
-                <span>{recommendedActivity.estimatedMinutes} minutes</span>
-              </div>
-              <div className="flex items-center gap-2 text-muted-foreground">
-                <span>Difficulty:</span>
-                <div className="flex gap-1">
-                  {[1, 2, 3, 4, 5].map((level) => (
-                    <div
-                      key={level}
-                      className={`h-2 w-4 rounded-full ${level <= recommendedActivity.difficultyLevel
+            </CardHeader>
+            <CardContent className="pt-6 space-y-6">
+              {/* Activity Details */}
+              <div className="flex flex-wrap items-center gap-6 text-sm">
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <Clock className="h-4 w-4" />
+                  <span>{recommendedActivity.estimatedMinutes} minutes</span>
+                </div>
+                <div className="flex items-center gap-2 text-muted-foreground">
+                  <span>Difficulty:</span>
+                  <div className="flex gap-1">
+                    {[1, 2, 3, 4, 5].map((level) => (
+                      <div
+                        key={level}
+                        className={`h-2 w-4 rounded-full ${level <= recommendedActivity.difficultyLevel
                           ? 'bg-primary'
                           : 'bg-muted'
-                        }`}
-                    />
-                  ))}
-                </div>
-              </div>
-            </div>
-
-            {/* Materials Preview */}
-            {recommendedActivity.materials.length > 0 && (
-              <div className="space-y-2">
-                <h4 className="text-sm font-medium text-foreground">Materials needed:</h4>
-                <div className="flex flex-wrap gap-2">
-                  {recommendedActivity.materials.slice(0, 5).map((material, idx) => (
-                    <Badge key={idx} variant="outline" className="bg-muted/50">
-                      {material}
-                    </Badge>
-                  ))}
-                  {recommendedActivity.materials.length > 5 && (
-                    <Badge variant="outline" className="bg-muted/50">
-                      +{recommendedActivity.materials.length - 5} more
-                    </Badge>
-                  )}
-                </div>
-              </div>
-            )}
-
-            {/* Actions */}
-            <div className="flex items-center gap-3 pt-2">
-              <Button
-                size="lg"
-                onClick={() => navigate(`/early-years/activities/${recommendedActivity.id}`)}
-                className="gap-2"
-              >
-                Start Activity
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-              <Button
-                variant="outline"
-                size="lg"
-                className="gap-2"
-                onClick={handlePickAnother}
-              >
-                <RefreshCw className="h-4 w-4" />
-                Pick Another
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      ) : (
-        <Card>
-          <CardContent className="py-12 text-center">
-            <p className="text-muted-foreground">No activities available for this age range.</p>
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Alternatives */}
-      {alternativeActivities.length > 0 && (
-        <div className="space-y-4">
-          <h2 className="text-lg font-semibold text-foreground">Or try one of these</h2>
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            {alternativeActivities.map((activity) => (
-              <Card
-                key={activity.id}
-                className="cursor-pointer hover:border-muted-foreground/40 hover:shadow-md transition-all"
-                onClick={() => navigate(`/early-years/activities/${activity.id}`)}
-              >
-                <CardContent className="p-4 space-y-3">
-                  <Badge variant="outline" className={domainColors[activity.domain]}>
-                    {DOMAIN_LABELS[activity.domain]}
-                  </Badge>
-                  <h3 className="font-medium text-foreground leading-tight">
-                    {activity.title}
-                  </h3>
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {activity.description}
-                  </p>
-                  <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                    <Clock className="h-3 w-3" />
-                    <span>{activity.estimatedMinutes} mins</span>
+                          }`}
+                      />
+                    ))}
                   </div>
-                </CardContent>
-              </Card>
-            ))}
+                </div>
+              </div>
+
+              {/* Materials Preview */}
+              {recommendedActivity.materials.length > 0 && (
+                <div className="space-y-2">
+                  <h4 className="text-sm font-medium text-foreground">Materials needed:</h4>
+                  <div className="flex flex-wrap gap-2">
+                    {recommendedActivity.materials.slice(0, 5).map((material, idx) => (
+                      <Badge key={idx} variant="outline" className="bg-muted/50">
+                        {material}
+                      </Badge>
+                    ))}
+                    {recommendedActivity.materials.length > 5 && (
+                      <Badge variant="outline" className="bg-muted/50">
+                        +{recommendedActivity.materials.length - 5} more
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+
+              {/* Actions */}
+              <div className="flex items-center gap-3 pt-2">
+                <Button
+                  size="lg"
+                  onClick={() => navigate(`/early-years/activities/${recommendedActivity.id}`)}
+                  className="gap-2"
+                >
+                  Start Activity
+                  <ArrowRight className="h-4 w-4" />
+                </Button>
+                <Button
+                  variant="outline"
+                  size="lg"
+                  className="gap-2"
+                  onClick={handlePickAnother}
+                >
+                  <RefreshCw className="h-4 w-4" />
+                  Pick Another
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ) : (
+          <EmptyState
+            icon={Target}
+            title="No Activities Yet"
+            description={`We're preparing personalized activities for ${selectedChild.name}. Check back soon, or browse our activity library.`}
+            actionLabel="Browse Activities"
+            actionHref="/early-years/activities"
+          />
+        )}
+
+        {/* Alternatives */}
+        {alternativeActivities.length > 0 && (
+          <div className="space-y-4">
+            <h2 className="text-lg font-semibold text-foreground">Or try one of these</h2>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              {alternativeActivities.map((activity) => (
+                <Card
+                  key={activity.id}
+                  className="cursor-pointer hover:border-muted-foreground/40 hover:shadow-md transition-all"
+                  onClick={() => navigate(`/early-years/activities/${activity.id}`)}
+                >
+                  <CardContent className="p-4 space-y-3">
+                    <Badge variant="outline" className={domainColors[activity.domain]}>
+                      {DOMAIN_LABELS[activity.domain]}
+                    </Badge>
+                    <h3 className="font-medium text-foreground leading-tight">
+                      {activity.title}
+                    </h3>
+                    <p className="text-sm text-muted-foreground line-clamp-2">
+                      {activity.description}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
+                      <Clock className="h-3 w-3" />
+                      <span>{activity.estimatedMinutes} mins</span>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
           </div>
-        </div>
-      )}
-    </div>
+        )}
+      </div>
+    </>
   );
 }

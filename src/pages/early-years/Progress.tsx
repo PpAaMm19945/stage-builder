@@ -1,8 +1,12 @@
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { ErrorState } from '@/components/ui/ErrorState';
+import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
@@ -13,9 +17,11 @@ import {
   Heart,
   BookOpen,
   HandMetal,
-  AlertCircle,
   Sparkles,
-  Target
+  Target,
+  BarChart3,
+  Calendar,
+  CheckCircle2
 } from 'lucide-react';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
@@ -34,8 +40,17 @@ const domainColors: Record<EarlyYearsDomain, { bg: string; text: string; progres
   'pre-academic': { bg: 'bg-domain-academic/10', text: 'text-domain-academic', progress: 'bg-domain-academic' },
 };
 
+const domainBadgeColors: Record<EarlyYearsDomain, string> = {
+  'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
+  'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
+  'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
+  'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
+  'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
+};
+
 export default function ProgressPage() {
   const { selectedChild } = useAuth();
+  const navigate = useNavigate();
 
   // Fetch progress from API
   const { data: progressData, isLoading, isError, error, refetch } = useQuery({
@@ -43,6 +58,14 @@ export default function ProgressPage() {
     queryFn: () => students.getProgress(selectedChild!.id),
     enabled: !!selectedChild,
     staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
+  // Fetch observations for activity history
+  const { data: observationsData } = useQuery({
+    queryKey: ['observations', selectedChild?.id],
+    queryFn: () => students.getObservations(selectedChild!.id),
+    enabled: !!selectedChild,
+    staleTime: 2 * 60 * 1000,
   });
 
   const domains = Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[];
@@ -140,17 +163,35 @@ export default function ProgressPage() {
   // Error state
   if (isError) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
-        <div className="p-4 rounded-full bg-destructive/10">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
+      <ErrorState
+        title="Failed to Load Progress"
+        message={error instanceof Error ? error.message : "We couldn't load your progress data. Please try again."}
+        onRetry={() => refetch()}
+      />
+    );
+  }
+
+  // Empty state - show when no activities completed yet
+  if (totalCompleted === 0) {
+    return (
+      <div className="space-y-8 max-w-4xl">
+        {/* Header */}
         <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Failed to load progress</h2>
-          <p className="text-muted-foreground max-w-sm">
-            {error instanceof Error ? error.message : 'Please try again later.'}
+          <h1 className="text-3xl font-display font-bold text-foreground">
+            {selectedChild.name}'s Progress
+          </h1>
+          <p className="text-muted-foreground">
+            Development overview across all learning domains
           </p>
         </div>
-        <Button onClick={() => refetch()}>Try Again</Button>
+
+        <EmptyState
+          icon={BarChart3}
+          title="Start Your Journey"
+          description="Complete your first activity to begin tracking progress. Every small step counts!"
+          actionLabel="View Today's Activity"
+          actionHref="/early-years/today"
+        />
       </div>
     );
   }
@@ -325,7 +366,72 @@ export default function ProgressPage() {
           )}
         </CardContent>
       </Card>
+
+      {/* Recent Activity History */}
+      {observationsData && observationsData.length > 0 && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center gap-2">
+              <Calendar className="h-5 w-5 text-primary" />
+              Recent Activity
+            </CardTitle>
+            <CardDescription>
+              Activities completed by {selectedChild.name}
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {(() => {
+              // Group observations by date
+              const grouped = observationsData.reduce((acc: Record<string, any[]>, obs: any) => {
+                const date = new Date(obs.created_at).toLocaleDateString('en-US', {
+                  weekday: 'long',
+                  month: 'short',
+                  day: 'numeric'
+                });
+                if (!acc[date]) acc[date] = [];
+                acc[date].push(obs);
+                return acc;
+              }, {});
+
+              // Take only first 3 days
+              const dates = Object.keys(grouped).slice(0, 3);
+
+              return dates.map((date) => (
+                <div key={date} className="space-y-2">
+                  <h4 className="text-sm font-medium text-muted-foreground">{date}</h4>
+                  <div className="space-y-2">
+                    {grouped[date].slice(0, 3).map((obs: any) => (
+                      <div
+                        key={obs.id}
+                        onClick={() => navigate(`/early-years/activities/${obs.activity_id}`)}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
+                      >
+                        <CheckCircle2 className="h-4 w-4 text-mastery-secure shrink-0" />
+                        <div className="flex-1 min-w-0">
+                          <p className="font-medium text-foreground truncate">
+                            {obs.activity_title || 'Activity'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <Badge
+                              variant="outline"
+                              className={`text-xs ${domainBadgeColors[obs.domain as EarlyYearsDomain] || ''}`}
+                            >
+                              {DOMAIN_LABELS[obs.domain as EarlyYearsDomain] || obs.domain}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground capitalize">
+                              {obs.mastery_level}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ));
+            })()}
+          </CardContent>
+        </Card>
+      )}
     </div>
   );
 }
-

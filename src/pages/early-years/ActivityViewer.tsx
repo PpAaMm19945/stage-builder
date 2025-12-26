@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { ErrorState } from '@/components/ui/ErrorState';
 import { ObservationModal } from '@/components/early-years/ObservationModal';
 import { toast } from 'sonner';
 import {
@@ -22,7 +23,6 @@ import {
   Lightbulb,
   ArrowRight,
   Sparkles,
-  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -171,21 +171,12 @@ export default function ActivityViewer() {
   // Error state
   if (isActivityError) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
-        <div className="p-4 rounded-full bg-destructive/10">
-          <AlertCircle className="h-8 w-8 text-destructive" />
-        </div>
-        <div className="space-y-2">
-          <h2 className="text-xl font-semibold text-foreground">Failed to load activity</h2>
-          <p className="text-muted-foreground max-w-sm">
-            {activityError instanceof Error ? activityError.message : 'Please try again later.'}
-          </p>
-        </div>
-        <Button onClick={() => navigate(-1)}>
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Go Back
-        </Button>
-      </div>
+      <ErrorState
+        title="Failed to Load Activity"
+        message={activityError instanceof Error ? activityError.message : "We couldn't load this activity. Please try again."}
+        onRetry={() => navigate(-1)}
+        showHomeButton={true}
+      />
     );
   }
 
