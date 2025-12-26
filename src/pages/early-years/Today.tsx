@@ -7,10 +7,12 @@ import {
   ArrowRight,
   Clock,
   Star,
-  RefreshCw
+  RefreshCw,
+  UserPlus
 } from 'lucide-react';
 import { getActivitiesForAge } from '@/data/activities';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { AddChildForm } from '@/components/children/AddChildForm';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
   'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
@@ -34,8 +36,17 @@ export default function Today() {
 
   if (!selectedChild) {
     return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-        <p className="text-muted-foreground">Please select a child to see today's activities</p>
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6">
+        <div className="p-6 rounded-full bg-muted/50">
+          <UserPlus className="h-12 w-12 text-muted-foreground" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">No children registered yet</h2>
+          <p className="text-muted-foreground max-w-sm">
+            Add your child to get started with personalized learning activities
+          </p>
+        </div>
+        <AddChildForm />
       </div>
     );
   }
