@@ -1,7 +1,7 @@
 // SchoolOS API Client for Cloudflare Worker
-// Update API_URL to your deployed Worker URL
 
-const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:8787';
+// Production Worker URL - works for both Cloudflare Pages and Lovable preview
+const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
 function getAuthToken(): string | null {
   return localStorage.getItem('schoolos_token');
