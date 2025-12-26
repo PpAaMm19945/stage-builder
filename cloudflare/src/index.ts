@@ -33,12 +33,21 @@ interface JWTPayload {
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
-// CORS middleware
+// CORS middleware - allows Cloudflare Pages and Lovable preview
 app.use('*', cors({
   origin: (origin, c) => {
-    const frontendUrl = c.env.FRONTEND_URL || 'http://localhost:5173';
-    const allowedOrigins = [frontendUrl, 'http://localhost:5173', 'http://localhost:3000'];
-    return allowedOrigins.includes(origin) ? origin : frontendUrl;
+    const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+    const allowedOrigins = [
+      frontendUrl,
+      'https://stage-builder-9hh.pages.dev',
+      'http://localhost:5173',
+      'http://localhost:3000',
+    ];
+    // Also allow any lovable.app subdomain
+    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.lovable.app'))) {
+      return origin;
+    }
+    return frontendUrl;
   },
   credentials: true,
   allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
