@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -106,11 +106,21 @@ export const activities = {
   },
 
   get: (id: string) => apiRequest<any>(`/api/activities/${id}`),
+
+  export: () => apiRequest<any[]>('/api/activities/export'),
 };
 
 // Family
 export const family = {
-  getToday: () => apiRequest<import('@/types').FamilyTodayResponse>('/api/family/today'),
+  getToday: () => apiRequest<FamilyTodayResponse>('/api/family/today'),
+
+  getMaterials: () => apiRequest<MaterialItem[]>('/api/family/materials'),
+
+  updateMaterials: (materials: MaterialItem[]) =>
+    apiRequest<{ success: boolean }>('/api/family/materials', {
+      method: 'PUT',
+      body: JSON.stringify({ materials }),
+    }),
 };
 
 // Observations

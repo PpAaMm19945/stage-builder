@@ -542,6 +542,61 @@ app.get('/api/students/:studentId/today', async (c) => {
   }
 });
 
+// Helper: Get family-first daily recommendations
+async function getFamilyDailyRecommendations(db: D1Database, children: any[], parentId: string) {
+  const today = new Date().toISOString().split('T')[0];
+
+  if (children.length === 0) return [];
+
+  // Get all children's ages
+  const ages = children.map(c => c.age_in_months);
+  const youngestAge = Math.min(...ages);
+  const oldestAge = Math.max(...ages);
+
+  // Get parent's material preferences
+  const { results: materialPrefs } = await db.prepare(`
+    SELECT material_name, status FROM family_materials WHERE parent_id = ?
+  `).bind(parentId).all();
+
+  const haveMaterials = new Set(
+    materialPrefs
+      .filter((m: any) => m.status === 'have' || m.status === 'willing_to_buy')
+      .map((m: any) => m.material_name.toLowerCase())
+  );
+
+  // Find family sessions that:
+  // 1. Cover all children's age ranges
+  // 2. Have tiered expectations
+  // 3. Prioritize core kit activities
+  // 4. Prioritize materials parent has/will buy
+  // 5. Prefer low mess, quick setup
+  const { results: candidates } = await db.prepare(`
+    SELECT * FROM activities 
+    WHERE activity_type = 'family_session'
+      AND min_age_months <= ? 
+      AND max_age_months >= ?
+      AND tiered_expectations IS NOT NULL
+      AND is_active = 1
+    ORDER BY 
+      uses_core_kit DESC,
+      mess_level ASC,
+      prep_time_minutes ASC,
+      RANDOM()
+    LIMIT 10
+  `).bind(youngestAge, oldestAge).all();
+
+  // Score and select top 2-3 sessions
+  // Prioritize activities where parent has materials
+  const scored = candidates.map((activity: any) => {
+    const materials = JSON.parse(activity.materials || '[]');
+    const matchCount = materials.filter((m: string) => haveMaterials.has(m.toLowerCase())).length;
+    const matchRatio = materials.length > 0 ? matchCount / materials.length : 1;
+    return { activity, score: matchRatio };
+  }).sort((a, b) => b.score - a.score);
+
+  return scored.slice(0, 3).map(s => s.activity);
+}
+
 // Get family dashboard data
 app.get('/api/family/today', async (c) => {
   try {
@@ -556,90 +611,173 @@ app.get('/api/family/today', async (c) => {
       return c.json({
         date: new Date().toISOString().split('T')[0],
         children: [],
-        familyActivities: [],
-        sharedMaterials: [],
-        totalDuration: 0
+        familySessions: [],
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
       });
     }
 
-    // Get recommendations for each child (in parallel)
-    const childData = await Promise.all(children.map(async (child: any) => {
-      const recommendations = await getStudentDailyRecommendations(c.env.DB, child);
+    // Get Unified Family Sessions
+    const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
 
-      const activities = recommendations.map((r: any) => ({
-        ...r,
-        materials: JSON.parse(r.materials || '[]'),
-        instructions: JSON.parse(r.instructions || '[]'),
-        learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
-      }));
+    // Process sessions with child-specific tiers
+    const familySessions = recommendedActivities.map((activity: any) => {
+      const tiers = JSON.parse(activity.tiered_expectations || '[]');
+      const childTiers = children.map((child: any) => {
+        // Find appropriate tier for child's age
+        const age = child.age_in_months;
+        // Find tier where age is within range, or closest
+        let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
 
-      return {
-        id: child.id,
-        name: child.name,
-        ageInMonths: child.age_in_months,
-        activities
-      };
-    }));
-
-    // Family Activities
-    let familyActivities: any[] = [];
-    if (children.length > 1) {
-      const ages = children.map((c: any) => c.age_in_months);
-      const oldestAge = Math.max(...ages);
-      const youngestAge = Math.min(...ages);
-
-      const { results: sharedActivities } = await c.env.DB.prepare(`
-        SELECT * FROM activities 
-        WHERE min_age_months <= ? AND max_age_months >= ? AND is_active = 1
-        ORDER BY RANDOM() LIMIT 3
-      `).bind(youngestAge, oldestAge).all();
-
-      familyActivities = sharedActivities.map((activity: any) => {
-        const variations: Record<string, string> = {};
-        children.forEach((child: any) => {
-          const childAge = child.age_in_months;
-          const activityMidpoint = (activity.min_age_months + activity.max_age_months) / 2;
-          if (childAge < activityMidpoint - 6) variations[child.id] = 'easier';
-          else if (childAge > activityMidpoint + 6) variations[child.id] = 'harder';
-          else variations[child.id] = 'standard';
-        });
+        // Fallback to closest if out of specific ranges (capped at min/max tiers)
+        if (!tier) {
+          if (age < tiers[0]?.age_min) tier = tiers[0];
+          else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+        }
 
         return {
-          activity: {
-            ...activity,
-            materials: JSON.parse(activity.materials || '[]'),
-            instructions: JSON.parse(activity.instructions || '[]'),
-            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
-          },
-          suitableFor: children.map((c: any) => c.id),
-          variations,
+          childId: child.id,
+          childName: child.name,
+          tier: tier?.tier || 'Standard',
+          expectation: tier?.expectation || 'Participate with support',
+          childAge: age
         };
+      });
+
+      // Check materials availability
+      const materials = JSON.parse(activity.materials || '[]');
+      // We would ideally check against DB here again or pass it down, 
+      // but for now we'll fetch in frontend or assume partially available based on scoring
+
+      return {
+        activity: {
+          ...activity,
+          materials: JSON.parse(activity.materials || '[]'),
+          instructions: JSON.parse(activity.instructions || '[]'),
+          learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+        },
+        childTiers,
+        messLevel: activity.mess_level,
+        prepMinutes: activity.prep_time_minutes,
+        materialsAvailable: true // Simplified for now, computed in frontend or detailed query
+      };
+    });
+
+    // Collect all materials needed today
+    const neededMaterials = new Set<string>();
+    familySessions.forEach((session: any) => {
+      session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+    });
+
+    // Get status of these materials
+    const materialsList: any[] = [];
+    if (neededMaterials.size > 0) {
+      // Fetch statuses
+      const marks = Array(neededMaterials.size).fill('?').join(',');
+      const { results: existing } = await c.env.DB.prepare(`
+            SELECT material_name, status FROM family_materials 
+            WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
+        `).bind(user.id, ...Array.from(neededMaterials)).all();
+
+      const statusMap = new Map();
+      existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
+
+      neededMaterials.forEach(m => {
+        materialsList.push({
+          name: m,
+          status: statusMap.get(m) || 'unknown'
+        });
       });
     }
 
-    // Compute shared materials (deduplicated)
-    const allMaterials = new Set<string>();
-    childData.forEach(child => child.activities.forEach((a: any) => {
-      if (Array.isArray(a.materials)) a.materials.forEach((m: string) => allMaterials.add(m));
-    }));
-    familyActivities.forEach((fa: any) => {
-      if (Array.isArray(fa.activity.materials)) fa.activity.materials.forEach((m: string) => allMaterials.add(m));
-    });
-
-    // Compute total duration
-    const totalDuration = childData.reduce((sum, child) =>
-      sum + child.activities.reduce((s: number, a: any) => s + (a.duration_minutes || 15), 0), 0
-    );
+    // Compute metrics
+    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
+    const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
+    const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
 
     return c.json({
       date: new Date().toISOString().split('T')[0],
-      children: childData,
-      familyActivities,
-      sharedMaterials: Array.from(allMaterials).sort(),
-      totalDuration
+      children,
+      familySessions,
+      materials: materialsList,
+      totalDuration,
+      coreKitCoverage
     });
   } catch (error: any) {
     return c.json({ error: error.message || 'Unauthorized' }, 401);
+  }
+});
+
+// ============ FAMILY MATERIALS ROUTES ============
+
+// Get family materials
+app.get('/api/family/materials', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM family_materials WHERE parent_id = ? ORDER BY material_name'
+    ).bind(user.id).all();
+    return c.json(results);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Unauthorized' }, 401);
+  }
+});
+
+// Update family materials
+app.put('/api/family/materials', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+    const { materials } = body; // Array of { name, status }
+
+    if (!Array.isArray(materials)) {
+      return c.json({ error: 'Invalid format' }, 400);
+    }
+
+    const stmt = c.env.DB.prepare(`
+      INSERT INTO family_materials (id, parent_id, material_name, status, updated_at)
+      VALUES (?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(parent_id, material_name) 
+      DO UPDATE SET status = excluded.status, updated_at = datetime('now')
+    `);
+
+    const batch = materials.map((m: any) =>
+      stmt.bind(generateId('mat'), user.id, m.name, m.status)
+    );
+
+    await c.env.DB.batch(batch);
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to update materials' }, 400);
+  }
+});
+
+// ============ ADMIN / EXPORT ROUTES ============
+
+// Export activities
+app.get('/api/activities/export', async (c) => {
+  // optionally protect with secret or admin role
+  try {
+    // For now allow any auth user or public if needed? Let's require auth at least.
+    const user = requireAuth(c);
+
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM activities ORDER BY id'
+    ).all();
+
+    const activities = results.map((a: any) => ({
+      ...a,
+      materials: JSON.parse(a.materials || '[]'),
+      instructions: JSON.parse(a.instructions || '[]'),
+      learning_outcomes: JSON.parse(a.learning_outcomes || '[]'),
+      tiered_expectations: JSON.parse(a.tiered_expectations || 'null')
+    }));
+
+    return c.json(activities);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 401);
   }
 });
 

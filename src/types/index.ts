@@ -145,9 +145,15 @@ export interface ApiActivity {
   materials: string[];
   instructions: string[];
   learning_outcomes?: string[];
+  // New fields
+  activity_type?: 'family_session' | 'individual';
+  tiered_expectations?: any[];
+  uses_core_kit?: number;
+  mess_level?: string | number;
+  prep_time_minutes?: number;
 }
 
-// Family Activity (for sibling-aware recommendations)
+// Family Activity (for sibling-aware recommendations - legacy)
 export interface FamilyActivity {
   activity: ApiActivity;
   suitableFor: string[];
@@ -161,11 +167,31 @@ export interface TodaysLearningResponse {
   familyActivities?: FamilyActivity[];
 }
 
+export interface MaterialItem {
+  name: string;
+  status: 'have' | 'willing_to_buy' | 'not_interested' | 'unknown';
+}
+
+export interface FamilySession {
+  activity: ApiActivity;
+  childTiers: {
+    childId: string;
+    childName: string;
+    tier: string;
+    expectation: string;
+    childAge: number;
+  }[];
+  messLevel: string | number;
+  prepMinutes: number;
+  materialsAvailable: boolean;
+}
+
 // Family Dashboard Response
 export interface FamilyTodayResponse {
   date: string;
-  children: (Student & { activities: ApiActivity[] })[];
-  familyActivities: FamilyActivity[];
-  sharedMaterials: string[];
+  children: Student[];
+  familySessions: FamilySession[];
+  materials: MaterialItem[];
   totalDuration: number;
+  coreKitCoverage: number;
 }

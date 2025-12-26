@@ -1,13 +1,14 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus } from 'lucide-react';
+import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus, Box, Check, CheckCircle2, Circle } from 'lucide-react';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
-import { students } from '@/lib/api';
+import { students, family } from '@/lib/api';
 import { toast } from 'sonner';
 import {
   AlertDialog,
@@ -19,13 +20,89 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
-import type { Student } from '@/types';
+import type { Student, MaterialItem } from '@/types';
+
+// Common core kit items to suggest
+const COMMON_MATERIALS = [
+  'Blocks', 'Balls', 'Books', 'Crayons', 'Paper',
+  'Playdough', 'Bubbles', 'Cardboard Boxes', 'Containers',
+  'Scarves/Fabric', 'Tape', 'Glue', 'Safety Scissors',
+  'Puzzles', 'Toy Cars', 'Dolls/Puppets', 'Musical Instruments'
+];
 
 export default function Settings() {
   const { user, children, logout, refreshAuth, selectedChild, setSelectedChild } = useAuth();
   const [editingChild, setEditingChild] = useState<Student | null>(null);
   const [deletingChild, setDeletingChild] = useState<Student | null>(null);
   const [isDeleting, setIsDeleting] = useState(false);
+  const queryClient = useQueryClient();
+
+  // Materials Query
+  const { data: serverMaterials, isLoading: isMaterialsLoading } = useQuery({
+    queryKey: ['family-materials'],
+    queryFn: family.getMaterials,
+  });
+
+  // Local state for materials editing
+  const [materialsState, setMaterialsState] = useState<MaterialItem[]>([]);
+  const [hasChanges, setHasChanges] = useState(false);
+
+  // Sync server data to local state
+  useEffect(() => {
+    if (serverMaterials) {
+      // Merge common materials with server materials
+      const merged = COMMON_MATERIALS.map(name => {
+        const existing = serverMaterials.find((m: MaterialItem) => m.name === name);
+        return {
+          name,
+          status: existing?.status || 'unknown'
+        } as MaterialItem;
+      });
+
+      // Also add any server materials that aren't in common list
+      serverMaterials.forEach((m: MaterialItem) => {
+        if (!COMMON_MATERIALS.includes(m.name)) {
+          merged.push(m);
+        }
+      });
+
+      setMaterialsState(merged.sort((a, b) => a.name.localeCompare(b.name)));
+    }
+  }, [serverMaterials]);
+
+  // Update Material Mutation
+  const updateMaterialsMutation = useMutation({
+    mutationFn: family.updateMaterials,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family-materials'] });
+      queryClient.invalidateQueries({ queryKey: ['family-today'] }); // Refresh dashboard too
+      toast.success('Materials updated successfully');
+      setHasChanges(false);
+    },
+    onError: () => {
+      toast.error('Failed to update materials');
+    }
+  });
+
+  const handleMaterialToggle = (name: string) => {
+    setMaterialsState(prev => prev.map(m => {
+      if (m.name !== name) return m;
+
+      // Cycle: unknown -> have -> willing_to_buy -> not_interested -> have...
+      // Simplified Cycle: unknown/not_interested -> have -> willing_to_buy -> not_interested
+      let nextStatus: MaterialItem['status'] = 'unknown';
+      if (m.status === 'unknown' || m.status === 'not_interested') nextStatus = 'have';
+      else if (m.status === 'have') nextStatus = 'willing_to_buy';
+      else if (m.status === 'willing_to_buy') nextStatus = 'not_interested';
+
+      return { ...m, status: nextStatus };
+    }));
+    setHasChanges(true);
+  };
+
+  const handleSaveMaterials = () => {
+    updateMaterialsMutation.mutate(materialsState);
+  };
 
   const getInitials = (name: string) => {
     return name
@@ -77,47 +154,11 @@ export default function Settings() {
   };
 
   return (
-    <div className="space-y-8 max-w-2xl">
+    <div className="space-y-8 max-w-2xl mx-auto pb-12">
       <div className="space-y-2">
         <h1 className="text-3xl font-display font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your account and preferences</p>
+        <p className="text-muted-foreground">Manage your account, family, and materials</p>
       </div>
-
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <User className="h-5 w-5" />
-            Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                {user ? getInitials(user.name) : '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium text-foreground">{user?.name}</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
-          <Separator />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              toast.info('Your profile is synced from your Google account', {
-                description: 'Sign in with a different Google account to change your name or email.'
-              });
-            }}
-          >
-            Edit Profile
-          </Button>
-        </CardContent>
-      </Card>
 
       {/* Children Management */}
       <Card>
@@ -194,18 +235,108 @@ export default function Settings() {
         </CardContent>
       </Card>
 
-      {/* Notifications */}
+      {/* Materials Section */}
+      <Card>
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center gap-2 text-lg">
+              <Box className="h-5 w-5" />
+              My Family's Materials
+            </CardTitle>
+            {hasChanges && (
+              <Button size="sm" onClick={handleSaveMaterials} disabled={updateMaterialsMutation.isPending}>
+                {updateMaterialsMutation.isPending && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                Save Changes
+              </Button>
+            )}
+          </div>
+          <CardDescription>
+            Tell us what you have at home so we can suggest activities you're ready for!
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          {isMaterialsLoading ? (
+            <div className="flex justify-center py-8">
+              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : (
+            <div className="space-y-4">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                {materialsState.map((material) => (
+                  <div
+                    key={material.name}
+                    className={`
+                                flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
+                                ${material.status === 'have' ? 'bg-green-50 border-green-200' : ''}
+                                ${material.status === 'willing_to_buy' ? 'bg-blue-50 border-blue-200' : ''}
+                                ${material.status === 'not_interested' ? 'bg-muted/50 opacity-60' : ''}
+                            `}
+                    onClick={() => handleMaterialToggle(material.name)}
+                  >
+                    <span className="font-medium text-sm">{material.name}</span>
+
+                    <div className="flex items-center">
+                      {material.status === 'have' && (
+                        <div className="flex items-center gap-1.5 text-green-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                          <CheckCircle2 className="w-3.5 h-3.5" /> Have
+                        </div>
+                      )}
+                      {material.status === 'willing_to_buy' && (
+                        <div className="flex items-center gap-1.5 text-blue-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                          <Circle className="w-3.5 h-3.5" /> Will Buy
+                        </div>
+                      )}
+                      {material.status === 'not_interested' && (
+                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium bg-black/5 px-2 py-1 rounded-full">
+                          <LogOut className="w-3.5 h-3.5" /> No
+                        </div>
+                      )}
+                      {material.status === 'unknown' && (
+                        <span className="text-xs text-muted-foreground px-2">Click to set</span>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-xs text-muted-foreground text-center pt-2">
+                Tap an item to cycle: Have → Will Buy → Not Interested
+              </p>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Profile Section */}
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Bell className="h-5 w-5" />
-            Notifications
+            <User className="h-5 w-5" />
+            Profile
           </CardTitle>
         </CardHeader>
-        <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Notification settings coming soon.
-          </p>
+        <CardContent className="space-y-4">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16">
+              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
+              <AvatarFallback className="bg-primary/10 text-primary text-lg">
+                {user ? getInitials(user.name) : '?'}
+              </AvatarFallback>
+            </Avatar>
+            <div>
+              <p className="font-medium text-foreground">{user?.name}</p>
+              <p className="text-sm text-muted-foreground">{user?.email}</p>
+            </div>
+          </div>
+          <Separator />
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              toast.info('Your profile is synced from your Google account');
+            }}
+          >
+            Edit Profile
+          </Button>
         </CardContent>
       </Card>
 
@@ -301,4 +432,3 @@ export default function Settings() {
     </div >
   );
 }
-
