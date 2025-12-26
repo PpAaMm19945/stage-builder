@@ -160,3 +160,17 @@ export interface TodaysLearningResponse {
   activities: ApiActivity[];
   familyActivities?: FamilyActivity[];
 }
+
+// Family Dashboard Response
+export interface FamilyTodayResponse {
+  date: string;
+  children: {
+    id: string;
+    name: string;
+    ageInMonths: number;
+    activities: ApiActivity[];
+  }[];
+  familyActivities: FamilyActivity[];
+  sharedMaterials: string[];
+  totalDuration: number;
+}

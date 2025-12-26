@@ -94,6 +94,8 @@ export const students = {
   delete: (id: string) => apiRequest<{ success: boolean }>(`/api/students/${id}`, {
     method: 'DELETE',
   }),
+
+  getFamilyToday: () => apiRequest<import('@/types').FamilyTodayResponse>('/api/family/today'),
 };
 
 // Activities

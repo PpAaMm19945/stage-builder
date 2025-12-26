@@ -405,6 +405,60 @@ app.get('/api/activities/:id', async (c) => {
 });
 
 // Get today's recommended activities for a student
+// Helper: Get or generate daily recommendations for a student
+async function getStudentDailyRecommendations(db: D1Database, student: any) {
+  const today = new Date().toISOString().split('T')[0];
+  const studentId = student.id;
+
+  // Check for existing recommendations
+  let { results: recommendations } = await db.prepare(`
+    SELECT dr.*, a.* FROM daily_recommendations dr
+    JOIN activities a ON dr.activity_id = a.id
+    WHERE dr.student_id = ? AND dr.recommended_date = ?
+    ORDER BY dr.position
+  `).bind(studentId, today).all();
+
+  // Generate recommendations if none exist
+  if (recommendations.length === 0) {
+    const ageMonths = (student as any).age_in_months;
+
+    // Get one activity from each domain that hasn't been completed recently
+    const domains = ['cognitive', 'motor', 'language', 'social-emotional', 'pre-academic'];
+
+    for (let i = 0; i < domains.length; i++) {
+      const domain = domains[i];
+      const activity = await db.prepare(`
+        SELECT * FROM activities 
+        WHERE domain = ? AND min_age_months <= ? AND max_age_months >= ? AND is_active = 1
+        AND id NOT IN (
+          SELECT activity_id FROM observations WHERE student_id = ? 
+          AND completed_at > datetime('now', '-7 days')
+        )
+        ORDER BY RANDOM() LIMIT 1
+      `).bind(domain, ageMonths, ageMonths, studentId).first();
+
+      if (activity) {
+        const recId = generateId('rec');
+        await db.prepare(
+          'INSERT INTO daily_recommendations (id, student_id, activity_id, recommended_date, position) VALUES (?, ?, ?, ?, ?)'
+        ).bind(recId, studentId, (activity as any).id, today, i).run();
+      }
+    }
+
+    // Fetch the newly created recommendations
+    const result = await db.prepare(`
+      SELECT dr.*, a.* FROM daily_recommendations dr
+      JOIN activities a ON dr.activity_id = a.id
+      WHERE dr.student_id = ? AND dr.recommended_date = ?
+      ORDER BY dr.position
+    `).bind(studentId, today).all();
+    recommendations = result.results;
+  }
+
+  return recommendations;
+}
+
+// Get today's recommended activities for a student
 app.get('/api/students/:studentId/today', async (c) => {
   try {
     const user = requireAuth(c);
@@ -419,52 +473,7 @@ app.get('/api/students/:studentId/today', async (c) => {
       return c.json({ error: 'Student not found' }, 404);
     }
 
-    const today = new Date().toISOString().split('T')[0];
-
-    // Check for existing recommendations
-    let { results: recommendations } = await c.env.DB.prepare(`
-      SELECT dr.*, a.* FROM daily_recommendations dr
-      JOIN activities a ON dr.activity_id = a.id
-      WHERE dr.student_id = ? AND dr.recommended_date = ?
-      ORDER BY dr.position
-    `).bind(studentId, today).all();
-
-    // Generate recommendations if none exist
-    if (recommendations.length === 0) {
-      const ageMonths = (student as any).age_in_months;
-
-      // Get one activity from each domain that hasn't been completed recently
-      const domains = ['cognitive', 'motor', 'language', 'social-emotional', 'pre-academic'];
-
-      for (let i = 0; i < domains.length; i++) {
-        const domain = domains[i];
-        const activity = await c.env.DB.prepare(`
-          SELECT * FROM activities 
-          WHERE domain = ? AND min_age_months <= ? AND max_age_months >= ? AND is_active = 1
-          AND id NOT IN (
-            SELECT activity_id FROM observations WHERE student_id = ? 
-            AND completed_at > datetime('now', '-7 days')
-          )
-          ORDER BY RANDOM() LIMIT 1
-        `).bind(domain, ageMonths, ageMonths, studentId).first();
-
-        if (activity) {
-          const recId = generateId('rec');
-          await c.env.DB.prepare(
-            'INSERT INTO daily_recommendations (id, student_id, activity_id, recommended_date, position) VALUES (?, ?, ?, ?, ?)'
-          ).bind(recId, studentId, (activity as any).id, today, i).run();
-        }
-      }
-
-      // Fetch the newly created recommendations
-      const result = await c.env.DB.prepare(`
-        SELECT dr.*, a.* FROM daily_recommendations dr
-        JOIN activities a ON dr.activity_id = a.id
-        WHERE dr.student_id = ? AND dr.recommended_date = ?
-        ORDER BY dr.position
-      `).bind(studentId, today).all();
-      recommendations = result.results;
-    }
+    const recommendations = await getStudentDailyRecommendations(c.env.DB, student);
 
     // Parse JSON fields
     const activities = recommendations.map((r: any) => ({
@@ -528,6 +537,98 @@ app.get('/api/students/:studentId/today', async (c) => {
     }
 
     return c.json({ student, activities, familyActivities });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Unauthorized' }, 401);
+  }
+});
+
+// Get family dashboard data
+app.get('/api/family/today', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    // Get all children
+    const { results: allChildren } = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    const childrenData = [];
+    let allMaterials: string[] = [];
+    let totalDuration = 0;
+
+    // Get activities for each child
+    for (const child of allChildren) {
+      const recommendations = await getStudentDailyRecommendations(c.env.DB, child);
+
+      const activities = recommendations.map((r: any) => {
+        const mats = JSON.parse(r.materials || '[]');
+        if (Array.isArray(mats)) {
+          allMaterials.push(...mats);
+        }
+        totalDuration += (r.duration_minutes || 0);
+
+        return {
+          ...r,
+          materials: mats,
+          instructions: JSON.parse(r.instructions || '[]'),
+          learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
+        };
+      });
+
+      childrenData.push({
+        id: (child as any).id,
+        name: (child as any).name,
+        ageInMonths: (child as any).age_in_months,
+        activities
+      });
+    }
+
+    // Deduplicate materials
+    const sharedMaterials = [...new Set(allMaterials)].sort();
+
+    // Family Activities
+    let familyActivities: any[] = [];
+    if (allChildren.length > 1) {
+      const ages = allChildren.map((c: any) => c.age_in_months);
+      const oldestAge = Math.max(...ages);
+      const youngestAge = Math.min(...ages);
+
+      const { results: sharedActivities } = await c.env.DB.prepare(`
+        SELECT * FROM activities 
+        WHERE min_age_months <= ? AND max_age_months >= ? AND is_active = 1
+        ORDER BY RANDOM() LIMIT 3
+      `).bind(youngestAge, oldestAge).all();
+
+      familyActivities = sharedActivities.map((activity: any) => {
+        const variations: Record<string, string> = {};
+        allChildren.forEach((child: any) => {
+          const childAge = child.age_in_months;
+          const activityMidpoint = (activity.min_age_months + activity.max_age_months) / 2;
+          if (childAge < activityMidpoint - 6) variations[child.id] = 'easier';
+          else if (childAge > activityMidpoint + 6) variations[child.id] = 'harder';
+          else variations[child.id] = 'standard';
+        });
+
+        return {
+          activity: {
+            ...activity,
+            materials: JSON.parse(activity.materials || '[]'),
+            instructions: JSON.parse(activity.instructions || '[]'),
+            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          },
+          suitableFor: allChildren.map((c: any) => c.id),
+          variations,
+        };
+      });
+    }
+
+    return c.json({
+      date: new Date().toISOString().split('T')[0],
+      children: childrenData,
+      familyActivities,
+      sharedMaterials,
+      totalDuration
+    });
   } catch (error: any) {
     return c.json({ error: error.message || 'Unauthorized' }, 401);
   }
