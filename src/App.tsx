@@ -53,8 +53,7 @@ const App = () => (
 
               {/* Protected Routes */}
               <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                <Route path="/" element={<Navigate to="/early-years/today" replace />} />
-                <Route path="/dashboard" element={<Dashboard />} />
+                <Route path="/" element={<Dashboard />} />
 
                 {/* Early Years */}
                 <Route path="/early-years/today" element={<Today />} />
