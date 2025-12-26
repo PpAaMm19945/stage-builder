@@ -6,22 +6,24 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
+import {
+  Calendar,
   Sparkles,
   Clock,
-  Package,
   Baby,
   Loader2,
   AlertCircle,
+  Box,
   Paintbrush,
   PlayCircle,
   Check,
   CheckCircle2,
-  Circle
+  Circle,
+  Info
 } from 'lucide-react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem } from '@/types';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -57,6 +59,7 @@ export default function Dashboard() {
 
   const hasChildren = data.children.length > 0;
 
+  // No children state
   if (!hasChildren) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
@@ -73,6 +76,12 @@ export default function Dashboard() {
       </div>
     );
   }
+
+  // Check if materials need setup
+  const unknownOrNotInterestedMaterials = data.materials.filter(
+    (m: MaterialItem) => m.status === 'unknown' || m.status === 'not_interested'
+  );
+  const needsMaterialsSetup = unknownOrNotInterestedMaterials.length > 0;
 
   const messLevelLabels: Record<string | number, string> = {
     1: 'No Mess',
@@ -108,12 +117,29 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2" onClick={() => navigate('/settings')}>
-              <Package className="w-4 h-4" />
+              <Box className="w-4 h-4" />
               My Materials
             </Button>
           </div>
         </div>
       </div>
+
+      {/* Materials Reminder Banner */}
+      {needsMaterialsSetup && (
+        <Alert className="border-orange-200 bg-orange-50">
+          <Info className="h-4 w-4 text-orange-600" />
+          <AlertDescription className="text-orange-900">
+            <strong>Update your materials:</strong> Some activities need materials you haven't set.
+            <Button
+              variant="link"
+              className="h-auto p-0 ml-1 text-orange-900 underline font-semibold"
+              onClick={() => navigate('/settings')}
+            >
+              Review Materials
+            </Button> to improve suggestions.
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Materials Section */}
       <Card className="border-muted bg-muted/5">
@@ -121,7 +147,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Package className="h-5 w-5 text-primary" />
+                <Box className="h-5 w-5 text-primary" />
                 Materials for Today
               </CardTitle>
               <CardDescription>
@@ -137,9 +163,9 @@ export default function Dashboard() {
           {data.materials.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {data.materials.map((m: MaterialItem, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400' : m.status === 'willing_to_buy' ? 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
+                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
                   {m.status === 'have' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
                   ) : m.status === 'willing_to_buy' ? (
                     <Circle className="w-4 h-4" />
                   ) : (
@@ -157,7 +183,7 @@ export default function Dashboard() {
 
       {/* Family Sessions */}
       <div className="space-y-6">
-        {data.familySessions.map((session: FamilySession, index: number) => (
+        {data.familySessions.map((session, index) => (
           <Card key={index} className="overflow-hidden border-2 hover:border-primary/20 transition-colors">
             <div className="bg-muted/30 p-4 border-b flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -168,7 +194,7 @@ export default function Dashboard() {
                   <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {session.activity.duration_minutes} min</span>
-                    <span className="flex items-center gap-1"><Paintbrush className="w-3 h-3" /> {messLevelLabels[session.messLevel] || 'Variable Mess'}</span>
+                    <span className="flex items-center gap-1"><Paintbrush className="w-3 h-3" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
                   </div>
                 </div>
               </div>
@@ -184,7 +210,9 @@ export default function Dashboard() {
                   {session.childTiers.map(tier => (
                     <div key={tier.childId} className="bg-accent/5 rounded-xl p-4 border border-accent/10">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">👶</span>
+                        <span className="text-lg">
+                          👶
+                        </span>
                         <span className="font-bold text-foreground">
                           {tier.childName}
                         </span>
@@ -193,8 +221,8 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                       <div className="flex gap-3 pl-1">
-                        <Sparkles className="w-4 h-4 text-primary mt-1 shrink-0" />
-                        <p className="text-sm font-medium text-foreground/80">
+                        <Sparkles className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
+                        <p className="text-sm font-medium text-indigo-900/80">
                           {tier.expectation}
                         </p>
                       </div>

@@ -718,7 +718,14 @@ app.get('/api/family/materials', async (c) => {
     const { results } = await c.env.DB.prepare(
       'SELECT * FROM family_materials WHERE parent_id = ? ORDER BY material_name'
     ).bind(user.id).all();
-    return c.json(results);
+
+    // Normalize field names: material_name → name for frontend consistency
+    const normalized = results.map((row: any) => ({
+      name: row.material_name,
+      status: row.status
+    }));
+
+    return c.json(normalized);
   } catch (error: any) {
     return c.json({ error: error.message || 'Unauthorized' }, 401);
   }
@@ -732,7 +739,20 @@ app.put('/api/family/materials', async (c) => {
     const { materials } = body; // Array of { name, status }
 
     if (!Array.isArray(materials)) {
-      return c.json({ error: 'Invalid format' }, 400);
+      return c.json({ error: 'Materials must be an array' }, 400);
+    }
+
+    // Validate each material entry
+    const validStatuses = ['have', 'willing_to_buy', 'not_interested', 'unknown'];
+    const invalidEntries = materials.filter((m: any) =>
+      !m.name || typeof m.name !== 'string' || !validStatuses.includes(m.status)
+    );
+
+    if (invalidEntries.length > 0) {
+      return c.json({
+        error: 'Invalid material entries found. Each must have a valid name and status.',
+        details: `Found ${invalidEntries.length} invalid entries`
+      }, 400);
     }
 
     const stmt = c.env.DB.prepare(`
@@ -750,6 +770,7 @@ app.put('/api/family/materials', async (c) => {
 
     return c.json({ success: true });
   } catch (error: any) {
+    console.error('Materials update error:', error);
     return c.json({ error: error.message || 'Failed to update materials' }, 400);
   }
 });
@@ -789,7 +810,7 @@ app.post('/api/observations', async (c) => {
   try {
     const user = requireAuth(c);
     const body = await c.req.json();
-    const { studentId, activityId, masteryLevel, parentNotes } = body;
+    const { studentId, activityId, masteryLevel, parentNotes, tier } = body;
 
     // Verify student ownership
     const student = await c.env.DB.prepare(
@@ -811,9 +832,10 @@ app.post('/api/observations', async (c) => {
 
     const observationId = generateId('obs');
 
+    // Include tier if provided (for family sessions)
     await c.env.DB.prepare(
-      'INSERT INTO observations (id, student_id, activity_id, mastery_level, parent_notes) VALUES (?, ?, ?, ?, ?)'
-    ).bind(observationId, studentId, activityId, masteryLevel, parentNotes || null).run();
+      'INSERT INTO observations (id, student_id, activity_id, mastery_level, parent_notes, tier) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(observationId, studentId, activityId, masteryLevel, parentNotes || null, tier || null).run();
 
     // Mark daily recommendation as completed if exists
     const today = new Date().toISOString().split('T')[0];

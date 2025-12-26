@@ -22,10 +22,11 @@ export default function AuthCallback() {
     if (token) {
       // Store the JWT token
       auth.handleCallback(token);
-      
+
       // Refresh auth state and redirect
       refreshAuth().then(() => {
-        navigate('/early-years/today', { replace: true });
+        // Redirect to family dashboard (family-first experience)
+        navigate('/', { replace: true });
       }).catch((err) => {
         console.error('Auth refresh failed:', err);
         setError('Failed to complete authentication');

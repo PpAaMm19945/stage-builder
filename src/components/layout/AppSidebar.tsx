@@ -161,10 +161,36 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Early Years Navigation */}
+          {/* Family Navigation (Primary) */}
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Early Years
+              Family
+            </SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton asChild>
+                    <NavLink
+                      to="/"
+                      end
+                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                      activeClassName="bg-primary/10 text-primary font-medium"
+                    >
+                      <Sparkles className="h-4 w-4" />
+                      <span className="font-semibold">Family Plan</span>
+                    </NavLink>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          {/* Individual Child Navigation (Secondary) */}
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+              Individual {selectedChild ? `· ${selectedChild.name}` : ''}
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>

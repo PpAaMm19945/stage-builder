@@ -59,7 +59,13 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       setStudentChildren(childrenData);
       setSelectedChild(childrenData[0] || null);
     } catch (error: any) {
+      // Enhanced logging to diagnose refresh issues
       console.error('Failed to fetch user data:', error);
+      console.log('Auth error details:', {
+        isAuthError: error?.isAuthError,
+        message: error?.message,
+        status: error?.status,
+      });
 
       // Show informative message for auth errors
       if (error?.isAuthError || error?.message?.includes('Session expired')) {

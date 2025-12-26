@@ -130,6 +130,7 @@ export const observations = {
     activityId: string;
     masteryLevel: string;
     parentNotes?: string;
+    tier?: string;
   }) =>
     apiRequest<any>('/api/observations', {
       method: 'POST',

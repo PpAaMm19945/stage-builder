@@ -45,13 +45,14 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
         try {
             // Submit observations for each child
             const promises = session.childTiers.map(child => {
-                const rating = ratings[child.childId] || 'developing'; // Default if skipped? Or require it? Let's default to developing.
+                const rating = ratings[child.childId] || 'developing'; // Default if skipped
 
                 return observations.create({
                     studentId: child.childId,
                     activityId: session.activity.id,
                     masteryLevel: rating,
                     parentNotes: notes ? `[Family Session] ${notes}` : undefined,
+                    tier: child.tier, // Include tier for progress tracking
                 });
             });
 
@@ -113,8 +114,8 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                                         key={option.value}
                                         onClick={() => handleRatingChange(child.childId, option.value)}
                                         className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
-                                                ? `ring-2 ring-primary ring-offset-1 ${option.color}`
-                                                : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
+                                            ? `ring-2 ring-primary ring-offset-1 ${option.color}`
+                                            : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
                                             }`}
                                     >
                                         {option.label}

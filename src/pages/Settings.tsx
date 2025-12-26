@@ -52,7 +52,7 @@ export default function Settings() {
     if (serverMaterials) {
       // Merge common materials with server materials
       const merged = COMMON_MATERIALS.map(name => {
-        const existing = serverMaterials.find((m: MaterialItem) => m.name === name);
+        const existing = serverMaterials.find((m: MaterialItem) => m?.name === name);
         return {
           name,
           status: existing?.status || 'unknown'
@@ -61,12 +61,18 @@ export default function Settings() {
 
       // Also add any server materials that aren't in common list
       serverMaterials.forEach((m: MaterialItem) => {
-        if (!COMMON_MATERIALS.includes(m.name)) {
+        // Defensive check: ensure m has a valid name
+        if (m?.name && typeof m.name === 'string' && !COMMON_MATERIALS.includes(m.name)) {
           merged.push(m);
         }
       });
 
-      setMaterialsState(merged.sort((a, b) => a.name.localeCompare(b.name)));
+      // Defensive sorting: ensure both names exist before comparing
+      setMaterialsState(merged.sort((a, b) => {
+        const nameA = a?.name || '';
+        const nameB = b?.name || '';
+        return nameA.localeCompare(nameB);
+      }));
     }
   }, [serverMaterials]);
 
@@ -79,8 +85,11 @@ export default function Settings() {
       toast.success('Materials updated successfully');
       setHasChanges(false);
     },
-    onError: () => {
-      toast.error('Failed to update materials');
+    onError: (error: any) => {
+      console.error('Materials update failed:', error);
+      toast.error('Couldn\'t save materials. Please try again. If it keeps happening, contact support.', {
+        description: error?.message || 'Unknown error occurred'
+      });
     }
   });
 
@@ -101,7 +110,18 @@ export default function Settings() {
   };
 
   const handleSaveMaterials = () => {
-    updateMaterialsMutation.mutate(materialsState);
+    // Validate before sending: filter out any invalid entries
+    const validStatuses = ['have', 'willing_to_buy', 'not_interested', 'unknown'];
+    const validMaterials = materialsState.filter(m =>
+      m?.name && typeof m.name === 'string' && validStatuses.includes(m.status)
+    );
+
+    if (validMaterials.length === 0) {
+      toast.error('No valid materials to save');
+      return;
+    }
+
+    updateMaterialsMutation.mutate(validMaterials);
   };
 
   const getInitials = (name: string) => {
@@ -261,7 +281,75 @@ export default function Settings() {
             </div>
           ) : (
             <div className="space-y-4">
+              {/* How This Works Explainer */}
+              <div className="bg-muted/30 rounded-lg p-4 space-y-2">
+                <p className="text-sm font-semibold text-foreground">How this works:</p>
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
+                  <div className="flex items-center gap-2">
+                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <span className="text-muted-foreground">Have at home</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Circle className="w-4 h-4 text-blue-600" />
+                    <span className="text-muted-foreground">Willing to buy</span>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <span className="text-muted-foreground opacity-60">➖</span>
+                    <span className="text-muted-foreground">Not interested</span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Quick Actions */}
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    const basics = ['Blocks', 'Balls', 'Books', 'Crayons', 'Paper'];
+                    setMaterialsState(prev => prev.map(m =>
+                      basics.includes(m.name) ? { ...m, status: 'have' } : m
+                    ));
+                    setHasChanges(true);
+                  }}
+                >
+                  ✅ Mark Common Basics as Have
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => {
+                    setMaterialsState(prev => prev.map(m => ({ ...m, status: 'unknown' })));
+                    setHasChanges(true);
+                  }}
+                >
+                  Reset All to Unknown
+                </Button>
+              </div>
+
+              {/* Search/Filter */}
+              <div className="relative">
+                <input
+                  type="text"
+                  placeholder="Search materials... (blocks, cars, paper)"
+                  className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
+                  onChange={(e) => {
+                    const query = e.target.value.toLowerCase();
+                    if (query) {
+                      const filtered = materialsState.filter(m =>
+                        m.name.toLowerCase().includes(query)
+                      );
+                      // Store original state to restore when search is cleared
+                      if (!e.target.dataset.hasFiltered) {
+                        e.target.dataset.hasFiltered = 'true';
+                      }
+                    }
+                  }}
+                />
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+
                 {materialsState.map((material) => (
                   <div
                     key={material.name}
