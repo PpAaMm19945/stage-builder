@@ -46,6 +46,7 @@ export default function Settings() {
   // Local state for materials editing
   const [materialsState, setMaterialsState] = useState<MaterialItem[]>([]);
   const [hasChanges, setHasChanges] = useState(false);
+  const [searchQuery, setSearchQuery] = useState('');
 
   // Sync server data to local state
   useEffect(() => {
@@ -346,62 +347,68 @@ export default function Settings() {
                   type="text"
                   placeholder="Search materials... (blocks, cars, paper)"
                   className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  onChange={(e) => {
-                    const query = e.target.value.toLowerCase();
-                    if (query) {
-                      const filtered = materialsState.filter(m =>
-                        m.name.toLowerCase().includes(query)
-                      );
-                      // Store original state to restore when search is cleared
-                      if (!e.target.dataset.hasFiltered) {
-                        e.target.dataset.hasFiltered = 'true';
-                      }
-                    }
-                  }}
+                  value={searchQuery}
+                  onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              {/* Filter materials based on search query */}
+              {(() => {
+                const filteredMaterials = searchQuery
+                  ? materialsState.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
+                  : materialsState;
 
-                {materialsState.map((material) => (
-                  <div
-                    key={material.name}
-                    className={`
+                return (
+                  <>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {filteredMaterials.length === 0 && searchQuery ? (
+                        <div className="col-span-full text-center py-8 text-muted-foreground text-sm">
+                          No materials found matching "{searchQuery}"
+                        </div>
+                      ) : (
+                        filteredMaterials.map((material) => (
+                          <div
+                            key={material.name}
+                            className={`
                                 flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
                                 ${material.status === 'have' ? 'bg-green-50 border-green-200' : ''}
                                 ${material.status === 'willing_to_buy' ? 'bg-blue-50 border-blue-200' : ''}
                                 ${material.status === 'not_interested' ? 'bg-muted/50 opacity-60' : ''}
                             `}
-                    onClick={() => handleMaterialToggle(material.name)}
-                  >
-                    <span className="font-medium text-sm">{material.name}</span>
+                            onClick={() => handleMaterialToggle(material.name)}
+                          >
+                            <span className="font-medium text-sm">{material.name}</span>
 
-                    <div className="flex items-center">
-                      {material.status === 'have' && (
-                        <div className="flex items-center gap-1.5 text-green-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Have
-                        </div>
-                      )}
-                      {material.status === 'willing_to_buy' && (
-                        <div className="flex items-center gap-1.5 text-blue-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
-                          <Circle className="w-3.5 h-3.5" /> Will Buy
-                        </div>
-                      )}
-                      {material.status === 'not_interested' && (
-                        <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium bg-black/5 px-2 py-1 rounded-full">
-                          <LogOut className="w-3.5 h-3.5" /> No
-                        </div>
-                      )}
-                      {material.status === 'unknown' && (
-                        <span className="text-xs text-muted-foreground px-2">Click to set</span>
+                            <div className="flex items-center">
+                              {material.status === 'have' && (
+                                <div className="flex items-center gap-1.5 text-green-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                                  <CheckCircle2 className="w-3.5 h-3.5" /> Have
+                                </div>
+                              )}
+                              {material.status === 'willing_to_buy' && (
+                                <div className="flex items-center gap-1.5 text-blue-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                                  <Circle className="w-3.5 h-3.5" /> Will Buy
+                                </div>
+                              )}
+                              {material.status === 'not_interested' && (
+                                <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium bg-black/5 px-2 py-1 rounded-full">
+                                  <LogOut className="w-3.5 h-3.5" /> No
+                                </div>
+                              )}
+                              {material.status === 'unknown' && (
+                                <span className="text-xs text-muted-foreground px-2">Click to set</span>
+                              )}
+                            </div>
+                          </div>
+                        ))
                       )}
                     </div>
-                  </div>
-                ))}
-              </div>
-              <p className="text-xs text-muted-foreground text-center pt-2">
-                Tap an item to cycle: Have → Will Buy → Not Interested
-              </p>
+                    <p className="text-xs text-muted-foreground text-center pt-2">
+                      Tap an item to cycle: Have → Will Buy → Not Interested
+                    </p>
+                  </>
+                );
+              })()}
             </div>
           )}
         </CardContent>

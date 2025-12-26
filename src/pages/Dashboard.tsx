@@ -19,7 +19,9 @@ import {
   Check,
   CheckCircle2,
   Circle,
-  Info
+  Info,
+  Settings,
+  Zap
 } from 'lucide-react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem } from '@/types';
@@ -73,6 +75,79 @@ export default function Dashboard() {
         <Button onClick={() => navigate('/settings')} size="lg">
           Add Your First Child
         </Button>
+      </div>
+    );
+  }
+
+  // Check if user is first-time (all materials are unknown)
+  const isFirstTimeUser = data.materials.every((m: MaterialItem) => m.status === 'unknown');
+
+  // First-time user onboarding
+  if (isFirstTimeUser && data.familySessions.length === 0) {
+    return (
+      <div className="max-w-2xl mx-auto py-12">
+        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+          <CardHeader className="text-center space-y-2">
+            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+              <Sparkles className="h-8 w-8 text-primary" />
+            </div>
+            <CardTitle className="text-2xl">Welcome to Your Family Learning Journey!</CardTitle>
+            <CardDescription className="text-base">
+              We're excited to help your family learn and grow together.
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <Alert className="border-blue-200 bg-blue-50">
+              <Info className="h-4 w-4 text-blue-600" />
+              <AlertDescription className="text-blue-900">
+                To give you the best activity recommendations, we need to know what materials you have at home.
+              </AlertDescription>
+            </Alert>
+
+            <div className="space-y-3">
+              <h3 className="font-semibold flex items-center gap-2">
+                <Zap className="h-4 w-4 text-orange-500" />
+                Quick Setup (2 minutes)
+              </h3>
+              <ol className="space-y-2 text-sm text-muted-foreground">
+                <li className="flex gap-2">
+                  <span className="font-semibold text-primary">1.</span>
+                  <span>Tell us what materials you have (blocks, crayons, books, etc.)</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold text-primary">2.</span>
+                  <span>We'll instantly recommend activities your family can do today</span>
+                </li>
+                <li className="flex gap-2">
+                  <span className="font-semibold text-primary">3.</span>
+                  <span>Track progress and watch your children grow!</span>
+                </li>
+              </ol>
+            </div>
+
+            <div className="flex flex-col sm:flex-row gap-3 pt-4">
+              <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
+                <Settings className="h-4 w-4" />
+                Set Up Materials (2 min)
+              </Button>
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={() => {
+                  // Quick start: mark common basics as "have"
+                  navigate('/settings?quickstart=true');
+                }}
+                className="flex-1"
+              >
+                Quick Start →
+              </Button>
+            </div>
+
+            <p className="text-xs text-center text-muted-foreground italic">
+              💡 Takes just 2 minutes and unlocks personalized family activities!
+            </p>
+          </CardContent>
+        </Card>
       </div>
     );
   }

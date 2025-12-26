@@ -52,7 +52,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                     activityId: session.activity.id,
                     masteryLevel: rating,
                     parentNotes: notes ? `[Family Session] ${notes}` : undefined,
-                    tier: child.tier, // Include tier for progress tracking
+                    tier: child.tier, // Include tier for progress tracking,
                 });
             });
 
@@ -61,6 +61,45 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
             toast({
                 title: "Great job!",
                 description: "Activity marked as complete for the whole family.",
+            });
+
+            onSuccess();
+            onClose();
+            // Reset state
+            setRatings({});
+            setNotes('');
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save observations. Please try again.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
+    const handleQuickComplete = async () => {
+        if (!session) return;
+        setIsSubmitting(true);
+
+        try {
+            // Submit observations for each child with default 'developing' rating
+            const promises = session.childTiers.map(child => {
+                return observations.create({
+                    studentId: child.childId,
+                    activityId: session.activity.id,
+                    masteryLevel: 'developing', // Default rating
+                    parentNotes: '[Family Session] Completed',
+                    tier: child.tier,
+                });
+            });
+
+            await Promise.all(promises);
+
+            toast({
+                title: "Activity completed!",
+                description: "Marked as complete with default progress ratings.",
             });
 
             onSuccess();
@@ -137,14 +176,29 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                     </div>
                 </div>
 
-                <DialogFooter className="gap-2 sm:justify-between">
+                <DialogFooter className="gap-2 sm:justify-between flex-col sm:flex-row">
                     <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
                         Cancel
                     </Button>
-                    <Button onClick={handleSubmit} disabled={isSubmitting}>
-                        {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                        Save Progress
-                    </Button>
+                    <div className="flex gap-2 flex-1 sm:flex-initial">
+                        <Button
+                            variant="outline"
+                            onClick={handleQuickComplete}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-initial"
+                        >
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Quick Complete
+                        </Button>
+                        <Button
+                            onClick={handleSubmit}
+                            disabled={isSubmitting}
+                            className="flex-1 sm:flex-initial"
+                        >
+                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                            Save Progress
+                        </Button>
+                    </div>
                 </DialogFooter>
             </DialogContent>
         </Dialog>
