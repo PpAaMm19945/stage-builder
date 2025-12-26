@@ -94,8 +94,6 @@ export const students = {
   delete: (id: string) => apiRequest<{ success: boolean }>(`/api/students/${id}`, {
     method: 'DELETE',
   }),
-
-  getFamilyToday: () => apiRequest<import('@/types').FamilyTodayResponse>('/api/family/today'),
 };
 
 // Activities
@@ -108,6 +106,11 @@ export const activities = {
   },
 
   get: (id: string) => apiRequest<any>(`/api/activities/${id}`),
+};
+
+// Family
+export const family = {
+  getToday: () => apiRequest<import('@/types').FamilyTodayResponse>('/api/family/today'),
 };
 
 // Observations
@@ -124,5 +127,5 @@ export const observations = {
     }),
 };
 
-export const api = { auth, students, activities, observations };
+export const api = { auth, students, activities, observations, family };
 export default api;

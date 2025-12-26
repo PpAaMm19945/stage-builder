@@ -548,48 +548,43 @@ app.get('/api/family/today', async (c) => {
     const user = requireAuth(c);
 
     // Get all children
-    const { results: allChildren } = await c.env.DB.prepare(
+    const { results: children } = await c.env.DB.prepare(
       'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
     ).bind(user.id).all();
 
-    const childrenData = [];
-    let allMaterials: string[] = [];
-    let totalDuration = 0;
-
-    // Get activities for each child
-    for (const child of allChildren) {
-      const recommendations = await getStudentDailyRecommendations(c.env.DB, child);
-
-      const activities = recommendations.map((r: any) => {
-        const mats = JSON.parse(r.materials || '[]');
-        if (Array.isArray(mats)) {
-          allMaterials.push(...mats);
-        }
-        totalDuration += (r.duration_minutes || 0);
-
-        return {
-          ...r,
-          materials: mats,
-          instructions: JSON.parse(r.instructions || '[]'),
-          learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
-        };
-      });
-
-      childrenData.push({
-        id: (child as any).id,
-        name: (child as any).name,
-        ageInMonths: (child as any).age_in_months,
-        activities
+    if (children.length === 0) {
+      return c.json({
+        date: new Date().toISOString().split('T')[0],
+        children: [],
+        familyActivities: [],
+        sharedMaterials: [],
+        totalDuration: 0
       });
     }
 
-    // Deduplicate materials
-    const sharedMaterials = [...new Set(allMaterials)].sort();
+    // Get recommendations for each child (in parallel)
+    const childData = await Promise.all(children.map(async (child: any) => {
+      const recommendations = await getStudentDailyRecommendations(c.env.DB, child);
+
+      const activities = recommendations.map((r: any) => ({
+        ...r,
+        materials: JSON.parse(r.materials || '[]'),
+        instructions: JSON.parse(r.instructions || '[]'),
+        learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
+      }));
+
+      return {
+        id: child.id,
+        name: child.name,
+        ageInMonths: child.age_in_months,
+        activities
+      };
+    }));
 
     // Family Activities
     let familyActivities: any[] = [];
-    if (allChildren.length > 1) {
-      const ages = allChildren.map((c: any) => c.age_in_months);
+    if (children.length > 1) {
+      const ages = children.map((c: any) => c.age_in_months);
       const oldestAge = Math.max(...ages);
       const youngestAge = Math.min(...ages);
 
@@ -601,7 +596,7 @@ app.get('/api/family/today', async (c) => {
 
       familyActivities = sharedActivities.map((activity: any) => {
         const variations: Record<string, string> = {};
-        allChildren.forEach((child: any) => {
+        children.forEach((child: any) => {
           const childAge = child.age_in_months;
           const activityMidpoint = (activity.min_age_months + activity.max_age_months) / 2;
           if (childAge < activityMidpoint - 6) variations[child.id] = 'easier';
@@ -616,17 +611,31 @@ app.get('/api/family/today', async (c) => {
             instructions: JSON.parse(activity.instructions || '[]'),
             learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
           },
-          suitableFor: allChildren.map((c: any) => c.id),
+          suitableFor: children.map((c: any) => c.id),
           variations,
         };
       });
     }
 
+    // Compute shared materials (deduplicated)
+    const allMaterials = new Set<string>();
+    childData.forEach(child => child.activities.forEach((a: any) => {
+      if (Array.isArray(a.materials)) a.materials.forEach((m: string) => allMaterials.add(m));
+    }));
+    familyActivities.forEach((fa: any) => {
+      if (Array.isArray(fa.activity.materials)) fa.activity.materials.forEach((m: string) => allMaterials.add(m));
+    });
+
+    // Compute total duration
+    const totalDuration = childData.reduce((sum, child) =>
+      sum + child.activities.reduce((s: number, a: any) => s + (a.duration_minutes || 15), 0), 0
+    );
+
     return c.json({
       date: new Date().toISOString().split('T')[0],
-      children: childrenData,
+      children: childData,
       familyActivities,
-      sharedMaterials,
+      sharedMaterials: Array.from(allMaterials).sort(),
       totalDuration
     });
   } catch (error: any) {

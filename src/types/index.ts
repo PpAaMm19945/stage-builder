@@ -164,12 +164,7 @@ export interface TodaysLearningResponse {
 // Family Dashboard Response
 export interface FamilyTodayResponse {
   date: string;
-  children: {
-    id: string;
-    name: string;
-    ageInMonths: number;
-    activities: ApiActivity[];
-  }[];
+  children: (Student & { activities: ApiActivity[] })[];
   familyActivities: FamilyActivity[];
   sharedMaterials: string[];
   totalDuration: number;
