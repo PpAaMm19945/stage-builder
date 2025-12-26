@@ -447,9 +447,9 @@ export default function ActivityViewer() {
         <Card className="bg-muted/30">
           <CardContent className="py-4">
             <p className="text-sm text-muted-foreground">
-              Last completed on {new Date(previousResult.completedAt).toLocaleDateString()}
-              {previousResult.parentNotes && (
-                <span> — "{previousResult.parentNotes}"</span>
+              Last completed on {new Date(previousResult.created_at).toLocaleDateString()}
+              {previousResult.parent_notes && (
+                <span> — "{previousResult.parent_notes}"</span>
               )}
             </p>
           </CardContent>

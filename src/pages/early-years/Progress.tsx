@@ -13,7 +13,9 @@ import {
   Heart,
   BookOpen,
   HandMetal,
-  AlertCircle
+  AlertCircle,
+  Sparkles,
+  Target
 } from 'lucide-react';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
@@ -45,6 +47,43 @@ export default function ProgressPage() {
 
   const domains = Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[];
   const totalCompleted = progressData?.totalCompleted || 0;
+
+  // Calculate domains with at least one activity
+  const domainsWithProgress = progressData?.byDomain?.filter((d: any) => d.count > 0).length || 0;
+
+  // Get overall progress label based on total completed
+  const getOverallProgressLabel = () => {
+    if (totalCompleted === 0) return 'Getting Started';
+    if (totalCompleted <= 5) return 'Beginning';
+    if (totalCompleted <= 20) return 'Good Progress';
+    return 'Excellent!';
+  };
+
+  // Get insights based on actual domain data
+  const getInsights = () => {
+    const domainData = progressData?.byDomain || [];
+    if (domainData.length === 0) {
+      return { strongDomain: null, focusDomain: null };
+    }
+
+    // Aggregate counts by domain
+    const domainCounts: Record<string, number> = {};
+    domainData.forEach((d: any) => {
+      domainCounts[d.domain] = (domainCounts[d.domain] || 0) + d.count;
+    });
+
+    const sortedDomains = Object.entries(domainCounts)
+      .sort(([, a], [, b]) => (b as number) - (a as number));
+
+    if (sortedDomains.length === 0) {
+      return { strongDomain: null, focusDomain: null };
+    }
+
+    return {
+      strongDomain: sortedDomains[0] ? { domain: sortedDomains[0][0], count: sortedDomains[0][1] } : null,
+      focusDomain: sortedDomains.length > 1 ? { domain: sortedDomains[sortedDomains.length - 1][0], count: sortedDomains[sortedDomains.length - 1][1] } : null,
+    };
+  };
 
   if (!selectedChild) {
     return (
@@ -118,13 +157,16 @@ export default function ProgressPage() {
 
   // Helper to get domain progress from API data
   const getDomainProgress = (domain: EarlyYearsDomain) => {
-    const domainData = progressData?.byDomain?.find((d: any) => d.domain === domain);
+    const domainData = progressData?.byDomain?.filter((d: any) => d.domain === domain) || [];
+    const totalCount = domainData.reduce((sum: number, d: any) => sum + (d.count || 0), 0);
+    const masteryLevel = domainData.length > 0 ? domainData[0].mastery_level : 'Not Started';
     return {
-      level: domainData?.mastery_level || 'Not Started',
-      completed: domainData?.count || 0,
-      total: 10, // Approximate total activities per domain
+      level: masteryLevel || 'Not Started',
+      completed: totalCount,
     };
   };
+
+  const insights = getInsights();
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -161,7 +203,7 @@ export default function ProgressPage() {
                 <Activity className="h-6 w-6 text-secondary" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">5</p>
+                <p className="text-2xl font-bold text-foreground">{domainsWithProgress}</p>
                 <p className="text-sm text-muted-foreground">Domains Tracked</p>
               </div>
             </div>
@@ -175,7 +217,7 @@ export default function ProgressPage() {
                 <Heart className="h-6 w-6 text-accent" />
               </div>
               <div>
-                <p className="text-2xl font-bold text-foreground">Great</p>
+                <p className="text-2xl font-bold text-foreground">{getOverallProgressLabel()}</p>
                 <p className="text-sm text-muted-foreground">Overall Progress</p>
               </div>
             </div>
@@ -191,7 +233,6 @@ export default function ProgressPage() {
             const Icon = domainIcons[domain];
             const colors = domainColors[domain];
             const progress = getDomainProgress(domain);
-            const percentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
             return (
               <Card key={domain} className="overflow-hidden">
@@ -211,11 +252,11 @@ export default function ProgressPage() {
                       </div>
                       <div className="space-y-1">
                         <Progress
-                          value={percentage}
+                          value={progress.completed > 0 ? Math.min(progress.completed * 10, 100) : 0}
                           className="h-2"
                         />
                         <p className="text-xs text-muted-foreground">
-                          {progress.completed} activities completed
+                          {progress.completed} {progress.completed === 1 ? 'activity' : 'activities'} completed
                         </p>
                       </div>
                     </div>
@@ -236,30 +277,55 @@ export default function ProgressPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/5 border border-secondary/20">
-            <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-              <Heart className="h-4 w-4 text-secondary" />
+          {totalCompleted === 0 ? (
+            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-muted">
+              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
+                <Target className="h-4 w-4 text-muted-foreground" />
+              </div>
+              <div>
+                <p className="font-medium text-foreground">Ready to Begin!</p>
+                <p className="text-sm text-muted-foreground">
+                  Complete some activities to see personalized insights about {selectedChild.name}'s progress.
+                </p>
+              </div>
             </div>
-            <div>
-              <p className="font-medium text-foreground">Strong in Social Skills</p>
-              <p className="text-sm text-muted-foreground">
-                {selectedChild.name} shows excellent progress in social-emotional activities. Keep encouraging group play!
-              </p>
-            </div>
-          </div>
-          <div className="flex items-start gap-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
-            <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-              <BookOpen className="h-4 w-4 text-accent" />
-            </div>
-            <div>
-              <p className="font-medium text-foreground">Focus Area: Pre-Academic</p>
-              <p className="text-sm text-muted-foreground">
-                Consider more sorting and pattern activities to build early numeracy skills.
-              </p>
-            </div>
-          </div>
+          ) : (
+            <>
+              {insights.strongDomain && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/5 border border-secondary/20">
+                  <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
+                    <Sparkles className="h-4 w-4 text-secondary" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Strong in {DOMAIN_LABELS[insights.strongDomain.domain as EarlyYearsDomain] || insights.strongDomain.domain}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      {selectedChild.name} has completed {insights.strongDomain.count} {insights.strongDomain.count === 1 ? 'activity' : 'activities'} in this domain. Keep up the great work!
+                    </p>
+                  </div>
+                </div>
+              )}
+              {insights.focusDomain && insights.focusDomain.domain !== insights.strongDomain?.domain && (
+                <div className="flex items-start gap-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
+                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
+                    <Target className="h-4 w-4 text-accent" />
+                  </div>
+                  <div>
+                    <p className="font-medium text-foreground">
+                      Focus Area: {DOMAIN_LABELS[insights.focusDomain.domain as EarlyYearsDomain] || insights.focusDomain.domain}
+                    </p>
+                    <p className="text-sm text-muted-foreground">
+                      Try some more activities in this domain to build a well-rounded skill set.
+                    </p>
+                  </div>
+                </div>
+              )}
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
   );
 }
+

@@ -20,7 +20,7 @@ async function apiRequest<T>(
   options: RequestInit = {}
 ): Promise<T> {
   const token = getAuthToken();
-  
+
   const response = await fetch(`${API_URL}${endpoint}`, {
     ...options,
     headers: {
@@ -41,45 +41,49 @@ async function apiRequest<T>(
 // Auth
 export const auth = {
   getLoginUrl: () => `${API_URL}/auth/google`,
-  
+
   handleCallback: (token: string) => {
     setAuthToken(token);
   },
-  
+
   getMe: () => apiRequest<{ user: any; children: any[] }>('/api/auth/me'),
-  
+
   logout: () => {
     clearAuthToken();
     // Don't await the API call, just clear locally
   },
-  
+
   isAuthenticated: () => !!getAuthToken(),
 };
 
 // Students
 export const students = {
   list: () => apiRequest<any[]>('/api/students'),
-  
+
   create: (data: { name: string; dateOfBirth: string }) =>
     apiRequest<any>('/api/students', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
-  
+
   update: (id: string, data: { name?: string; dateOfBirth?: string; avatarUrl?: string }) =>
     apiRequest<any>(`/api/students/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
-  
+
   getToday: (studentId: string) =>
     apiRequest<{ student: any; activities: any[] }>(`/api/students/${studentId}/today`),
-  
+
   getProgress: (studentId: string) =>
     apiRequest<any>(`/api/students/${studentId}/progress`),
-  
+
   getObservations: (studentId: string, domain?: string) =>
     apiRequest<any[]>(`/api/students/${studentId}/observations${domain ? `?domain=${domain}` : ''}`),
+
+  delete: (id: string) => apiRequest<{ success: boolean }>(`/api/students/${id}`, {
+    method: 'DELETE',
+  }),
 };
 
 // Activities
@@ -90,7 +94,7 @@ export const activities = {
     if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
     return apiRequest<any[]>(`/api/activities?${query}`);
   },
-  
+
   get: (id: string) => apiRequest<any>(`/api/activities/${id}`),
 };
 
