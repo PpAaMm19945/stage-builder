@@ -1,41 +1,6 @@
-import { createContext, useContext, useState, ReactNode } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Student } from '@/types';
-
-// Mock data for development
-const MOCK_USER: User = {
-  id: 'user-1',
-  email: 'parent@schoolos.com',
-  name: 'Sarah Mitchell',
-  avatarUrl: undefined,
-  provider: 'google',
-  createdAt: '2024-01-15T00:00:00Z',
-  updatedAt: new Date().toISOString(),
-};
-
-const MOCK_CHILDREN: Student[] = [
-  {
-    id: 'child-1',
-    parentId: 'user-1',
-    name: 'Emma',
-    dateOfBirth: '2021-03-15',
-    ageInMonths: 33,
-    currentStage: 'early-years',
-    avatarUrl: undefined,
-    createdAt: '2024-01-15T00:00:00Z',
-    updatedAt: new Date().toISOString(),
-  },
-  {
-    id: 'child-2',
-    parentId: 'user-1',
-    name: 'Lucas',
-    dateOfBirth: '2022-08-22',
-    ageInMonths: 16,
-    currentStage: 'early-years',
-    avatarUrl: undefined,
-    createdAt: '2024-06-01T00:00:00Z',
-    updatedAt: new Date().toISOString(),
-  },
-];
+import { auth } from '@/lib/api';
 
 interface AuthContextType {
   user: User | null;
@@ -43,28 +8,77 @@ interface AuthContextType {
   selectedChild: Student | null;
   setSelectedChild: (child: Student) => void;
   isAuthenticated: boolean;
-  login: () => void;
   logout: () => void;
+  refreshAuth: () => Promise<void>;
   isLoading: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children: childrenProp }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(MOCK_USER);
-  const [studentChildren] = useState<Student[]>(MOCK_CHILDREN);
-  const [selectedChild, setSelectedChild] = useState<Student | null>(MOCK_CHILDREN[0]);
-  const [isLoading] = useState(false);
+  const [user, setUser] = useState<User | null>(null);
+  const [studentChildren, setStudentChildren] = useState<Student[]>([]);
+  const [selectedChild, setSelectedChild] = useState<Student | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const login = () => {
-    setUser(MOCK_USER);
-    setSelectedChild(MOCK_CHILDREN[0]);
-  };
+  const refreshAuth = useCallback(async () => {
+    if (!auth.isAuthenticated()) {
+      setUser(null);
+      setStudentChildren([]);
+      setSelectedChild(null);
+      setIsLoading(false);
+      return;
+    }
 
-  const logout = () => {
+    try {
+      const response = await auth.getMe();
+      const userData: User = {
+        id: response.user.id,
+        email: response.user.email,
+        name: response.user.name,
+        avatarUrl: response.user.avatar_url,
+        provider: 'google',
+        createdAt: response.user.created_at,
+        updatedAt: response.user.updated_at,
+      };
+      
+      const childrenData: Student[] = (response.children || []).map((child: any) => ({
+        id: child.id,
+        parentId: child.parent_id,
+        name: child.name,
+        dateOfBirth: child.date_of_birth,
+        ageInMonths: child.age_in_months,
+        currentStage: child.current_stage || 'early-years',
+        avatarUrl: child.avatar_url,
+        createdAt: child.created_at,
+        updatedAt: child.updated_at,
+      }));
+
+      setUser(userData);
+      setStudentChildren(childrenData);
+      setSelectedChild(childrenData[0] || null);
+    } catch (error) {
+      console.error('Failed to fetch user data:', error);
+      // Token might be invalid, clear it
+      auth.logout();
+      setUser(null);
+      setStudentChildren([]);
+      setSelectedChild(null);
+    } finally {
+      setIsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    refreshAuth();
+  }, [refreshAuth]);
+
+  const logout = useCallback(() => {
+    auth.logout();
     setUser(null);
+    setStudentChildren([]);
     setSelectedChild(null);
-  };
+  }, []);
 
   return (
     <AuthContext.Provider
@@ -74,8 +88,8 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         selectedChild,
         setSelectedChild,
         isAuthenticated: !!user,
-        login,
         logout,
+        refreshAuth,
         isLoading,
       }}
     >

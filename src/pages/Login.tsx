@@ -1,15 +1,11 @@
 import { GraduationCap } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/api';
 
 export default function Login() {
-  const navigate = useNavigate();
-  const { login } = useAuth();
-
   const handleLogin = () => {
-    login();
-    navigate('/early-years/today');
+    // Redirect to the real Google OAuth endpoint
+    window.location.href = auth.getLoginUrl();
   };
 
   return (

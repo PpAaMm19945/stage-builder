@@ -19,6 +19,7 @@ import { PublicLayout } from "@/components/layout/PublicLayout";
 
 // Pages
 import Login from "./pages/Login";
+import AuthCallback from "./pages/auth/Callback";
 import Dashboard from "./pages/Dashboard";
 import Today from "./pages/early-years/Today";
 import Activities from "./pages/early-years/Activities";
@@ -39,9 +40,10 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-              {/* Public Routes */}
+            {/* Public Routes */}
               <Route element={<PublicLayout />}>
                 <Route path="/login" element={<Login />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
               </Route>
 
               {/* Protected Routes */}
