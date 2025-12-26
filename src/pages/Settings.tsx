@@ -3,9 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
-import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus } from 'lucide-react';
 import { EditChildForm } from '@/components/children/EditChildForm';
+import { AddChildForm } from '@/components/children/AddChildForm';
 import { students } from '@/lib/api';
 import { toast } from 'sonner';
 import {
@@ -93,6 +94,7 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
+              {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
               <AvatarFallback className="bg-primary/10 text-primary text-lg">
                 {user ? getInitials(user.name) : '?'}
               </AvatarFallback>
@@ -103,7 +105,17 @@ export default function Settings() {
             </div>
           </div>
           <Separator />
-          <Button variant="outline" size="sm">Edit Profile</Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => {
+              toast.info('Your profile is synced from your Google account', {
+                description: 'Sign in with a different Google account to change your name or email.'
+              });
+            }}
+          >
+            Edit Profile
+          </Button>
         </CardContent>
       </Card>
 
@@ -120,12 +132,15 @@ export default function Settings() {
         </CardHeader>
         <CardContent className="space-y-4">
           {children.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center mb-4">
+            <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
+              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
                 <Baby className="h-6 w-6 text-muted-foreground" />
               </div>
-              <p className="text-muted-foreground">No children registered yet.</p>
-              <p className="text-sm text-muted-foreground">Add a child from the sidebar to get started.</p>
+              <div>
+                <p className="text-muted-foreground font-medium">No children registered yet.</p>
+                <p className="text-sm text-muted-foreground">Add a child to get started.</p>
+              </div>
+              <AddChildForm />
             </div>
           ) : (
             <div className="space-y-3">
@@ -169,6 +184,11 @@ export default function Settings() {
                   </div>
                 </div>
               ))}
+              {children.length < 5 && (
+                <div className="pt-2 flex justify-center">
+                  <AddChildForm />
+                </div>
+              )}
             </div>
           )}
         </CardContent>
@@ -215,14 +235,16 @@ export default function Settings() {
       </Card>
 
       {/* Edit Child Dialog */}
-      {editingChild && (
-        <EditChildForm
-          child={editingChild}
-          open={!!editingChild}
-          onOpenChange={(open) => !open && setEditingChild(null)}
-          onSuccess={() => setEditingChild(null)}
-        />
-      )}
+      {
+        editingChild && (
+          <EditChildForm
+            child={editingChild}
+            open={!!editingChild}
+            onOpenChange={(open) => !open && setEditingChild(null)}
+            onSuccess={() => setEditingChild(null)}
+          />
+        )
+      }
 
       {/* Delete Confirmation Dialog */}
       <AlertDialog open={!!deletingChild} onOpenChange={(open) => !open && setDeletingChild(null)}>
@@ -252,7 +274,7 @@ export default function Settings() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </div>
+    </div >
   );
 }
 

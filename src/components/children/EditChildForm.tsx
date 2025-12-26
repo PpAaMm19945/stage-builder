@@ -38,6 +38,11 @@ interface EditChildFormProps {
     onSuccess?: () => void;
 }
 
+const formatDateForInput = (dateString: string) => {
+    if (!dateString) return '';
+    return dateString.split('T')[0];
+};
+
 export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChildFormProps) {
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { refreshAuth } = useAuth();
@@ -51,7 +56,7 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
         resolver: zodResolver(editChildSchema),
         defaultValues: {
             name: child.name,
-            dateOfBirth: child.dateOfBirth,
+            dateOfBirth: formatDateForInput(child.dateOfBirth),
         },
     });
 
@@ -59,7 +64,7 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
     useEffect(() => {
         reset({
             name: child.name,
-            dateOfBirth: child.dateOfBirth,
+            dateOfBirth: formatDateForInput(child.dateOfBirth),
         });
     }, [child, reset]);
 

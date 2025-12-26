@@ -130,7 +130,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                     </div>
 
                     <div className="py-4">
-                        <AddChildForm onSuccess={handleChildAdded} />
+                        <InlineAddChildForm onSuccess={handleChildAdded} />
                     </div>
 
                     <div className="flex justify-center">
@@ -214,10 +214,10 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                         <div
                             key={index}
                             className={`h-2 w-2 rounded-full transition-colors ${index === step
-                                    ? 'bg-primary'
-                                    : index < step
-                                        ? 'bg-primary/40'
-                                        : 'bg-muted'
+                                ? 'bg-primary'
+                                : index < step
+                                    ? 'bg-primary/40'
+                                    : 'bg-muted'
                                 }`}
                         />
                     ))}

@@ -37,7 +37,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { Avatar, AvatarFallback } from '@/components/ui/avatar';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EditChildForm } from '@/components/children/EditChildForm';
@@ -243,6 +243,7 @@ export function AppSidebar() {
           {/* User Info */}
           <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/30 p-3">
             <Avatar className="h-8 w-8">
+              {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
               <AvatarFallback className="bg-secondary/20 text-secondary-foreground text-sm">
                 {user ? getInitials(user.name) : '?'}
               </AvatarFallback>

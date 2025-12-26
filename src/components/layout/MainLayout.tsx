@@ -72,7 +72,7 @@ export function MainLayout() {
                         <ChevronDown className="h-4 w-4 text-muted-foreground" />
                       </Button>
                     </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
+                    <DropdownMenuContent align="end" className="bg-popover">
                       {children.map((child) => (
                         <DropdownMenuItem
                           key={child.id}
