@@ -1,37 +1,26 @@
-<<<<<<< Updated upstream
-import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-=======
 import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
->>>>>>> Stashed changes
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import { useQuery } from '@tanstack/react-query';
-import { family } from '@/lib/api';
 import { 
   Calendar, 
   Sparkles,
   Clock,
-  Users,
   Package,
   Baby,
   Loader2,
   AlertCircle,
-<<<<<<< Updated upstream
-  ArrowRight,
-=======
-  Box,
   Paintbrush,
   PlayCircle,
-  Check
->>>>>>> Stashed changes
+  Check,
+  CheckCircle2,
+  Circle
 } from 'lucide-react';
-import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal'; // To be created
+import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem } from '@/types';
 
 export default function Dashboard() {
@@ -119,154 +108,20 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2" onClick={() => navigate('/settings')}>
-              <Box className="w-4 h-4" />
+              <Package className="w-4 h-4" />
               My Materials
             </Button>
           </div>
         </div>
       </div>
 
-<<<<<<< Updated upstream
-      {/* Family Activities Section */}
-      {showFamilySection && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center">
-              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Family Activities</h2>
-              <p className="text-sm text-muted-foreground">Perfect for {data.children.map(c => c.name).join(' & ')} to do together</p>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {data.familyActivities.map((item, idx) => (
-              <Card key={idx} className="border-indigo-100 dark:border-indigo-900 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/early-years/activities/${item.activity.id}`)}>
-                <CardHeader className="pb-3">
-                  <Badge className="w-fit mb-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-200 dark:border-indigo-800">
-                    All Ages
-                  </Badge>
-                  <CardTitle className="text-lg">{item.activity.title}</CardTitle>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <p className="text-sm text-muted-foreground line-clamp-2">
-                    {item.activity.description}
-                  </p>
-                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-1">
-                      <Clock className="h-4 w-4" />
-                      <span>{item.activity.duration_minutes || 15} mins</span>
-                    </div>
-                  </div>
-                  <div className="flex gap-1 flex-wrap">
-                    {data.children.map(child => (
-                      <Badge key={child.id} variant="outline" className="text-xs">
-                        {child.name}: {item.variations[child.id] || 'standard'}
-                      </Badge>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
-          </div>
-        </section>
-      )}
-
-      {/* Materials for Today */}
-      {data.sharedMaterials.length > 0 && (
-        <section className="space-y-4">
-          <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
-              <Package className="h-5 w-5 text-amber-600 dark:text-amber-400" />
-            </div>
-            <div>
-              <h2 className="text-xl font-bold">Materials for Today</h2>
-              <p className="text-sm text-muted-foreground">Everything you need for today's activities</p>
-            </div>
-          </div>
-          <Card>
-            <CardContent className="pt-6">
-              <div className="flex flex-wrap gap-2">
-                {data.sharedMaterials.map((material, idx) => (
-                  <Badge key={idx} variant="secondary" className="text-sm py-1.5 px-3">
-                    {material}
-                  </Badge>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        </section>
-      )}
-
-      {/* Per-Child Activity Streams */}
-      <section className="space-y-4">
-        <h2 className="text-xl font-bold">Individual Learning Plans</h2>
-        <div className={`grid gap-6 ${data.children.length === 1 ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 md:grid-cols-2'}`}>
-          {data.children.map((child) => (
-            <div key={child.id} className="space-y-4">
-              <div className="flex items-center gap-3">
-                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
-                  <span className="text-lg font-bold text-primary">
-                    {child.name.charAt(0).toUpperCase()}
-                  </span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-lg">{child.name}</h3>
-                  <p className="text-sm text-muted-foreground">{child.ageInMonths} months • {child.activities.length} activities</p>
-                </div>
-              </div>
-
-              <div className="space-y-3">
-                {child.activities.map((activity, idx) => (
-                  <Card 
-                    key={idx} 
-                    className="cursor-pointer hover:border-primary/30 transition-colors"
-                    onClick={() => navigate(`/early-years/activities/${activity.id}`)}
-                  >
-                    <CardContent className="p-4">
-                      <div className="flex items-start justify-between gap-4">
-                        <div className="space-y-1 flex-1">
-                          <div className="flex items-center gap-2">
-                            <Badge className={domainColors[activity.domain as EarlyYearsDomain]}>
-                              {DOMAIN_LABELS[activity.domain as EarlyYearsDomain]}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground flex items-center gap-1">
-                              <Clock className="h-3 w-3" />
-                              {activity.duration_minutes || 15} mins
-                            </span>
-                          </div>
-                          <h4 className="font-medium">{activity.title}</h4>
-                          <p className="text-sm text-muted-foreground line-clamp-1">
-                            {activity.description}
-                          </p>
-                        </div>
-                        <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-
-                {child.activities.length === 0 && (
-                  <Card className="border-dashed">
-                    <CardContent className="p-6 text-center text-muted-foreground">
-                      No activities scheduled for today
-                    </CardContent>
-                  </Card>
-                )}
-              </div>
-            </div>
-          ))}
-        </div>
-      </section>
-=======
       {/* Materials Section */}
       <Card className="border-muted bg-muted/5">
         <CardHeader className="pb-3 border-b border-muted/50">
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Box className="h-5 w-5 text-primary" />
+                <Package className="h-5 w-5 text-primary" />
                 Materials for Today
               </CardTitle>
               <CardDescription>
@@ -282,9 +137,9 @@ export default function Dashboard() {
           {data.materials.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {data.materials.map((m: MaterialItem, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
+                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-400' : m.status === 'willing_to_buy' ? 'bg-blue-500/10 border-blue-500/20 text-blue-700 dark:text-blue-400' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
                   {m.status === 'have' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <CheckCircle2 className="w-4 h-4 text-green-600 dark:text-green-400" />
                   ) : m.status === 'willing_to_buy' ? (
                     <Circle className="w-4 h-4" />
                   ) : (
@@ -302,7 +157,7 @@ export default function Dashboard() {
 
       {/* Family Sessions */}
       <div className="space-y-6">
-        {data.familySessions.map((session, index) => (
+        {data.familySessions.map((session: FamilySession, index: number) => (
           <Card key={index} className="overflow-hidden border-2 hover:border-primary/20 transition-colors">
             <div className="bg-muted/30 p-4 border-b flex justify-between items-center">
               <div className="flex items-center gap-3">
@@ -313,7 +168,7 @@ export default function Dashboard() {
                   <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
                     <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {session.activity.duration_minutes} min</span>
-                    <span className="flex items-center gap-1"><Paintbrush className="w-3 h-3" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
+                    <span className="flex items-center gap-1"><Paintbrush className="w-3 h-3" /> {messLevelLabels[session.messLevel] || 'Variable Mess'}</span>
                   </div>
                 </div>
               </div>
@@ -329,10 +184,7 @@ export default function Dashboard() {
                   {session.childTiers.map(tier => (
                     <div key={tier.childId} className="bg-accent/5 rounded-xl p-4 border border-accent/10">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">
-                          {/* Emoji based on name hash or just generic */}
-                          👶
-                        </span>
+                        <span className="text-lg">👶</span>
                         <span className="font-bold text-foreground">
                           {tier.childName}
                         </span>
@@ -341,8 +193,8 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                       <div className="flex gap-3 pl-1">
-                        <Sparkles className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
-                        <p className="text-sm font-medium text-indigo-900/80">
+                        <Sparkles className="w-4 h-4 text-primary mt-1 shrink-0" />
+                        <p className="text-sm font-medium text-foreground/80">
                           {tier.expectation}
                         </p>
                       </div>
@@ -367,7 +219,7 @@ export default function Dashboard() {
 
         {data.familySessions.length === 0 && (
           <div className="text-center py-12 border-2 border-dashed rounded-xl">
-            <p className="text-muted-foreground">No family sessions scheduled for today using the new system.</p>
+            <p className="text-muted-foreground">No family sessions scheduled for today.</p>
             <Button variant="link" onClick={() => window.location.reload()}>Refresh</Button>
           </div>
         )}
@@ -382,7 +234,6 @@ export default function Dashboard() {
           refetch();
         }}
       />
->>>>>>> Stashed changes
     </div>
   );
 }
