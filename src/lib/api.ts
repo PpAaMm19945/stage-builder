@@ -1,5 +1,7 @@
 // SchoolOS API Client for Cloudflare Worker
 
+import { TodaysLearningResponse } from '@/types';
+
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
@@ -81,7 +83,7 @@ export const students = {
     }),
 
   getToday: (studentId: string) =>
-    apiRequest<{ student: any; activities: any[] }>(`/api/students/${studentId}/today`),
+    apiRequest<TodaysLearningResponse>(`/api/students/${studentId}/today`),
 
   getProgress: (studentId: string) =>
     apiRequest<any>(`/api/students/${studentId}/progress`),
