@@ -1,21 +1,20 @@
-import { useQuery } from '@tanstack/react-query';
-import { family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import {
-  Calendar,
+import { useQuery } from '@tanstack/react-query';
+import { family } from '@/lib/api';
+import { 
+  Calendar, 
   Sparkles,
   Clock,
-  Baby,
   Users,
-  CheckCircle2,
-  Circle,
-  ArrowRight,
+  Package,
+  Baby,
   Loader2,
-  AlertCircle
+  AlertCircle,
+  ArrowRight,
 } from 'lucide-react';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 
@@ -110,8 +109,8 @@ export default function Dashboard() {
       {showFamilySection && (
         <section className="space-y-4">
           <div className="flex items-center gap-2">
-            <div className="h-8 w-8 rounded-lg bg-indigo-100 flex items-center justify-center">
-              <Users className="h-5 w-5 text-indigo-600" />
+            <div className="h-8 w-8 rounded-lg bg-indigo-100 dark:bg-indigo-950 flex items-center justify-center">
+              <Users className="h-5 w-5 text-indigo-600 dark:text-indigo-400" />
             </div>
             <div>
               <h2 className="text-xl font-bold">Family Activities</h2>
@@ -121,9 +120,9 @@ export default function Dashboard() {
 
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
             {data.familyActivities.map((item, idx) => (
-              <Card key={idx} className="border-indigo-100 shadow-sm hover:shadow-md transition-shadow">
+              <Card key={idx} className="border-indigo-100 dark:border-indigo-900 shadow-sm hover:shadow-md transition-shadow cursor-pointer" onClick={() => navigate(`/early-years/activities/${item.activity.id}`)}>
                 <CardHeader className="pb-3">
-                  <Badge className="w-fit mb-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border-indigo-200">
+                  <Badge className="w-fit mb-2 bg-indigo-50 dark:bg-indigo-950 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-900 border-indigo-200 dark:border-indigo-800">
                     All Ages
                   </Badge>
                   <CardTitle className="text-lg">{item.activity.title}</CardTitle>
@@ -132,38 +131,19 @@ export default function Dashboard() {
                   <p className="text-sm text-muted-foreground line-clamp-2">
                     {item.activity.description}
                   </p>
-
-                  {/* Variations Pill */}
-                  <div className="bg-muted/50 rounded-lg p-3 text-xs space-y-2">
-                    <p className="font-semibold text-muted-foreground flex items-center gap-1">
-                      <Sparkles className="h-3 w-3" />
-                      Adjustments needed:
-                    </p>
-                    <div className="space-y-1">
-                      {Object.entries(item.variations).map(([childId, variation]) => {
-                        const childName = data.children.find(c => c.id === childId)?.name || 'Child';
-                        if (variation === 'standard') return null;
-                        return (
-                          <div key={childId} className="flex justify-between items-center">
-                            <span>{childName}</span>
-                            <Badge variant="outline" className="text-[10px] h-5 px-1.5">
-                              {variation === 'easier' ? 'Simpler' : 'More Challenge'}
-                            </Badge>
-                          </div>
-                        );
-                      })}
-                      {Object.values(item.variations).every(v => v === 'standard') && (
-                        <span className="text-muted-foreground italic">None - perfect for everyone!</span>
-                      )}
+                  <div className="flex items-center gap-4 text-sm text-muted-foreground">
+                    <div className="flex items-center gap-1">
+                      <Clock className="h-4 w-4" />
+                      <span>{item.activity.duration_minutes || 15} mins</span>
                     </div>
                   </div>
-
-                  <Button
-                    className="w-full bg-indigo-600 hover:bg-indigo-700"
-                    onClick={() => navigate(`/early-years/activities/${item.activity.id}`)}
-                  >
-                    View Activity
-                  </Button>
+                  <div className="flex gap-1 flex-wrap">
+                    {data.children.map(child => (
+                      <Badge key={child.id} variant="outline" className="text-xs">
+                        {child.name}: {item.variations[child.id] || 'standard'}
+                      </Badge>
+                    ))}
+                  </div>
                 </CardContent>
               </Card>
             ))}
@@ -171,102 +151,92 @@ export default function Dashboard() {
         </section>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
-        {/* Materials Sidebar */}
-        <aside className="lg:col-span-1 space-y-6">
+      {/* Materials for Today */}
+      {data.sharedMaterials.length > 0 && (
+        <section className="space-y-4">
+          <div className="flex items-center gap-2">
+            <div className="h-8 w-8 rounded-lg bg-amber-100 dark:bg-amber-950 flex items-center justify-center">
+              <Package className="h-5 w-5 text-amber-600 dark:text-amber-400" />
+            </div>
+            <div>
+              <h2 className="text-xl font-bold">Materials for Today</h2>
+              <p className="text-sm text-muted-foreground">Everything you need for today's activities</p>
+            </div>
+          </div>
           <Card>
-            <CardHeader className="pb-3">
-              <CardTitle className="text-lg flex items-center gap-2">
-                <CheckCircle2 className="h-5 w-5 text-primary" />
-                Materials Needed
-              </CardTitle>
-              <CardDescription>
-                Gather these for today's plan
-              </CardDescription>
-            </CardHeader>
-            <CardContent>
-              {data.sharedMaterials.length > 0 ? (
-                <ul className="space-y-3">
-                  {data.sharedMaterials.map((material, idx) => (
-                    <li key={idx} className="flex items-start gap-2 text-sm group cursor-pointer">
-                      <div className="mt-0.5 rounded-full border border-muted-foreground/30 w-4 h-4 flex items-center justify-center group-hover:border-primary transition-colors">
-                        <div className="w-2.5 h-2.5 rounded-full bg-transparent group-active:bg-primary/20" />
-                      </div>
-                      <span className="text-muted-foreground group-hover:text-foreground transition-colors">
-                        {material}
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              ) : (
-                <p className="text-sm text-muted-foreground italic">No special materials needed today!</p>
-              )}
+            <CardContent className="pt-6">
+              <div className="flex flex-wrap gap-2">
+                {data.sharedMaterials.map((material, idx) => (
+                  <Badge key={idx} variant="secondary" className="text-sm py-1.5 px-3">
+                    {material}
+                  </Badge>
+                ))}
+              </div>
             </CardContent>
           </Card>
-        </aside>
+        </section>
+      )}
 
-        {/* Children Columns */}
-        <div className={`lg:col-span-3 grid grid-cols-1 ${data.children.length > 1 ? 'md:grid-cols-2' : ''} gap-6`}>
+      {/* Per-Child Activity Streams */}
+      <section className="space-y-4">
+        <h2 className="text-xl font-bold">Individual Learning Plans</h2>
+        <div className={`grid gap-6 ${data.children.length === 1 ? 'grid-cols-1 max-w-2xl' : 'grid-cols-1 md:grid-cols-2'}`}>
           {data.children.map((child) => (
             <div key={child.id} className="space-y-4">
-              <div className="flex items-center justify-between border-b pb-2">
-                <div className="flex items-center gap-3">
-                  <div className="h-10 w-10 rounded-full bg-accent/10 flex items-center justify-center text-accent font-bold">
-                    {child.name[0]}
-                  </div>
-                  <div>
-                    <h3 className="font-bold text-lg">{child.name}</h3>
-                    <p className="text-xs text-muted-foreground">
-                      {Math.floor(child.ageInMonths / 12)}y {child.ageInMonths % 12}m • {child.activities.length} activities
-                    </p>
-                  </div>
+              <div className="flex items-center gap-3">
+                <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center">
+                  <span className="text-lg font-bold text-primary">
+                    {child.name.charAt(0).toUpperCase()}
+                  </span>
+                </div>
+                <div>
+                  <h3 className="font-semibold text-lg">{child.name}</h3>
+                  <p className="text-sm text-muted-foreground">{child.ageInMonths} months • {child.activities.length} activities</p>
                 </div>
               </div>
 
               <div className="space-y-3">
-                {child.activities.map((activity) => (
-                  <Card
-                    key={activity.id}
-                    className="cursor-pointer transition-all hover:border-primary/50 hover:shadow-sm group"
+                {child.activities.map((activity, idx) => (
+                  <Card 
+                    key={idx} 
+                    className="cursor-pointer hover:border-primary/30 transition-colors"
                     onClick={() => navigate(`/early-years/activities/${activity.id}`)}
                   >
                     <CardContent className="p-4">
-                      <div className="flex justify-between items-start mb-2">
-                        <Badge variant="outline" className={`${domainColors[activity.domain]} text-[10px] px-2 py-0.5 h-5`}>
-                          {DOMAIN_LABELS[activity.domain]}
-                        </Badge>
-                        <div className="flex items-center gap-1 text-xs text-muted-foreground">
-                          <Clock className="h-3 w-3" />
-                          <span>{activity.duration_minutes}m</span>
+                      <div className="flex items-start justify-between gap-4">
+                        <div className="space-y-1 flex-1">
+                          <div className="flex items-center gap-2">
+                            <Badge className={domainColors[activity.domain as EarlyYearsDomain]}>
+                              {DOMAIN_LABELS[activity.domain as EarlyYearsDomain]}
+                            </Badge>
+                            <span className="text-xs text-muted-foreground flex items-center gap-1">
+                              <Clock className="h-3 w-3" />
+                              {activity.duration_minutes || 15} mins
+                            </span>
+                          </div>
+                          <h4 className="font-medium">{activity.title}</h4>
+                          <p className="text-sm text-muted-foreground line-clamp-1">
+                            {activity.description}
+                          </p>
                         </div>
+                        <ArrowRight className="h-5 w-5 text-muted-foreground shrink-0 mt-1" />
                       </div>
-
-                      <h4 className="font-medium text-sm mb-1 group-hover:text-primary transition-colors">
-                        {activity.title}
-                      </h4>
-                      <p className="text-xs text-muted-foreground line-clamp-2">
-                        {activity.materials.length > 0 && (
-                          <span className="flex items-center gap-1 mt-1.5 pt-1.5 border-t border-dashed">
-                            <span className="font-medium text-foreground/80">Need:</span>
-                            {activity.materials.slice(0, 2).join(', ')}
-                            {activity.materials.length > 2 && ` +${activity.materials.length - 2}`}
-                          </span>
-                        )}
-                      </p>
                     </CardContent>
                   </Card>
                 ))}
 
                 {child.activities.length === 0 && (
-                  <div className="text-center py-8 border rounded-lg border-dashed bg-muted/10">
-                    <p className="text-sm text-muted-foreground">All caught up for today!</p>
-                  </div>
+                  <Card className="border-dashed">
+                    <CardContent className="p-6 text-center text-muted-foreground">
+                      No activities scheduled for today
+                    </CardContent>
+                  </Card>
                 )}
               </div>
             </div>
           ))}
         </div>
-      </div>
+      </section>
     </div>
   );
 }

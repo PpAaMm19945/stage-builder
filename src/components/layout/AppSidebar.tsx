@@ -83,15 +83,18 @@ export function AppSidebar() {
     <>
       <Sidebar className="border-r border-border/50">
         <SidebarHeader className="p-4">
-          {/* Logo */}
-          <div className="flex items-center gap-2 px-2">
+          {/* Logo - Clickable to Dashboard */}
+          <button
+            onClick={() => navigate('/')}
+            className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
+          >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
               <GraduationCap className="h-5 w-5 text-primary-foreground" />
             </div>
             <span className="font-display text-lg font-bold text-foreground">
               SchoolOS
             </span>
-          </div>
+          </button>
 
           {/* Child Selector */}
           {children.length > 0 && (
