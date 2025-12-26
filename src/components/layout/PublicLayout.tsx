@@ -13,7 +13,7 @@ export function PublicLayout() {
   }
 
   if (isAuthenticated) {
-    return <Navigate to="/early-years/today" replace />;
+    return <Navigate to="/" replace />;
   }
 
   return <Outlet />;

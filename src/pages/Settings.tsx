@@ -5,7 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus, Box, Check, CheckCircle2, Circle } from 'lucide-react';
+import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus, Box, Check, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { students, family } from '@/lib/api';
@@ -38,7 +38,7 @@ export default function Settings() {
   const queryClient = useQueryClient();
 
   // Materials Query
-  const { data: serverMaterials, isLoading: isMaterialsLoading } = useQuery({
+  const { data: serverMaterials, isLoading: isMaterialsLoading, error: materialsError, refetch: refetchMaterials } = useQuery({
     queryKey: ['family-materials'],
     queryFn: family.getMaterials,
   });
@@ -278,6 +278,19 @@ export default function Settings() {
           {isMaterialsLoading ? (
             <div className="flex justify-center py-8">
               <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+            </div>
+          ) : materialsError ? (
+            <div className="flex flex-col items-center justify-center py-8 space-y-4">
+              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
+                <AlertCircle className="h-6 w-6 text-destructive" />
+              </div>
+              <div className="text-center space-y-1">
+                <p className="font-semibold text-foreground">Failed to load materials</p>
+                <p className="text-sm text-muted-foreground">We couldn't fetch your materials. Please try again.</p>
+              </div>
+              <Button onClick={() => refetchMaterials()} size="sm">
+                Retry
+              </Button>
             </div>
           ) : (
             <div className="space-y-4">

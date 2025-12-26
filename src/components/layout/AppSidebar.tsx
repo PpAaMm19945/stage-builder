@@ -44,7 +44,7 @@ import { EditChildForm } from '@/components/children/EditChildForm';
 import type { Student } from '@/types';
 
 const earlyYearsLinks = [
-  { title: 'Today', url: '/early-years/today', icon: Calendar },
+  { title: 'Individual Today', url: '/early-years/today', icon: Calendar },
   { title: 'Activities', url: '/early-years/activities', icon: Compass },
   { title: 'Progress', url: '/early-years/progress', icon: BarChart3 },
 ];

@@ -43,10 +43,12 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
+              {/* Auth Callback - Must be outside PublicLayout */}
+              <Route path="/auth/callback" element={<AuthCallback />} />
+
               {/* Public Routes */}
               <Route element={<PublicLayout />}>
                 <Route path="/login" element={<Login />} />
-                <Route path="/auth/callback" element={<AuthCallback />} />
                 <Route path="/privacy" element={<PrivacyPolicy />} />
                 <Route path="/terms" element={<TermsOfService />} />
               </Route>

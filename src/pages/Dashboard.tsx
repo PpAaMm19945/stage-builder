@@ -246,9 +246,25 @@ export default function Dashboard() {
         ))}
 
         {data.familySessions.length === 0 && (
-          <div className="text-center py-12 border-2 border-dashed rounded-xl">
-            <p className="text-muted-foreground">No family sessions scheduled for today.</p>
-            <Button variant="link" onClick={() => window.location.reload()}>Refresh</Button>
+          <div className="text-center py-12 border-2 border-dashed rounded-xl space-y-4">
+            <div className="space-y-2">
+              <p className="text-lg font-semibold text-foreground">No activities matched your family today</p>
+              <p className="text-sm text-muted-foreground">
+                This usually means we need more info about your materials, or we're still adding activities for your children's ages.
+              </p>
+            </div>
+            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+              <Button onClick={() => navigate('/settings')} size="lg" className="gap-2">
+                <Box className="w-4 h-4" />
+                Update My Materials
+              </Button>
+              <Button variant="outline" onClick={() => window.location.reload()}>
+                Refresh
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground italic">
+              💡 We're adding more family activities soon!
+            </p>
           </div>
         )}
       </div>
