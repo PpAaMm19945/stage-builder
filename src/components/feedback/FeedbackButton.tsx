@@ -50,7 +50,7 @@ export function FeedbackButton() {
             );
 
             // Open mailto link
-            window.open(`mailto:feedback@schoolos.com?subject=${subject}&body=${body}`, '_blank');
+            window.open(`mailto:antmwes104.1@gmail.com?subject=${subject}&body=${body}`, '_blank');
 
             toast.success('Thank you for your feedback!', {
                 description: 'Your email client should open with the feedback details.',
