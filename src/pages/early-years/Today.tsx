@@ -33,15 +33,7 @@ const domainColors: Record<EarlyYearsDomain, string> = {
 interface ApiActivity {
   id: string;
   title: string;
-  description: string;
-  domain: EarlyYearsDomain;
-  duration_minutes: number;
-  difficulty: number;
-  materials: string[];
-  instructions: string[];
-  min_age_months: number;
-  max_age_months: number;
-}
+
 
 interface Activity {
   id: string;

@@ -132,9 +132,24 @@ export interface DailyRecommendation {
   reasoning?: string;
 }
 
+// Raw API Activity (as returned from Cloudflare Worker - snake_case)
+export interface ApiActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  min_age_months: number;
+  max_age_months: number;
+  difficulty: number;
+  duration_minutes: number;
+  materials: string[];
+  instructions: string[];
+  learning_outcomes?: string[];
+}
+
 // Family Activity (for sibling-aware recommendations)
 export interface FamilyActivity {
-  activity: Activity;
+  activity: ApiActivity;
   suitableFor: string[];
   variations: Record<string, 'easier' | 'standard' | 'harder'>;
 }
@@ -142,6 +157,6 @@ export interface FamilyActivity {
 // Today's Learning Response (extended for family activities)
 export interface TodaysLearningResponse {
   student: Student;
-  activities: Activity[];
+  activities: ApiActivity[];
   familyActivities?: FamilyActivity[];
 }

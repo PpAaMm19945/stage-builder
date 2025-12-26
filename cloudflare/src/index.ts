@@ -333,8 +333,8 @@ app.put('/api/students/:id', async (c) => {
     const { name, dateOfBirth, avatarUrl } = body;
 
     await c.env.DB.prepare(
-      'UPDATE students SET name = ?, date_of_birth = COALESCE(?, date_of_birth), avatar_url = ?, updated_at = datetime("now") WHERE id = ?'
-    ).bind(name, dateOfBirth, avatarUrl, studentId).run();
+      'UPDATE students SET name = COALESCE(?, name), date_of_birth = COALESCE(?, date_of_birth), avatar_url = COALESCE(?, avatar_url), updated_at = datetime("now") WHERE id = ?'
+    ).bind(name || null, dateOfBirth || null, avatarUrl || null, studentId).run();
 
     const student = await c.env.DB.prepare(
       'SELECT * FROM students WHERE id = ?'
