@@ -4,6 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "wrangler dev",
+    "build": "echo 'No build step required for Cloudflare Workers'",
     "deploy": "wrangler deploy",
     "db:create": "wrangler d1 create schoolos-db",
     "db:migrate:local": "wrangler d1 migrations apply DB --local",
