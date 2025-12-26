@@ -26,7 +26,7 @@ compatibility_flags = ["nodejs_compat"]
 [[d1_databases]]
 binding = "DB"
 database_name = "schoolos-db"
-database_id = "PASTE_YOUR_DATABASE_ID_HERE"
+database_id = "acb84cf7-fd3b-4083-b08a-9f28f131fc3f"
 migrations_dir = "migrations"
 
 [vars]
