@@ -243,7 +243,7 @@ export function AppSidebar() {
           {/* User Info */}
           <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/30 p-3">
             <Avatar className="h-8 w-8">
-              {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
+              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
               <AvatarFallback className="bg-secondary/20 text-secondary-foreground text-sm">
                 {user ? getInitials(user.name) : '?'}
               </AvatarFallback>

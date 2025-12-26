@@ -94,7 +94,7 @@ export default function Settings() {
         <CardContent className="space-y-4">
           <div className="flex items-center gap-4">
             <Avatar className="h-16 w-16">
-              {user?.picture && <AvatarImage src={user.picture} alt={user.name} />}
+              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
               <AvatarFallback className="bg-primary/10 text-primary text-lg">
                 {user ? getInitials(user.name) : '?'}
               </AvatarFallback>
