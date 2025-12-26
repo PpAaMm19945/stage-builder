@@ -1,12 +1,13 @@
 import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { useActivityProgress } from '@/contexts/ActivityProgressContext';
-import { getActivityById, getActivitiesForAge } from '@/data/activities';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { activities as activitiesApi, observations, students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain, type MasteryLevel } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { ObservationModal } from '@/components/early-years/ObservationModal';
 import { toast } from 'sonner';
 import {
@@ -21,6 +22,7 @@ import {
   Lightbulb,
   ArrowRight,
   Sparkles,
+  AlertCircle,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -32,35 +34,160 @@ const domainColors: Record<EarlyYearsDomain, string> = {
   'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
 };
 
+// Map API response fields to UI expected fields
+interface ApiActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  duration_minutes: number;
+  difficulty: number;
+  materials: string[];
+  instructions: string[];
+  success_indicators: string[];
+  tips: string[];
+  easier_variation: string;
+  harder_variation: string;
+  min_age_months: number;
+  max_age_months: number;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  estimatedMinutes: number;
+  difficultyLevel: number;
+  materials: string[];
+  instructions: string[];
+  successIndicators: string[];
+  tips: string[];
+  easierVariation: string;
+  harderVariation: string;
+  minAgeMonths: number;
+  maxAgeMonths: number;
+}
+
+const mapApiActivity = (activity: ApiActivity): Activity => ({
+  id: activity.id,
+  title: activity.title,
+  description: activity.description,
+  domain: activity.domain,
+  estimatedMinutes: activity.duration_minutes,
+  difficultyLevel: activity.difficulty,
+  materials: activity.materials || [],
+  instructions: activity.instructions || [],
+  successIndicators: activity.success_indicators || [],
+  tips: activity.tips || [],
+  easierVariation: activity.easier_variation || '',
+  harderVariation: activity.harder_variation || '',
+  minAgeMonths: activity.min_age_months,
+  maxAgeMonths: activity.max_age_months,
+});
+
 export default function ActivityViewer() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { selectedChild } = useAuth();
-  const { addObservation, isActivityCompleted, getActivityResult } = useActivityProgress();
-  
+  const queryClient = useQueryClient();
+
   const [showEasier, setShowEasier] = useState(false);
   const [showHarder, setShowHarder] = useState(false);
   const [observationModalOpen, setObservationModalOpen] = useState(false);
 
-  const activity = id ? getActivityById(id) : undefined;
-  
-  const isCompleted = selectedChild && activity 
-    ? isActivityCompleted(activity.id, selectedChild.id) 
-    : false;
-  
-  const previousResult = selectedChild && activity 
-    ? getActivityResult(activity.id, selectedChild.id) 
-    : undefined;
+  // Fetch activity from API
+  const { data: activityData, isLoading: isLoadingActivity, isError: isActivityError, error: activityError } = useQuery({
+    queryKey: ['activity', id],
+    queryFn: () => activitiesApi.get(id!),
+    enabled: !!id,
+    staleTime: 5 * 60 * 1000,
+  });
 
-  // Get next recommended activity
-  const getNextActivity = () => {
-    if (!selectedChild) return undefined;
-    const ageActivities = getActivitiesForAge(selectedChild.ageInMonths);
-    const currentIndex = ageActivities.findIndex(a => a.id === activity?.id);
-    return ageActivities[currentIndex + 1] || ageActivities[0];
-  };
+  // Fetch observations for this student
+  const { data: observationsData } = useQuery({
+    queryKey: ['observations', selectedChild?.id],
+    queryFn: () => students.getObservations(selectedChild!.id),
+    enabled: !!selectedChild,
+    staleTime: 2 * 60 * 1000,
+  });
 
-  const nextActivity = getNextActivity();
+  // Mutation for creating observation
+  const createObservationMutation = useMutation({
+    mutationFn: (data: { masteryLevel: string; parentNotes?: string }) =>
+      observations.create({
+        studentId: selectedChild!.id,
+        activityId: id!,
+        masteryLevel: data.masteryLevel,
+        parentNotes: data.parentNotes,
+      }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['observations', selectedChild?.id] });
+      queryClient.invalidateQueries({ queryKey: ['progress', selectedChild?.id] });
+    },
+  });
+
+  const activity = activityData ? mapApiActivity(activityData) : undefined;
+
+  // Check if activity was completed by looking at observations
+  const previousResult = observationsData?.find(
+    (obs: any) => obs.activity_id === id
+  );
+  const isCompleted = !!previousResult;
+
+  // Loading state
+  if (isLoadingActivity) {
+    return (
+      <div className="space-y-6 max-w-3xl pb-8">
+        <Skeleton className="h-8 w-16" />
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-24" />
+          <Skeleton className="h-10 w-3/4" />
+          <Skeleton className="h-6 w-full" />
+        </div>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-40" />
+          </CardHeader>
+          <CardContent>
+            <Skeleton className="h-4 w-full" />
+            <Skeleton className="h-4 w-3/4 mt-2" />
+          </CardContent>
+        </Card>
+        <Card>
+          <CardHeader>
+            <Skeleton className="h-6 w-48" />
+          </CardHeader>
+          <CardContent className="space-y-2">
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-full" />
+            <Skeleton className="h-6 w-full" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isActivityError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Failed to load activity</h2>
+          <p className="text-muted-foreground max-w-sm">
+            {activityError instanceof Error ? activityError.message : 'Please try again later.'}
+          </p>
+        </div>
+        <Button onClick={() => navigate(-1)}>
+          <ArrowLeft className="h-4 w-4 mr-2" />
+          Go Back
+        </Button>
+      </div>
+    );
+  }
 
   if (!activity) {
     return (
@@ -74,23 +201,28 @@ export default function ActivityViewer() {
     );
   }
 
-  const handleObservationSubmit = (masteryLevel: MasteryLevel, notes?: string) => {
+  const handleObservationSubmit = async (masteryLevel: MasteryLevel, notes?: string) => {
     if (!selectedChild) return;
-    
-    addObservation(activity.id, selectedChild.id, masteryLevel, notes);
-    setObservationModalOpen(false);
-    
-    toast.success('Great job!', {
-      description: `Observation recorded for ${activity.title}`,
-    });
+
+    try {
+      await createObservationMutation.mutateAsync({ masteryLevel, parentNotes: notes });
+      setObservationModalOpen(false);
+      toast.success('Great job!', {
+        description: `Observation recorded for ${activity.title}`,
+      });
+    } catch (error) {
+      toast.error('Failed to save observation', {
+        description: error instanceof Error ? error.message : 'Please try again.',
+      });
+    }
   };
 
   return (
     <div className="space-y-6 max-w-3xl pb-8">
       {/* Back Navigation */}
-      <Button 
-        variant="ghost" 
-        size="sm" 
+      <Button
+        variant="ghost"
+        size="sm"
         onClick={() => navigate(-1)}
         className="gap-2 -ml-2"
       >
@@ -132,9 +264,8 @@ export default function ActivityViewer() {
               {[1, 2, 3, 4, 5].map((level) => (
                 <div
                   key={level}
-                  className={`h-2 w-4 rounded-full ${
-                    level <= activity.difficultyLevel ? 'bg-primary' : 'bg-muted'
-                  }`}
+                  className={`h-2 w-4 rounded-full ${level <= activity.difficultyLevel ? 'bg-primary' : 'bg-muted'
+                    }`}
                 />
               ))}
             </div>
@@ -282,28 +413,26 @@ export default function ActivityViewer() {
       <div className="flex flex-col sm:flex-row gap-3 pt-4">
         {isCompleted ? (
           <>
-            <Button 
-              size="lg" 
+            <Button
+              size="lg"
               variant="outline"
               onClick={() => setObservationModalOpen(true)}
               className="flex-1"
             >
               Update Observation
             </Button>
-            {nextActivity && (
-              <Button 
-                size="lg"
-                onClick={() => navigate(`/early-years/activities/${nextActivity.id}`)}
-                className="flex-1 gap-2"
-              >
-                Next Activity
-                <ArrowRight className="h-4 w-4" />
-              </Button>
-            )}
+            <Button
+              size="lg"
+              onClick={() => navigate('/early-years/activities')}
+              className="flex-1 gap-2"
+            >
+              Browse Activities
+              <ArrowRight className="h-4 w-4" />
+            </Button>
           </>
         ) : (
-          <Button 
-            size="lg" 
+          <Button
+            size="lg"
             onClick={() => setObservationModalOpen(true)}
             className="w-full sm:w-auto gap-2"
           >
@@ -318,7 +447,7 @@ export default function ActivityViewer() {
         <Card className="bg-muted/30">
           <CardContent className="py-4">
             <p className="text-sm text-muted-foreground">
-              Last completed on {new Date(previousResult.completedAt).toLocaleDateString()} 
+              Last completed on {new Date(previousResult.completedAt).toLocaleDateString()}
               {previousResult.parentNotes && (
                 <span> — "{previousResult.parentNotes}"</span>
               )}

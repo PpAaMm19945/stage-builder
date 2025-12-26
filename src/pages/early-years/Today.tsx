@@ -2,15 +2,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 import { useNavigate } from 'react-router-dom';
-import { 
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import {
   ArrowRight,
   Clock,
   Star,
   RefreshCw,
-  UserPlus
+  UserPlus,
+  AlertCircle
 } from 'lucide-react';
-import { getActivitiesForAge } from '@/data/activities';
+import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 import { AddChildForm } from '@/components/children/AddChildForm';
 
@@ -22,17 +25,67 @@ const domainColors: Record<EarlyYearsDomain, string> = {
   'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
 };
 
+// Map API response fields to UI expected fields
+interface ApiActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  duration_minutes: number;
+  difficulty: number;
+  materials: string[];
+  instructions: string[];
+  min_age_months: number;
+  max_age_months: number;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  estimatedMinutes: number;
+  difficultyLevel: number;
+  materials: string[];
+  instructions: string[];
+  minAgeMonths: number;
+  maxAgeMonths: number;
+}
+
+const mapApiActivity = (activity: ApiActivity): Activity => ({
+  id: activity.id,
+  title: activity.title,
+  description: activity.description,
+  domain: activity.domain,
+  estimatedMinutes: activity.duration_minutes,
+  difficultyLevel: activity.difficulty,
+  materials: activity.materials || [],
+  instructions: activity.instructions || [],
+  minAgeMonths: activity.min_age_months,
+  maxAgeMonths: activity.max_age_months,
+});
+
 export default function Today() {
   const { selectedChild } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
 
-  // Get activities for selected child's age
-  const activities = selectedChild 
-    ? getActivitiesForAge(selectedChild.ageInMonths)
-    : [];
-  
+  // Fetch today's activities from API
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['today', selectedChild?.id],
+    queryFn: () => students.getToday(selectedChild!.id),
+    enabled: !!selectedChild,
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
+
+  // Map API activities to UI format
+  const activities = data?.activities?.map(mapApiActivity) || [];
   const recommendedActivity = activities[0];
   const alternativeActivities = activities.slice(1, 4);
+
+  const handlePickAnother = () => {
+    refetch();
+  };
 
   if (!selectedChild) {
     return (
@@ -47,6 +100,47 @@ export default function Today() {
           </p>
         </div>
         <AddChildForm />
+      </div>
+    );
+  }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8 max-w-4xl">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <Card className="overflow-hidden">
+          <CardHeader>
+            <Skeleton className="h-6 w-32" />
+            <Skeleton className="h-8 w-64" />
+            <Skeleton className="h-4 w-full" />
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <Skeleton className="h-4 w-48" />
+            <Skeleton className="h-10 w-32" />
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Failed to load activities</h2>
+          <p className="text-muted-foreground max-w-sm">
+            {error instanceof Error ? error.message : 'Please try again later.'}
+          </p>
+        </div>
+        <Button onClick={() => refetch()}>Try Again</Button>
       </div>
     );
   }
@@ -98,11 +192,10 @@ export default function Today() {
                   {[1, 2, 3, 4, 5].map((level) => (
                     <div
                       key={level}
-                      className={`h-2 w-4 rounded-full ${
-                        level <= recommendedActivity.difficultyLevel
+                      className={`h-2 w-4 rounded-full ${level <= recommendedActivity.difficultyLevel
                           ? 'bg-primary'
                           : 'bg-muted'
-                      }`}
+                        }`}
                     />
                   ))}
                 </div>
@@ -130,7 +223,7 @@ export default function Today() {
 
             {/* Actions */}
             <div className="flex items-center gap-3 pt-2">
-              <Button 
+              <Button
                 size="lg"
                 onClick={() => navigate(`/early-years/activities/${recommendedActivity.id}`)}
                 className="gap-2"
@@ -138,10 +231,11 @@ export default function Today() {
                 Start Activity
                 <ArrowRight className="h-4 w-4" />
               </Button>
-              <Button 
+              <Button
                 variant="outline"
                 size="lg"
                 className="gap-2"
+                onClick={handlePickAnother}
               >
                 <RefreshCw className="h-4 w-4" />
                 Pick Another
@@ -163,7 +257,7 @@ export default function Today() {
           <h2 className="text-lg font-semibold text-foreground">Or try one of these</h2>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
             {alternativeActivities.map((activity) => (
-              <Card 
+              <Card
                 key={activity.id}
                 className="cursor-pointer hover:border-muted-foreground/40 hover:shadow-md transition-all"
                 onClick={() => navigate(`/early-years/activities/${activity.id}`)}

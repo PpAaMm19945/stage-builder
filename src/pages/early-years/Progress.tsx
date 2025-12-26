@@ -1,14 +1,19 @@
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
+import { Button } from '@/components/ui/button';
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
-import { 
+import {
   TrendingUp,
   Activity,
   Brain,
   Heart,
   BookOpen,
-  HandMetal
+  HandMetal,
+  AlertCircle
 } from 'lucide-react';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
@@ -27,20 +32,19 @@ const domainColors: Record<EarlyYearsDomain, { bg: string; text: string; progres
   'pre-academic': { bg: 'bg-domain-academic/10', text: 'text-domain-academic', progress: 'bg-domain-academic' },
 };
 
-// Mock progress data
-const mockProgress: Record<EarlyYearsDomain, { level: string; completed: number; total: number }> = {
-  'motor': { level: 'Developing', completed: 8, total: 15 },
-  'language': { level: 'Emerging', completed: 3, total: 12 },
-  'cognitive': { level: 'Developing', completed: 6, total: 10 },
-  'social-emotional': { level: 'Secure', completed: 12, total: 14 },
-  'pre-academic': { level: 'Emerging', completed: 2, total: 8 },
-};
-
 export default function ProgressPage() {
   const { selectedChild } = useAuth();
 
+  // Fetch progress from API
+  const { data: progressData, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['progress', selectedChild?.id],
+    queryFn: () => students.getProgress(selectedChild!.id),
+    enabled: !!selectedChild,
+    staleTime: 2 * 60 * 1000, // 2 minutes
+  });
+
   const domains = Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[];
-  const totalCompleted = Object.values(mockProgress).reduce((sum, d) => sum + d.completed, 0);
+  const totalCompleted = progressData?.totalCompleted || 0;
 
   if (!selectedChild) {
     return (
@@ -49,6 +53,78 @@ export default function ProgressPage() {
       </div>
     );
   }
+
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-8 max-w-4xl">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          {[1, 2, 3].map((i) => (
+            <Card key={i}>
+              <CardContent className="pt-6">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <div>
+                    <Skeleton className="h-8 w-16" />
+                    <Skeleton className="h-4 w-24 mt-1" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+        <div className="space-y-4">
+          <Skeleton className="h-6 w-40" />
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4">
+                <div className="flex items-center gap-4">
+                  <Skeleton className="h-12 w-12 rounded-xl" />
+                  <div className="flex-1">
+                    <Skeleton className="h-5 w-32" />
+                    <Skeleton className="h-2 w-full mt-2" />
+                    <Skeleton className="h-4 w-48 mt-1" />
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Failed to load progress</h2>
+          <p className="text-muted-foreground max-w-sm">
+            {error instanceof Error ? error.message : 'Please try again later.'}
+          </p>
+        </div>
+        <Button onClick={() => refetch()}>Try Again</Button>
+      </div>
+    );
+  }
+
+  // Helper to get domain progress from API data
+  const getDomainProgress = (domain: EarlyYearsDomain) => {
+    const domainData = progressData?.byDomain?.find((d: any) => d.domain === domain);
+    return {
+      level: domainData?.mastery_level || 'Not Started',
+      completed: domainData?.count || 0,
+      total: 10, // Approximate total activities per domain
+    };
+  };
 
   return (
     <div className="space-y-8 max-w-4xl">
@@ -114,8 +190,8 @@ export default function ProgressPage() {
           {domains.map((domain) => {
             const Icon = domainIcons[domain];
             const colors = domainColors[domain];
-            const progress = mockProgress[domain];
-            const percentage = Math.round((progress.completed / progress.total) * 100);
+            const progress = getDomainProgress(domain);
+            const percentage = progress.total > 0 ? Math.round((progress.completed / progress.total) * 100) : 0;
 
             return (
               <Card key={domain} className="overflow-hidden">
@@ -134,12 +210,12 @@ export default function ProgressPage() {
                         </span>
                       </div>
                       <div className="space-y-1">
-                        <Progress 
-                          value={percentage} 
+                        <Progress
+                          value={percentage}
                           className="h-2"
                         />
                         <p className="text-xs text-muted-foreground">
-                          {progress.completed} of {progress.total} activities completed
+                          {progress.completed} activities completed
                         </p>
                       </div>
                     </div>

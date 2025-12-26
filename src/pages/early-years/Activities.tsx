@@ -5,13 +5,16 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { 
+import { Skeleton } from '@/components/ui/skeleton';
+import { useQuery } from '@tanstack/react-query';
+import {
   Search,
   Clock,
   Filter,
-  X
+  X,
+  AlertCircle
 } from 'lucide-react';
-import { getActivitiesForAge, getAllActivities } from '@/data/activities';
+import { activities as activitiesApi } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
@@ -31,6 +34,46 @@ const domainFilters: { id: EarlyYearsDomain | 'all'; label: string }[] = [
   { id: 'pre-academic', label: 'Pre-Academic' },
 ];
 
+// Map API response fields to UI expected fields
+interface ApiActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  duration_minutes: number;
+  difficulty: number;
+  materials: string[];
+  instructions: string[];
+  min_age_months: number;
+  max_age_months: number;
+}
+
+interface Activity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain;
+  estimatedMinutes: number;
+  difficultyLevel: number;
+  materials: string[];
+  instructions: string[];
+  minAgeMonths: number;
+  maxAgeMonths: number;
+}
+
+const mapApiActivity = (activity: ApiActivity): Activity => ({
+  id: activity.id,
+  title: activity.title,
+  description: activity.description,
+  domain: activity.domain,
+  estimatedMinutes: activity.duration_minutes,
+  difficultyLevel: activity.difficulty,
+  materials: activity.materials || [],
+  instructions: activity.instructions || [],
+  minAgeMonths: activity.min_age_months,
+  maxAgeMonths: activity.max_age_months,
+});
+
 export default function Activities() {
   const { selectedChild } = useAuth();
   const navigate = useNavigate();
@@ -38,20 +81,76 @@ export default function Activities() {
   const [selectedDomain, setSelectedDomain] = useState<EarlyYearsDomain | 'all'>('all');
   const [showAgeAppropriate, setShowAgeAppropriate] = useState(true);
 
-  // Get activities based on filter
-  const allActivities = getAllActivities();
-  const ageAppropriateActivities = selectedChild 
-    ? getActivitiesForAge(selectedChild.ageInMonths)
-    : allActivities;
+  // Build query params for API
+  const queryParams: { domain?: string; ageMonths?: number } = {};
+  if (selectedDomain !== 'all') {
+    queryParams.domain = selectedDomain;
+  }
+  if (showAgeAppropriate && selectedChild) {
+    queryParams.ageMonths = selectedChild.ageInMonths;
+  }
 
-  const baseActivities = showAgeAppropriate ? ageAppropriateActivities : allActivities;
+  // Fetch activities from API
+  const { data, isLoading, isError, error, refetch } = useQuery({
+    queryKey: ['activities', queryParams],
+    queryFn: () => activitiesApi.list(queryParams),
+    staleTime: 5 * 60 * 1000, // 5 minutes
+  });
 
-  // Apply filters
-  const filteredActivities = baseActivities.filter((activity) => {
+  // Loading state
+  if (isLoading) {
+    return (
+      <div className="space-y-6 max-w-5xl">
+        <div className="space-y-2">
+          <Skeleton className="h-9 w-48" />
+          <Skeleton className="h-5 w-64" />
+        </div>
+        <Skeleton className="h-10 w-full" />
+        <div className="flex gap-2">
+          {[1, 2, 3, 4, 5].map((i) => (
+            <Skeleton key={i} className="h-8 w-20 rounded-full" />
+          ))}
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i}>
+              <CardContent className="p-4 space-y-3">
+                <Skeleton className="h-5 w-20" />
+                <Skeleton className="h-5 w-full" />
+                <Skeleton className="h-4 w-full" />
+                <Skeleton className="h-4 w-32" />
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (isError) {
+    return (
+      <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-4">
+        <div className="p-4 rounded-full bg-destructive/10">
+          <AlertCircle className="h-8 w-8 text-destructive" />
+        </div>
+        <div className="space-y-2">
+          <h2 className="text-xl font-semibold text-foreground">Failed to load activities</h2>
+          <p className="text-muted-foreground max-w-sm">
+            {error instanceof Error ? error.message : 'Please try again later.'}
+          </p>
+        </div>
+        <Button onClick={() => refetch()}>Try Again</Button>
+      </div>
+    );
+  }
+
+  // Map API activities and apply client-side search filter
+  const allActivities = (data || []).map(mapApiActivity);
+  const filteredActivities = allActivities.filter((activity) => {
     const matchesSearch = activity.title.toLowerCase().includes(search.toLowerCase()) ||
       activity.description.toLowerCase().includes(search.toLowerCase());
-    const matchesDomain = selectedDomain === 'all' || activity.domain === selectedDomain;
-    return matchesSearch && matchesDomain;
+    return matchesSearch;
   });
 
   return (
@@ -123,7 +222,7 @@ export default function Activities() {
       {filteredActivities.length > 0 ? (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
           {filteredActivities.map((activity) => (
-            <Card 
+            <Card
               key={activity.id}
               className="cursor-pointer hover:border-muted-foreground/40 hover:shadow-md transition-all group"
               onClick={() => navigate(`/early-years/activities/${activity.id}`)}
@@ -137,11 +236,10 @@ export default function Activities() {
                     {[1, 2, 3, 4, 5].map((level) => (
                       <div
                         key={level}
-                        className={`h-1 w-2 rounded-full ${
-                          level <= activity.difficultyLevel
-                            ? 'bg-primary/70'
-                            : 'bg-muted'
-                        }`}
+                        className={`h-1 w-2 rounded-full ${level <= activity.difficultyLevel
+                          ? 'bg-primary/70'
+                          : 'bg-muted'
+                          }`}
                       />
                     ))}
                   </div>

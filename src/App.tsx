@@ -16,6 +16,7 @@ import { ActivityProgressProvider } from "@/contexts/ActivityProgressContext";
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Pages
 import Login from "./pages/Login";
@@ -40,28 +41,28 @@ const App = () => (
           <Sonner />
           <BrowserRouter>
             <Routes>
-            {/* Public Routes */}
+              {/* Public Routes */}
               <Route element={<PublicLayout />}>
                 <Route path="/login" element={<Login />} />
                 <Route path="/auth/callback" element={<AuthCallback />} />
               </Route>
 
               {/* Protected Routes */}
-              <Route element={<MainLayout />}>
+              <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
                 <Route path="/" element={<Navigate to="/early-years/today" replace />} />
                 <Route path="/dashboard" element={<Dashboard />} />
-                
+
                 {/* Early Years */}
                 <Route path="/early-years/today" element={<Today />} />
                 <Route path="/early-years/activities" element={<Activities />} />
                 <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
                 <Route path="/early-years/progress" element={<ProgressPage />} />
-                
+
                 {/* Locked Stages */}
                 <Route path="/lower-primary" element={<LockedStage />} />
                 <Route path="/middle-school" element={<LockedStage />} />
                 <Route path="/upper-school" element={<LockedStage />} />
-                
+
                 {/* Settings */}
                 <Route path="/settings" element={<Settings />} />
               </Route>
