@@ -8,7 +8,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { AddChildForm } from '@/components/children/AddChildForm';
+import { InlineAddChildForm } from '@/components/children/InlineAddChildForm';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     Sparkles,
