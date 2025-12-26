@@ -218,9 +218,33 @@ export default function Settings() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          <p className="text-sm text-muted-foreground">
-            Privacy settings coming soon.
-          </p>
+          <div className="space-y-2">
+            <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/privacy'}>
+              Privacy Policy
+            </Button>
+            <br />
+            <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/terms'}>
+              Terms of Service
+            </Button>
+          </div>
+          <Separator className="my-4" />
+          <div className="space-y-2">
+            <p className="text-sm text-muted-foreground">
+              Request deletion of your account and all associated data.
+            </p>
+            <Button
+              variant="outline"
+              className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
+              onClick={() => {
+                window.open('mailto:antmwes104.1@gmail.com?subject=SchoolOS%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.', '_blank');
+                toast.info('Account deletion request', {
+                  description: 'Your email client should open. Send the email to complete your request.'
+                });
+              }}
+            >
+              Request Account Deletion
+            </Button>
+          </div>
         </CardContent>
       </Card>
 

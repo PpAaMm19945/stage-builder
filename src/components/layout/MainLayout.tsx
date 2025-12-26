@@ -111,6 +111,14 @@ export function MainLayout() {
           <div className="flex-1 p-6">
             <Outlet />
           </div>
+          {/* Footer with legal links */}
+          <footer className="py-6 text-center text-xs text-muted-foreground">
+            <a href="/privacy" className="hover:underline">Privacy Policy</a>
+            {' · '}
+            <a href="/terms" className="hover:underline">Terms of Service</a>
+            {' · '}
+            © 2024 SchoolOS
+          </footer>
         </main>
         {/* Floating Feedback Button */}
         <FeedbackButton />

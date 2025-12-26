@@ -31,6 +31,14 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
+    // Handle 401 specifically
+    if (response.status === 401) {
+      clearAuthToken();
+      const error = new Error('Session expired');
+      (error as any).isAuthError = true;
+      throw error;
+    }
+
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
     throw new Error(error.error || 'Request failed');
   }

@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Student } from '@/types';
 import { auth } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -41,7 +42,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         createdAt: response.user.created_at,
         updatedAt: response.user.updated_at,
       };
-      
+
       const childrenData: Student[] = (response.children || []).map((child: any) => ({
         id: child.id,
         parentId: child.parent_id,
@@ -57,8 +58,17 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       setUser(userData);
       setStudentChildren(childrenData);
       setSelectedChild(childrenData[0] || null);
-    } catch (error) {
+    } catch (error: any) {
       console.error('Failed to fetch user data:', error);
+
+      // Show informative message for auth errors
+      if (error?.isAuthError || error?.message?.includes('Session expired')) {
+        toast.error('Session Expired', {
+          description: 'Please sign in again to continue.',
+          duration: 5000,
+        });
+      }
+
       // Token might be invalid, clear it
       auth.logout();
       setUser(null);
