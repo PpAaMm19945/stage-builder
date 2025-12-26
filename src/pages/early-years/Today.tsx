@@ -18,7 +18,7 @@ import {
   Compass
 } from 'lucide-react';
 import { students } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { DOMAIN_LABELS, type EarlyYearsDomain, type ApiActivity } from '@/types';
 import { AddChildForm } from '@/components/children/AddChildForm';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
@@ -29,12 +29,7 @@ const domainColors: Record<EarlyYearsDomain, string> = {
   'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
 };
 
-// Map API response fields to UI expected fields
-interface ApiActivity {
-  id: string;
-  title: string;
-
-
+// UI Activity interface (camelCase)
 interface Activity {
   id: string;
   title: string;
