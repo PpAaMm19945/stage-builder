@@ -3,7 +3,7 @@
 
 -- ART/CREATIVE ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'creative-001',
   'Drawing Together',
@@ -11,6 +11,9 @@ VALUES (
   'Creative Arts',
   18, 72, 20,
   '["Crayons", "Paper", "Markers (optional)"]',
+  '["Gather drawing materials and set up at a table", "Give each child paper and crayons", "Draw alongside your children", "Talk about colors and shapes as you draw", "Display finished artwork together"]',
+  '["Fine motor development", "Creative expression", "Color recognition", "Hand-eye coordination"]',
+  'beginner',
   'family_session',
   1,
   '[
@@ -20,7 +23,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'creative-002',
   'Painting Fun',
@@ -28,6 +31,9 @@ VALUES (
   'Creative Arts',
   24, 72, 25,
   '["Paint", "Paper", "Brushes or sponges"]',
+  '["Cover work area with newspaper or plastic", "Set out paint colors and paper", "Show children how to dip brush or finger in paint", "Encourage mixing colors and exploring textures", "Let paintings dry and discuss what they created"]',
+  '["Color mixing awareness", "Sensory exploration", "Creative expression", "Fine motor skills"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -37,7 +43,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'creative-003',
   'Playdough Sculpture',
@@ -45,6 +51,9 @@ VALUES (
   'Creative Arts',
   18, 72, 20,
   '["Playdough", "Rolling pin or jar", "Cookie cutters (optional)"]',
+  '["Give each child a portion of playdough", "Demonstrate rolling, squeezing, and shaping", "Introduce tools like rolling pin or cutters", "Create together and describe what you make", "Clean up together when finished"]',
+  '["Hand strength development", "Fine motor control", "Creativity and imagination", "Shape recognition"]',
+  'beginner',
   'family_session',
   1,
   '[
@@ -56,7 +65,7 @@ VALUES (
 
 -- MOVEMENT ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'motor-011',
   'Dance Party',
@@ -64,6 +73,9 @@ VALUES (
   'Physical Development',
   12, 72, 15,
   '["Music player", "Open space"]',
+  '["Clear a safe open space for dancing", "Put on upbeat music children enjoy", "Dance together and model different movements", "Try freeze dance: dance when music plays, freeze when it stops", "Take turns being the dance leader"]',
+  '["Gross motor development", "Rhythm and timing", "Body awareness", "Social interaction"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -73,7 +85,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'motor-012',
   'Obstacle Course',
@@ -81,6 +93,9 @@ VALUES (
   'Physical Development',
   24, 72, 20,
   '["Pillows", "Furniture", "Tape", "Cushions"]',
+  '["Set up stations: crawl-under, jump-over, balance-on", "Walk through the course with children first", "Demonstrate each station", "Cheer children on as they try each obstacle", "Make it easier or harder based on ability"]',
+  '["Gross motor skills", "Balance and coordination", "Problem solving", "Following directions"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -90,7 +105,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'motor-013',
   'Yoga Poses',
@@ -98,6 +113,9 @@ VALUES (
   'Physical Development',
   24, 72, 15,
   '["Open space", "Mat or towel (optional)"]',
+  '["Find a quiet space with room to stretch", "Start with deep breaths together", "Introduce animal poses: cat, dog, tree, butterfly", "Hold poses and count together", "End with relaxation lying down"]',
+  '["Body awareness and control", "Flexibility", "Mindfulness and calm", "Balance"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -109,7 +127,7 @@ VALUES (
 
 -- MUSIC ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'music-001',
   'Sing-Along',
@@ -117,6 +135,9 @@ VALUES (
   'Creative Arts',
   6, 72, 15,
   '["Song lyrics or music", "Optional: pictures or props"]',
+  '["Choose familiar songs children enjoy", "Sing slowly and clearly", "Add hand motions to songs", "Pause to let children fill in words", "Repeat favorite songs multiple times"]',
+  '["Language development", "Memory skills", "Rhythm awareness", "Social bonding"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -126,7 +147,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'music-002',
   'Rhythm Instruments',
@@ -134,6 +155,9 @@ VALUES (
   'Creative Arts',
   12, 72, 15,
   '["Musical Instruments", "Or homemade: rice in containers, wooden spoons, pots"]',
+  '["Give each child an instrument", "Explore sounds together: loud, soft, fast, slow", "Play along with music", "Take turns leading the rhythm", "Try copying simple patterns"]',
+  '["Rhythm and timing", "Listening skills", "Turn-taking", "Sound exploration"]',
+  'beginner',
   'family_session',
   1,
   '[
@@ -143,7 +167,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'music-003',
   'Musical Movement',
@@ -151,6 +175,9 @@ VALUES (
   'Physical Development',
   12, 72, 15,
   '["Music player", "Various types of music", "Open space"]',
+  '["Play different types of music", "Suggest movements: march to fast music, sway to slow", "Let children choose how to move", "Change music and see how movement changes", "End with calm, slow music"]',
+  '["Body awareness", "Listening skills", "Self-expression", "Tempo recognition"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -162,7 +189,7 @@ VALUES (
 
 -- NATURE ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'science-011',
   'Leaf Collecting',
@@ -170,6 +197,9 @@ VALUES (
   'Science & Nature',
   24, 72, 25,
   '["Outdoor space", "Container or bag", "Leaves"]',
+  '["Go outside where leaves are available", "Collect leaves together in a bag", "Spread leaves out and observe them", "Sort leaves: by color, size, or shape", "Talk about similarities and differences"]',
+  '["Observation skills", "Classification and sorting", "Nature awareness", "Vocabulary development"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -179,7 +209,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'science-012',
   'Nature Walk',
@@ -187,6 +217,9 @@ VALUES (
   'Science & Nature',
   12, 72, 30,
   '["Outdoor space", "Optional: collection bag, magnifying glass"]',
+  '["Head outside to a safe walking area", "Walk slowly and observe together", "Point out interesting things: birds, flowers, clouds", "Stop to examine discoveries up close", "Collect small treasures if appropriate"]',
+  '["Observation skills", "Vocabulary development", "Curiosity and wonder", "Physical activity"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -198,7 +231,7 @@ VALUES (
 
 -- LITERACY ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'literacy-011',
   'Story Retelling',
@@ -206,6 +239,9 @@ VALUES (
   'Language & Literacy',
   24, 72, 20,
   '["Books", "Optional: puppets, toys, or pictures from story"]',
+  '["Read a familiar story together", "Ask what happened at the beginning", "Use props or pictures to retell", "Act out parts of the story", "Encourage children to tell it in their own words"]',
+  '["Sequencing skills", "Memory development", "Narrative skills", "Comprehension"]',
+  'beginner',
   'family_session',
   1,
   '[
@@ -215,7 +251,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'literacy-012',
   'Rhyming Games',
@@ -223,6 +259,9 @@ VALUES (
   'Language & Literacy',
   30, 72, 15,
   '["No materials needed", "Optional: rhyming picture cards or books"]',
+  '["Start with a familiar rhyming song", "Say a word and ask what rhymes with it", "Make silly rhymes together", "Read books with rhyming words", "Play rhyming matching games"]',
+  '["Phonological awareness", "Language play", "Vocabulary expansion", "Pre-reading skills"]',
+  'beginner',
   'family_session',
   0,
   '[
@@ -234,7 +273,7 @@ VALUES (
 
 -- MATH ACTIVITIES
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'cognitive-021',
   'Counting Games',
@@ -242,6 +281,9 @@ VALUES (
   'Cognitive Development',
   18, 72, 15,
   '["Any countable objects: blocks, toys, snacks, buttons"]',
+  '["Gather small objects to count", "Count together, touching each object", "Ask: How many are there?", "Practice counting during daily activities", "Count fingers, toes, steps, snacks"]',
+  '["Number sense", "One-to-one correspondence", "Cardinality understanding", "Math vocabulary"]',
+  'beginner',
   'family_session',
   1,
   '[
@@ -251,7 +293,7 @@ VALUES (
   ]'
 );
 
-INSERT INTO activities (id, title, description, domain, age_min, age_max, duration_estimate, materials, activity_type, uses_core_kit, tiered_expectations)
+INSERT INTO activities (id, title, description, domain, min_age_months, max_age_months, duration_minutes, materials, instructions, learning_outcomes, difficulty, activity_type, uses_core_kit, tiered_expectations)
 VALUES (
   'cognitive-022',
   'Shape Hunt',
@@ -259,6 +301,9 @@ VALUES (
   'Cognitive Development',
   24, 72, 20,
   '["No materials needed", "Just household objects"]',
+  '["Name a shape to find: circle", "Walk around looking for that shape", "Point out shapes together: clock is a circle", "Try different shapes: square, triangle", "Sort found objects by shape"]',
+  '["Shape recognition", "Spatial awareness", "Vocabulary development", "Observation skills"]',
+  'beginner',
   'family_session',
   0,
   '[
