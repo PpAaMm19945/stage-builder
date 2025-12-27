@@ -23,6 +23,7 @@ import {
   Lightbulb,
   ArrowRight,
   Sparkles,
+  Users,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -35,6 +36,13 @@ const domainColors: Record<EarlyYearsDomain, string> = {
 };
 
 // Map API response fields to UI expected fields
+interface TieredExpectation {
+  age_min: number;
+  age_max: number;
+  tier: string;
+  expectation: string;
+}
+
 interface ApiActivity {
   id: string;
   title: string;
@@ -50,6 +58,12 @@ interface ApiActivity {
   harder_variation: string;
   min_age_months: number;
   max_age_months: number;
+  // New fields for family sessions
+  activity_type?: 'family_session' | 'individual';
+  tiered_expectations?: TieredExpectation[];
+  uses_core_kit?: number;
+  mess_level?: string;
+  setting?: string;
 }
 
 interface Activity {
@@ -67,6 +81,12 @@ interface Activity {
   harderVariation: string;
   minAgeMonths: number;
   maxAgeMonths: number;
+  // Family session fields
+  activityType?: 'family_session' | 'individual';
+  tieredExpectations?: TieredExpectation[];
+  usesCoreKit?: boolean;
+  messLevel?: string;
+  setting?: string;
 }
 
 const mapApiActivity = (activity: ApiActivity): Activity => ({
@@ -84,6 +104,12 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   harderVariation: activity.harder_variation || '',
   minAgeMonths: activity.min_age_months,
   maxAgeMonths: activity.max_age_months,
+  // Family session fields
+  activityType: activity.activity_type,
+  tieredExpectations: activity.tiered_expectations,
+  usesCoreKit: activity.uses_core_kit === 1,
+  messLevel: activity.mess_level,
+  setting: activity.setting,
 });
 
 export default function ActivityViewer() {
@@ -326,6 +352,38 @@ export default function ActivityViewer() {
           </ul>
         </CardContent>
       </Card>
+
+      {/* Tiered Expectations - Only show for family sessions */}
+      {activity.activityType === 'family_session' && activity.tieredExpectations && activity.tieredExpectations.length > 0 && (
+        <Card className="border-primary/30 bg-primary/5">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg flex items-center gap-2 text-primary">
+              <Users className="h-5 w-5" />
+              Age-Appropriate Expectations
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p className="text-sm text-muted-foreground mb-4">
+              This is a family activity! Here's what to expect for different ages:
+            </p>
+            <div className="space-y-3">
+              {activity.tieredExpectations.map((tier, idx) => (
+                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+                  <div className="shrink-0 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
+                    {tier.tier}
+                  </div>
+                  <div className="flex-1">
+                    <p className="text-xs text-muted-foreground mb-1">
+                      Ages {tier.age_min}-{tier.age_max} months
+                    </p>
+                    <p className="text-sm text-foreground">{tier.expectation}</p>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </CardContent>
+        </Card>
+      )}
 
       {/* Tips */}
       {activity.tips && activity.tips.length > 0 && (
