@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Traceable Numbers on Lined Paper</title>
+    
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Codystar:wght@300&family=Fredoka:wght@400;600&display=swap" rel="stylesheet">
+
+    <style>
+        body {
+            font-family: 'Fredoka', sans-serif;
+            background-color: #e2e8f0;
+            -webkit-user-select: none;
+            user-select: none;
+            touch-action: none;
+        }
+
+        /* The Page - A4ish aspect ratio */
+        .page-sheet {
+            background: white;
+            width: 100%;
+            max-width: 210mm; /* A4 width */
+            min-height: 297mm; /* A4 height */
+            margin: 0 auto;
+            padding: 2rem;
+            padding-left: 3.5rem; /* Margin space */
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+            position: relative;
+        }
+
+        /* The Red Vertical Margin Line */
+        .page-sheet::before {
+            content: '';
+            position: absolute;
+            left: 2.5rem;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: #fca5a5; /* Light red */
+            z-index: 5;
+        }
+
+        /* Handwriting Line Row */
+        .writing-row {
+            position: relative;
+            height: 120px; /* Height of one writing block */
+            width: 100%;
+            margin-bottom: 2rem;
+            display: flex;
+            align-items: center; /* Centers text vertically, we adjust via line-height */
+        }
+
+        /* The Lines Background */
+        .writing-lines {
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            z-index: 1;
+            border-top: 2px solid #93c5fd; /* Top Blue Line */
+            border-bottom: 2px solid #93c5fd; /* Bottom Blue Line */
+        }
+
+        /* The Middle Dotted Line */
+        .writing-lines::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 0;
+            right: 0;
+            border-top: 2px dashed #93c5fd; /* Middle Blue Dashed */
+            transform: translateY(-50%);
+        }
+
+        /* The Dotted Text */
+        .trace-text {
+            font-family: 'Codystar', cursive;
+            font-weight: 300;
+            font-size: 90px; /* Adjusted to fit line height */
+            line-height: 120px; /* Matches container height to center it */
+            letter-spacing: 1.5rem;
+            color: #cbd5e1; /* Traceable gray */
+            position: relative;
+            z-index: 2;
+            width: 100%;
+            padding-left: 1rem;
+            pointer-events: none;
+        }
+
+        canvas {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            cursor: crosshair;
+            touch-action: none;
+        }
+
+        @media print {
+            body {
+                background: white;
+            }
+            .no-print {
+                display: none !important;
+            }
+            .page-sheet {
+                box-shadow: none;
+                margin: 0;
+                width: 100%;
+                height: auto;
+                page-break-after: always;
+            }
+            canvas {
+                display: none; /* Remove drawings for clean print, or keep if desired */
+            }
+            .trace-text {
+                color: #d1d5db !important;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+            }
+        }
+    </style>
+</head>
+<body class="py-8 px-2">
+
+    <!-- Controls Header -->
+    <div class="no-print w-full max-w-[210mm] mx-auto mb-6 flex flex-wrap gap-4 justify-between items-center bg-white p-4 rounded-xl shadow-sm border border-blue-100">
+        <div>
+            <h1 class="text-2xl font-bold text-blue-600">Writing Practice</h1>
+            <p class="text-gray-500 text-sm">Trace the numbers on the lines</p>
+        </div>
+        
+        <div class="flex gap-3 items-center">
+            <div class="flex gap-2 bg-gray-100 p-1 rounded-lg">
+                <button onclick="setPenColor('#ef4444')" class="w-8 h-8 rounded-full bg-red-500 hover:scale-110 transition border-2 border-transparent focus:border-black" aria-label="Red Pen"></button>
+                <button onclick="setPenColor('#1d4ed8')" class="w-8 h-8 rounded-full bg-blue-700 hover:scale-110 transition border-2 border-transparent focus:border-black ring-2 ring-offset-1 ring-blue-200" aria-label="Blue Pen"></button>
+                <button onclick="setPenColor('#15803d')" class="w-8 h-8 rounded-full bg-green-700 hover:scale-110 transition border-2 border-transparent focus:border-black" aria-label="Green Pen"></button>
+            </div>
+
+            <button onclick="clearAll()" class="px-4 py-2 text-red-500 hover:bg-red-50 rounded-lg font-semibold transition">
+                Clear
+            </button>
+            
+            <button onclick="window.print()" class="px-6 py-2 bg-blue-600 text-white rounded-lg font-bold hover:bg-blue-700 shadow-md transition flex items-center gap-2">
+                Print
+            </button>
+        </div>
+    </div>
+
+    <!-- The "Paper" Sheet -->
+    <div class="page-sheet" id="paper-container">
+        <!-- Rows will be injected here -->
+    </div>
+
+    <script>
+        const rowsData = [
+            "1 2 3 4 5",
+            "6 7 8 9 10",
+            "1 2 3 4 5",  // Extra practice
+            "6 7 8 9 10"  // Extra practice
+        ];
+        
+        const container = document.getElementById('paper-container');
+        let currentPenColor = '#1d4ed8'; // Dark blue pen default
+        let isDrawing = false;
+        let canvases = [];
+
+        // 1. Generate Rows
+        rowsData.forEach((text, index) => {
+            const row = document.createElement('div');
+            row.className = 'writing-row';
+            
+            row.innerHTML = `
+                <div class="writing-lines"></div>
+                <div class="trace-text">${text}</div>
+                <canvas id="canvas-${index}"></canvas>
+            `;
+            container.appendChild(row);
+
+            const canvas = row.querySelector('canvas');
+            canvases.push(canvas);
+            setupCanvas(canvas);
+        });
+
+        // 2. Canvas Logic
+        function setupCanvas(canvas) {
+            const ctx = canvas.getContext('2d');
+            
+            function resize() {
+                const rect = canvas.parentElement.getBoundingClientRect();
+                // We use the high-res trick for sharper lines if needed, 
+                // but standard 1:1 pixel mapping is okay for kids drawings usually.
+                canvas.width = rect.width;
+                canvas.height = rect.height;
+                
+                ctx.lineCap = 'round';
+                ctx.lineJoin = 'round';
+                ctx.lineWidth = 8;
+                ctx.strokeStyle = currentPenColor;
+            }
+            
+            resize();
+            window.addEventListener('resize', resize);
+
+            function startDraw(e) {
+                isDrawing = true;
+                ctx.beginPath();
+                const { x, y } = getPos(e, canvas);
+                ctx.moveTo(x, y);
+                e.preventDefault();
+            }
+
+            function draw(e) {
+                if (!isDrawing) return;
+                const { x, y } = getPos(e, canvas);
+                ctx.lineTo(x, y);
+                ctx.stroke();
+                e.preventDefault();
+            }
+
+            function stopDraw() {
+                isDrawing = false;
+                ctx.closePath();
+            }
+
+            canvas.addEventListener('mousedown', startDraw);
+            canvas.addEventListener('mousemove', draw);
+            canvas.addEventListener('mouseup', stopDraw);
+            canvas.addEventListener('mouseleave', stopDraw);
+
+            canvas.addEventListener('touchstart', (e) => startDraw(e.touches[0]));
+            canvas.addEventListener('touchmove', (e) => draw(e.touches[0]));
+            canvas.addEventListener('touchend', stopDraw);
+        }
+
+        function getPos(e, canvas) {
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.clientX; 
+            const clientY = e.clientY;
+            return {
+                x: clientX - rect.left,
+                y: clientY - rect.top
+            };
+        }
+
+        // 3. Controls
+        function setPenColor(color) {
+            currentPenColor = color;
+            canvases.forEach(c => {
+                const ctx = c.getContext('2d');
+                ctx.strokeStyle = color;
+            });
+        }
+
+        function clearAll() {
+            canvases.forEach(c => {
+                const ctx = c.getContext('2d');
+                ctx.clearRect(0, 0, c.width, c.height);
+            });
+        }
+    </script>
+</body>
+</html>

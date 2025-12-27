@@ -1,0 +1,192 @@
+{
+  "bookId": "Kato",
+  "id": "Kato",
+  "title": "Kato's Truck Count",
+  "author": "Anthony Jr. Mwesigwa",
+  "illustrator": "Anthony Jr. Mwesigwa",
+  "description": "A colorful counting book for children following Kato as he counts trucks in Kampala. Join Kato on his exciting adventure through the bustling streets as he discovers 10 different types of trucks!",
+  "genre": "Children's Picture Book - Counting & Educational",
+  "keywords": "counting, trucks, Uganda, Kampala, numbers, children, learning",
+  "ageRange": "3-5 years",
+  
+  "publisher": "Petra Reformed Publishing",
+  "publisherLocation": "Kampala, Uganda",
+  "copyrightYear": 2025,
+  "edition": "First Edition",
+  "isbn": "ISBN-978-0-XXXXX-XXX-X",
+  "price": "5000 UGX/1.40 USD",
+  "website": "www.example.com",
+  "printLocation": "Uganda",
+  
+  "dedication": "For all the curious children of Kampala who see wonder in everyday life.",
+  "authorBio": "Anthony Jr. Mwesigwa is a passionate storyteller from Kampala, Uganda, dedicated to creating engaging educational books for young African readers.",
+  "backCoverText": "Join Kato on an exciting counting adventure through the busy streets of Kampala! From bright red boda-bodas to colorful matatus, discover 10 different types of trucks while learning to count. Perfect for young learners ages 3-5!",
+  
+  "cover_image_url": "Cover Photo.jpg",
+  "creationDate": "2024-01-15T10:00:00Z",
+  "totalPages": 16,
+  "estimatedReadTime": "10 minutes",
+  "pageFormat": {
+    "size": "A5",
+    "orientation": "landscape",
+    "width": "210mm",
+    "height": "148mm",
+    "flip": "short-edge",
+    "margins": {
+      "top": "10mm",
+      "right": "10mm",
+      "bottom": "10mm",
+      "left": "10mm"
+    }
+  },
+  "styleProfile": "print-a5-landscape-picturebook.css",
+  "bookType": "picturebook",
+  "pages": [
+    {
+      "pageNumber": 0,
+      "type": "cover",
+      "image": "Cover Photo.jpg",
+      "text": "Kato's Truck Count"
+    },
+    {
+      "type": "title",
+      "subtitle": "A Counting Adventure in Kampala"
+    },
+    {
+      "type": "copyright"
+    },
+    {
+      "type": "dedication"
+    },
+    {
+      "pageNumber": 1,
+      "type": "content",
+      "number": 1,
+      "image": "Page 1.jpg",
+      "imageAlt": "One bright red boda-boda truck in Kampala",
+      "text": [
+        "Kato spots 1 red boda-boda, rushing down the street.",
+        "It zips past the market with a friendly... PII-PII!"
+      ],
+      "practicePrompt": "Trace the number 1"
+    },
+    {
+      "pageNumber": 2,
+      "type": "content",
+      "number": 2,
+      "image": "Page 2.jpg",
+      "imageAlt": "Two blue lorries carrying bananas",
+      "text": [
+        "Look! 2 blue lorries with a heavy, heavy load.",
+        "They carry sweet matooke down the dusty road."
+      ],
+      "practicePrompt": "Trace the number 2"
+    },
+    {
+      "pageNumber": 3,
+      "type": "content",
+      "number": 3,
+      "image": "Page 3.jpg",
+      "imageAlt": "Three yellow diggers scooping soil",
+      "text": [
+        "3 yellow diggers are working on the ground.",
+        "They scoop up the red soil—what a noisy sound! SCOOP, SCOOP!"
+      ],
+      "practicePrompt": "Trace the number 3"
+    },
+    {
+      "pageNumber": 4,
+      "type": "content",
+      "number": 4,
+      "image": "Page 4.jpg",
+      "imageAlt": "Four green garbage trucks at the market",
+      "text": [
+        "4 green garbage trucks, keeping the city clean.",
+        "They have the biggest hungry tummies you have ever seen! CRUNCH, CRUNCH!"
+      ],
+      "practicePrompt": "Trace the number 4"
+    },
+    {
+      "pageNumber": 5,
+      "type": "content",
+      "number": 5,
+      "image": "Pages 5.jpg",
+      "imageAlt": "Five orange cement mixers spinning",
+      "text": [
+        "5 orange cement mixers, turning round and round.",
+        "They spin and they mix with a whirring, stirring sound. WHIRR, WHIRR!"
+      ],
+      "practicePrompt": "Trace the number 5"
+    },
+    {
+      "pageNumber": 6,
+      "type": "content",
+      "number": 6,
+      "image": "Page 6.jpg",
+      "imageAlt": "Six helpful breakdown trucks pulling cars",
+      "text": [
+        "6 strong breakdown trucks, coming to the rescue.",
+        "If your car is stuck in mud, they will pull it out for you! VROOOM!"
+      ],
+      "practicePrompt": "Trace the number 6"
+    },
+    {
+      "pageNumber": 7,
+      "type": "content",
+      "number": 7,
+      "image": "Page 7.jpg",
+      "imageAlt": "Seven big water trucks delivering water",
+      "text": [
+        "7 water trucks are driving to the town.",
+        "Bringing cool, fresh water, splashing up and down. SPLISH, SPLASH!"
+      ],
+      "practicePrompt": "Trace the number 7"
+    },
+    {
+      "pageNumber": 8,
+      "type": "content",
+      "number": 8,
+      "image": "Page 8.jpg",
+      "imageAlt": "Eight long timber trucks with logs",
+      "text": [
+        "8 timber trucks with logs from the trees.",
+        "The men are so strong—lifting with such ease! HEAVE-HO!"
+      ],
+      "practicePrompt": "Trace the number 8"
+    },
+    {
+      "pageNumber": 9,
+      "type": "content",
+      "number": 9,
+      "image": "Page 9.jpg",
+      "imageAlt": "Nine shiny car carriers bringing new cars",
+      "text": [
+        "9 shiny car carriers parked in a row.",
+        "They have new cars for sale—all lined up to show! HONK, HONK!"
+      ],
+      "practicePrompt": "Trace the number 9"
+    },
+    {
+      "pageNumber": 10,
+      "type": "content",
+      "number": 10,
+      "image": "Page 10.jpg",
+      "imageAlt": "Ten colorful matatus lined up at taxi park",
+      "text": [
+        "10 colorful matatus at the busy taxi stand.",
+        "They will take you anywhere—all across our land! 'MBI, MBI!' (Let's go!)"
+      ],
+      "practicePrompt": "Trace the number 10"
+    },
+    {
+      "type": "about-author"
+    },
+    {
+      "type": "colophon",
+      "text": "<p><strong>Colophon</strong></p><p>Written and Illustrated by <strong>Anthony Jr. Mwesigwa</strong></p><p>Illustrations created with Google Gemini AI</p><p>Published by <strong>Petra Reformed Publishing</strong><br>Kampala, Uganda</p><p>Typeface: Nunito by Vernon Adams</p><p>Printed in Uganda</p><p>© 2025</p>"
+    },
+    {
+      "type": "back-cover"
+    }
+  ]
+}

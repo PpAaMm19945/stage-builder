@@ -1,0 +1,95 @@
+{
+  "title": "Kato's Truck Count",
+  "pages": [
+    {
+      "page": 1,
+      "number": 1,
+      "text": [
+        "Kato spots 1 red boda-boda, rushing down the street.",
+        "It zips past the market with a friendly... PII-PII!"
+      ],
+      "practicePrompt": "Trace the number 1"
+    },
+    {
+      "page": 2,
+      "number": 2,
+      "text": [
+        "Look! 2 blue lorries with a heavy, heavy load.",
+        "They carry sweet matooke down the dusty road."
+      ],
+      "practicePrompt": "Trace the number 2"
+    },
+    {
+      "page": 3,
+      "number": 3,
+      "text": [
+        "3 yellow diggers are working on the ground.",
+        "They scoop up the red soil—what a noisy sound! SCOOP, SCOOP!"
+      ],
+      "practicePrompt": "Trace the number 3"
+    },
+    {
+      "page": 4,
+      "number": 4,
+      "text": [
+        "4 green garbage trucks, keeping the city clean.",
+        "They have the biggest hungry tummies you have ever seen! CRUNCH, CRUNCH!"
+      ],
+      "practicePrompt": "Trace the number 4"
+    },
+    {
+      "page": 5,
+      "number": 5,
+      "text": [
+        "5 orange cement mixers, turning round and round.",
+        "They spin and they mix with a whirring, stirring sound. WHIRR, WHIRR!"
+      ],
+      "practicePrompt": "Trace the number 5"
+    },
+    {
+      "page": 6,
+      "number": 6,
+      "text": [
+        "6 strong breakdown trucks, coming to the rescue.",
+        "If your car is stuck in mud, they will pull it out for you! VROOOM!"
+      ],
+      "practicePrompt": "Trace the number 6"
+    },
+    {
+      "page": 7,
+      "number": 7,
+      "text": [
+        "7 water trucks are driving to the town.",
+        "Bringing cool, fresh water, splashing up and down. SPLISH, SPLASH!"
+      ],
+      "practicePrompt": "Trace the number 7"
+    },
+    {
+      "page": 8,
+      "number": 8,
+      "text": [
+        "8 timber trucks with logs from the trees.",
+        "The men are so strong—lifting with such ease! HEAVE-HO!"
+      ],
+      "practicePrompt": "Trace the number 8"
+    },
+    {
+      "page": 9,
+      "number": 9,
+      "text": [
+        "9 shiny car carriers parked in a row.",
+        "They have new cars for sale—all lined up to show! HONK, HONK!"
+      ],
+      "practicePrompt": "Trace the number 9"
+    },
+    {
+      "page": 10,
+      "number": 10,
+      "text": [
+        "10 colorful matatus at the busy taxi stand.",
+        "They will take you anywhere—all across our land! 'MBI, MBI!' (Let's go!)"
+      ],
+      "practicePrompt": "Trace the number 10"
+    }
+  ]
+}
