@@ -225,5 +225,10 @@
     {
       "type": "back-cover"
     }
-  ]
+  ],
+  "pageCount": 20,
+  "learningStage": "early-years",
+  "domain": "language",
+  "minAgeMonths": 72,
+  "maxAgeMonths": 108
 }

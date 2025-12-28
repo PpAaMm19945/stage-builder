@@ -75,6 +75,33 @@ BOAT goes splish-splash on the water!
 # Page 7
 ![Page 7](images/page-07.png)
 
+TRAIN goes Chugga-Chugga Choo-Choo!
+
+**Ask:** Have you seen a train?
+
+---
+
+# Page 8
+![Page 8](images/page-08.png)
+
+WHEELBARROW carries heavy water. Squeak squeak!
+
+**Ask:** What can you carry in a wheelbarrow?
+
+---
+
+# Page 9
+![Page 9](images/page-09.png)
+
+BIG BUS goes HONK HONK! Taking people far away.
+
+**Ask:** Where would you like to travel?
+
+---
+
+# Page 10
+![Page 10](images/page-10.png)
+
 So many things that go! VROOM VROOM!
 
 **Ask:** What's your favorite thing that goes?

@@ -195,3 +195,33 @@ export interface FamilyTodayResponse {
   totalDuration: number;
   coreKitCoverage: number;
 }
+
+// ============================================
+// Books & Reading System
+// ============================================
+
+export interface Book {
+  id: string;
+  series: string;
+  title: string;
+  author?: string;
+  illustrator?: string;
+  description: string;
+  minAgeMonths: number;
+  maxAgeMonths: number;
+  pageCount: number;
+  domain: string;
+  learningStage: string;
+  readingPrompts?: { page: number; prompt: string }[];
+  coverUrl?: string;
+}
+
+export interface ReadingSession {
+  id: string;
+  parentId: string;
+  bookId: string;
+  series: string;
+  childrenPresent?: string[];
+  notes?: string;
+  completedAt: string;
+}

@@ -7,12 +7,28 @@ import { cors } from 'hono/cors';
 // Types
 interface Env {
   DB: D1Database;
+  BOOKS_BUCKET: R2Bucket;
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
   JWT_SECRET: string;
   FRONTEND_URL: string;
   ENVIRONMENT: string;
+}
+
+interface BookMetadata {
+  id: string;
+  series: string;
+  title: string;
+  author?: string;
+  illustrator?: string;
+  description: string;
+  minAgeMonths: number;
+  maxAgeMonths: number;
+  pageCount: number;
+  domain: string;
+  learningStage: string;
+  readingPrompts?: { page: number; prompt: string }[];
 }
 
 interface User {
@@ -975,6 +991,248 @@ app.delete('/api/students/:id', async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     return c.json({ error: error.message || 'Failed to delete child' }, 400);
+  }
+});
+
+// ============ BOOKS & READING ROUTES ============
+
+// Helper: Parse age range string to months
+function parseAgeRange(ageRange: string): { min: number; max: number } {
+  // Examples: "1-4 years", "3-5 years", "6-9"
+  const match = ageRange.match(/(\d+)\s*-\s*(\d+)/);
+  if (!match) return { min: 24, max: 60 };
+
+  let [, minStr, maxStr] = match;
+  let min = parseInt(minStr);
+  let max = parseInt(maxStr);
+
+  // If values are small (likely years), convert to months
+  if (max <= 12) {
+    min = min * 12;
+    max = max * 12;
+  }
+
+  return { min, max };
+}
+
+// Helper: Get book metadata from R2
+async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string): Promise<BookMetadata | null> {
+  const key = `${series}/${bookId}/metadata.json`;
+  const object = await bucket.get(key);
+
+  if (!object) return null;
+
+  const data = await object.json() as any;
+
+  // Normalize metadata format
+  const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+  return {
+    id: data.id || bookId,
+    series: data.series || series,
+    title: data.title || bookId,
+    author: data.author,
+    illustrator: data.illustrator,
+    description: data.description || '',
+    minAgeMonths: data.minAgeMonths || ageRange.min,
+    maxAgeMonths: data.maxAgeMonths || ageRange.max,
+    pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+    domain: data.domain || 'language',
+    learningStage: data.learningStage || 'early-years',
+    readingPrompts: data.readingPrompts,
+  };
+}
+
+// List all books
+app.get('/api/books', async (c) => {
+  try {
+    const stage = c.req.query('stage');
+    const ageMonths = c.req.query('ageMonths');
+
+    // List all objects in the bucket looking for metadata.json files
+    const listed = await c.env.BOOKS_BUCKET.list();
+    const books: BookMetadata[] = [];
+
+    // Group by directory structure
+    const metadataKeys = listed.objects
+      .filter(obj => obj.key.endsWith('metadata.json'))
+      .map(obj => obj.key);
+
+    for (const key of metadataKeys) {
+      const parts = key.split('/');
+      if (parts.length >= 3) {
+        const series = parts[0];
+        const bookId = parts[1];
+        const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId);
+        if (metadata) books.push(metadata);
+      }
+    }
+
+    // Apply filters
+    let filtered = books;
+
+    if (stage) {
+      filtered = filtered.filter(b => b.learningStage === stage);
+    }
+
+    if (ageMonths) {
+      const age = parseInt(ageMonths);
+      filtered = filtered.filter(b => b.minAgeMonths <= age && b.maxAgeMonths >= age);
+    }
+
+    return c.json(filtered);
+  } catch (error: any) {
+    console.error('Books list error:', error);
+    return c.json({ error: error.message || 'Failed to list books' }, 500);
+  }
+});
+
+// Get single book metadata
+app.get('/api/books/:series/:bookId', async (c) => {
+  try {
+    const series = c.req.param('series');
+    const bookId = c.req.param('bookId');
+
+    const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId);
+
+    if (!metadata) {
+      return c.json({ error: 'Book not found' }, 404);
+    }
+
+    return c.json(metadata);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to get book' }, 500);
+  }
+});
+
+// Get book cover image
+app.get('/api/books/:series/:bookId/cover', async (c) => {
+  try {
+    const series = c.req.param('series');
+    const bookId = c.req.param('bookId');
+
+    // Try multiple possible cover file names
+    const coverNames = ['cover.png', 'cover.jpg', 'Cover Photo.png', 'page-01.png'];
+
+    for (const coverName of coverNames) {
+      const key = `${series}/${bookId}/${coverName}`;
+      const object = await c.env.BOOKS_BUCKET.get(key);
+
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        headers.set('Cache-Control', 'public, max-age=86400');
+
+        return new Response(object.body, { headers });
+      }
+    }
+
+    return c.json({ error: 'Cover not found' }, 404);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get book page image
+app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
+  try {
+    const series = c.req.param('series');
+    const bookId = c.req.param('bookId');
+    const pageNum = c.req.param('pageNum');
+
+    // Try multiple page naming conventions
+    const paddedNum = pageNum.padStart(2, '0');
+    const pageNames = [
+      `page-${paddedNum}.png`,
+      `page-${paddedNum}.jpg`,
+      `Page ${pageNum}.png`,
+      `Page ${paddedNum}.png`,
+    ];
+
+    for (const pageName of pageNames) {
+      const key = `${series}/${bookId}/${pageName}`;
+      const object = await c.env.BOOKS_BUCKET.get(key);
+
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        headers.set('Cache-Control', 'public, max-age=86400');
+
+        return new Response(object.body, { headers });
+      }
+    }
+
+    // Also try looking in images subdirectory
+    for (const pageName of pageNames) {
+      const key = `${series}/${bookId}/images/${pageName}`;
+      const object = await c.env.BOOKS_BUCKET.get(key);
+
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        headers.set('Cache-Control', 'public, max-age=86400');
+
+        return new Response(object.body, { headers });
+      }
+    }
+
+    return c.json({ error: 'Page not found' }, 404);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Log reading session completion
+app.post('/api/reading/complete', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+    const { series, bookId, childrenPresent, notes } = body;
+
+    if (!series || !bookId) {
+      return c.json({ error: 'Series and bookId are required' }, 400);
+    }
+
+    const sessionId = generateId('read');
+    const childrenJson = childrenPresent ? JSON.stringify(childrenPresent) : null;
+
+    await c.env.DB.prepare(`
+      INSERT INTO reading_sessions (id, parent_id, book_id, children_present, notes, completed_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+    `).bind(sessionId, user.id, `${series}/${bookId}`, childrenJson, notes || null).run();
+
+    const session = await c.env.DB.prepare(
+      'SELECT * FROM reading_sessions WHERE id = ?'
+    ).bind(sessionId).first();
+
+    return c.json(session, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to log reading session' }, 400);
+  }
+});
+
+// Get reading history
+app.get('/api/reading/history', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const limit = c.req.query('limit') || '20';
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT * FROM reading_sessions 
+      WHERE parent_id = ? 
+      ORDER BY completed_at DESC 
+      LIMIT ?
+    `).bind(user.id, parseInt(limit)).all();
+
+    // Parse children_present JSON
+    const sessions = results.map((session: any) => ({
+      ...session,
+      childrenPresent: session.children_present ? JSON.parse(session.children_present) : [],
+    }));
+
+    return c.json(sessions);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Unauthorized' }, 401);
   }
 });
 

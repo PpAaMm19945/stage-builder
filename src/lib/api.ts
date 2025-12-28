@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -138,5 +138,37 @@ export const observations = {
     }),
 };
 
-export const api = { auth, students, activities, observations, family };
+// Books
+export const books = {
+  list: (params?: { stage?: string; ageMonths?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.stage) query.set('stage', params.stage);
+    if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
+    return apiRequest<Book[]>(`/api/books?${query}`);
+  },
+
+  get: (series: string, bookId: string) =>
+    apiRequest<Book>(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}`),
+
+  getCoverUrl: (series: string, bookId: string) =>
+    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
+
+  getPageUrl: (series: string, bookId: string, pageNum: number) =>
+    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+};
+
+// Reading Sessions
+export const reading = {
+  complete: (data: { series: string; bookId: string; childrenPresent?: string[]; notes?: string }) =>
+    apiRequest<ReadingSession>('/api/reading/complete', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  history: (limit?: number) =>
+    apiRequest<ReadingSession[]>(`/api/reading/history${limit ? `?limit=${limit}` : ''}`),
+};
+
+export const api = { auth, students, activities, observations, family, books, reading };
 export default api;
+

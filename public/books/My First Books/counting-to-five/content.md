@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-5 years
 domain: cognitive
-description: Learn to count with fun objects from everyday Ugandan life!
-keywords: counting, numbers, Uganda, first reader, early learning, Kato
+description: Learn to count to 10 with fun objects from everyday Ugandan life!
+keywords: counting, numbers, Uganda, first reader, early learning, Kato, Nsenene, Engalabi
 ---
 
 # Dedication
@@ -63,6 +63,51 @@ Five happy children playing in the village!
 
 ---
 
+# Page 6
+![Page 6](images/page-06.png)
+
+Six loud drums beating a rhythm! *Boom-didi-boom!*
+
+**Ask:** Can you pretend to play a drum?
+
+---
+
+# Page 7
+![Page 7](images/page-07.png)
+
+Seven tasty nsenene hopping in the grass.
+
+**Ask:** Have you ever seen a grasshopper?
+
+---
+
+# Page 8
+![Page 8](images/page-08.png)
+
+Eight silver fish swimming in the lake.
+
+**Ask:** Can you make a fish face?
+
+---
+
+# Page 9
+![Page 9](images/page-09.png)
+
+Nine stripes on a playful zebra.
+
+**Ask:** What colors is the zebra?
+
+---
+
+# Page 10
+![Page 10](images/page-10.png)
+
+Ten bright stars twinkling above the village.
+
+**Ask:** Touch your nose ten times!
+
+---
+
 # About the Author
 
 Anthony Jr. Mwesigwa is a passionate storyteller from Kampala, Uganda, dedicated to creating engaging educational books for young African readers.
@@ -84,4 +129,4 @@ Kampala, Uganda
 
 # Back Cover
 
-One, two, three, four, five! Join Kato as he discovers numbers all around him in Uganda. Perfect for little learners aged 2-5!
+One banana, two hens, three tomatoes... count all the way to ten with Kato! Discover numbers in the beautiful sights and sounds of Uganda. Perfect for little learners aged 2-5!

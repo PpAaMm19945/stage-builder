@@ -213,5 +213,10 @@
         "This is the true story of 'The Bishop Who Stayed.'"
       ]
     }
-  ]
+  ],
+  "pageCount": 21,
+  "learningStage": "early-years",
+  "domain": "language",
+  "minAgeMonths": 72,
+  "maxAgeMonths": 108
 }

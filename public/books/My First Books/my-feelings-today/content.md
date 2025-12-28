@@ -8,7 +8,7 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-5 years
 domain: social-emotional
-description: Learn about feelings with Amina! Happy, sad, angry, scared—all feelings are okay.
+description: Learn about feelings with Amina! Happy, sad, angry, scared, proud, shy—all feelings are okay.
 keywords: feelings, emotions, social-emotional, Amina, first reader, Uganda, early learning
 ---
 
@@ -84,6 +84,42 @@ Amina feels LOVED every single day.
 # Page 8
 ![Page 8](images/page-08.png)
 
+Amina feels PROUD when she learns something new.
+
+**Ask:** What are you proud of?
+
+---
+
+# Page 9
+![Page 9](images/page-09.png)
+
+Amina feels SHY when she meets a new friend.
+
+**Ask:** How do you say hello?
+
+---
+
+# Page 10
+![Page 10](images/page-10.png)
+
+Amina feels FRUSTRATED when her tower falls down.
+
+**Ask:** Do you try again?
+
+---
+
+# Page 11
+![Page 11](images/page-11.png)
+
+Amina feels CURIOUS when she sees a tiny bug.
+
+**Ask:** What do you like to explore?
+
+---
+
+# Page 12
+![Page 12](images/page-12.png)
+
 All feelings are okay. Big feelings, small feelings, happy and sad feelings. God made them all!
 
 **Ask:** How do you feel right now?
@@ -111,4 +147,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Happy, sad, angry, scared—Amina feels them all! Join her as she discovers that all feelings are okay. A gentle first book about emotions for children aged 2-5.
+Happy, sad, angry, scared, proud, shy—Amina feels them all! Join her as she discovers that all feelings are okay. A gentle first book about emotions for children aged 2-5.

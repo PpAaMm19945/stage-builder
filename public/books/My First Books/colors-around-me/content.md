@@ -75,6 +75,33 @@ ORANGE like a juicy passion fruit.
 # Page 7
 ![Page 7](images/page-07.png)
 
+PURPLE like beautiful bougainvillea flowers.
+
+**Ask:** Do you like flowers?
+
+---
+
+# Page 8
+![Page 8](images/page-08.png)
+
+BLACK like a charcoal stove (sigiri) cooking supper.
+
+**Ask:** Is the stove hot or cold?
+
+---
+
+# Page 9
+![Page 9](images/page-09.png)
+
+WHITE like fresh milk in a cup.
+
+**Ask:** Do you like to drink milk?
+
+---
+
+# Page 10
+![Page 10](images/page-10.png)
+
 Colors are everywhere in our world!
 
 **Ask:** What is your favorite color?

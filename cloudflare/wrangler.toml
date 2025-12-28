@@ -29,6 +29,11 @@ database_name = "schoolos-db"
 database_id = "acb84cf7-fd3b-4083-b08a-9f28f131fc3f"
 migrations_dir = "migrations"
 
+# R2 Storage for books and media
+[[r2_buckets]]
+binding = "BOOKS_BUCKET"
+bucket_name = "schoolos-books"
+
 [vars]
 ENVIRONMENT = "production"
 GOOGLE_REDIRECT_URI = "https://stage-builder.antmwes104-1.workers.dev/auth/google/callback"

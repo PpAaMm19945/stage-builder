@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-4 years
 domain: language
-description: Meet the friendly animals that live around Kampala! Learn their names and sounds.
-keywords: animals, wanyama, Swahili, Kampala, Uganda, first reader, early learning
+description: Meet the friendly animals that live around Kampala and the Uganda Wildlife Conservation Centre!
+keywords: animals, wanyama, Swahili, Kampala, Uganda, zoo, Entebbe, first reader
 ---
 
 # Dedication
@@ -75,6 +75,51 @@ KASUKU! The parrot says "Hello! Hello!"
 # Page 7
 ![Page 7](images/page-07.png)
 
+SIMBA! The lion roars "ROAAAAR!"
+
+**Ask:** Can you roar like a lion?
+
+---
+
+# Page 8
+![Page 8](images/page-08.png)
+
+NJOVU! The elephant has a long trunk.
+
+**Ask:** Can you wave your arm like a trunk?
+
+---
+
+# Page 9
+![Page 9](images/page-09.png)
+
+NKIMA! The monkey likes to climb trees.
+
+**Ask:** Can you climb like a monkey?
+
+---
+
+# Page 10
+![Page 10](images/page-10.png)
+
+KIBOKO! The hippo splashes in the water.
+
+**Ask:** Where does the hippo live?
+
+---
+
+# Page 11
+![Page 11](images/page-11.png)
+
+PUNDA MILIA! The zebra has black and white stripes.
+
+**Ask:** How many stripes can you see?
+
+---
+
+# Page 12
+![Page 12](images/page-12.png)
+
 So many animal friends in Kampala!
 
 **Ask:** Which animal is your favorite?
@@ -102,4 +147,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Kuku, mbwa, paka! Discover the wonderful animals of Kampala in this delightful first animals book. Perfect for toddlers aged 2-4 learning about the world around them!
+Kuku, mbwa, simba, njovu! Discover the wonderful animals of Uganda in this delightful first animals book. From village friends to zoo favorites, perfect for toddlers aged 2-4!

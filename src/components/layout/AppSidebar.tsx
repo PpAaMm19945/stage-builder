@@ -46,6 +46,7 @@ import type { Student } from '@/types';
 const earlyYearsLinks = [
   { title: 'Individual Today', url: '/early-years/today', icon: Calendar },
   { title: 'Activities', url: '/early-years/activities', icon: Compass },
+  { title: 'Reading', url: '/early-years/reading', icon: BookOpen },
   { title: 'Progress', url: '/early-years/progress', icon: BarChart3 },
 ];
 
