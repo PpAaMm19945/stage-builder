@@ -1145,8 +1145,12 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     const pageNames = [
       `page-${paddedNum}.png`,
       `page-${paddedNum}.jpg`,
-      `Page ${pageNum}.png`,
-      `Page ${paddedNum}.png`,
+      `page-${pageNum}.png`, // page-1.png
+      `page-${pageNum}.jpg`,
+      `Page ${pageNum}.png`, // Page 1.png
+      `Page ${paddedNum}.png`, // Page 01.png
+      `Page-${pageNum}.png`, // Page-1.png
+      `Page-${paddedNum}.png`, // Page-01.png
     ];
 
     for (const pageName of pageNames) {

@@ -21,11 +21,14 @@ import {
   Circle,
   Info,
   Settings,
-  Zap
+  Zap,
+  BookOpen
 } from 'lucide-react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
-import { FamilySession, MaterialItem } from '@/types';
+import { FamilySession, MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { books } from '@/lib/api';
+import { BookReader } from '@/components/books/BookReader';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -36,6 +39,19 @@ export default function Dashboard() {
     queryKey: ['family-today'],
     queryFn: family.getToday,
   });
+
+  const [readerBook, setReaderBook] = useState<Book | null>(null);
+
+  // Get youngest child for age-appropriate recommendations
+  const youngestChild = data?.children ? [...data.children].sort((a: any, b: any) => a.age_in_months - b.age_in_months)[0] : null;
+
+  const { data: recommendedBooks } = useQuery({
+    queryKey: ['todays-book', youngestChild?.age_in_months],
+    queryFn: () => books.list({ ageMonths: youngestChild?.age_in_months }),
+    enabled: !!youngestChild,
+  });
+
+  const todaysBook = recommendedBooks && recommendedBooks.length > 0 ? recommendedBooks[0] : null;
 
   if (isLoading) {
     return (
@@ -256,6 +272,62 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      {/* Today's Reading */}
+      {todaysBook && youngestChild && (
+        <Card className="border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden">
+          <CardHeader className="pb-3 border-b border-indigo-100/50">
+            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
+              <BookOpen className="h-5 w-5 text-indigo-600" />
+              Today's Reading
+            </CardTitle>
+            <CardDescription className="text-indigo-900/60">
+              Selected for {youngestChild.name}'s age ({Math.floor(youngestChild.age_in_months / 12)}y)
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="pt-6">
+            <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
+              {/* Book Cover */}
+              <div className="relative w-32 sm:w-40 shadow-lg rounded-lg overflow-hidden shrink-0 transform transition-transform hover:scale-105 duration-300">
+                <div className="aspect-[3/4] bg-indigo-100 flex items-center justify-center">
+                  <img
+                    src={books.getCoverUrl(todaysBook.series, todaysBook.id)}
+                    alt={todaysBook.title}
+                    className="w-full h-full object-cover"
+                    onError={(e) => {
+                      // Fallback if image fails
+                      (e.target as HTMLImageElement).src = 'https://placehold.co/300x400?text=Book+Cover';
+                    }}
+                  />
+                </div>
+              </div>
+
+              <div className="flex-1 space-y-4 text-center sm:text-left">
+                <div>
+                  <Badge variant="secondary" className="mb-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200">
+                    {todaysBook.series} Series
+                  </Badge>
+                  <h3 className="text-xl font-bold text-indigo-950 mb-1">{todaysBook.title}</h3>
+                  <p className="text-indigo-900/70 text-sm leading-relaxed max-w-xl">
+                    {todaysBook.description}
+                  </p>
+                </div>
+
+                <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
+                  <Button
+                    size="lg"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 gap-2"
+                    onClick={() => setReaderBook(todaysBook)}
+                  >
+                    <BookOpen className="h-4 w-4" />
+                    Read Together
+                  </Button>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
       {/* Family Sessions */}
       <div className="space-y-6">
         {data.familySessions.map((session, index) => (
@@ -353,6 +425,15 @@ export default function Dashboard() {
           refetch();
         }}
       />
+
+      {readerBook && (
+        <BookReader
+          isOpen={!!readerBook}
+          onClose={() => setReaderBook(null)}
+          book={readerBook}
+          childrenIds={data?.children?.map((c: any) => c.id) || []}
+        />
+      )}
     </div>
   );
 }
