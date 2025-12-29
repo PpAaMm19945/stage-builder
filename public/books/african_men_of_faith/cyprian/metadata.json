@@ -1,0 +1,223 @@
+{
+  "bookId": "Cyprian",
+  "id": "cyprian",
+  "title": "The Bishop Who Stayed",
+  "subtitle": "A Story of Cyprian of Carthage",
+  "author": "Anthony Jr. Mwesigwa",
+  "illustrator": "AI Generated Illustrations",
+  "description": "The true story of Bishop Cyprian of Carthage, who demonstrated radical Christian mercy by organizing believers to care for everyone—friend and enemy alike—during a deadly plague.",
+  "genre": "Children's Picture Book - Religious & Educational",
+  "keywords": "Cyprian, Mercy, Plague, Christian Love, Generosity, Transformation, Church History, Carthage, Sanctification",
+  "ageRange": "6-9",
+  "publisher": "Petra Reformed Publishing",
+  "publisherLocation": "Kampala, Uganda",
+  "copyrightYear": 2025,
+  "edition": "First Edition",
+  "isbn": "ISBN-978-0-XXXXX-XXX-X",
+  "price": "8000 UGX/2.20 USD",
+  "website": "www.example.com",
+  "printLocation": "Uganda",
+  "dedication": "To those who risk everything to love their neighbor, even in times of fear.",
+  "authorBio": "Anthony Jr. Mwesigwa is a passionate storyteller dedicated to making history come alive for young readers.",
+  "backCoverText": "A mysterious plague swept through the city of Carthage. Fear caused doctors to run and families to hide. But Bishop Cyprian did not leave. Instead, he organized the Christians to risk their lives to serve everyone, showing a love that was stronger than fear. This is the true story of 'The Bishop Who Stayed.'",
+  "cover_image_url": "Cover Photo.png",
+  "pageFormat": {
+    "size": "A5",
+    "orientation": "landscape",
+    "width": "210mm",
+    "height": "148mm",
+    "flip": "short-edge",
+    "margins": {
+      "top": "10mm",
+      "right": "10mm",
+      "bottom": "10mm",
+      "left": "10mm"
+    }
+  },
+  "styleProfile": "print-a5-landscape-picturebook.css",
+  "bookType": "picturebook",
+  "pages": [
+    {
+      "type": "cover",
+      "image": "Cover Photo.png"
+    },
+    {
+      "type": "title",
+      "subtitle": "A Story of Cyprian of Carthage"
+    },
+    {
+      "type": "copyright"
+    },
+    {
+      "type": "dedication",
+      "text": "To those who risk everything to love their neighbor, even in times of fear."
+    },
+    {
+      "pageNumber": 1,
+      "type": "content",
+      "image": "Page 1.png",
+      "imageAlt": "A portrait of Bishop Cyprian, a dignified man in robes, standing in a busy North African city street.",
+      "text": [
+        "**Title Page (Text Only):** **The Bishop Who Stayed**",
+        "***A Story of Cyprian of Carthage***"
+      ]
+    },
+    {
+      "pageNumber": 2,
+      "type": "content",
+      "image": "Page 2.png",
+      "imageAlt": "A very wealthy man, Cyprian, standing in a grand Roman house, admiring his fine robes and piles of gold.",
+      "text": [
+        "In the grand city of Carthage, where the sun always shone, lived a rich man named Cyprian.",
+        "He had the finest silks, a massive house, and piles of gold coins.",
+        "Cyprian believed that happiness was measured by how many valuable things he owned."
+      ]
+    },
+    {
+      "pageNumber": 3,
+      "type": "content",
+      "image": "Page 3.png",
+      "imageAlt": "Cyprian sitting in simple clothes, reading a scroll (the Bible), looking up with a joyful and transformed expression.",
+      "text": [
+        "But one day, Cyprian heard about something far more precious than gold: the free, powerful grace of God.",
+        "He learned that God had forgiven all his sins through Jesus Christ.",
+        "When this truth filled his heart, the gold he owned suddenly looked dull. He felt a fierce, new love for God and for all people."
+      ]
+    },
+    {
+      "pageNumber": 4,
+      "type": "content",
+      "image": "Page 4.png",
+      "imageAlt": "Cyprian giving away bags of money and goods to poor families in the street, smiling with genuine happiness.",
+      "text": [
+        "Cyprian traded his old life for his new faith. He sold his huge house and all his expensive things.",
+        "He gave all the money away, sharing it with the poor and the struggling.",
+        "He chose a simple life so he could serve God with everything he had."
+      ]
+    },
+    {
+      "pageNumber": 5,
+      "type": "content",
+      "image": "Page 5.png",
+      "imageAlt": "Cyprian, now wearing a simple Bishop's robe, standing and teaching a group of attentive Christian people.",
+      "text": [
+        "Because of his deep faith and generous heart, the people of Carthage chose Cyprian to be their **Bishop**.",
+        "He became their shepherd, guiding the church with wisdom. He taught them: 'Because God has been so merciful to you, you must be merciful to everyone else!'"
+      ]
+    },
+    {
+      "pageNumber": 6,
+      "type": "content",
+      "image": "Page 6.png",
+      "imageAlt": "A crowded, dusty city street scene, with people starting to look sick, clutching their throats and coughing in fear.",
+      "text": [
+        "Then, a terrible disaster struck. A plague—a mysterious, deadly illness—hit Carthage like a storm.",
+        "People got sick fast. They coughed, shivered, and many sadly died. The whole city was overcome by panic and fear."
+      ]
+    },
+    {
+      "pageNumber": 7,
+      "type": "content",
+      "image": "Page 7.png",
+      "imageAlt": "An empty city street. Doctors abandoning their offices. People fleeing the city gates, leaving the sick behind.",
+      "text": [
+        "Everyone was terrified! Rich people ran away to the countryside. Doctors locked their doors.",
+        "Fear was so powerful that neighbors abandoned neighbors, and even family members ran away from their sick loved ones.",
+        "The poor and sick were left alone to die in the dusty streets."
+      ]
+    },
+    {
+      "pageNumber": 8,
+      "type": "content",
+      "image": "Page 8.png",
+      "imageAlt": "Cyprian standing with immense courage before his congregation in a dimly lit church, encouraging them with open hands.",
+      "text": [
+        "But Bishop Cyprian did not run. He gathered his church and spoke with a strong voice:",
+        "\"Friends, this is our time to shine! If we are in Christ, we do not fear death. Let us show the world the boundless love of God by serving those who need us most!\""
+      ]
+    },
+    {
+      "pageNumber": 9,
+      "type": "content",
+      "image": "Page 9.png",
+      "imageAlt": "Cyprian pointing as he gives clear instructions to Christians who are dividing up supplies and sections of the city.",
+      "text": [
+        "Cyprian quickly organized the church into a great team of mercy. He divided the city into zones.",
+        "He matched the strong to the hard work, the wealthy to donating funds, and everyone to offering their time and care.",
+        "They set out to serve the sick with fearless love."
+      ]
+    },
+    {
+      "pageNumber": 10,
+      "type": "content",
+      "image": "Page 10.png",
+      "imageAlt": "Christians kneeling in the street to gently wash and comfort sick non-believers.",
+      "text": [
+        "The Christians served **everyone**—not just their friends.",
+        "They cared for the neighbors who had ignored them and the pagans who had made fun of their faith.",
+        "They saw every suffering person as a precious neighbor in need, just as Jesus taught."
+      ]
+    },
+    {
+      "pageNumber": 11,
+      "type": "content",
+      "image": "Page 11.png",
+      "imageAlt": "A line of Christians carrying clean water jars, bread, and blankets. Others are respectfully burying the dead.",
+      "text": [
+        "They worked all day and through the night. They brought fresh water to the thirsty and warm blankets to the shivering.",
+        "They cleaned the sick and, most difficult of all, they buried the dead with dignity and prayer.",
+        "In the dark city, the Christians were the only light of hope."
+      ]
+    },
+    {
+      "pageNumber": 12,
+      "type": "content",
+      "image": "Page 12.png",
+      "imageAlt": "Non-believers standing under an archway, watching the Christians serve the sick with expressions of confusion and awe.",
+      "text": [
+        "The non-believers were astonished. They asked the Christians, \"Why do you risk your lives? Why do you help those who hate you?\"",
+        "They had never seen such fearless kindness before."
+      ]
+    },
+    {
+      "pageNumber": 13,
+      "type": "content",
+      "image": "Page 13.png",
+      "imageAlt": "A Christian speaking earnestly to a non-believer, gesturing with open hands as he explains their motivation.",
+      "text": [
+        "Cyprian's people answered: “We do this because Jesus Christ first loved us.",
+        "God showed us the greatest kindness when we were His enemies. Now, His love moves our hearts to do the same for all people.”",
+        "“This,” they declared, “is what true faith looks like in action.”"
+      ]
+    },
+    {
+      "pageNumber": 14,
+      "type": "content",
+      "image": "Page 14.png",
+      "imageAlt": "The city of Carthage restored to health and peace. Bishop Cyprian is standing on a high point, overlooking the hopeful city.",
+      "text": [
+        "The great plague finally ended, and the city began to heal.",
+        "Because of the love, courage, and mercy of Bishop Cyprian and the church, many people saw the power of God's grace.",
+        "They learned that the Bishop who stayed had truly shown them the path of Christ's selfless love."
+      ]
+    },
+    {
+      "type": "about-author",
+      "text": "<h3>A Note for Parents & Teachers</h3><p>The life of Cyprian beautifully illustrates the practical outworking of Christian faith. Here are some themes to discuss:</p><ul><li><strong>Transformation and Justification:</strong> Cyprian's decision to sell his riches and serve the poor (Page 4) demonstrates that true salvation results in radical life change. When we are forgiven (justified), our hearts are transformed, and our priorities shift from self-interest to serving others.</li><li><strong>Radical Christian Mercy (Love for Neighbor):</strong> The Christians cared for everyone, even those who hated them (Pages 10-11). This is the highest expression of Christian love, imitating Christ, who loved us while we were His enemies (Romans 5:8).</li><li><strong>Faith Over Fear (Sovereignty):</strong> Cyprian taught the believers that they had nothing to fear from death because their future was secure in Christ (Page 8). This encourages us to trust God's sovereignty over life and death, allowing us to serve others without being paralyzed by fear.</li></ul>"
+    },
+    {
+      "type": "back-cover",
+      "text": [
+        "A mysterious plague swept through the city of Carthage. Fear caused doctors to run and families to hide. But Bishop Cyprian did not leave.",
+        "Instead, he organized the Christians to risk their lives to serve everyone, showing a love that was stronger than fear.",
+        "This is the true story of 'The Bishop Who Stayed.'"
+      ]
+    }
+  ],
+  "pageCount": 21,
+  "learningStage": "early-years",
+  "domain": "language",
+  "minAgeMonths": 72,
+  "maxAgeMonths": 108,
+  "series": "African Men Of Faith"
+}

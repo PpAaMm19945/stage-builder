@@ -1,0 +1,212 @@
+{
+  "bookId": "Perpetua",
+  "id": "perpetua",
+  "title": "Perpetua's Brave Choice",
+  "subtitle": "The True Story of Courage and Unwavering Faith",
+  "author": "Anthony Jr. Mwesigwa",
+  "illustrator": "Anthony Jr. Mwesigwa",
+  "description": "The story of Saint Perpetua and her friend Felicity, who stood firm for Christ in the face of Roman persecution, demonstrating God's sustaining grace.",
+  "genre": "Children's Picture Book - Religious & Educational",
+  "keywords": "Perpetua, Felicity, Persecution, Perseverance, Courage, Martyrdom, Steadfastness, Carthage, North Africa, Church History",
+  "ageRange": "6-9",
+  "publisher": "Petra Reformed Publishing",
+  "publisherLocation": "Kampala, Uganda",
+  "copyrightYear": 2025,
+  "edition": "First Edition",
+  "isbn": "ISBN-978-0-XXXXX-XXX-X",
+  "price": "8000 UGX/2.20 USD",
+  "website": "www.example.com",
+  "printLocation": "Uganda",
+  "dedication": "To all who stand firm on the testimony of Jesus, no matter the cost.",
+  "authorBio": "Anthony Jr. Mwesigwa is a passionate storyteller dedicated to making history come alive for young readers.",
+  "backCoverText": "Perpetua had everything the world could offer—but she chose Jesus. When Roman soldiers arrested her, her father begged her to give up her faith. But Perpetua's answer echoes through history: 'I am a Christian.' This is the true story of how God gave two young mothers the strength to stand tall against the world.",
+  "cover_image_url": "Cover Photo.png",
+  "pageFormat": {
+    "size": "A5",
+    "orientation": "landscape",
+    "width": "210mm",
+    "height": "148mm",
+    "flip": "short-edge",
+    "margins": {
+      "top": "10mm",
+      "right": "10mm",
+      "bottom": "10mm",
+      "left": "10mm"
+    }
+  },
+  "styleProfile": "print-a5-landscape-picturebook.css",
+  "bookType": "picturebook",
+  "pages": [
+    {
+      "type": "cover",
+      "image": "Cover Photo.png"
+    },
+    {
+      "type": "title",
+      "subtitle": "The True Story of Courage and Unwavering Faith"
+    },
+    {
+      "type": "copyright"
+    },
+    {
+      "type": "dedication",
+      "text": "To all who stand firm on the testimony of Jesus, no matter the cost."
+    },
+    {
+      "pageNumber": 1,
+      "type": "content",
+      "image": "Page 1.png",
+      "imageAlt": "Perpetua, a young African woman, holding her baby son in the sunny Roman city of Carthage.",
+      "text": [
+        "In the busy, sunny city of Carthage, where the waves met the sand and the Roman flags flew high, lived a young woman named Perpetua. She had everything: a loving family, a comfortable home, and a beautiful baby son.",
+        "But Perpetua had something more precious than gold or comfort: a deep, secret faith in Jesus Christ. She knew that belonging to God was the most important choice she could ever make."
+      ]
+    },
+    {
+      "pageNumber": 2,
+      "type": "content",
+      "image": "Page 2.png",
+      "imageAlt": "Perpetua, Felicity, and other believers secretly gathered in a dimly lit room to pray and read scripture.",
+      "text": [
+        "In those days, it was very dangerous to believe in Jesus. The Roman rulers demanded that everyone worship their gods. But Perpetua and her friends, like Felicity, knew only one true God.",
+        "They met quietly to pray and read the good news of the Bible. This secret faith was their greatest joy and their greatest risk."
+      ]
+    },
+    {
+      "pageNumber": 3,
+      "type": "content",
+      "image": "Page 3.png",
+      "imageAlt": "Perpetua, holding her baby son tightly, being led by Roman guards toward the dark, heavy prison gate.",
+      "text": [
+        "One day, the soldiers came. They were looking for anyone who refused to worship the Roman gods. Perpetua, Felicity (who was also a new mother), and several other believers were arrested. The heavy doors of the dark, stuffy prison closed behind them.",
+        "It was frightening, but Perpetua held tight to her baby and whispered a prayer, asking God for strength."
+      ]
+    },
+    {
+      "pageNumber": 4,
+      "type": "content",
+      "image": "Page 4.png",
+      "imageAlt": "Perpetua's elderly father standing outside the prison bars, desperately pleading with her to deny her faith.",
+      "text": [
+        "Perpetua’s elderly father was heartbroken. He was not a Christian and couldn't understand her choice. He came to the prison gate, his voice shaking.",
+        "\"Perpetua, my daughter! Just say the words the Romans want to hear. Just pretend! Think of your son! Think of your family! You could be free today!\""
+      ]
+    },
+    {
+      "pageNumber": 5,
+      "type": "content",
+      "image": "Page 5.png",
+      "imageAlt": "Perpetua's hand pointing toward a simple water pitcher on the stone floor of her cell.",
+      "text": [
+        "Perpetua looked at her father. She loved him deeply, but her choice was clear. She pointed to a water pitcher sitting on the floor. \"Father,\" she said gently, \"can you call this pitcher by any other name than what it is?\"",
+        "Her father frowned. \"No, of course not,\" he said. \"Then I, too,\" Perpetua said firmly, \"cannot be called anything but what I am: a Christian. I belong to Jesus.\""
+      ]
+    },
+    {
+      "pageNumber": 6,
+      "type": "content",
+      "image": "Page 6.png",
+      "imageAlt": "Perpetua writing in her diary while Felicity sits beside her, both showing peace despite the grim prison.",
+      "text": [
+        "The prison was a terrible place, but it couldn't stop Perpetua’s faith from shining. She wrote in her diary, reminding herself and others that God was right there with them.",
+        "Felicity, her dear friend, was also full of courage. Even in chains, they sang hymns and shared their hope with each other. They knew that God sustains all His people, keeping their faith strong no matter what."
+      ]
+    },
+    {
+      "pageNumber": 7,
+      "type": "content",
+      "image": "Page 7.png",
+      "imageAlt": "Felicity, still chained, holding her newborn baby with a look of joy and gratitude, while Perpetua encourages her.",
+      "text": [
+        "Felicity was often scared, but her faith was rock-solid. Soon, she had her own baby while they were imprisoned. Though she was tired and still in chains, she looked at her new baby and knew God was good.",
+        "She and Perpetua helped each other, proving that God gives us friends to encourage us when we need it most."
+      ]
+    },
+    {
+      "pageNumber": 8,
+      "type": "content",
+      "image": "Page 8.png",
+      "imageAlt": "Perpetua, Felicity, and others standing bravely before the stern Roman judge in a large public square.",
+      "text": [
+        "Finally, the day of the trial came. They were led into a great public square. The Roman judge glared at them. \"Worship the Emperor! Offer a small sacrifice to the gods, and you will live!\" he commanded."
+      ]
+    },
+    {
+      "pageNumber": 9,
+      "type": "content",
+      "image": "Page 9.png",
+      "imageAlt": "A close-up of Perpetua’s resolute face as she stands trial, with her father's hand and her baby visible nearby.",
+      "text": [
+        "Again, Perpetua’s father pushed through the crowd, begging her to change her mind. He held out her little son.",
+        "But Perpetua did not waver. She knew that true comfort and lasting life were only found in following Jesus. She stood tall and declared, \"I am a Christian!\" Felicity stood beside her, repeating the same brave words."
+      ]
+    },
+    {
+      "pageNumber": 10,
+      "type": "content",
+      "image": "Page 10.png",
+      "imageAlt": "Perpetua and Felicity embracing briefly after their sentence, looking united and joyful in their spiritual victory.",
+      "text": [
+        "Because of their choice, the judge sentenced them to death. This was a very sad outcome for their lives on Earth, but for Perpetua and Felicity, it was a victory. They knew that even death could not separate them from God's unwavering love.",
+        "Their faith was not something they created themselves; it was a gift from God, and He would hold onto them until the very end."
+      ]
+    },
+    {
+      "pageNumber": 11,
+      "type": "content",
+      "image": "Page 11.png",
+      "imageAlt": "Perpetua and Felicity walking toward the arena entrance with firm steps and serene, resolved gazes.",
+      "text": [
+        "On their final day, they walked toward the arena, a place where people were publicly tested for their faith. They did not look sad or afraid. Instead, they looked peaceful and resolved, like soldiers who know their battle is already won.",
+        "They were witnesses to the whole world: a true Christian, upheld by God, will persevere and stand firm."
+      ]
+    },
+    {
+      "pageNumber": 12,
+      "type": "content",
+      "image": "Page 12.png",
+      "imageAlt": "Perpetua and Felicity holding hands tightly inside the vast arena, supporting one another.",
+      "text": [
+        "In the arena, a terrible moment came. But Perpetua and Felicity stood close together, supporting one another. They knew they were not alone. God was giving them the final strength they needed to finish their race well.",
+        "Their lives were a powerful demonstration that faith is not just a feeling, but an enduring commitment protected by God's power."
+      ]
+    },
+    {
+      "pageNumber": 13,
+      "type": "content",
+      "image": "Page 13.png",
+      "imageAlt": "Perpetua's face looking up toward the sky with immense peace and anticipation, bathed in bright light.",
+      "text": [
+        "Perpetua’s last words were a message of peace and encouragement to her friends. She showed the world that when you hold onto Jesus, you gain a reward far greater than anything this world can offer.",
+        "She made a brave choice to say 'no' to fear and 'yes' to her Savior."
+      ]
+    },
+    {
+      "pageNumber": 14,
+      "type": "content",
+      "image": "Page 14.png",
+      "imageAlt": "A close-up of Perpetua's open diary page written in ancient script, surrounded by a glowing light.",
+      "text": [
+        "Perpetua's story, written in her own diary, has been a shining light for Christians for hundreds of years. She teaches us that God gives us the strength to persevere through any difficulty.",
+        "Her courage reminds all believers that those whom God saves, He keeps, and their faith will stand firm to the end."
+      ]
+    },
+    {
+      "type": "about-author",
+      "text": "<h3>A Note for Parents & Teachers</h3><p>The lives of Perpetua and Felicity exemplify core Christian truths. Here are some themes to discuss:</p><ul><li><strong>The Assurance of Salvation:</strong> Perpetua did not rely on her own bravery; she knew her faith was a gift from God, and God would sustain her to the end. This aligns with the doctrine of the perseverance of the saints—those whom God saves, He keeps.</li><li><strong>Love vs. Loyalty:</strong> Perpetua's confrontation with her father demonstrates that true loyalty belongs to God above all earthly ties (Luke 14:26). Her love for her father was great, but her allegiance to Christ was total.</li><li><strong>Christ's Sufficiency in Suffering:</strong> Felicity's experience in the dungeon and Perpetua's peacefulness in the arena show that Christ's strength is perfected in our weakness, sustaining believers even in the face of death (2 Corinthians 12:9).</li></ul>"
+    },
+    {
+      "type": "colophon",
+      "text": "<p><strong>Colophon</strong></p><p>Written and Illustrated by <strong>Anthony Jr. Mwesigwa</strong></p><p>Illustrations created with Google Gemini AI</p><p>Published by <strong>Petra Reformed Publishing</strong><br>Kampala, Uganda</p><p>Typeface: Nunito by Vernon Adams</p><p>Printed in Uganda</p><p>© 2025</p>"
+    },
+    {
+      "type": "back-cover"
+    }
+  ],
+  "pageCount": 20,
+  "learningStage": "early-years",
+  "domain": "language",
+  "minAgeMonths": 72,
+  "maxAgeMonths": 108,
+  "series": "African Men Of Faith"
+}

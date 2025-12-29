@@ -1027,8 +1027,10 @@ function parseAgeRange(ageRange: string): { min: number; max: number } {
 }
 
 // Helper: Get book metadata from R2
+// Helper: Get book metadata from R2
 async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string): Promise<BookMetadata | null> {
-  const key = `${series}/${bookId}/metadata.json`;
+  // STRICT: Always expected at books/series/book/metadata.json
+  const key = `books/${series}/${bookId}/metadata.json`;
   const object = await bucket.get(key);
 
   if (!object) return null;
@@ -1051,6 +1053,7 @@ async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string)
     domain: data.domain || 'language',
     learningStage: data.learningStage || 'early-years',
     readingPrompts: data.readingPrompts,
+    coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
   };
 }
 
@@ -1179,6 +1182,116 @@ app.get('/api/books', async (c) => {
   }
 });
 
+// List all books (Legacy - keep for now if needed, or update frontend to use series)
+// ... keeping as is, but also adding Series endpoints
+
+// ============ SERIES ROUTES ============
+
+// List all series
+app.get('/api/series', async (c) => {
+  try {
+    const bucket = c.env.BOOKS_BUCKET;
+    const seriesList: any[] = [];
+
+    // List 'books/' prefix with '/' delimiter to get series folders
+    const rootList = await bucket.list({ prefix: 'books/', delimiter: '/' });
+    const seriesPrefixes = rootList.delimitedPrefixes || [];
+
+    for (const prefix of seriesPrefixes) {
+      const seriesId = prefix.replace('books/', '').replace('/', '');
+
+      // Try to get metadata
+      const metaKey = `${prefix}metadata.json`;
+      const metaObj = await bucket.get(metaKey);
+
+      let metadata: any = { id: seriesId, title: seriesId, description: '' };
+
+      if (metaObj) {
+        try {
+          metadata = await metaObj.json();
+        } catch (e) { console.warn(`Invalid metadata for series ${seriesId}`); }
+      }
+
+      seriesList.push({
+        ...metadata,
+        id: seriesId, // Ensure ID matches folder
+        coverUrl: `/api/series/${encodeURIComponent(seriesId)}/cover`
+      });
+    }
+
+    return c.json(seriesList);
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get series details
+app.get('/api/series/:seriesId', async (c) => {
+  try {
+    const seriesId = c.req.param('seriesId');
+    const bucket = c.env.BOOKS_BUCKET;
+    const prefix = `books/${seriesId}`;
+
+    // Get Metadata
+    const metaKey = `${prefix}/metadata.json`;
+    const metaObj = await bucket.get(metaKey);
+
+    if (!metaObj) {
+      return c.json({ error: 'Series not found' }, 404);
+    }
+
+    const metadata = await metaObj.json() as any;
+
+    // List Books in Series
+    const booksList = await bucket.list({ prefix: `${prefix}/`, delimiter: '/' });
+    const bookPrefixes = booksList.delimitedPrefixes || [];
+    const books: BookMetadata[] = [];
+
+    for (const bookPrefix of bookPrefixes) {
+      const bookId = bookPrefix.replace(`${prefix}/`, '').replace('/', '');
+      const bookMeta = await getBookMetadata(bucket, seriesId, bookId);
+      if (bookMeta) {
+        books.push(bookMeta);
+      }
+    }
+
+    return c.json({
+      ...metadata,
+      id: seriesId,
+      coverUrl: `/api/series/${encodeURIComponent(seriesId)}/cover`,
+      books
+    });
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get series cover
+app.get('/api/series/:seriesId/cover', async (c) => {
+  try {
+    const seriesId = c.req.param('seriesId');
+    const bucket = c.env.BOOKS_BUCKET;
+
+    // STRICT: books/{series}/cover.png
+    const key = `books/${seriesId}/cover.png`;
+    const object = await bucket.get(key);
+
+    if (object) {
+      const headers = new Headers();
+      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+      headers.set('Cache-Control', 'public, max-age=86400');
+      return new Response(object.body, { headers });
+    }
+
+    return c.json({ error: 'Series cover not found' }, 404);
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Get single book metadata
 app.get('/api/books/:series/:bookId', async (c) => {
   try {
@@ -1198,50 +1311,35 @@ app.get('/api/books/:series/:bookId', async (c) => {
 });
 
 // Get book cover image
+// Get book cover image
 app.get('/api/books/:series/:bookId/cover', async (c) => {
   try {
     const series = c.req.param('series');
     const bookId = c.req.param('bookId');
     const bucket = c.env.BOOKS_BUCKET;
 
-    // Cover file name variations
-    const coverNames = [
-      'cover.png', 'Cover.png',
-      'cover.jpg', 'Cover.jpg',
-      'Page-00.png', 'page-00.png',  // Some books use Page 0 as cover
-      'Page-01.png', 'page-01.png',  // Or Page 1
-      'Page 1.png', 'Page 01.png'
-    ];
+    // STRICT: Always books/{series}/{bookId}/images/cover.png
+    const key = `books/${series}/${bookId}/images/cover.png`;
+    const object = await bucket.get(key);
 
-    // Base path variations (with and without books/ prefix, with and without images/ subfolder)
-    const basePaths = [
-      `books/${series}/${bookId}/images/`,
-      `books/${series}/${bookId}/`,
-      `${series}/${bookId}/images/`,
-      `${series}/${bookId}/`
-    ];
-
-    // Try all combinations
-    for (const basePath of basePaths) {
-      for (const coverName of coverNames) {
-        const key = `${basePath}${coverName}`;
-        const object = await bucket.get(key);
-
-        if (object) {
-          const headers = new Headers();
-          headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-          headers.set('Cache-Control', 'public, max-age=86400');
-          return new Response(object.body, { headers });
-        }
-      }
+    if (object) {
+      const headers = new Headers();
+      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+      headers.set('Cache-Control', 'public, max-age=86400');
+      return new Response(object.body, { headers });
     }
 
-    return c.json({ error: 'Cover not found' }, 404);
+    return c.json({
+      error: 'Cover not found',
+      expected: key,
+      help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
+    }, 404);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
 });
 
+// Get book page image
 // Get book page image
 app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
   try {
@@ -1251,38 +1349,22 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     const bucket = c.env.BOOKS_BUCKET;
 
     const paddedNum = pageNum.padStart(2, '0');
-    const pageNames = [
-      `Page-${paddedNum}.png`,  // Page-01.png (most common in your books)
-      `Page-${pageNum}.png`,    // Page-1.png
-      `page-${paddedNum}.png`,  // page-01.png
-      `page-${paddedNum}.jpg`,
-      `page-${pageNum}.png`,
-      `Page ${pageNum}.png`,
-      `Page ${paddedNum}.png`,
-    ];
+    // STRICT: Always books/{series}/{bookId}/images/page-XX.png
+    const key = `books/${series}/${bookId}/images/page-${paddedNum}.png`;
+    const object = await bucket.get(key);
 
-    const basePaths = [
-      `books/${series}/${bookId}/images/`,
-      `books/${series}/${bookId}/`,
-      `${series}/${bookId}/images/`,
-      `${series}/${bookId}/`
-    ];
-
-    for (const basePath of basePaths) {
-      for (const pageName of pageNames) {
-        const key = `${basePath}${pageName}`;
-        const object = await bucket.get(key);
-
-        if (object) {
-          const headers = new Headers();
-          headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-          headers.set('Cache-Control', 'public, max-age=86400');
-          return new Response(object.body, { headers });
-        }
-      }
+    if (object) {
+      const headers = new Headers();
+      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+      headers.set('Cache-Control', 'public, max-age=86400');
+      return new Response(object.body, { headers });
     }
 
-    return c.json({ error: 'Page not found' }, 404);
+    return c.json({
+      error: 'Page not found',
+      expected: key,
+      help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
+    }, 404);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
@@ -1365,6 +1447,73 @@ app.get('/api/debug/r2', async (c) => {
     });
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
+  }
+});
+
+// Debug Book Audit
+app.get('/api/debug/books/audit', async (c) => {
+  // Protect
+  const secret = c.req.query('key');
+  if (secret !== 'DEBUG_SECRET') return c.json({ error: 'Unauthorized' }, 401);
+
+  const bucket = c.env.BOOKS_BUCKET;
+  const violations: any[] = [];
+  let totalBooks = 0;
+  let compliant = 0;
+
+  try {
+    // 1. List Series
+    const roots = await bucket.list({ prefix: 'books/', delimiter: '/' });
+    const seriesPrefixes = roots.delimitedPrefixes || [];
+
+    for (const seriesPrefix of seriesPrefixes) {
+      const seriesName = seriesPrefix.replace('books/', '').replace('/', '');
+      if (!/^[a-z0-9_]+$/.test(seriesName)) {
+        violations.push({ series: seriesName, issue: 'Series folder must be snake_case' });
+      }
+
+      // 2. List Books
+      const books = await bucket.list({ prefix: seriesPrefix, delimiter: '/' });
+      const bookPrefixes = books.delimitedPrefixes || [];
+
+      for (const bookPrefix of bookPrefixes) {
+        totalBooks++;
+        const bookId = bookPrefix.replace(seriesPrefix, '').replace('/', '');
+        const bookIssues: string[] = [];
+
+        if (!/^[a-z0-9_]+$/.test(bookId)) {
+          bookIssues.push('Book folder must be snake_case');
+        }
+
+        // 3. Check specific files
+        const cover = await bucket.head(bookPrefix + 'images/cover.png');
+        if (!cover) bookIssues.push('Missing images/cover.png');
+
+        const metadata = await bucket.get(bookPrefix + 'metadata.json');
+        if (!metadata) {
+          bookIssues.push('Missing metadata.json');
+        } else {
+          const m = await metadata.json() as any;
+          if (m.id !== bookId) bookIssues.push(`Metadata ID mismatch: ${m.id} != ${bookId}`);
+        }
+
+        if (bookIssues.length > 0) {
+          violations.push({ series: seriesName, bookId, issues: bookIssues });
+        } else {
+          compliant++;
+        }
+      }
+    }
+
+    return c.json({
+      totalBooks,
+      compliant,
+      nonCompliant: totalBooks - compliant,
+      violations
+    });
+
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
   }
 });
 

@@ -1,0 +1,14 @@
+{
+  "id": "counting_to_five",
+  "series": "My First Books",
+  "title": "Counting to Ten",
+  "author": "Anthony Jr. Mwesigwa",
+  "illustrator": "Anthony Jr. Mwesigwa",
+  "description": "Learn to count to 10 with fun objects from everyday life!",
+  "minAgeMonths": 24,
+  "maxAgeMonths": 60,
+  "pageCount": 10,
+  "domain": "cognitive",
+  "learningStage": "early-years",
+  "ageRange": "2-5 years"
+}
