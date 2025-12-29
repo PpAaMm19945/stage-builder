@@ -1048,25 +1048,35 @@ app.get('/api/books', async (c) => {
   try {
     const stage = c.req.query('stage');
     const ageMonths = c.req.query('ageMonths');
-
-    // List all objects in the bucket looking for metadata.json files
-    const listed = await c.env.BOOKS_BUCKET.list();
+    const bucket = c.env.BOOKS_BUCKET;
     const books: BookMetadata[] = [];
 
-    // Group by directory structure
-    const metadataKeys = listed.objects
-      .filter(obj => obj.key.endsWith('metadata.json'))
-      .map(obj => obj.key);
+    console.log('Starting book listing...');
 
-    for (const key of metadataKeys) {
-      const parts = key.split('/');
-      if (parts.length >= 3) {
-        const series = parts[0];
-        const bookId = parts[1];
-        const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId);
-        if (metadata) books.push(metadata);
+    // Step 1: List top-level series folders using delimiter
+    const seriesResult = await bucket.list({ delimiter: '/' });
+    const seriesPrefixes = seriesResult.delimitedPrefixes || [];
+    console.log('Series prefixes found:', seriesPrefixes);
+
+    // Step 2: For each series, list book folders
+    for (const seriesPrefix of seriesPrefixes) {
+      const seriesName = seriesPrefix.replace(/\/$/, ''); // Remove trailing slash
+      const booksResult = await bucket.list({ prefix: seriesPrefix, delimiter: '/' });
+      const bookPrefixes = booksResult.delimitedPrefixes || [];
+      console.log(`Books in ${seriesName}:`, bookPrefixes);
+
+      // Step 3: For each book folder, try to get metadata.json
+      for (const bookPrefix of bookPrefixes) {
+        const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
+        const metadata = await getBookMetadata(bucket, seriesName, bookId);
+        if (metadata) {
+          books.push(metadata);
+          console.log(`Loaded book: ${seriesName}/${bookId}`);
+        }
       }
     }
+
+    console.log(`Total books found: ${books.length}`);
 
     // Apply filters
     let filtered = books;
@@ -1079,6 +1089,8 @@ app.get('/api/books', async (c) => {
       const age = parseInt(ageMonths);
       filtered = filtered.filter(b => b.minAgeMonths <= age && b.maxAgeMonths >= age);
     }
+
+    console.log(`Filtered books: ${filtered.length} (stage=${stage}, ageMonths=${ageMonths})`);
 
     return c.json(filtered);
   } catch (error: any) {

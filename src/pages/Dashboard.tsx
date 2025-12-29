@@ -43,11 +43,11 @@ export default function Dashboard() {
   const [readerBook, setReaderBook] = useState<Book | null>(null);
 
   // Get youngest child for age-appropriate recommendations
-  const youngestChild = data?.children ? [...data.children].sort((a: any, b: any) => a.age_in_months - b.age_in_months)[0] : null;
+  const youngestChild = data?.children ? [...data.children].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0] : null;
 
   const { data: recommendedBooks } = useQuery({
-    queryKey: ['todays-book', youngestChild?.age_in_months],
-    queryFn: () => books.list({ ageMonths: youngestChild?.age_in_months }),
+    queryKey: ['todays-book', youngestChild?.ageInMonths],
+    queryFn: () => books.list({ ageMonths: youngestChild?.ageInMonths }),
     enabled: !!youngestChild,
   });
 
@@ -281,7 +281,7 @@ export default function Dashboard() {
               Today's Reading
             </CardTitle>
             <CardDescription className="text-indigo-900/60">
-              Selected for {youngestChild.name}'s age ({Math.floor(youngestChild.age_in_months / 12)}y)
+              Selected for {youngestChild.name}'s age ({Math.floor(youngestChild.ageInMonths / 12)}y)
             </CardDescription>
           </CardHeader>
           <CardContent className="pt-6">
@@ -428,8 +428,8 @@ export default function Dashboard() {
 
       {readerBook && (
         <BookReader
-          isOpen={!!readerBook}
-          onClose={() => setReaderBook(null)}
+          open={!!readerBook}
+          onOpenChange={(open) => !open && setReaderBook(null)}
           book={readerBook}
           childrenIds={data?.children?.map((c: any) => c.id) || []}
         />
