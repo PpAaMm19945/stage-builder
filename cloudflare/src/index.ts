@@ -1252,6 +1252,32 @@ app.get('/api/reading/history', async (c) => {
   }
 });
 
+// Debug R2 endpoint
+app.get('/api/debug/r2', async (c) => {
+  const secret = c.req.query('key');
+  if (secret !== 'DEBUG_SECRET') {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  try {
+    const bucket = c.env.BOOKS_BUCKET;
+    const prefix = c.req.query('prefix');
+    const delimiter = c.req.query('delimiter'); // optional override
+
+    const listNoDelimiter = await bucket.list({ prefix });
+    const listWithDelimiter = await bucket.list({ prefix, delimiter: delimiter || '/' });
+
+    return c.json({
+      prefix,
+      delimiter: delimiter || '/',
+      listNoDelimiter,
+      listWithDelimiter
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Health check
 app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
