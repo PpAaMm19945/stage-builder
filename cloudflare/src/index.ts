@@ -29,6 +29,7 @@ interface BookMetadata {
   domain: string;
   learningStage: string;
   readingPrompts?: { page: number; prompt: string }[];
+  coverUrl?: string;
 }
 
 interface User {
@@ -1043,6 +1044,39 @@ async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string)
   };
 }
 
+// Helper: List all delimited prefixes with pagination
+async function listAllPrefixes(bucket: R2Bucket, options: R2ListOptions): Promise<string[]> {
+  let prefixes: string[] = [];
+  let truncated = true;
+  let cursor: string | undefined;
+
+  while (truncated) {
+    const result = await bucket.list({ ...options, cursor });
+    prefixes = prefixes.concat(result.delimitedPrefixes || []);
+    truncated = result.truncated;
+    if (result.truncated) {
+      cursor = result.cursor;
+    }
+  }
+  return prefixes;
+}
+
+// Helper: Find metadata file in a book directory (case-insensitive)
+async function findMetadataFile(bucket: R2Bucket, bookPrefix: string): Promise<R2ObjectBody | null> {
+  // List files in the book directory to find metadata.json regardless of case
+  const result = await bucket.list({ prefix: bookPrefix });
+
+  const metadataKey = result.objects.find(obj =>
+    obj.key.toLowerCase().endsWith('/metadata.json') ||
+    obj.key.toLowerCase() === 'metadata.json'
+  )?.key;
+
+  if (metadataKey) {
+    return bucket.get(metadataKey);
+  }
+  return null;
+}
+
 // List all books
 app.get('/api/books', async (c) => {
   try {
@@ -1051,46 +1085,82 @@ app.get('/api/books', async (c) => {
     const bucket = c.env.BOOKS_BUCKET;
     const books: BookMetadata[] = [];
 
-    console.log('Starting book listing...');
+    console.log('Starting robust book listing...');
 
-    // Step 1: List top-level series folders using delimiter
-    const seriesResult = await bucket.list({ delimiter: '/' });
-    const seriesPrefixes = seriesResult.delimitedPrefixes || [];
-    console.log('Series prefixes found:', seriesPrefixes);
+    // Step 1: Detect Root
+    // Check if 'books/' exists at the root level
+    const rootList = await bucket.list({ delimiter: '/' });
+    const rootPrefixes = rootList.delimitedPrefixes || [];
 
-    // Step 2: For each series, list book folders
+    let rootPath = '';
+    if (rootPrefixes.includes('books/')) {
+      rootPath = 'books/';
+    }
+    console.log(`Detected root path: '${rootPath}'`);
+
+    // Step 2: List Series (handling pagination)
+    const seriesPrefixes = await listAllPrefixes(bucket, {
+      prefix: rootPath,
+      delimiter: '/'
+    });
+    console.log(`Found ${seriesPrefixes.length} series prefixes`);
+
+    // Step 3: Iterate Series
     for (const seriesPrefix of seriesPrefixes) {
-      const seriesName = seriesPrefix.replace(/\/$/, ''); // Remove trailing slash
-      const booksResult = await bucket.list({ prefix: seriesPrefix, delimiter: '/' });
-      const bookPrefixes = booksResult.delimitedPrefixes || [];
-      console.log(`Books in ${seriesName}:`, bookPrefixes);
+      const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
 
-      // Step 3: For each book folder, try to get metadata.json
+      // Step 4: List Books in Series (handling pagination)
+      const bookPrefixes = await listAllPrefixes(bucket, {
+        prefix: seriesPrefix,
+        delimiter: '/'
+      });
+
+      // Step 5: Process Books
       for (const bookPrefix of bookPrefixes) {
+        // bookPath is the relative path from the series, e.g., "Book Title/"
         const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
-        const metadata = await getBookMetadata(bucket, seriesName, bookId);
-        if (metadata) {
-          books.push(metadata);
-          console.log(`Loaded book: ${seriesName}/${bookId}`);
+
+        try {
+          // Find and load metadata
+          const object = await findMetadataFile(bucket, bookPrefix);
+
+          if (object) {
+            const data = await object.json() as any;
+            const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+            books.push({
+              id: data.id || bookId,
+              series: data.series || seriesName,
+              title: data.title || bookId,
+              author: data.author,
+              illustrator: data.illustrator,
+              description: data.description || '',
+              minAgeMonths: data.minAgeMonths || ageRange.min,
+              maxAgeMonths: data.maxAgeMonths || ageRange.max,
+              pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+              domain: data.domain || 'language',
+              learningStage: data.learningStage || 'early-years',
+              readingPrompts: data.readingPrompts,
+              coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
+            });
+          }
+        } catch (e) {
+          console.warn(`Failed to load book ${bookId}:`, e);
         }
       }
     }
 
-    console.log(`Total books found: ${books.length}`);
+    console.log(`Total books loaded: ${books.length}`);
 
-    // Apply filters
+    // Apply filters matching the original logic
     let filtered = books;
-
     if (stage) {
       filtered = filtered.filter(b => b.learningStage === stage);
     }
-
     if (ageMonths) {
       const age = parseInt(ageMonths);
       filtered = filtered.filter(b => b.minAgeMonths <= age && b.maxAgeMonths >= age);
     }
-
-    console.log(`Filtered books: ${filtered.length} (stage=${stage}, ageMonths=${ageMonths})`);
 
     return c.json(filtered);
   } catch (error: any) {
