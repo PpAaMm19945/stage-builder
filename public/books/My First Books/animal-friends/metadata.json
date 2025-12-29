@@ -1,0 +1,14 @@
+{
+    "id": "animal-friends",
+    "series": "My First Books",
+    "title": "Animal Friends",
+    "author": "Anthony Jr. Mwesigwa",
+    "illustrator": "Anthony Jr. Mwesigwa",
+    "description": "Meet the friendly animals that live around us!",
+    "minAgeMonths": 24,
+    "maxAgeMonths": 48,
+    "pageCount": 12,
+    "domain": "language",
+    "learningStage": "early-years",
+    "ageRange": "2-4 years"
+}

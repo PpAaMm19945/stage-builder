@@ -1,6 +1,6 @@
 ---
-title: Rangi Zangu
-subtitle: My Colors
+title: My Colors
+subtitle: A First Colors Book
 author: Anthony Jr. Mwesigwa
 illustrator: Anthony Jr. Mwesigwa
 publisher: Petra Reformed Publishing
@@ -9,7 +9,7 @@ copyrightYear: 2025
 ageRange: 1-4 years
 domain: pre-academic
 description: Explore colors in everyday objects from an East African home!
-keywords: colors, rangi, Swahili, first reader, early learning, Uganda
+keywords: colors, first reader, early learning, Uganda, children
 ---
 
 # Dedication
@@ -21,7 +21,7 @@ For the little eyes learning to see the beautiful world God made.
 # Page 1
 ![Page 1](images/page-01.png)
 
-RED like Maama's kitenge dress.
+RED like Mama's pretty dress.
 
 **Ask:** What else is red?
 
@@ -30,7 +30,7 @@ RED like Maama's kitenge dress.
 # Page 2
 ![Page 2](images/page-02.png)
 
-YELLOW like the morning sun over Kampala.
+YELLOW like the morning sun.
 
 **Ask:** Can you point to something yellow?
 
@@ -48,16 +48,16 @@ GREEN like banana leaves swaying in the wind.
 # Page 4
 ![Page 4](images/page-04.png)
 
-BLUE like the big, beautiful sky.
+BLUE like the big sky above.
 
-**Ask:** Look outside! What color is the sky today?
+**Ask:** What color is the water?
 
 ---
 
 # Page 5
 ![Page 5](images/page-05.png)
 
-BROWN like Taata's strong hands.
+BROWN like my beautiful hands.
 
 **Ask:** What color are your hands?
 
@@ -66,27 +66,27 @@ BROWN like Taata's strong hands.
 # Page 6
 ![Page 6](images/page-06.png)
 
-ORANGE like a juicy passion fruit.
+ORANGE like a ripe passion fruit.
 
-**Ask:** Can you find something orange?
+**Ask:** What fruits are orange?
 
 ---
 
 # Page 7
 ![Page 7](images/page-07.png)
 
-PURPLE like beautiful bougainvillea flowers.
+PURPLE like beautiful flowers on the fence.
 
-**Ask:** Do you like flowers?
+**Ask:** Can you find something purple?
 
 ---
 
 # Page 8
 ![Page 8](images/page-08.png)
 
-BLACK like a charcoal stove (sigiri) cooking supper.
+BLACK like the cooking stove.
 
-**Ask:** Is the stove hot or cold?
+**Ask:** What else is black?
 
 ---
 
@@ -95,16 +95,16 @@ BLACK like a charcoal stove (sigiri) cooking supper.
 
 WHITE like fresh milk in a cup.
 
-**Ask:** Do you like to drink milk?
+**Ask:** What else is white?
 
 ---
 
 # Page 10
 ![Page 10](images/page-10.png)
 
-Colors are everywhere in our world!
+So many beautiful colors all around me!
 
-**Ask:** What is your favorite color?
+**Ask:** What is YOUR favorite color?
 
 ---
 
@@ -129,4 +129,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Red, yellow, green, and blue! Discover the beautiful colors all around you in this delightful first colors book. Perfect for babies and toddlers aged 1-4!
+Red, yellow, green, blue! Discover the beautiful colors that fill our world. A perfect first colors book for toddlers aged 1-4!

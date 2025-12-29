@@ -1,6 +1,6 @@
 ---
-title: Boda Boda and Friends
-subtitle: Things That Go in Uganda
+title: Things That Go
+subtitle: A First Vehicles Book
 author: Anthony Jr. Mwesigwa
 illustrator: Anthony Jr. Mwesigwa
 publisher: Petra Reformed Publishing
@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 1-4 years
 domain: cognitive
-description: Discover the exciting vehicles of Uganda! From boda bodas to buses, learn what goes VROOM!
-keywords: vehicles, boda boda, matatu, transport, Uganda, first reader, things that go
+description: Discover exciting vehicles! From motorcycles to buses, learn what goes VROOM!
+keywords: vehicles, transport, first reader, things that go, early learning, children
 ---
 
 # Dedication
@@ -21,25 +21,25 @@ For all the little ones who wave at every passing vehicle!
 # Page 1
 ![Page 1](images/page-01.png)
 
-BODA BODA goes PII-PII!
+MOTORCYCLE goes VROOM VROOM!
 
-**Ask:** Can you say pii-pii?
+**Ask:** Can you say vroom vroom?
 
 ---
 
 # Page 2
 ![Page 2](images/page-02.png)
 
-MATATU goes BEEP BEEP!
+MINIBUS goes BEEP BEEP!
 
-**Ask:** Where does the matatu go?
+**Ask:** Where does the bus go?
 
 ---
 
 # Page 3
 ![Page 3](images/page-03.png)
 
-BIG TRUCK goes VROOOOM!
+BIG TRUCK goes HONK HONK!
 
 **Ask:** What is the truck carrying?
 
@@ -84,7 +84,7 @@ TRAIN goes Chugga-Chugga Choo-Choo!
 # Page 8
 ![Page 8](images/page-08.png)
 
-WHEELBARROW carries heavy water. Squeak squeak!
+WHEELBARROW carries heavy things. Squeak squeak!
 
 **Ask:** What can you carry in a wheelbarrow?
 
@@ -93,7 +93,7 @@ WHEELBARROW carries heavy water. Squeak squeak!
 # Page 9
 ![Page 9](images/page-09.png)
 
-BIG BUS goes HONK HONK! Taking people far away.
+BIG BUS takes people far away. HONK HONK!
 
 **Ask:** Where would you like to travel?
 
@@ -129,4 +129,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Pii-pii! Beep beep! Vroom vroom! Discover the exciting vehicles of Uganda in this fun first book about things that go. Perfect for babies and toddlers aged 1-4!
+Vroom vroom! Beep beep! Honk honk! Discover exciting vehicles in this fun first book about things that go. Perfect for babies and toddlers aged 1-4!

@@ -1,6 +1,6 @@
 ---
-title: Amina's Feelings
-subtitle: How Do You Feel Today?
+title: My Feelings Today
+subtitle: A First Emotions Book
 author: Anthony Jr. Mwesigwa
 illustrator: Anthony Jr. Mwesigwa
 publisher: Petra Reformed Publishing
@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-5 years
 domain: social-emotional
-description: Learn about feelings with Amina! Happy, sad, angry, scared, proud, shy—all feelings are okay.
-keywords: feelings, emotions, social-emotional, Amina, first reader, Uganda, early learning
+description: Learn about feelings! Happy, sad, angry, scared, proud, shy—all feelings are okay.
+keywords: feelings, emotions, social-emotional, first reader, early learning, children
 ---
 
 # Dedication
@@ -21,7 +21,7 @@ For every child learning to understand the big feelings in their little hearts.
 # Page 1
 ![Page 1](images/page-01.png)
 
-Amina feels HAPPY when Maama gives her a hug.
+I feel HAPPY when Mama gives me a hug.
 
 **Ask:** What makes you happy?
 
@@ -30,7 +30,7 @@ Amina feels HAPPY when Maama gives her a hug.
 # Page 2
 ![Page 2](images/page-02.png)
 
-Amina feels SAD when her toy breaks.
+I feel SAD when my toy breaks.
 
 **Ask:** What do you do when you feel sad?
 
@@ -39,7 +39,7 @@ Amina feels SAD when her toy breaks.
 # Page 3
 ![Page 3](images/page-03.png)
 
-Amina feels ANGRY when someone takes her food.
+I feel ANGRY when someone takes my food.
 
 **Ask:** What makes you angry?
 
@@ -48,7 +48,7 @@ Amina feels ANGRY when someone takes her food.
 # Page 4
 ![Page 4](images/page-04.png)
 
-Amina feels SCARED when thunder goes BOOM!
+I feel SCARED when thunder goes BOOM!
 
 **Ask:** What helps you feel brave?
 
@@ -57,7 +57,7 @@ Amina feels SCARED when thunder goes BOOM!
 # Page 5
 ![Page 5](images/page-05.png)
 
-Amina feels EXCITED on market day!
+I feel EXCITED on market day!
 
 **Ask:** What makes you excited?
 
@@ -66,7 +66,7 @@ Amina feels EXCITED on market day!
 # Page 6
 ![Page 6](images/page-06.png)
 
-Amina feels TIRED after playing all day.
+I feel TIRED after playing all day.
 
 **Ask:** What do you do when you are tired?
 
@@ -75,7 +75,7 @@ Amina feels TIRED after playing all day.
 # Page 7
 ![Page 7](images/page-07.png)
 
-Amina feels LOVED every single day.
+I feel LOVED every single day.
 
 **Ask:** Who loves you?
 
@@ -84,7 +84,7 @@ Amina feels LOVED every single day.
 # Page 8
 ![Page 8](images/page-08.png)
 
-Amina feels PROUD when she learns something new.
+I feel PROUD when I learn something new.
 
 **Ask:** What are you proud of?
 
@@ -93,7 +93,7 @@ Amina feels PROUD when she learns something new.
 # Page 9
 ![Page 9](images/page-09.png)
 
-Amina feels SHY when she meets a new friend.
+I feel SHY when I meet a new friend.
 
 **Ask:** How do you say hello?
 
@@ -102,7 +102,7 @@ Amina feels SHY when she meets a new friend.
 # Page 10
 ![Page 10](images/page-10.png)
 
-Amina feels FRUSTRATED when her tower falls down.
+I feel FRUSTRATED when my tower falls down.
 
 **Ask:** Do you try again?
 
@@ -111,7 +111,7 @@ Amina feels FRUSTRATED when her tower falls down.
 # Page 11
 ![Page 11](images/page-11.png)
 
-Amina feels CURIOUS when she sees a tiny bug.
+I feel CURIOUS when I see a tiny bug.
 
 **Ask:** What do you like to explore?
 
@@ -147,4 +147,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Happy, sad, angry, scared, proud, shy—Amina feels them all! Join her as she discovers that all feelings are okay. A gentle first book about emotions for children aged 2-5.
+Happy, sad, angry, scared, proud, shy—we feel them all! Discover that all feelings are okay. A gentle first book about emotions for children aged 2-5.

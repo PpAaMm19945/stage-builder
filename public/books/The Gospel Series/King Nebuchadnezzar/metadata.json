@@ -1,0 +1,220 @@
+{
+  "bookId": "King-Nebuchadnezzar",
+  "id": "King-Nebuchadnezzar",
+  "title": "King Nebuchadnezzar",
+  "subtitle": "The Gospel Series",
+  "author": "Unknown",
+  "illustrator": "Unknown",
+  "description": "The story of King Nebuchadnezzar from the Gospel Series.",
+  "genre": "Children's Picture Book - Biblical",
+  "keywords": "bible, gospel, children, story",
+  "ageRange": "3-6",
+  "publisher": "Petra Reformed Publishing",
+  "publisherLocation": "Kampala, Uganda",
+  "copyrightYear": 2025,
+  "edition": "First Edition",
+  "isbn": "ISBN-PENDING",
+  "price": "0",
+  "website": "www.example.com",
+  "printLocation": "Uganda",
+  "dedication": "To all children learning the good news.",
+  "authorBio": "A collection of faithful retellings of Bible stories.",
+  "backCoverText": "Read the amazing story of King Nebuchadnezzar.",
+  "cover_image_url": "cover.png",
+  "pageFormat": {
+    "size": "Square",
+    "orientation": "landscape",
+    "width": "200mm",
+    "height": "200mm",
+    "flip": "short-edge",
+    "margins": {
+      "top": "10mm",
+      "right": "10mm",
+      "bottom": "10mm",
+      "left": "10mm"
+    }
+  },
+  "styleProfile": "print-square-picturebook.css",
+  "bookType": "picturebook",
+  "learningStage": "early-years",
+  "domain": "spiritual",
+  "minAgeMonths": 36,
+  "maxAgeMonths": 72,
+  "pages": [
+    {
+      "type": "cover",
+      "image": "cover.png"
+    },
+    {
+      "type": "title",
+      "subtitle": "The Gospel Series"
+    },
+    {
+      "type": "copyright"
+    },
+    {
+      "type": "dedication",
+      "text": "To all children learning the good news."
+    },
+    {
+      "pageNumber": 1,
+      "type": "content",
+      "image": "images/page-01.png",
+      "imageAlt": "Illustration for page 1 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 2,
+      "type": "content",
+      "image": "images/page-02.png",
+      "imageAlt": "Illustration for page 2 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 3,
+      "type": "content",
+      "image": "images/page-03.png",
+      "imageAlt": "Illustration for page 3 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 4,
+      "type": "content",
+      "image": "images/page-04.png",
+      "imageAlt": "Illustration for page 4 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 5,
+      "type": "content",
+      "image": "images/page-05.png",
+      "imageAlt": "Illustration for page 5 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 6,
+      "type": "content",
+      "image": "images/page-06.png",
+      "imageAlt": "Illustration for page 6 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 7,
+      "type": "content",
+      "image": "images/page-07.png",
+      "imageAlt": "Illustration for page 7 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 8,
+      "type": "content",
+      "image": "images/page-08.png",
+      "imageAlt": "Illustration for page 8 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 9,
+      "type": "content",
+      "image": "images/page-09.png",
+      "imageAlt": "Illustration for page 9 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 10,
+      "type": "content",
+      "image": "images/page-10.png",
+      "imageAlt": "Illustration for page 10 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 11,
+      "type": "content",
+      "image": "images/page-11.png",
+      "imageAlt": "Illustration for page 11 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 12,
+      "type": "content",
+      "image": "images/page-12.png",
+      "imageAlt": "Illustration for page 12 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 13,
+      "type": "content",
+      "image": "images/page-13.png",
+      "imageAlt": "Illustration for page 13 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 14,
+      "type": "content",
+      "image": "images/page-14.png",
+      "imageAlt": "Illustration for page 14 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 15,
+      "type": "content",
+      "image": "images/page-15.png",
+      "imageAlt": "Illustration for page 15 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 16,
+      "type": "content",
+      "image": "images/page-16.png",
+      "imageAlt": "Illustration for page 16 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "pageNumber": 17,
+      "type": "content",
+      "image": "images/page-17.png",
+      "imageAlt": "Illustration for page 17 of King Nebuchadnezzar",
+      "text": [
+        ""
+      ]
+    },
+    {
+      "type": "back-cover",
+      "text": [
+        "Read the amazing story of King Nebuchadnezzar."
+      ]
+    }
+  ],
+  "pageCount": 22
+}

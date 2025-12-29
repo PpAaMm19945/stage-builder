@@ -1,6 +1,6 @@
 ---
-title: Wanyama wa Kampala
-subtitle: Animals of Kampala
+title: Animal Friends
+subtitle: A First Animals Book
 author: Anthony Jr. Mwesigwa
 illustrator: Anthony Jr. Mwesigwa
 publisher: Petra Reformed Publishing
@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-4 years
 domain: language
-description: Meet the friendly animals that live around Kampala and the Uganda Wildlife Conservation Centre!
-keywords: animals, wanyama, Swahili, Kampala, Uganda, zoo, Entebbe, first reader
+description: Meet the friendly animals that live around us!
+keywords: animals, first reader, early learning, Uganda, children
 ---
 
 # Dedication
@@ -21,7 +21,7 @@ For all the children who love animals—furry, feathery, and four-legged friends
 # Page 1
 ![Page 1](images/page-01.png)
 
-KUKU! The hen says "Ko-ko-ko-ko!"
+HEN! The hen says "Cluck-cluck-cluck!"
 
 **Ask:** Can you cluck like a hen?
 
@@ -30,7 +30,7 @@ KUKU! The hen says "Ko-ko-ko-ko!"
 # Page 2
 ![Page 2](images/page-02.png)
 
-MBWA! The dog says "Wow-wow!"
+DOG! The dog says "Woof-woof!"
 
 **Ask:** What does a dog say?
 
@@ -39,7 +39,7 @@ MBWA! The dog says "Wow-wow!"
 # Page 3
 ![Page 3](images/page-03.png)
 
-PAKA! The cat says "Miaow!"
+CAT! The cat says "Meow!"
 
 **Ask:** Can you purr like a cat?
 
@@ -48,7 +48,7 @@ PAKA! The cat says "Miaow!"
 # Page 4
 ![Page 4](images/page-04.png)
 
-NG'OMBE! The cow says "Moo-oo!"
+COW! The cow says "Moo-oo!"
 
 **Ask:** What does a cow give us?
 
@@ -57,7 +57,7 @@ NG'OMBE! The cow says "Moo-oo!"
 # Page 5
 ![Page 5](images/page-05.png)
 
-MBUZI! The goat says "Mee-mee!"
+GOAT! The goat says "Meh-meh!"
 
 **Ask:** Can you jump like a goat?
 
@@ -66,7 +66,7 @@ MBUZI! The goat says "Mee-mee!"
 # Page 6
 ![Page 6](images/page-06.png)
 
-KASUKU! The parrot says "Hello! Hello!"
+PARROT! The parrot says "Hello! Hello!"
 
 **Ask:** What color is the parrot?
 
@@ -75,7 +75,7 @@ KASUKU! The parrot says "Hello! Hello!"
 # Page 7
 ![Page 7](images/page-07.png)
 
-SIMBA! The lion roars "ROAAAAR!"
+LION! The lion roars "ROAAAAR!"
 
 **Ask:** Can you roar like a lion?
 
@@ -84,7 +84,7 @@ SIMBA! The lion roars "ROAAAAR!"
 # Page 8
 ![Page 8](images/page-08.png)
 
-NJOVU! The elephant has a long trunk.
+ELEPHANT! The elephant has a long trunk.
 
 **Ask:** Can you wave your arm like a trunk?
 
@@ -93,7 +93,7 @@ NJOVU! The elephant has a long trunk.
 # Page 9
 ![Page 9](images/page-09.png)
 
-NKIMA! The monkey likes to climb trees.
+MONKEY! The monkey likes to climb trees.
 
 **Ask:** Can you climb like a monkey?
 
@@ -102,7 +102,7 @@ NKIMA! The monkey likes to climb trees.
 # Page 10
 ![Page 10](images/page-10.png)
 
-KIBOKO! The hippo splashes in the water.
+HIPPO! The hippo splashes in the water.
 
 **Ask:** Where does the hippo live?
 
@@ -111,7 +111,7 @@ KIBOKO! The hippo splashes in the water.
 # Page 11
 ![Page 11](images/page-11.png)
 
-PUNDA MILIA! The zebra has black and white stripes.
+ZEBRA! The zebra has black and white stripes.
 
 **Ask:** How many stripes can you see?
 
@@ -120,7 +120,7 @@ PUNDA MILIA! The zebra has black and white stripes.
 # Page 12
 ![Page 12](images/page-12.png)
 
-So many animal friends in Kampala!
+So many animal friends all around us!
 
 **Ask:** Which animal is your favorite?
 
@@ -147,4 +147,4 @@ Kampala, Uganda
 
 # Back Cover
 
-Kuku, mbwa, simba, njovu! Discover the wonderful animals of Uganda in this delightful first animals book. From village friends to zoo favorites, perfect for toddlers aged 2-4!
+Hen, dog, lion, elephant! Discover wonderful animals in this delightful first animals book. From farm friends to wildlife favorites, perfect for toddlers aged 2-4!

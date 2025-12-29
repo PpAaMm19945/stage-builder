@@ -1,5 +1,5 @@
 ---
-title: Kato Counts to Five
+title: Counting to Ten
 subtitle: A First Numbers Book
 author: Anthony Jr. Mwesigwa
 illustrator: Anthony Jr. Mwesigwa
@@ -8,8 +8,8 @@ publisherLocation: Kampala, Uganda
 copyrightYear: 2025
 ageRange: 2-5 years
 domain: cognitive
-description: Learn to count to 10 with fun objects from everyday Ugandan life!
-keywords: counting, numbers, Uganda, first reader, early learning, Kato, Nsenene, Engalabi
+description: Learn to count to 10 with fun objects from everyday life!
+keywords: counting, numbers, first reader, early learning, children
 ---
 
 # Dedication
@@ -21,7 +21,7 @@ For the little ones taking their first steps into the world of numbers.
 # Page 1
 ![Page 1](images/page-01.png)
 
-One yellow banana on Maama's plate.
+ONE yellow banana on Mama's plate.
 
 **Ask:** Can you show me one finger?
 
@@ -30,7 +30,7 @@ One yellow banana on Maama's plate.
 # Page 2
 ![Page 2](images/page-02.png)
 
-Two brown hens pecking in the yard.
+TWO brown hens pecking in the yard.
 
 **Ask:** Can you count to two?
 
@@ -39,7 +39,7 @@ Two brown hens pecking in the yard.
 # Page 3
 ![Page 3](images/page-03.png)
 
-Three red tomatoes in the basket.
+THREE red tomatoes in the basket.
 
 **Ask:** How many tomatoes do you see?
 
@@ -48,7 +48,7 @@ Three red tomatoes in the basket.
 # Page 4
 ![Page 4](images/page-04.png)
 
-Four green mangoes hanging on the tree.
+FOUR sweet mangoes on the tree.
 
 **Ask:** Can you show me four fingers?
 
@@ -57,7 +57,7 @@ Four green mangoes hanging on the tree.
 # Page 5
 ![Page 5](images/page-05.png)
 
-Five happy children playing in the village!
+FIVE happy children playing together!
 
 **Ask:** Let's count them together!
 
@@ -66,7 +66,7 @@ Five happy children playing in the village!
 # Page 6
 ![Page 6](images/page-06.png)
 
-Six loud drums beating a rhythm! *Boom-didi-boom!*
+SIX loud drums beating a rhythm! *Boom-boom-boom!*
 
 **Ask:** Can you pretend to play a drum?
 
@@ -75,7 +75,7 @@ Six loud drums beating a rhythm! *Boom-didi-boom!*
 # Page 7
 ![Page 7](images/page-07.png)
 
-Seven tasty nsenene hopping in the grass.
+SEVEN crunchy grasshoppers hopping in the grass.
 
 **Ask:** Have you ever seen a grasshopper?
 
@@ -84,7 +84,7 @@ Seven tasty nsenene hopping in the grass.
 # Page 8
 ![Page 8](images/page-08.png)
 
-Eight silver fish swimming in the lake.
+EIGHT silver fish swimming in the lake.
 
 **Ask:** Can you make a fish face?
 
@@ -93,7 +93,7 @@ Eight silver fish swimming in the lake.
 # Page 9
 ![Page 9](images/page-09.png)
 
-Nine stripes on a playful zebra.
+NINE stripes on a playful zebra.
 
 **Ask:** What colors is the zebra?
 
@@ -102,7 +102,7 @@ Nine stripes on a playful zebra.
 # Page 10
 ![Page 10](images/page-10.png)
 
-Ten bright stars twinkling above the village.
+TEN bright stars twinkling in the night sky.
 
 **Ask:** Touch your nose ten times!
 
@@ -129,4 +129,4 @@ Kampala, Uganda
 
 # Back Cover
 
-One banana, two hens, three tomatoes... count all the way to ten with Kato! Discover numbers in the beautiful sights and sounds of Uganda. Perfect for little learners aged 2-5!
+One banana, two hens, three tomatoes... count all the way to ten! Discover numbers with everyday objects. Perfect for little learners aged 2-5!
