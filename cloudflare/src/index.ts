@@ -1202,20 +1202,37 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
   try {
     const series = c.req.param('series');
     const bookId = c.req.param('bookId');
+    const bucket = c.env.BOOKS_BUCKET;
 
-    // Try multiple possible cover file names (handle case variations)
-    const coverNames = ['cover.png', 'Cover.png', 'cover.jpg', 'Cover.jpg', 'Cover Photo.png', 'Cover Photo.jpg', 'page-01.png', 'Page 1.png', 'Page 01.png'];
+    // Cover file name variations
+    const coverNames = [
+      'cover.png', 'Cover.png',
+      'cover.jpg', 'Cover.jpg',
+      'Page-00.png', 'page-00.png',  // Some books use Page 0 as cover
+      'Page-01.png', 'page-01.png',  // Or Page 1
+      'Page 1.png', 'Page 01.png'
+    ];
 
-    for (const coverName of coverNames) {
-      const key = `${series}/${bookId}/${coverName}`;
-      const object = await c.env.BOOKS_BUCKET.get(key);
+    // Base path variations (with and without books/ prefix, with and without images/ subfolder)
+    const basePaths = [
+      `books/${series}/${bookId}/images/`,
+      `books/${series}/${bookId}/`,
+      `${series}/${bookId}/images/`,
+      `${series}/${bookId}/`
+    ];
 
-      if (object) {
-        const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-        headers.set('Cache-Control', 'public, max-age=86400');
+    // Try all combinations
+    for (const basePath of basePaths) {
+      for (const coverName of coverNames) {
+        const key = `${basePath}${coverName}`;
+        const object = await bucket.get(key);
 
-        return new Response(object.body, { headers });
+        if (object) {
+          const headers = new Headers();
+          headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+          headers.set('Cache-Control', 'public, max-age=86400');
+          return new Response(object.body, { headers });
+        }
       }
     }
 
@@ -1231,44 +1248,37 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     const series = c.req.param('series');
     const bookId = c.req.param('bookId');
     const pageNum = c.req.param('pageNum');
+    const bucket = c.env.BOOKS_BUCKET;
 
-    // Try multiple page naming conventions
     const paddedNum = pageNum.padStart(2, '0');
     const pageNames = [
-      `page-${paddedNum}.png`,
+      `Page-${paddedNum}.png`,  // Page-01.png (most common in your books)
+      `Page-${pageNum}.png`,    // Page-1.png
+      `page-${paddedNum}.png`,  // page-01.png
       `page-${paddedNum}.jpg`,
-      `page-${pageNum}.png`, // page-1.png
-      `page-${pageNum}.jpg`,
-      `Page ${pageNum}.png`, // Page 1.png
-      `Page ${paddedNum}.png`, // Page 01.png
-      `Page-${pageNum}.png`, // Page-1.png
-      `Page-${paddedNum}.png`, // Page-01.png
+      `page-${pageNum}.png`,
+      `Page ${pageNum}.png`,
+      `Page ${paddedNum}.png`,
     ];
 
-    for (const pageName of pageNames) {
-      const key = `${series}/${bookId}/${pageName}`;
-      const object = await c.env.BOOKS_BUCKET.get(key);
+    const basePaths = [
+      `books/${series}/${bookId}/images/`,
+      `books/${series}/${bookId}/`,
+      `${series}/${bookId}/images/`,
+      `${series}/${bookId}/`
+    ];
 
-      if (object) {
-        const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-        headers.set('Cache-Control', 'public, max-age=86400');
+    for (const basePath of basePaths) {
+      for (const pageName of pageNames) {
+        const key = `${basePath}${pageName}`;
+        const object = await bucket.get(key);
 
-        return new Response(object.body, { headers });
-      }
-    }
-
-    // Also try looking in images subdirectory
-    for (const pageName of pageNames) {
-      const key = `${series}/${bookId}/images/${pageName}`;
-      const object = await c.env.BOOKS_BUCKET.get(key);
-
-      if (object) {
-        const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-        headers.set('Cache-Control', 'public, max-age=86400');
-
-        return new Response(object.body, { headers });
+        if (object) {
+          const headers = new Headers();
+          headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+          headers.set('Cache-Control', 'public, max-age=86400');
+          return new Response(object.body, { headers });
+        }
       }
     }
 
