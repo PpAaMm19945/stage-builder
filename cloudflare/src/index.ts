@@ -1111,8 +1111,8 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     const series = c.req.param('series');
     const bookId = c.req.param('bookId');
 
-    // Try multiple possible cover file names
-    const coverNames = ['cover.png', 'cover.jpg', 'Cover Photo.png', 'page-01.png'];
+    // Try multiple possible cover file names (handle case variations)
+    const coverNames = ['cover.png', 'Cover.png', 'cover.jpg', 'Cover.jpg', 'Cover Photo.png', 'Cover Photo.jpg', 'page-01.png', 'Page 1.png', 'Page 01.png'];
 
     for (const coverName of coverNames) {
       const key = `${series}/${bookId}/${coverName}`;

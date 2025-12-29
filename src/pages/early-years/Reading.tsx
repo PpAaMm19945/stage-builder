@@ -15,7 +15,7 @@ export default function Reading() {
 
     // Get youngest child's age for recommendations
     const youngestAge = children.length > 0
-        ? Math.min(...children.map(c => c.ageInMonths || (c as any).age_in_months || 36))
+        ? Math.min(...children.map(c => c.ageInMonths || 36))
         : 36;
 
     // Fetch a recommended book based on age
