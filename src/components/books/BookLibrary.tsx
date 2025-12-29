@@ -25,7 +25,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     // Get youngest child's age for filtering
     const youngestAge = children.length > 0
-        ? Math.min(...children.map(c => c.ageInMonths || c.age_in_months || 36))
+        ? Math.min(...children.map(c => c.ageInMonths || 36))
         : undefined;
 
     const { data: allBooks = [], isLoading, error } = useQuery({
