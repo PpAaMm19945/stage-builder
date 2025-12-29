@@ -267,8 +267,10 @@ app.get('/api/auth/me', async (c) => {
     ).bind(user.id).all();
 
     return c.json({ user, children });
-  } catch {
-    return c.json({ user: null, children: [] }, 401);
+  } catch (error: any) {
+    console.error('Auth error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ user: null, children: [] }, status);
   }
 });
 
@@ -287,8 +289,10 @@ app.get('/api/students', async (c) => {
       'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
     ).bind(user.id).all();
     return c.json(results);
-  } catch {
-    return c.json({ error: 'Unauthorized' }, 401);
+  } catch (error: any) {
+    console.error('Students list error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
 });
 
@@ -555,7 +559,9 @@ app.get('/api/students/:studentId/today', async (c) => {
 
     return c.json({ student, activities, familyActivities });
   } catch (error: any) {
-    return c.json({ error: error.message || 'Unauthorized' }, 401);
+    console.error('Student today error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
 });
 
@@ -722,7 +728,9 @@ app.get('/api/family/today', async (c) => {
       coreKitCoverage
     });
   } catch (error: any) {
-    return c.json({ error: error.message || 'Unauthorized' }, 401);
+    console.error('Family today error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
 });
 
@@ -744,7 +752,9 @@ app.get('/api/family/materials', async (c) => {
 
     return c.json(normalized);
   } catch (error: any) {
-    return c.json({ error: error.message || 'Unauthorized' }, 401);
+    console.error('Family materials error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
 });
 

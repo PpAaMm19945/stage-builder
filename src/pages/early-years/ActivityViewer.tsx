@@ -106,7 +106,7 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   maxAgeMonths: activity.max_age_months,
   // Family session fields
   activityType: activity.activity_type,
-  tieredExpectations: activity.tiered_expectations,
+  tieredExpectations: Array.isArray(activity.tiered_expectations) ? activity.tiered_expectations : [],
   usesCoreKit: activity.uses_core_kit === 1,
   messLevel: activity.mess_level,
   setting: activity.setting,
