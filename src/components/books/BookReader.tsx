@@ -6,6 +6,59 @@ import { Button } from '@/components/ui/button';
 import { ChevronLeft, ChevronRight, X, BookOpen, CheckCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import useEmblaCarousel from 'embla-carousel-react';
+import { Skeleton } from '@/components/ui/skeleton';
+
+// Individual page slide with lazy loading
+function PageSlide({ 
+    pageNum, 
+    series, 
+    bookId, 
+    isVisible 
+}: { 
+    pageNum: number; 
+    series: string; 
+    bookId: string; 
+    isVisible: boolean;
+}) {
+    const [loaded, setLoaded] = useState(false);
+    const [error, setError] = useState(false);
+
+    return (
+        <div className="embla__slide flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4">
+            {/* Only load images that are visible or adjacent */}
+            {isVisible ? (
+                <>
+                    {!loaded && !error && (
+                        <div className="absolute inset-4 flex items-center justify-center">
+                            <Skeleton className="w-full h-full max-w-md rounded-lg" />
+                        </div>
+                    )}
+                    {error && (
+                        <div className="flex flex-col items-center justify-center text-muted-foreground">
+                            <span className="text-4xl mb-2">📄</span>
+                            <span className="text-sm">Page {pageNum} not found</span>
+                        </div>
+                    )}
+                    <img
+                        src={books.getPageUrl(series, bookId, pageNum)}
+                        alt={`Page ${pageNum}`}
+                        loading="lazy"
+                        className={`max-h-full max-w-full object-contain rounded-lg shadow-lg transition-opacity duration-300 ${
+                            loaded ? 'opacity-100' : 'opacity-0'
+                        }`}
+                        onLoad={() => setLoaded(true)}
+                        onError={() => {
+                            setError(true);
+                            setLoaded(true);
+                        }}
+                    />
+                </>
+            ) : (
+                <Skeleton className="w-full h-full max-w-md rounded-lg" />
+            )}
+        </div>
+    );
+}
 
 interface BookReaderProps {
     book: Book | null;
@@ -124,19 +177,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds }: BookReader
                     <div className="embla h-full" ref={emblaRef}>
                         <div className="embla__container flex h-full">
                             {Array.from({ length: book.pageCount }, (_, i) => (
-                                <div
+                                <PageSlide
                                     key={i + 1}
-                                    className="embla__slide flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4"
-                                >
-                                    <img
-                                        src={books.getPageUrl(book.series, book.id, i + 1)}
-                                        alt={`Page ${i + 1}`}
-                                        className="max-h-full max-w-full object-contain rounded-lg shadow-lg"
-                                        onError={(e) => {
-                                            (e.target as HTMLImageElement).style.display = 'none';
-                                        }}
-                                    />
-                                </div>
+                                    pageNum={i + 1}
+                                    series={book.series}
+                                    bookId={book.id}
+                                    isVisible={Math.abs(currentPage - (i + 1)) <= 1}
+                                />
                             ))}
                         </div>
                     </div>

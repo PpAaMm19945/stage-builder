@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
+import { Skeleton } from '@/components/ui/skeleton';
 
 interface BookCardProps {
     book: Book;
@@ -9,6 +11,8 @@ interface BookCardProps {
 }
 
 export function BookCard({ book, onClick }: BookCardProps) {
+    const [imageLoaded, setImageLoaded] = useState(false);
+    const [imageError, setImageError] = useState(false);
     const coverUrl = books.getCoverUrl(book.series, book.id);
 
     // Format age range for display
@@ -19,19 +23,49 @@ export function BookCard({ book, onClick }: BookCardProps) {
         return `${minYears}-${maxYears} yrs`;
     };
 
+    // Use seriesTitle for display, fallback to series (folder name) formatted nicely
+    const displaySeries = book.seriesTitle || book.series
+        .split('_')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+
+    // Shorten series names for badge display
+    const shortenedSeries = displaySeries
+        .replace('My First Books', 'First')
+        .replace('African Men of Faith', 'Faith')
+        .replace('The Gospel Series', 'Gospel');
+
     return (
         <Card
             className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
             onClick={onClick}
         >
             <div className="aspect-[3/4] relative overflow-hidden bg-muted">
+                {/* Skeleton loader shown while image is loading */}
+                {!imageLoaded && !imageError && (
+                    <div className="absolute inset-0 animate-pulse">
+                        <Skeleton className="h-full w-full" />
+                    </div>
+                )}
+
+                {/* Fallback for error state */}
+                {imageError && (
+                    <div className="absolute inset-0 flex items-center justify-center bg-muted">
+                        <span className="text-4xl">📚</span>
+                    </div>
+                )}
+
                 <img
                     src={coverUrl}
                     alt={book.title}
-                    className="h-full w-full object-cover transition-transform group-hover:scale-105"
-                    onError={(e) => {
-                        // Fallback to a placeholder if image fails
-                        (e.target as HTMLImageElement).src = 'data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 133" fill="%23e2e8f0"><rect width="100" height="133"/><text x="50" y="70" text-anchor="middle" fill="%2394a3b8" font-size="12">📚</text></svg>';
+                    loading="lazy"
+                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${
+                        imageLoaded ? 'opacity-100' : 'opacity-0'
+                    }`}
+                    onLoad={() => setImageLoaded(true)}
+                    onError={() => {
+                        setImageError(true);
+                        setImageLoaded(true);
                     }}
                 />
                 <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
@@ -48,7 +82,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
                     </Badge>
                     {book.series && (
                         <Badge variant="outline" className="text-[10px] px-1.5 truncate max-w-[100px]">
-                            {book.series.replace('My First Books', 'First').replace('African Men of Faith', 'Faith')}
+                            {shortenedSeries}
                         </Badge>
                     )}
                 </div>

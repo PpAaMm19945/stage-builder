@@ -201,8 +201,9 @@ export interface FamilyTodayResponse {
 // ============================================
 
 export interface Book {
-  id: string;
-  series: string;
+  id: string;  // Folder name (snake_case) - use for API URLs
+  series: string;  // Folder name (snake_case) - use for API URLs
+  seriesTitle?: string;  // Human-readable series name for display
   title: string;
   author?: string;
   illustrator?: string;
