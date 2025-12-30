@@ -1,49 +1,80 @@
-import { useState, useCallback, useEffect } from 'react';
+import { useState, useCallback, useEffect, useRef } from 'react';
 import { Book } from '@/types';
 import { books, reading } from '@/lib/api';
 import { Dialog, DialogContent, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, BookOpen, CheckCircle } from 'lucide-react';
+import { ChevronLeft, ChevronRight, X, BookOpen, CheckCircle, RotateCcw } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import useEmblaCarousel from 'embla-carousel-react';
 import { Skeleton } from '@/components/ui/skeleton';
 
-// Individual page slide with lazy loading
-function PageSlide({ 
-    pageNum, 
+// Slide types for the carousel
+type SlideType = 'cover' | 'copyright' | 'content';
+
+interface SlideInfo {
+    type: SlideType;
+    pageNum?: number; // Only for content pages
+}
+
+// Individual slide with lazy loading
+function BookSlide({ 
+    slideInfo,
     series, 
     bookId, 
-    isVisible 
+    isVisible,
+    bookTitle
 }: { 
-    pageNum: number; 
+    slideInfo: SlideInfo;
     series: string; 
     bookId: string; 
     isVisible: boolean;
+    bookTitle: string;
 }) {
     const [loaded, setLoaded] = useState(false);
     const [error, setError] = useState(false);
 
+    const getImageUrl = () => {
+        if (slideInfo.type === 'cover') {
+            return books.getCoverUrl(series, bookId);
+        }
+        if (slideInfo.type === 'copyright') {
+            return books.getPageUrl(series, bookId, 0);
+        }
+        return books.getPageUrl(series, bookId, slideInfo.pageNum!);
+    };
+
+    const getAltText = () => {
+        if (slideInfo.type === 'cover') return `${bookTitle} - Cover`;
+        if (slideInfo.type === 'copyright') return `${bookTitle} - Copyright`;
+        return `${bookTitle} - Page ${slideInfo.pageNum}`;
+    };
+
+    const getErrorText = () => {
+        if (slideInfo.type === 'cover') return 'Cover not found';
+        if (slideInfo.type === 'copyright') return 'Copyright page not found';
+        return `Page ${slideInfo.pageNum} not found`;
+    };
+
     return (
-        <div className="embla__slide flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-4">
-            {/* Only load images that are visible or adjacent */}
+        <div className="embla__slide flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-1 sm:p-2">
             {isVisible ? (
                 <>
                     {!loaded && !error && (
-                        <div className="absolute inset-4 flex items-center justify-center">
-                            <Skeleton className="w-full h-full max-w-md rounded-lg" />
+                        <div className="absolute inset-2 flex items-center justify-center">
+                            <Skeleton className="w-full h-full max-w-2xl aspect-[4/3] rounded-lg" />
                         </div>
                     )}
                     {error && (
                         <div className="flex flex-col items-center justify-center text-muted-foreground">
                             <span className="text-4xl mb-2">📄</span>
-                            <span className="text-sm">Page {pageNum} not found</span>
+                            <span className="text-sm">{getErrorText()}</span>
                         </div>
                     )}
                     <img
-                        src={books.getPageUrl(series, bookId, pageNum)}
-                        alt={`Page ${pageNum}`}
+                        src={getImageUrl()}
+                        alt={getAltText()}
                         loading="lazy"
-                        className={`max-h-full max-w-full object-contain rounded-lg shadow-lg transition-opacity duration-300 ${
+                        className={`max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-lg transition-opacity duration-300 ${
                             loaded ? 'opacity-100' : 'opacity-0'
                         }`}
                         onLoad={() => setLoaded(true)}
@@ -54,8 +85,71 @@ function PageSlide({
                     />
                 </>
             ) : (
-                <Skeleton className="w-full h-full max-w-md rounded-lg" />
+                <Skeleton className="w-full h-full max-w-2xl aspect-[4/3] rounded-lg" />
             )}
+        </div>
+    );
+}
+
+// Progress dots component
+function ProgressDots({ 
+    total, 
+    current, 
+    onDotClick 
+}: { 
+    total: number; 
+    current: number; 
+    onDotClick: (index: number) => void;
+}) {
+    // For books with many pages, show condensed dots
+    const maxDots = 12;
+    const showCondensed = total > maxDots;
+    
+    if (showCondensed) {
+        // Show progress bar instead
+        const progress = ((current + 1) / total) * 100;
+        return (
+            <div className="w-full max-w-xs mx-auto">
+                <div className="h-1 bg-muted rounded-full overflow-hidden">
+                    <div 
+                        className="h-full bg-primary transition-all duration-300"
+                        style={{ width: `${progress}%` }}
+                    />
+                </div>
+            </div>
+        );
+    }
+
+    return (
+        <div className="flex items-center justify-center gap-1.5">
+            {Array.from({ length: total }, (_, i) => (
+                <button
+                    key={i}
+                    onClick={() => onDotClick(i)}
+                    className={`w-2 h-2 rounded-full transition-all duration-200 ${
+                        i === current 
+                            ? 'bg-primary w-4' 
+                            : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
+                    }`}
+                    aria-label={`Go to slide ${i + 1}`}
+                />
+            ))}
+        </div>
+    );
+}
+
+// Landscape orientation hint
+function LandscapeHint({ onDismiss }: { onDismiss: () => void }) {
+    return (
+        <div className="absolute inset-0 z-50 bg-background/95 backdrop-blur flex flex-col items-center justify-center p-6 text-center animate-fade-in">
+            <RotateCcw className="h-16 w-16 text-primary mb-4 animate-pulse" />
+            <h3 className="text-lg font-semibold mb-2">Rotate for Best Experience</h3>
+            <p className="text-muted-foreground mb-6 max-w-xs">
+                Turn your phone sideways to see the full page in landscape mode
+            </p>
+            <Button onClick={onDismiss} variant="outline">
+                Continue Anyway
+            </Button>
         </div>
     );
 }
@@ -68,8 +162,11 @@ interface BookReaderProps {
 }
 
 export function BookReader({ book, open, onOpenChange, childrenIds }: BookReaderProps) {
-    const [currentPage, setCurrentPage] = useState(1);
+    const [currentSlide, setCurrentSlide] = useState(0);
     const [isCompleting, setIsCompleting] = useState(false);
+    const [showLandscapeHint, setShowLandscapeHint] = useState(false);
+    const [controlsVisible, setControlsVisible] = useState(true);
+    const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
     const { toast } = useToast();
 
     const [emblaRef, emblaApi] = useEmblaCarousel({
@@ -77,18 +174,51 @@ export function BookReader({ book, open, onOpenChange, childrenIds }: BookReader
         dragFree: false,
     });
 
-    // Reset to page 1 when book changes
+    // Build slide array: cover + copyright + content pages
+    const slides: SlideInfo[] = book ? [
+        { type: 'cover' },
+        { type: 'copyright' },
+        ...Array.from({ length: book.pageCount }, (_, i) => ({
+            type: 'content' as SlideType,
+            pageNum: i + 1
+        }))
+    ] : [];
+
+    const totalSlides = slides.length;
+    const isLastSlide = currentSlide >= totalSlides - 1;
+
+    // Check if mobile and portrait on open
+    useEffect(() => {
+        if (open && book) {
+            const isMobile = window.innerWidth < 768;
+            const isPortrait = window.innerHeight > window.innerWidth;
+            
+            // Only show hint on mobile in portrait mode, and only once per session
+            const hintShown = sessionStorage.getItem('landscapeHintShown');
+            if (isMobile && isPortrait && !hintShown) {
+                setShowLandscapeHint(true);
+            }
+        }
+    }, [open, book]);
+
+    const dismissLandscapeHint = () => {
+        setShowLandscapeHint(false);
+        sessionStorage.setItem('landscapeHintShown', 'true');
+    };
+
+    // Reset to cover when book changes
     useEffect(() => {
         if (book) {
-            setCurrentPage(1);
+            setCurrentSlide(0);
             emblaApi?.scrollTo(0);
+            setControlsVisible(true);
         }
     }, [book, emblaApi]);
 
-    // Sync carousel with currentPage
+    // Sync carousel with currentSlide
     const onSelect = useCallback(() => {
         if (!emblaApi) return;
-        setCurrentPage(emblaApi.selectedScrollSnap() + 1);
+        setCurrentSlide(emblaApi.selectedScrollSnap());
     }, [emblaApi]);
 
     useEffect(() => {
@@ -97,18 +227,80 @@ export function BookReader({ book, open, onOpenChange, childrenIds }: BookReader
         return () => { emblaApi.off('select', onSelect); };
     }, [emblaApi, onSelect]);
 
+    // Keyboard navigation
+    useEffect(() => {
+        if (!open) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            if (e.key === 'ArrowLeft') {
+                emblaApi?.scrollPrev();
+            } else if (e.key === 'ArrowRight') {
+                emblaApi?.scrollNext();
+            } else if (e.key === 'Escape') {
+                onOpenChange(false);
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, emblaApi, onOpenChange]);
+
+    // Auto-hide controls after inactivity
+    const resetControlsTimeout = useCallback(() => {
+        setControlsVisible(true);
+        if (controlsTimeoutRef.current) {
+            clearTimeout(controlsTimeoutRef.current);
+        }
+        controlsTimeoutRef.current = setTimeout(() => {
+            setControlsVisible(false);
+        }, 3000);
+    }, []);
+
+    useEffect(() => {
+        if (open) {
+            resetControlsTimeout();
+        }
+        return () => {
+            if (controlsTimeoutRef.current) {
+                clearTimeout(controlsTimeoutRef.current);
+            }
+        };
+    }, [open, resetControlsTimeout]);
+
+    const handleInteraction = () => {
+        resetControlsTimeout();
+    };
+
     const scrollPrev = useCallback(() => {
         if (emblaApi) emblaApi.scrollPrev();
+        handleInteraction();
     }, [emblaApi]);
 
     const scrollNext = useCallback(() => {
         if (emblaApi) emblaApi.scrollNext();
+        handleInteraction();
     }, [emblaApi]);
 
-    // Get current page prompt
+    const scrollTo = useCallback((index: number) => {
+        if (emblaApi) emblaApi.scrollTo(index);
+        handleInteraction();
+    }, [emblaApi]);
+
+    // Get current page prompt (only for content pages)
     const getCurrentPrompt = () => {
         if (!book?.readingPrompts) return null;
-        return book.readingPrompts.find(p => p.page === currentPage)?.prompt;
+        const slide = slides[currentSlide];
+        if (slide?.type !== 'content') return null;
+        return book.readingPrompts.find(p => p.page === slide.pageNum)?.prompt;
+    };
+
+    // Get display text for current slide
+    const getSlideLabel = () => {
+        const slide = slides[currentSlide];
+        if (!slide) return '';
+        if (slide.type === 'cover') return 'Cover';
+        if (slide.type === 'copyright') return 'Copyright';
+        return `Page ${slide.pageNum} of ${book?.pageCount}`;
     };
 
     // Handle completion
@@ -142,24 +334,36 @@ export function BookReader({ book, open, onOpenChange, childrenIds }: BookReader
 
     if (!book) return null;
 
-    const isLastPage = currentPage >= book.pageCount;
     const prompt = getCurrentPrompt();
 
     return (
         <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent className="max-w-4xl w-[95vw] h-[90vh] p-0 gap-0 overflow-hidden">
+            <DialogContent 
+                className="max-w-[98vw] w-[98vw] h-[98vh] sm:h-[95vh] p-0 gap-0 overflow-hidden border-0 sm:border sm:rounded-lg"
+                onPointerMove={handleInteraction}
+                onTouchStart={handleInteraction}
+            >
                 <DialogTitle className="sr-only">{book.title}</DialogTitle>
 
-                {/* Header */}
-                <div className="flex items-center justify-between p-3 border-b bg-background/95 backdrop-blur">
-                    <div className="flex items-center gap-2">
-                        <BookOpen className="h-5 w-5 text-primary" />
-                        <span className="font-medium truncate max-w-[200px]">{book.title}</span>
+                {/* Landscape hint for mobile portrait */}
+                {showLandscapeHint && (
+                    <LandscapeHint onDismiss={dismissLandscapeHint} />
+                )}
+
+                {/* Header - auto-hide */}
+                <div 
+                    className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-2 bg-background/90 backdrop-blur transition-all duration-300 ${
+                        controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
+                    }`}
+                >
+                    <div className="flex items-center gap-2 min-w-0">
+                        <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
+                        <span className="font-medium truncate text-sm">{book.title}</span>
                     </div>
 
                     <div className="flex items-center gap-2">
-                        <span className="text-sm text-muted-foreground">
-                            Page {currentPage} of {book.pageCount}
+                        <span className="text-xs text-muted-foreground whitespace-nowrap">
+                            {getSlideLabel()}
                         </span>
                         <Button
                             variant="ghost"
@@ -172,55 +376,83 @@ export function BookReader({ book, open, onOpenChange, childrenIds }: BookReader
                     </div>
                 </div>
 
-                {/* Page Carousel */}
-                <div className="flex-1 overflow-hidden relative bg-muted/30">
+                {/* Page Carousel - Full height */}
+                <div className="h-full overflow-hidden relative bg-muted/30">
                     <div className="embla h-full" ref={emblaRef}>
                         <div className="embla__container flex h-full">
-                            {Array.from({ length: book.pageCount }, (_, i) => (
-                                <PageSlide
-                                    key={i + 1}
-                                    pageNum={i + 1}
+                            {slides.map((slideInfo, i) => (
+                                <BookSlide
+                                    key={`${slideInfo.type}-${slideInfo.pageNum || 0}`}
+                                    slideInfo={slideInfo}
                                     series={book.series}
                                     bookId={book.id}
-                                    isVisible={Math.abs(currentPage - (i + 1)) <= 1}
+                                    isVisible={Math.abs(currentSlide - i) <= 2}
+                                    bookTitle={book.title}
                                 />
                             ))}
                         </div>
                     </div>
 
-                    {/* Navigation Arrows */}
+                    {/* Navigation Arrows - larger touch targets */}
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute left-2 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background shadow-lg"
+                        className={`absolute left-1 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-background/70 hover:bg-background shadow-lg transition-opacity duration-300 ${
+                            controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        }`}
                         onClick={scrollPrev}
-                        disabled={currentPage <= 1}
+                        disabled={currentSlide <= 0}
                     >
-                        <ChevronLeft className="h-6 w-6" />
+                        <ChevronLeft className="h-7 w-7 sm:h-6 sm:w-6" />
                     </Button>
 
                     <Button
                         variant="ghost"
                         size="icon"
-                        className="absolute right-2 top-1/2 -translate-y-1/2 h-12 w-12 rounded-full bg-background/80 hover:bg-background shadow-lg"
+                        className={`absolute right-1 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-background/70 hover:bg-background shadow-lg transition-opacity duration-300 ${
+                            controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
+                        }`}
                         onClick={scrollNext}
-                        disabled={isLastPage}
+                        disabled={isLastSlide}
                     >
-                        <ChevronRight className="h-6 w-6" />
+                        <ChevronRight className="h-7 w-7 sm:h-6 sm:w-6" />
                     </Button>
+
+                    {/* Tap zones for touch navigation */}
+                    <div 
+                        className="absolute left-0 top-0 bottom-0 w-1/4 sm:hidden"
+                        onClick={scrollPrev}
+                        aria-hidden="true"
+                    />
+                    <div 
+                        className="absolute right-0 top-0 bottom-0 w-1/4 sm:hidden"
+                        onClick={scrollNext}
+                        aria-hidden="true"
+                    />
                 </div>
 
-                {/* Footer with prompt and completion */}
-                <div className="p-4 border-t bg-background/95 backdrop-blur space-y-3">
+                {/* Footer - auto-hide, shows progress and completion */}
+                <div 
+                    className={`absolute bottom-0 left-0 right-0 z-20 p-2 bg-background/90 backdrop-blur transition-all duration-300 space-y-2 ${
+                        controlsVisible || prompt || isLastSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
+                    }`}
+                >
+                    {/* Progress indicator */}
+                    <ProgressDots 
+                        total={totalSlides} 
+                        current={currentSlide} 
+                        onDotClick={scrollTo}
+                    />
+
                     {prompt && (
-                        <div className="p-3 bg-primary/5 border border-primary/20 rounded-lg">
+                        <div className="p-2 bg-primary/5 border border-primary/20 rounded-lg">
                             <p className="text-sm font-medium text-primary">
                                 💬 {prompt}
                             </p>
                         </div>
                     )}
 
-                    {isLastPage && (
+                    {isLastSlide && (
                         <Button
                             onClick={handleComplete}
                             disabled={isCompleting}
