@@ -1030,6 +1030,7 @@ function parseAgeRange(ageRange: string): { min: number; max: number } {
 // Helper: Get book metadata from R2
 async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string): Promise<BookMetadata | null> {
   // STRICT: Always expected at books/series/book/metadata.json
+  // series and bookId here are FOLDER NAMES, not human-readable values
   const key = `books/${series}/${bookId}/metadata.json`;
   const object = await bucket.get(key);
 
@@ -1040,9 +1041,11 @@ async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string)
   // Normalize metadata format
   const ageRange = parseAgeRange(data.ageRange || '2-5 years');
 
+  // CRITICAL: Use folder names (series, bookId params) for URL construction
+  // Store human-readable title separately for display purposes
   return {
-    id: data.id || bookId,
-    series: data.series || series,
+    id: bookId,  // Always use folder name
+    series: series,  // Always use folder name
     title: data.title || bookId,
     author: data.author,
     illustrator: data.illustrator,
@@ -1141,9 +1144,13 @@ app.get('/api/books', async (c) => {
             const data = await object.json() as any;
             const ageRange = parseAgeRange(data.ageRange || '2-5 years');
 
+            // CRITICAL: Use folder names (seriesName, bookId) for URL construction
+            // The frontend uses book.series and book.id to build cover/page URLs
+            // These MUST match the actual R2 folder structure, not human-readable names
             books.push({
-              id: data.id || bookId,
-              series: data.series || seriesName,
+              id: bookId,  // Always use folder name, not metadata id
+              series: seriesName,  // Always use folder name, not metadata series
+              seriesTitle: data.series || seriesName,  // Human-readable for display
               title: data.title || bookId,
               author: data.author,
               illustrator: data.illustrator,
