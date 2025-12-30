@@ -8,18 +8,18 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { WelcomeFlow } from '@/components/onboarding/WelcomeFlow';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import {
-  ArrowRight,
-  Clock,
-  Star,
-  RefreshCw,
-  UserPlus,
-  Target,
-  Compass
-} from 'lucide-react';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain, type ApiActivity } from '@/types';
 import { AddChildForm } from '@/components/children/AddChildForm';
+import { 
+  Star, 
+  Clock, 
+  ArrowRight, 
+  ArrowsClockwise, 
+  UserPlus, 
+  Target, 
+  Compass 
+} from '@phosphor-icons/react';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
   'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
@@ -82,7 +82,7 @@ export default function Today() {
     return (
       <div className="flex flex-col items-center justify-center h-[50vh] text-center space-y-6">
         <div className="p-6 rounded-full bg-muted/50">
-          <UserPlus className="h-12 w-12 text-muted-foreground" />
+          <UserPlus className="h-12 w-12 text-muted-foreground" weight="duotone" />
         </div>
         <div className="space-y-2">
           <h2 className="text-xl font-semibold text-foreground">No children registered yet</h2>
@@ -152,7 +152,7 @@ export default function Today() {
               <div className="flex items-start justify-between gap-4">
                 <div className="space-y-2">
                   <div className="flex items-center gap-2">
-                    <Star className="h-5 w-5 text-accent fill-accent" />
+                    <Star className="h-5 w-5 text-accent" weight="fill" />
                     <span className="text-sm font-semibold text-accent uppercase tracking-wide">
                       Today's Pick
                     </span>
@@ -171,7 +171,7 @@ export default function Today() {
               {/* Activity Details */}
               <div className="flex flex-wrap items-center gap-6 text-sm">
                 <div className="flex items-center gap-2 text-muted-foreground">
-                  <Clock className="h-4 w-4" />
+                  <Clock className="h-4 w-4" weight="duotone" />
                   <span>{recommendedActivity.estimatedMinutes} minutes</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
@@ -210,14 +210,14 @@ export default function Today() {
               )}
 
               {/* Actions */}
-              <div className="flex items-center gap-3 pt-2">
+              <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
                 <Button
                   size="lg"
                   onClick={() => navigate(`/early-years/activities/${recommendedActivity.id}`)}
                   className="gap-2"
                 >
                   Start Activity
-                  <ArrowRight className="h-4 w-4" />
+                  <ArrowRight className="h-4 w-4" weight="bold" />
                 </Button>
                 <Button
                   variant="outline"
@@ -225,7 +225,7 @@ export default function Today() {
                   className="gap-2"
                   onClick={handlePickAnother}
                 >
-                  <RefreshCw className="h-4 w-4" />
+                  <ArrowsClockwise className="h-4 w-4" weight="bold" />
                   Pick Another
                 </Button>
               </div>
@@ -263,7 +263,7 @@ export default function Today() {
                       {activity.description}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <Clock className="h-3 w-3" />
+                      <Clock className="h-3 w-3" weight="duotone" />
                       <span>{activity.estimatedMinutes} mins</span>
                     </div>
                   </CardContent>
@@ -277,7 +277,7 @@ export default function Today() {
         {data?.familyActivities && data.familyActivities.length > 0 && (
           <div className="space-y-4">
             <div className="flex items-center gap-2">
-              <Compass className="h-5 w-5 text-accent" />
+              <Compass className="h-5 w-5 text-accent" weight="duotone" />
               <h2 className="text-lg font-semibold text-foreground">Family Activities</h2>
             </div>
             <p className="text-sm text-muted-foreground">
@@ -306,7 +306,7 @@ export default function Today() {
                       {familyActivity.activity.description}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
-                      <Clock className="h-3 w-3" />
+                      <Clock className="h-3 w-3" weight="duotone" />
                       <span>{familyActivity.activity.duration_minutes} mins</span>
                     </div>
                   </CardContent>
@@ -319,4 +319,3 @@ export default function Today() {
     </>
   );
 }
-

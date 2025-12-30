@@ -9,13 +9,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
-import {
-  Search,
-  Clock,
-  Filter,
-  X,
-  SearchX
-} from 'lucide-react';
+import { MagnifyingGlass, Clock, Funnel, X, MagnifyingGlassMinus } from '@phosphor-icons/react';
 import { activities as activitiesApi } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 
@@ -108,7 +102,7 @@ export default function Activities() {
           <Skeleton className="h-5 w-64" />
         </div>
         <Skeleton className="h-10 w-full" />
-        <div className="flex gap-2">
+        <div className="flex gap-2 flex-wrap">
           {[1, 2, 3, 4, 5].map((i) => (
             <Skeleton key={i} className="h-8 w-20 rounded-full" />
           ))}
@@ -166,7 +160,7 @@ export default function Activities() {
       <div className="space-y-4">
         {/* Search */}
         <div className="relative">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+          <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" weight="duotone" />
           <Input
             placeholder="Search activities..."
             value={search}
@@ -178,14 +172,14 @@ export default function Activities() {
               onClick={() => setSearch('')}
               className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
             >
-              <X className="h-4 w-4" />
+              <X className="h-4 w-4" weight="bold" />
             </button>
           )}
         </div>
 
         {/* Domain Pills */}
         <div className="flex flex-wrap items-center gap-2">
-          <Filter className="h-4 w-4 text-muted-foreground" />
+          <Funnel className="h-4 w-4 text-muted-foreground" weight="duotone" />
           {domainFilters.map((domain) => (
             <Button
               key={domain.id}
@@ -247,7 +241,7 @@ export default function Activities() {
                 </p>
                 <div className="flex items-center gap-3 text-xs text-muted-foreground pt-1">
                   <div className="flex items-center gap-1">
-                    <Clock className="h-3 w-3" />
+                    <Clock className="h-3 w-3" weight="duotone" />
                     <span>{activity.estimatedMinutes} mins</span>
                   </div>
                   <span>•</span>
@@ -259,7 +253,7 @@ export default function Activities() {
         </div>
       ) : (
         <EmptyState
-          icon={SearchX}
+          icon={MagnifyingGlassMinus}
           title="No Activities Found"
           description="Try adjusting your filters or browse all activities."
           actionLabel="Clear Filters"

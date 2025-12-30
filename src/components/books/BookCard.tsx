@@ -4,6 +4,7 @@ import { books } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Books as BooksIcon } from '@phosphor-icons/react';
 
 interface BookCardProps {
     book: Book;
@@ -40,7 +41,8 @@ export function BookCard({ book, onClick }: BookCardProps) {
             className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
             onClick={onClick}
         >
-            <div className="aspect-[3/4] relative overflow-hidden bg-muted">
+            {/* Landscape aspect ratio for picture book covers */}
+            <div className="aspect-[4/3] relative overflow-hidden bg-muted">
                 {/* Skeleton loader shown while image is loading */}
                 {!imageLoaded && !imageError && (
                     <div className="absolute inset-0 animate-pulse">
@@ -51,7 +53,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
                 {/* Fallback for error state */}
                 {imageError && (
                     <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                        <span className="text-4xl">📚</span>
+                        <BooksIcon className="h-12 w-12 text-muted-foreground" weight="duotone" />
                     </div>
                 )}
 

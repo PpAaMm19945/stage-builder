@@ -1,6 +1,7 @@
 import { GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
+import { Target, ChartLineUp, Lightbulb } from '@phosphor-icons/react';
 
 export default function Login() {
   const handleLogin = () => {
@@ -11,7 +12,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
       {/* Header */}
-      <header className="p-6">
+      <header className="p-4 md:p-6">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <GraduationCap className="h-6 w-6 text-primary-foreground" />
@@ -23,14 +24,14 @@ export default function Login() {
       </header>
 
       {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-6">
+      <main className="flex-1 flex items-center justify-center px-4 md:px-6">
         <div className="max-w-md w-full space-y-8 text-center">
           {/* Hero */}
           <div className="space-y-4">
-            <h1 className="text-4xl font-display font-bold text-foreground">
+            <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
               Welcome to SchoolOS
             </h1>
-            <p className="text-lg text-muted-foreground">
+            <p className="text-base md:text-lg text-muted-foreground">
               A personalized learning journey for your child, guided by you.
             </p>
           </div>
@@ -39,19 +40,19 @@ export default function Login() {
           <div className="grid grid-cols-3 gap-4 py-8">
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-motor/10 flex items-center justify-center">
-                <span className="text-2xl">🎯</span>
+                <Target className="h-6 w-6 text-domain-motor" weight="duotone" />
               </div>
               <p className="text-sm text-muted-foreground">Daily Activities</p>
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-cognitive/10 flex items-center justify-center">
-                <span className="text-2xl">📊</span>
+                <ChartLineUp className="h-6 w-6 text-domain-cognitive" weight="duotone" />
               </div>
               <p className="text-sm text-muted-foreground">Track Progress</p>
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-social/10 flex items-center justify-center">
-                <span className="text-2xl">💡</span>
+                <Lightbulb className="h-6 w-6 text-domain-social" weight="duotone" />
               </div>
               <p className="text-sm text-muted-foreground">Smart Recommendations</p>
             </div>
@@ -99,7 +100,7 @@ export default function Login() {
       </main>
 
       {/* Footer */}
-      <footer className="p-6 text-center">
+      <footer className="p-4 md:p-6 text-center">
         <p className="text-sm text-muted-foreground">
           © 2024 SchoolOS. Designed for parents who care.
         </p>
