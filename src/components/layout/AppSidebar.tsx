@@ -1,19 +1,19 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  Calendar,
-  Compass,
-  BarChart3,
-  Settings,
+  CalendarCheck,
+  Lightbulb,
+  TrendUp,
+  Gear,
   Lock,
-  ChevronDown,
+  CaretDown,
   GraduationCap,
-  Sparkles,
+  Plant,
   BookOpen,
-  School,
-  LogOut,
+  Student,
+  SignOut,
   Pencil,
-} from 'lucide-react';
+} from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
 import { STAGE_INFO, isStageEnabled } from '@/config/featureFlags';
@@ -44,16 +44,16 @@ import { EditChildForm } from '@/components/children/EditChildForm';
 import type { Student } from '@/types';
 
 const earlyYearsLinks = [
-  { title: 'Individual Today', url: '/early-years/today', icon: Calendar },
-  { title: 'Activities', url: '/early-years/activities', icon: Compass },
+  { title: 'Individual Today', url: '/early-years/today', icon: CalendarCheck },
+  { title: 'Activities', url: '/early-years/activities', icon: Lightbulb },
   { title: 'Reading', url: '/early-years/reading', icon: BookOpen },
-  { title: 'Progress', url: '/early-years/progress', icon: BarChart3 },
+  { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
 ];
 
 const stageIcons = {
-  'early-years': Sparkles,
+  'early-years': Plant,
   'lower-primary': BookOpen,
-  'middle-school': School,
+  'middle-school': Student,
   'upper-school': GraduationCap,
 };
 
@@ -90,7 +90,7 @@ export function AppSidebar() {
             className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" />
+              <GraduationCap className="h-5 w-5 text-primary-foreground" weight="duotone" />
             </div>
             <span className="font-display text-lg font-bold text-foreground">
               SchoolOS
@@ -115,7 +115,7 @@ export function AppSidebar() {
                       {selectedChild ? `${selectedChild.ageInMonths} months` : ''}
                     </p>
                   </div>
-                  <ChevronDown className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <CaretDown className="h-4 w-4 text-muted-foreground shrink-0" weight="duotone" />
                 </button>
               </DropdownMenuTrigger>
               <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
@@ -152,7 +152,7 @@ export function AppSidebar() {
                         setEditingChild(child);
                       }}
                     >
-                      <Pencil className="h-4 w-4" />
+                      <Pencil className="h-4 w-4" weight="duotone" />
                     </Button>
                   </DropdownMenuItem>
                 ))}
@@ -177,7 +177,7 @@ export function AppSidebar() {
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
-                      <Sparkles className="h-4 w-4" />
+                      <Plant className="h-4 w-4" weight="duotone" />
                       <span className="font-semibold">Family Plan</span>
                     </NavLink>
                   </SidebarMenuButton>
@@ -203,7 +203,7 @@ export function AppSidebar() {
                         className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
-                        <item.icon className="h-4 w-4" />
+                        <item.icon className="h-4 w-4" weight="duotone" />
                         <span>{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
@@ -237,11 +237,11 @@ export function AppSidebar() {
                             : 'text-muted-foreground/50 cursor-pointer'
                         )}
                       >
-                        <Icon className="h-4 w-4" />
+                        <Icon className="h-4 w-4" weight="duotone" />
                         <span className="flex-1">{stage.shortLabel}</span>
                         {!isEnabled && (
                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30">
-                            <Lock className="h-2.5 w-2.5 mr-1" />
+                            <Lock className="h-2.5 w-2.5 mr-1" weight="duotone" />
                             Soon
                           </Badge>
                         )}
@@ -263,7 +263,7 @@ export function AppSidebar() {
                   className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                   activeClassName="bg-primary/10 text-primary font-medium"
                 >
-                  <Settings className="h-4 w-4" />
+                  <Gear className="h-4 w-4" weight="duotone" />
                   <span>Settings</span>
                 </NavLink>
               </SidebarMenuButton>
@@ -288,7 +288,7 @@ export function AppSidebar() {
               onClick={logout}
               className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
             >
-              <LogOut className="h-4 w-4" />
+              <SignOut className="h-4 w-4" weight="duotone" />
             </button>
           </div>
         </SidebarFooter>
