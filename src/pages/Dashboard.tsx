@@ -7,23 +7,27 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
 import {
-  Calendar,
-  Sparkles,
-  Clock,
-  Baby,
   Loader2,
   AlertCircle,
-  Box,
-  Paintbrush,
-  PlayCircle,
-  Check,
-  CheckCircle2,
   Circle,
   Info,
-  Settings,
   Zap,
-  BookOpen
 } from 'lucide-react';
+import {
+  CalendarBlank,
+  Sparkle,
+  Clock,
+  Baby,
+  Cube,
+  PaintBrush,
+  PlayCircle,
+  Check,
+  CheckCircle,
+  Gear,
+  BookOpen,
+  Smiley,
+  Star,
+} from '@phosphor-icons/react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -82,7 +86,7 @@ export default function Dashboard() {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Baby className="h-8 w-8 text-primary" />
+          <Baby className="h-8 w-8 text-primary" weight="duotone" />
         </div>
         <h2 className="text-2xl font-bold mb-2">Welcome to SchoolOS!</h2>
         <p className="text-muted-foreground mb-8">
@@ -105,7 +109,7 @@ export default function Dashboard() {
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
           <CardHeader className="text-center space-y-2">
             <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Sparkles className="h-8 w-8 text-primary" />
+              <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
             </div>
             <CardTitle className="text-2xl">Welcome to Your Family Learning Journey!</CardTitle>
             <CardDescription className="text-base">
@@ -143,7 +147,7 @@ export default function Dashboard() {
 
             <div className="flex flex-col sm:flex-row gap-3 pt-4">
               <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
-                <Settings className="h-4 w-4" />
+                <Gear className="h-4 w-4" weight="duotone" />
                 Set Up Materials (2 min)
               </Button>
               <Button
@@ -193,12 +197,12 @@ export default function Dashboard() {
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="space-y-1">
             <div className="flex items-center gap-2 text-primary font-medium">
-              <Calendar className="h-4 w-4" />
+              <CalendarBlank className="h-4 w-4" weight="duotone" />
               <span>{new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
               Family Learning Plan
-              <Sparkles className="h-6 w-6 text-yellow-500 fill-yellow-500" />
+              <Sparkle className="h-6 w-6 text-yellow-500" weight="duotone" />
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">
               <span className="font-semibold text-foreground">{data.familySessions.length} activities</span>
@@ -208,7 +212,7 @@ export default function Dashboard() {
           </div>
           <div className="flex gap-2">
             <Button variant="outline" className="gap-2" onClick={() => navigate('/settings')}>
-              <Box className="w-4 h-4" />
+              <Cube className="w-4 h-4" weight="duotone" />
               My Materials
             </Button>
           </div>
@@ -238,7 +242,7 @@ export default function Dashboard() {
           <div className="flex items-center justify-between">
             <div>
               <CardTitle className="text-lg flex items-center gap-2">
-                <Box className="h-5 w-5 text-primary" />
+                <Cube className="h-5 w-5 text-primary" weight="duotone" />
                 Materials for Today
               </CardTitle>
               <CardDescription>
@@ -256,7 +260,7 @@ export default function Dashboard() {
               {data.materials.map((m: MaterialItem, idx: number) => (
                 <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
                   {m.status === 'have' ? (
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <CheckCircle className="w-4 h-4 text-green-600" weight="fill" />
                   ) : m.status === 'willing_to_buy' ? (
                     <Circle className="w-4 h-4" />
                   ) : (
@@ -274,13 +278,13 @@ export default function Dashboard() {
 
       {/* Today's Reading */}
       {todaysBook && youngestChild && (
-        <Card className="border-2 border-indigo-100 bg-indigo-50/30 overflow-hidden">
-          <CardHeader className="pb-3 border-b border-indigo-100/50">
-            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900">
-              <BookOpen className="h-5 w-5 text-indigo-600" />
+        <Card className="border-2 border-indigo-100 bg-indigo-50/30 dark:bg-indigo-900/10 dark:border-indigo-800 overflow-hidden">
+          <CardHeader className="pb-3 border-b border-indigo-100/50 dark:border-indigo-800">
+            <CardTitle className="text-lg flex items-center gap-2 text-indigo-900 dark:text-indigo-100">
+              <BookOpen className="h-5 w-5 text-indigo-600 dark:text-indigo-400" weight="duotone" />
               Today's Reading
             </CardTitle>
-            <CardDescription className="text-indigo-900/60">
+            <CardDescription className="text-indigo-900/60 dark:text-indigo-300">
               Selected for {youngestChild.name}'s age ({Math.floor(youngestChild.ageInMonths / 12)}y)
             </CardDescription>
           </CardHeader>
@@ -288,7 +292,7 @@ export default function Dashboard() {
             <div className="flex flex-col sm:flex-row gap-6 items-center sm:items-start">
               {/* Book Cover */}
               <div className="relative w-32 sm:w-40 shadow-lg rounded-lg overflow-hidden shrink-0 transform transition-transform hover:scale-105 duration-300">
-                <div className="aspect-[3/4] bg-indigo-100 flex items-center justify-center">
+                <div className="aspect-[3/4] bg-indigo-100 dark:bg-indigo-900/30 flex items-center justify-center">
                   <img
                     src={books.getCoverUrl(todaysBook.series, todaysBook.id)}
                     alt={todaysBook.title}
@@ -303,11 +307,11 @@ export default function Dashboard() {
 
               <div className="flex-1 space-y-4 text-center sm:text-left">
                 <div>
-                  <Badge variant="secondary" className="mb-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200">
+                  <Badge variant="secondary" className="mb-2 bg-indigo-100 text-indigo-700 hover:bg-indigo-200 border-indigo-200 dark:bg-indigo-900/50 dark:text-indigo-200 dark:border-indigo-700">
                     {todaysBook.series} Series
                   </Badge>
-                  <h3 className="text-xl font-bold text-indigo-950 mb-1">{todaysBook.title}</h3>
-                  <p className="text-indigo-900/70 text-sm leading-relaxed max-w-xl">
+                  <h3 className="text-xl font-bold text-indigo-950 mb-1 dark:text-indigo-50">{todaysBook.title}</h3>
+                  <p className="text-indigo-900/70 text-sm leading-relaxed max-w-xl dark:text-indigo-200/80">
                     {todaysBook.description}
                   </p>
                 </div>
@@ -315,10 +319,10 @@ export default function Dashboard() {
                 <div className="flex flex-wrap gap-2 justify-center sm:justify-start">
                   <Button
                     size="lg"
-                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 gap-2"
+                    className="bg-indigo-600 hover:bg-indigo-700 text-white shadow-md shadow-indigo-200 dark:shadow-none gap-2"
                     onClick={() => setReaderBook(todaysBook)}
                   >
-                    <BookOpen className="h-4 w-4" />
+                    <BookOpen className="h-4 w-4" weight="duotone" />
                     Read Together
                   </Button>
                 </div>
@@ -340,8 +344,8 @@ export default function Dashboard() {
                 <div>
                   <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
                   <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {session.activity.duration_minutes} min</span>
-                    <span className="flex items-center gap-1"><Paintbrush className="w-3 h-3" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
+                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" weight="duotone" /> {session.activity.duration_minutes} min</span>
+                    <span className="flex items-center gap-1"><PaintBrush className="w-3 h-3" weight="duotone" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
                   </div>
                 </div>
               </div>
@@ -357,9 +361,7 @@ export default function Dashboard() {
                   {session.childTiers.map(tier => (
                     <div key={tier.childId} className="bg-accent/5 rounded-xl p-4 border border-accent/10">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="text-lg">
-                          👶
-                        </span>
+                        <Baby className="h-5 w-5 text-slate-600 dark:text-slate-400" weight="duotone" />
                         <span className="font-bold text-foreground">
                           {tier.childName}
                         </span>
@@ -368,8 +370,8 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                       <div className="flex gap-3 pl-1">
-                        <Sparkles className="w-4 h-4 text-indigo-500 mt-1 shrink-0" />
-                        <p className="text-sm font-medium text-indigo-900/80">
+                        <Sparkle className="w-4 h-4 text-indigo-500 mt-1 shrink-0" weight="duotone" />
+                        <p className="text-sm font-medium text-indigo-900/80 dark:text-indigo-200/80">
                           {tier.expectation}
                         </p>
                       </div>
@@ -380,11 +382,11 @@ export default function Dashboard() {
 
               <div className="bg-muted/10 p-4 border-t flex gap-3">
                 <Button className="flex-1 gap-2" variant="default" onClick={() => navigate(`/early-years/activities/${session.activity.id}`)}>
-                  <PlayCircle className="w-4 h-4" />
+                  <PlayCircle className="w-4 h-4" weight="duotone" />
                   Start Activity
                 </Button>
                 <Button className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => setSelectedSession(session)}>
-                  <Check className="w-4 h-4" />
+                  <CheckCircle className="w-4 h-4" weight="fill" />
                   We Did It!
                 </Button>
               </div>
@@ -402,7 +404,7 @@ export default function Dashboard() {
             </div>
             <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
               <Button onClick={() => navigate('/settings')} size="lg" className="gap-2">
-                <Box className="w-4 h-4" />
+                <Cube className="w-4 h-4" weight="duotone" />
                 Update My Materials
               </Button>
               <Button variant="outline" onClick={() => window.location.reload()}>

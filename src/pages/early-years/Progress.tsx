@@ -11,24 +11,26 @@ import { useQuery } from '@tanstack/react-query';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 import {
-  TrendingUp,
-  Activity,
+  TrendUp,
+  Pulse,
   Brain,
   Heart,
   BookOpen,
-  HandMetal,
-  Sparkles,
+  HandGrabbing,
+  Sparkle,
   Target,
-  BarChart3,
-  Calendar,
-  CheckCircle2
-} from 'lucide-react';
+  ChartBar,
+  CalendarBlank,
+  CheckCircle,
+  ChatCircleText,
+  SmileyMelting
+} from '@phosphor-icons/react';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
-  'motor': HandMetal,
-  'language': Activity,
+  'motor': HandGrabbing,
+  'language': ChatCircleText,
   'cognitive': Brain,
-  'social-emotional': Heart,
+  'social-emotional': Heart, // or SmileyMelting
   'pre-academic': BookOpen,
 };
 
@@ -186,7 +188,7 @@ export default function ProgressPage() {
         </div>
 
         <EmptyState
-          icon={BarChart3}
+          icon={ChartBar}
           title="Start Your Journey"
           description="Complete your first activity to begin tracking progress. Every small step counts!"
           actionLabel="View Today's Activity"
@@ -227,7 +229,7 @@ export default function ProgressPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <TrendingUp className="h-6 w-6 text-primary" />
+                <TrendUp className="h-6 w-6 text-primary" weight="duotone" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{totalCompleted}</p>
@@ -241,7 +243,7 @@ export default function ProgressPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center">
-                <Activity className="h-6 w-6 text-secondary" />
+                <Pulse className="h-6 w-6 text-secondary" weight="duotone" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{domainsWithProgress}</p>
@@ -255,7 +257,7 @@ export default function ProgressPage() {
           <CardContent className="pt-6">
             <div className="flex items-center gap-4">
               <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Heart className="h-6 w-6 text-accent" />
+                <Heart className="h-6 w-6 text-accent" weight="duotone" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">{getOverallProgressLabel()}</p>
@@ -280,7 +282,7 @@ export default function ProgressPage() {
                 <CardContent className="p-0">
                   <div className="flex items-center gap-4 p-4">
                     <div className={`h-12 w-12 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}>
-                      <Icon className={`h-6 w-6 ${colors.text}`} />
+                      <Icon className={`h-6 w-6 ${colors.text}`} weight="duotone" />
                     </div>
                     <div className="flex-1 min-w-0">
                       <div className="flex items-center justify-between mb-2">
@@ -321,7 +323,7 @@ export default function ProgressPage() {
           {totalCompleted === 0 ? (
             <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-muted">
               <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <Target className="h-4 w-4 text-muted-foreground" />
+                <Target className="h-4 w-4 text-muted-foreground" weight="duotone" />
               </div>
               <div>
                 <p className="font-medium text-foreground">Ready to Begin!</p>
@@ -335,7 +337,7 @@ export default function ProgressPage() {
               {insights.strongDomain && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/5 border border-secondary/20">
                   <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-                    <Sparkles className="h-4 w-4 text-secondary" />
+                    <Sparkle className="h-4 w-4 text-secondary" weight="duotone" />
                   </div>
                   <div>
                     <p className="font-medium text-foreground">
@@ -350,7 +352,7 @@ export default function ProgressPage() {
               {insights.focusDomain && insights.focusDomain.domain !== insights.strongDomain?.domain && (
                 <div className="flex items-start gap-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
                   <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                    <Target className="h-4 w-4 text-accent" />
+                    <Target className="h-4 w-4 text-accent" weight="duotone" />
                   </div>
                   <div>
                     <p className="font-medium text-foreground">
@@ -372,7 +374,7 @@ export default function ProgressPage() {
         <Card>
           <CardHeader>
             <CardTitle className="text-lg flex items-center gap-2">
-              <Calendar className="h-5 w-5 text-primary" />
+              <CalendarBlank className="h-5 w-5 text-primary" weight="duotone" />
               Recent Activity
             </CardTitle>
             <CardDescription>
@@ -406,7 +408,7 @@ export default function ProgressPage() {
                         onClick={() => navigate(`/early-years/activities/${obs.activity_id}`)}
                         className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
                       >
-                        <CheckCircle2 className="h-4 w-4 text-mastery-secure shrink-0" />
+                        <CheckCircle className="h-4 w-4 text-mastery-secure shrink-0" weight="fill" />
                         <div className="flex-1 min-w-0">
                           <p className="font-medium text-foreground truncate">
                             {obs.activity_title || 'Activity'}
