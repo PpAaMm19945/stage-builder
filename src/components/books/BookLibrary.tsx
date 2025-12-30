@@ -23,16 +23,12 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
 
-    // Get youngest child's age for filtering
-    const youngestAge = children.length > 0
-        ? Math.min(...children.map(c => c.ageInMonths || 36))
-        : undefined;
-
+    // Fetch ALL books without age filtering (user chose "Show all by default")
     const { data: allBooks = [], isLoading, error } = useQuery({
-        queryKey: ['books', stageFilter, youngestAge],
+        queryKey: ['books', stageFilter],
         queryFn: () => booksApi.list({
             stage: stageFilter !== 'all' ? stageFilter : undefined,
-            ageMonths: youngestAge,
+            // No ageMonths filter - show all books
         }),
     });
 
@@ -69,11 +65,9 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                     </SelectContent>
                 </Select>
 
-                {youngestAge && (
-                    <span className="text-sm text-muted-foreground">
-                        Showing books for ages {Math.floor(youngestAge / 12)}+ years
-                    </span>
-                )}
+                <span className="text-sm text-muted-foreground">
+                    Showing all books
+                </span>
             </div>
 
             {/* Loading State */}
