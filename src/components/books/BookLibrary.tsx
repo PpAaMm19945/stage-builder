@@ -13,6 +13,7 @@ import {
     SelectValue,
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
+import { Books as BooksIcon, Book as BookIcon } from '@phosphor-icons/react';
 
 interface BookLibraryProps {
     initialStage?: string;
@@ -70,12 +71,12 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                 </span>
             </div>
 
-            {/* Loading State */}
+            {/* Loading State - Updated for landscape cards */}
             {isLoading && (
-                <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Array.from({ length: 8 }).map((_, i) => (
                         <div key={i} className="space-y-2">
-                            <Skeleton className="aspect-[3/4] rounded-lg" />
+                            <Skeleton className="aspect-[4/3] rounded-lg" />
                             <Skeleton className="h-4 w-3/4" />
                             <Skeleton className="h-3 w-1/2" />
                         </div>
@@ -86,7 +87,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             {/* Empty State */}
             {!isLoading && allBooks.length === 0 && (
                 <div className="text-center py-12">
-                    <p className="text-4xl mb-4">📚</p>
+                    <BooksIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
                     <h3 className="text-lg font-medium mb-2">No Books Found</h3>
                     <p className="text-muted-foreground">
                         {stageFilter !== 'all'
@@ -96,18 +97,18 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                 </div>
             )}
 
-            {/* Book Grid by Series */}
+            {/* Book Grid by Series - Updated for landscape cards */}
             {!isLoading && seriesNames.map(series => (
                 <section key={series} className="space-y-4">
                     <h2 className="text-lg font-semibold flex items-center gap-2">
-                        <span className="text-primary">📖</span>
+                        <BookIcon className="h-5 w-5 text-primary" weight="duotone" />
                         {series}
                         <span className="text-sm font-normal text-muted-foreground">
                             ({booksBySeries[series].length} {booksBySeries[series].length === 1 ? 'book' : 'books'})
                         </span>
                     </h2>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 gap-4">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                         {booksBySeries[series].map(book => (
                             <BookCard
                                 key={`${book.series}-${book.id}`}

@@ -12,6 +12,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
+import { ThemeProvider } from "@/components/theme/ThemeProvider";
 
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -37,12 +38,13 @@ const queryClient = new QueryClient();
 
 const App = () => (
   <ErrorBoundary>
-    <QueryClientProvider client={queryClient}>
-      <AuthProvider>
-        <TooltipProvider>
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="schoolos-theme">
+      <QueryClientProvider client={queryClient}>
+        <AuthProvider>
+          <TooltipProvider>
+            <Toaster />
+            <Sonner />
+            <BrowserRouter>
             <Routes>
               {/* Auth Callback - Must be outside PublicLayout */}
               <Route path="/auth/callback" element={<AuthCallback />} />
@@ -81,6 +83,7 @@ const App = () => (
         </TooltipProvider>
       </AuthProvider>
     </QueryClientProvider>
+  </ThemeProvider>
   </ErrorBoundary>
 );
 
