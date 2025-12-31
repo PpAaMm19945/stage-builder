@@ -1,4 +1,5 @@
 import { useState } from 'react';
+import { toast } from 'sonner';
 import { useQuery } from '@tanstack/react-query';
 import { family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -6,13 +7,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
-import {
-  Loader2,
-  AlertCircle,
-  Circle,
-  Info,
-  Zap,
-} from 'lucide-react';
+
 import {
   CalendarBlank,
   Sparkle,
@@ -27,6 +22,11 @@ import {
   BookOpen,
   Smiley,
   Star,
+  CircleNotch,
+  WarningCircle,
+  Circle,
+  Info,
+  Lightning,
 } from '@phosphor-icons/react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem, Book } from '@/types';
@@ -60,7 +60,7 @@ export default function Dashboard() {
   if (isLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+        <CircleNotch className="h-8 w-8 animate-spin text-primary" />
         <p className="mt-4 text-muted-foreground">Planning your family's day...</p>
       </div>
     );
@@ -70,7 +70,7 @@ export default function Dashboard() {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-          <AlertCircle className="h-6 w-6 text-destructive" />
+          <WarningCircle className="h-6 w-6 text-destructive" />
         </div>
         <h3 className="text-lg font-semibold">Unable to load dashboard</h3>
         <p className="text-muted-foreground mb-4">We couldn't get today's plan. Please try again.</p>
@@ -126,7 +126,7 @@ export default function Dashboard() {
 
             <div className="space-y-3">
               <h3 className="font-semibold flex items-center gap-2">
-                <Zap className="h-4 w-4 text-orange-500" />
+                <Lightning className="h-4 w-4 text-orange-500" />
                 Quick Setup (2 minutes)
               </h3>
               <ol className="space-y-2 text-sm text-muted-foreground">
@@ -201,11 +201,13 @@ export default function Dashboard() {
               <span>{new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
             </div>
             <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-              Family Learning Plan
+              {youngestChild?.ageInMonths <= 12 ? 'Gentle Moments for Today' : 'Family Learning Plan'}
               <Sparkle className="h-6 w-6 text-yellow-500" weight="duotone" />
             </h1>
             <p className="text-muted-foreground flex items-center gap-2">
-              <span className="font-semibold text-foreground">{data.familySessions.length} activities</span>
+              <span className="font-semibold text-foreground">
+                {data.familySessions.length} {youngestChild?.ageInMonths <= 12 ? 'ideas' : 'activities'}
+              </span>
               <span className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
               <span>~{Math.round(data.totalDuration)} min total</span>
             </p>
@@ -264,7 +266,7 @@ export default function Dashboard() {
                   ) : m.status === 'willing_to_buy' ? (
                     <Circle className="w-4 h-4" />
                   ) : (
-                    <AlertCircle className="w-4 h-4 text-orange-500" />
+                    <WarningCircle className="w-4 h-4 text-orange-500" />
                   )}
                   <span className="text-sm font-medium">{m.name}</span>
                 </div>
@@ -334,83 +336,128 @@ export default function Dashboard() {
 
       {/* Family Sessions */}
       <div className="space-y-6">
-        {data.familySessions.map((session, index) => (
-          <Card key={index} className="overflow-hidden border-2 hover:border-primary/20 transition-colors">
-            <div className="bg-muted/30 p-4 border-b flex justify-between items-center">
-              <div className="flex items-center gap-3">
-                <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
-                  {index + 1}
-                </div>
-                <div>
-                  <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
-                  <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
-                    <span className="flex items-center gap-1"><Clock className="w-3 h-3" weight="duotone" /> {session.activity.duration_minutes} min</span>
-                    <span className="flex items-center gap-1"><PaintBrush className="w-3 h-3" weight="duotone" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
+        {data.familySessions.map((session, index) => {
+          const isInfancyMode = youngestChild?.ageInMonths <= 12;
+          const isDailyPractice = session.activity.activity_type === 'daily_practice';
+          // Use daily practice type if available, otherwise assume standard
+          // Note: activity_type might not be populated yet until API is updated, 
+          // but we can trust age check for now to change the UI wrapper.
+
+          return (
+            <Card key={index} className={`overflow-hidden border-2 transition-colors ${isInfancyMode ? 'border-primary/10 hover:border-primary/20' : 'hover:border-primary/20'}`}>
+              <div className="bg-muted/30 p-4 border-b flex justify-between items-center">
+                <div className="flex items-center gap-3">
+                  <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold">
+                    {index + 1}
+                  </div>
+                  <div>
+                    <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
+                    <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" weight="duotone" /> {session.activity.duration_minutes} min</span>
+                      {session.activity.context_embedding && (
+                        <Badge variant="outline" className="text-[10px] h-5 px-1.5 font-normal capitalize">
+                          {session.activity.context_embedding}
+                        </Badge>
+                      )}
+                      {!isInfancyMode && (
+                        <span className="flex items-center gap-1"><PaintBrush className="w-3 h-3" weight="duotone" /> {messLevelLabels[session.messLevel as string] || 'Variable Mess'}</span>
+                      )}
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
 
-            <CardContent className="p-0">
-              <div className="p-6 space-y-6">
-                <p className="text-foreground/80 leading-relaxed">
-                  {session.activity.description}
-                </p>
+              <CardContent className="p-0">
+                <div className="p-6 space-y-6">
+                  <p className="text-foreground/80 leading-relaxed">
+                    {session.activity.description}
+                  </p>
 
-                <div className="space-y-4">
-                  {session.childTiers.map(tier => (
-                    <div key={tier.childId} className="bg-accent/5 rounded-xl p-4 border border-accent/10">
-                      <div className="flex items-center gap-2 mb-2">
-                        <Baby className="h-5 w-5 text-slate-600 dark:text-slate-400" weight="duotone" />
-                        <span className="font-bold text-foreground">
-                          {tier.childName}
-                        </span>
-                        <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto opacity-70">
-                          {tier.tier}
-                        </Badge>
+                  <div className="space-y-4">
+                    {session.childTiers.map(tier => (
+                      <div key={tier.childId} className="bg-accent/5 rounded-xl p-4 border border-accent/10">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Baby className="h-5 w-5 text-slate-600 dark:text-slate-400" weight="duotone" />
+                          <span className="font-bold text-foreground">
+                            {tier.childName}
+                          </span>
+                          {!isInfancyMode && (
+                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto opacity-70">
+                              {tier.tier}
+                            </Badge>
+                          )}
+                        </div>
+                        <div className="flex gap-3 pl-1">
+                          <Sparkle className="w-4 h-4 text-indigo-500 mt-1 shrink-0" weight="duotone" />
+                          <p className={`text-sm font-medium ${isInfancyMode ? 'text-foreground/80' : 'text-indigo-900/80 dark:text-indigo-200/80'}`}>
+                            {tier.expectation}
+                          </p>
+                        </div>
                       </div>
-                      <div className="flex gap-3 pl-1">
-                        <Sparkle className="w-4 h-4 text-indigo-500 mt-1 shrink-0" weight="duotone" />
-                        <p className="text-sm font-medium text-indigo-900/80 dark:text-indigo-200/80">
-                          {tier.expectation}
-                        </p>
-                      </div>
-                    </div>
-                  ))}
+                    ))}
+                  </div>
                 </div>
-              </div>
 
-              <div className="bg-muted/10 p-4 border-t flex gap-3">
-                <Button className="flex-1 gap-2" variant="default" onClick={() => navigate(`/early-years/activities/${session.activity.id}`)}>
-                  <PlayCircle className="w-4 h-4" weight="duotone" />
-                  Start Activity
-                </Button>
-                <Button className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => setSelectedSession(session)}>
-                  <CheckCircle className="w-4 h-4" weight="fill" />
-                  We Did It!
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                <div className="bg-muted/10 p-4 border-t flex gap-3">
+                  {isInfancyMode ? (
+                    // Soft UI for Infancy
+                    <Button
+                      className="w-full gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/10 shadow-none"
+                      variant="outline"
+                      onClick={() => {
+                        // Just a feel-good click, no API call intended for daily practices
+                        // Once API protects it, this button is just UI candy or could dismiss the item locally
+                        toast.success("That was lovely!");
+                      }}
+                    >
+                      <Smiley className="w-4 h-4" weight="duotone" />
+                      That was lovely
+                    </Button>
+                  ) : (
+                    // Standard UI
+                    <>
+                      <Button className="flex-1 gap-2" variant="default" onClick={() => navigate(`/early-years/activities/${session.activity.id}`)}>
+                        <PlayCircle className="w-4 h-4" weight="duotone" />
+                        Start Activity
+                      </Button>
+                      <Button className="flex-1 gap-2 bg-green-600 hover:bg-green-700 text-white" onClick={() => setSelectedSession(session)}>
+                        <CheckCircle className="w-4 h-4" weight="fill" />
+                        We Did It!
+                      </Button>
+                    </>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          );
+        })}
 
         {data.familySessions.length === 0 && (
           <div className="text-center py-12 border-2 border-dashed rounded-xl space-y-4">
             <div className="space-y-2">
-              <p className="text-lg font-semibold text-foreground">No activities matched your family today</p>
+              <p className="text-lg font-semibold text-foreground">
+                {youngestChild?.ageInMonths <= 12 ? 'No daily practices for today' : 'No activities matched your family today'}
+              </p>
               <p className="text-sm text-muted-foreground">
-                This usually means we need more info about your materials, or we're still adding activities for your children's ages.
+                {youngestChild?.ageInMonths <= 12 ? 'Enjoy some quiet time with your little one.' : "This usually means we need more info about your materials, or we're still adding activities for your children's ages."}
               </p>
             </div>
-            <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
-              <Button onClick={() => navigate('/settings')} size="lg" className="gap-2">
-                <Cube className="w-4 h-4" weight="duotone" />
-                Update My Materials
+            {!youngestChild || youngestChild.ageInMonths > 12 && (
+              <div className="flex flex-col sm:flex-row gap-3 justify-center items-center">
+                <Button onClick={() => navigate('/settings')} size="lg" className="gap-2">
+                  <Cube className="w-4 h-4" weight="duotone" />
+                  Update My Materials
+                </Button>
+                <Button variant="outline" onClick={() => window.location.reload()}>
+                  Refresh
+                </Button>
+              </div>
+            )}
+            {youngestChild && youngestChild.ageInMonths <= 12 && (
+              <Button variant="ghost" onClick={() => window.location.reload()}>
+                Check again
               </Button>
-              <Button variant="outline" onClick={() => window.location.reload()}>
-                Refresh
-              </Button>
-            </div>
+            )}
             <p className="text-xs text-muted-foreground italic">
               💡 We're adding more family activities soon!
             </p>

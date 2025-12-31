@@ -644,97 +644,125 @@ app.get('/api/family/today', async (c) => {
       });
     }
 
-    // Get Unified Family Sessions
-    const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
+  });
+    }
 
-    // Process sessions with child-specific tiers
-    const familySessions = recommendedActivities.map((activity: any) => {
-      const tiers = JSON.parse(activity.tiered_expectations || '[]');
-      const childTiers = children.map((child: any) => {
-        // Find appropriate tier for child's age
-        const age = child.age_in_months;
-        // Find tier where age is within range, or closest
-        let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+// Get ages for Infancy Mode check
+const ages = children.map((c: any) => c.age_in_months);
+const youngestAge = Math.min(...ages);
+const isInfancyMode = youngestAge <= 12;
 
-        // Fallback to closest if out of specific ranges (capped at min/max tiers)
-        if (!tier) {
-          if (age < tiers[0]?.age_min) tier = tiers[0];
-          else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
-        }
+let familySessions: any[] = [];
+let materialsList: any[] = [];
 
-        return {
-          childId: child.id,
-          childName: child.name,
-          tier: tier?.tier || 'Standard',
-          expectation: tier?.expectation || 'Participate with support',
-          childAge: age
-        };
-      });
+if (isInfancyMode) {
+  // Infancy Mode: Return Daily Practices instead of generic family sessions
+  const { results: practices } = await c.env.DB.prepare(`
+        SELECT * FROM activities 
+        WHERE activity_type = 'daily_practice'
+        ORDER BY RANDOM() LIMIT 3
+      `).all();
 
-      // Check materials availability
-      const materials = JSON.parse(activity.materials || '[]');
-      // We would ideally check against DB here again or pass it down, 
-      // but for now we'll fetch in frontend or assume partially available based on scoring
+  familySessions = practices.map((activity: any) => ({
+    activity: {
+      ...activity,
+      materials: JSON.parse((activity as any).materials || '[]'),
+      instructions: JSON.parse((activity as any).instructions || '[]'),
+      learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
+    },
+    childTiers: children.map((c: any) => ({
+      childId: c.id,
+      childName: c.name,
+      tier: 'Infant',
+      expectation: 'Gentle participation',
+      childAge: c.age_in_months
+    })),
+    messLevel: 'none',
+    prepMinutes: 0,
+    materialsAvailable: true
+  }));
 
+  // No complicated materials logic for infancy mode usually
+
+} else {
+  // Standard Family Mode
+  const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
+
+  familySessions = recommendedActivities.map((activity: any) => {
+    const tiers = JSON.parse(activity.tiered_expectations || '[]');
+    const childTiers = children.map((child: any) => {
+      const age = child.age_in_months;
+      let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+      if (!tier) {
+        if (age < tiers[0]?.age_min) tier = tiers[0];
+        else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+      }
       return {
-        activity: {
-          ...activity,
-          materials: JSON.parse(activity.materials || '[]'),
-          instructions: JSON.parse(activity.instructions || '[]'),
-          learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
-        },
-        childTiers,
-        messLevel: activity.mess_level,
-        prepMinutes: activity.prep_time_minutes,
-        materialsAvailable: true // Simplified for now, computed in frontend or detailed query
+        childId: child.id,
+        childName: child.name,
+        tier: tier?.tier || 'Standard',
+        expectation: tier?.expectation || 'Participate with support',
+        childAge: age
       };
     });
 
-    // Collect all materials needed today
-    const neededMaterials = new Set<string>();
-    familySessions.forEach((session: any) => {
-      session.activity.materials.forEach((m: string) => neededMaterials.add(m));
-    });
+    return {
+      activity: {
+        ...activity,
+        materials: JSON.parse(activity.materials || '[]'),
+        instructions: JSON.parse(activity.instructions || '[]'),
+        learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+      },
+      childTiers,
+      messLevel: activity.mess_level,
+      prepMinutes: activity.prep_time_minutes,
+      materialsAvailable: true
+    };
+  });
 
-    // Get status of these materials
-    const materialsList: any[] = [];
-    if (neededMaterials.size > 0) {
-      // Fetch statuses
-      const marks = Array(neededMaterials.size).fill('?').join(',');
-      const { results: existing } = await c.env.DB.prepare(`
-            SELECT material_name, status FROM family_materials 
-            WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
-        `).bind(user.id, ...Array.from(neededMaterials)).all();
+  // Collect materials
+  const neededMaterials = new Set<string>();
+  familySessions.forEach((session: any) => {
+    session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+  });
 
-      const statusMap = new Map();
-      existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
+  if (neededMaterials.size > 0) {
+    const marks = Array(neededMaterials.size).fill('?').join(',');
+    const { results: existing } = await c.env.DB.prepare(`
+              SELECT material_name, status FROM family_materials 
+              WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
+          `).bind(user.id, ...Array.from(neededMaterials)).all();
 
-      neededMaterials.forEach(m => {
-        materialsList.push({
-          name: m,
-          status: statusMap.get(m) || 'unknown'
-        });
+    const statusMap = new Map();
+    existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
+
+    neededMaterials.forEach(m => {
+      materialsList.push({
+        name: m,
+        status: statusMap.get(m) || 'unknown'
       });
-    }
-
-    // Compute metrics
-    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
-    const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
-    const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
-
-    return c.json({
-      date: new Date().toISOString().split('T')[0],
-      children,
-      familySessions,
-      materials: materialsList,
-      totalDuration,
-      coreKitCoverage
     });
-  } catch (error: any) {
-    console.error('Family today error:', error);
-    const status = error.message === 'Unauthorized' ? 401 : 500;
-    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
+}
+
+// Compute metrics
+const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
+const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
+const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
+
+return c.json({
+  date: new Date().toISOString().split('T')[0],
+  children,
+  familySessions,
+  materials: materialsList,
+  totalDuration,
+  coreKitCoverage
+});
+  } catch (error: any) {
+  console.error('Family today error:', error);
+  const status = error.message === 'Unauthorized' ? 401 : 500;
+  return c.json({ error: error.message || 'Internal Server Error' }, status);
+}
 });
 
 // ============ FAMILY MATERIALS ROUTES ============
@@ -952,6 +980,10 @@ app.post('/api/observations', async (c) => {
 
     if (!activity) {
       return c.json({ error: 'Activity not found' }, 404);
+    }
+
+    if ((activity as any).assessment_prohibited === 1) {
+      return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
     }
 
     const observationId = generateId('obs');

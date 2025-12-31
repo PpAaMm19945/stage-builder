@@ -15,7 +15,8 @@ export {
   Users,
   User,
   Baby,
-  
+  SunDim,
+
   // Actions
   Plus,
   Check,
@@ -25,7 +26,7 @@ export {
   ArrowLeft,
   CaretLeft,
   CaretRight,
-  
+
   // UI Elements
   Sparkle,
   Star,
@@ -38,7 +39,7 @@ export {
   Package,
   PencilSimple,
   Trash,
-  
+
   // Domain Icons
   Hand,
   PersonArmsSpread,
@@ -46,11 +47,11 @@ export {
   Brain,
   Heart,
   Smiley,
-  
+
   // Reading/Books
   Books,
   Book,
-  
+
   // Misc
   Warning,
   Info,

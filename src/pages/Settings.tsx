@@ -569,7 +569,7 @@ export default function Settings() {
             >
               {isDeleting ? (
                 <>
-                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
                   Deleting...
                 </>
               ) : (

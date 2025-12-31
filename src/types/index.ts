@@ -146,7 +146,9 @@ export interface ApiActivity {
   instructions: string[];
   learning_outcomes?: string[];
   // New fields
-  activity_type?: 'family_session' | 'individual';
+  activity_type?: 'family_session' | 'individual' | 'daily_practice';
+  assessment_prohibited?: number;
+  context_embedding?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor' | null;
   tiered_expectations?: any[];
   uses_core_kit?: number;
   mess_level?: string | number;
