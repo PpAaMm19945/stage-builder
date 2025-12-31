@@ -19,6 +19,7 @@ interface Env {
 interface BookMetadata {
   id: string;
   series: string;
+  seriesTitle?: string;
   title: string;
   author?: string;
   illustrator?: string;
@@ -375,7 +376,7 @@ app.get('/api/activities', async (c) => {
   const ageMonths = c.req.query('ageMonths');
   const limit = c.req.query('limit') || '50';
 
-  let query = 'SELECT * FROM activities WHERE is_active = 1';
+  let query = "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)";
   const params: any[] = [];
 
   if (domain) {
@@ -600,6 +601,8 @@ async function getFamilyDailyRecommendations(db: D1Database, children: any[], pa
       AND max_age_months >= ?
       AND tiered_expectations IS NOT NULL
       AND is_active = 1
+      AND (is_archived = 0 OR is_archived IS NULL)
+      AND (content_status != 'blacklisted' OR content_status IS NULL)
     ORDER BY 
       uses_core_kit DESC,
       mess_level ASC,
@@ -798,9 +801,103 @@ app.put('/api/family/materials', async (c) => {
     return c.json({ success: true });
   } catch (error: any) {
     console.error('Materials update error:', error);
-    return c.json({ error: error.message || 'Failed to update materials' }, 400);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
   }
 });
+
+// ============ FAMILY COMPOSER (NEW) ============
+
+// Compose a custom family session plan
+app.post('/family-sessions/compose', async (c) => {
+  try {
+    // Optional auth (can be public or authenticated)
+    // If auth, we can pull defaults. simple validation for now.
+    const body = await c.req.json();
+    const { children, materials, preferred_domain } = body;
+    // children: array of { age_months: number, name?: string }
+    // materials: array of strings (available materials)
+    // preferred_domain: optional string (biblical domain or standard domain)
+
+    if (!children || !Array.isArray(children) || children.length === 0) {
+      return c.json({ error: 'Children array required' }, 400);
+    }
+
+    const ages = children.map((c: any) => c.age_months);
+    const minAge = Math.min(...ages);
+    const maxAge = Math.max(...ages);
+
+    let query = `
+      SELECT * FROM activities 
+      WHERE activity_type = 'family_session'
+        AND min_age_months <= ? 
+        AND max_age_months >= ?
+        AND tiered_expectations IS NOT NULL
+        AND is_active = 1
+        AND (is_archived = 0 OR is_archived IS NULL)
+        AND (content_status != 'blacklisted' OR content_status IS NULL)
+    `;
+
+    const params: any[] = [minAge, maxAge];
+
+    // Domain filter (mapped to biblical or standard)
+    if (preferred_domain) {
+      if (['wisdom', 'stature', 'favor_with_god', 'favor_with_man'].includes(preferred_domain)) {
+        query += ' AND biblical_domain = ?';
+        params.push(preferred_domain);
+      } else {
+        query += ' AND domain = ?';
+        params.push(preferred_domain);
+      }
+    }
+
+    // Material matching logic could be added here similar to getFamilyDailyRecommendations
+    // For now, simpler ordering
+    query += ` ORDER BY uses_core_kit DESC, RANDOM() LIMIT 1`;
+
+    const activity = await c.env.DB.prepare(query).bind(...params).first();
+
+    if (!activity) {
+      return c.json({ error: 'No suitable family session found for this combination.' }, 404);
+    }
+
+    // Process tiers
+    const tiers = JSON.parse((activity as any).tiered_expectations || '[]');
+    const childInstructions = children.map((child: any) => {
+      const age = child.age_months;
+      let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+      if (!tier) {
+        if (age < tiers[0]?.age_min) tier = tiers[0];
+        else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+      }
+      return {
+        childName: child.name || 'Child',
+        ageMonths: age,
+        tier: tier?.tier || 'Standard',
+        instruction: tier?.expectation || 'Participate with support',
+        adultSupport: tier?.adult_support // New field if we added it to tiered_expectations json
+      };
+    });
+
+    return c.json({
+      activity: {
+        ...activity,
+        materials: JSON.parse((activity as any).materials || '[]'),
+        instructions: JSON.parse((activity as any).instructions || '[]'),
+        learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
+      },
+      familyPrompt: (activity as any).parent_script || "Guide your family through this activity together.",
+      safetyNote: (activity as any).safety_note,
+      successCue: (activity as any).success_cue,
+      childInstructions
+    });
+
+  } catch (error: any) {
+    console.error('Composer error:', error);
+    return c.json({ error: error.message || 'Internal Server Error' }, 500);
+  }
+});
+
 
 // ============ ADMIN / EXPORT ROUTES ============
 

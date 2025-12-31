@@ -151,6 +151,14 @@ export interface ApiActivity {
   uses_core_kit?: number;
   mess_level?: string | number;
   prep_time_minutes?: number;
+  // Overhaul fields
+  content_status?: 'draft' | 'reviewed' | 'restricted' | 'blacklisted' | 'published';
+  is_archived?: number; // 0 or 1
+  biblical_domain?: 'wisdom' | 'stature' | 'favor_with_god' | 'favor_with_man';
+  parent_script?: string;
+  safety_note?: string;
+  success_cue?: string;
+  cluster_tag?: string;
 }
 
 // Family Activity (for sibling-aware recommendations - legacy)
