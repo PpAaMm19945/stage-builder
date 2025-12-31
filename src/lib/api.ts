@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -169,6 +169,32 @@ export const reading = {
     apiRequest<ReadingSession[]>(`/api/reading/history${limit ? `?limit=${limit}` : ''}`),
 };
 
-export const api = { auth, students, activities, observations, family, books, reading };
+// Feedback
+export const feedback = {
+  // Upvotes
+  toggleUpvote: (contentType: 'activity' | 'book', contentId: string) =>
+    apiRequest<{ upvoted: boolean; newCount: number }>('/api/upvotes', {
+      method: 'POST',
+      body: JSON.stringify({ contentType, contentId }),
+    }),
+
+  checkUpvote: (contentType: 'activity' | 'book', contentId: string) =>
+    apiRequest<{ upvoted: boolean }>(`/api/upvotes/check?contentType=${contentType}&contentId=${contentId}`),
+
+  // Comments
+  getComments: (contentType: 'activity' | 'book', contentId: string) =>
+    apiRequest<{ comments: ParentComment[]; count: number }>(`/api/comments?contentType=${contentType}&contentId=${contentId}`),
+
+  addComment: (contentType: 'activity' | 'book', contentId: string, text: string, isSuccessStory = false) =>
+    apiRequest<{ comment: ParentComment }>('/api/comments', {
+      method: 'POST',
+      body: JSON.stringify({ contentType, contentId, text, isSuccessStory }),
+    }),
+
+  deleteComment: (commentId: string) =>
+    apiRequest<{ success: boolean }>(`/api/comments/${commentId}`, { method: 'DELETE' }),
+};
+
+export const api = { auth, students, activities, observations, family, books, reading, feedback };
 export default api;
 

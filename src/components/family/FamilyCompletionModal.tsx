@@ -8,6 +8,7 @@ import { observations } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2 } from 'lucide-react';
 import { FamilySession, MasteryLevel } from '@/types';
+import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
 
 interface FamilyCompletionModalProps {
     isOpen: boolean;
@@ -63,9 +64,8 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 description: "Activity marked as complete for the whole family.",
             });
 
-            onSuccess();
-            onClose();
-            // Reset state
+            // Transition to success story
+            setShowStoryPrompt(true);
             setRatings({});
             setNotes('');
         } catch (error) {
@@ -74,6 +74,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 description: "Failed to save observations. Please try again.",
                 variant: "destructive",
             });
+            setIsSubmitting(false);
         } finally {
             setIsSubmitting(false);
         }
@@ -102,9 +103,8 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 description: "Marked as complete with default progress ratings.",
             });
 
-            onSuccess();
-            onClose();
-            // Reset state
+            // Transition to success story
+            setShowStoryPrompt(true);
             setRatings({});
             setNotes('');
         } catch (error) {
@@ -113,94 +113,116 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 description: "Failed to save observations. Please try again.",
                 variant: "destructive",
             });
+            setIsSubmitting(false);
         } finally {
             setIsSubmitting(false);
         }
     };
 
+    const [showStoryPrompt, setShowStoryPrompt] = useState(false);
+
     if (!session) return null;
 
-    return (
-        <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-            <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
-                <DialogHeader>
-                    <DialogTitle>How did it go?</DialogTitle>
-                    <DialogDescription>
-                        Record progress for {session.activity.title}
-                    </DialogDescription>
-                </DialogHeader>
+    const onAllDone = () => {
+        onSuccess();
+        onClose();
+        setShowStoryPrompt(false);
+    };
 
-                <div className="space-y-6 py-4">
-                    {session.childTiers.map(child => (
-                        <div key={child.childId} className="space-y-3 pb-4 border-b last:border-0 last:pb-0">
-                            <div className="flex items-start justify-between">
-                                <div>
-                                    <h4 className="font-semibold flex items-center gap-2">
-                                        {child.childName}
-                                        <Badge variant="outline" className="text-[10px] font-normal">
-                                            {child.tier}
-                                        </Badge>
-                                    </h4>
-                                    <p className="text-xs text-muted-foreground mt-0.5">
-                                        Goal: {child.expectation}
-                                    </p>
+    return (
+        <>
+            <SuccessStoryPrompt
+                isOpen={showStoryPrompt}
+                onOpenChange={(open) => {
+                    if (!open) onAllDone();
+                }}
+                contentType="activity"
+                contentId={session.activity.id}
+                title={session.activity.title}
+            />
+
+            <Dialog open={isOpen && !showStoryPrompt} onOpenChange={(open) => !open && onClose()}>
+                <DialogContent className="max-w-md max-h-[90vh] overflow-y-auto">
+                    {/* ... existing content ... */}
+                    <DialogHeader>
+                        <DialogTitle>How did it go?</DialogTitle>
+                        <DialogDescription>
+                            Record progress for {session.activity.title}
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <div className="space-y-6 py-4">
+                        {session.childTiers.map(child => (
+                            <div key={child.childId} className="space-y-3 pb-4 border-b last:border-0 last:pb-0">
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h4 className="font-semibold flex items-center gap-2">
+                                            {child.childName}
+                                            <Badge variant="outline" className="text-[10px] font-normal">
+                                                {child.tier}
+                                            </Badge>
+                                        </h4>
+                                        <p className="text-xs text-muted-foreground mt-0.5">
+                                            Goal: {child.expectation}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="flex gap-2 w-full">
+                                    {MASTERY_OPTIONS.map(option => (
+                                        <button
+                                            key={option.value}
+                                            onClick={() => handleRatingChange(child.childId, option.value)}
+                                            className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
+                                                ? `ring-2 ring-primary ring-offset-1 ${option.color}`
+                                                : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
+                                                }`}
+                                        >
+                                            {option.label}
+                                        </button>
+                                    ))}
                                 </div>
                             </div>
+                        ))}
 
-                            <div className="flex gap-2 w-full">
-                                {MASTERY_OPTIONS.map(option => (
-                                    <button
-                                        key={option.value}
-                                        onClick={() => handleRatingChange(child.childId, option.value)}
-                                        className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
-                                            ? `ring-2 ring-primary ring-offset-1 ${option.color}`
-                                            : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
-                                            }`}
-                                    >
-                                        {option.label}
-                                    </button>
-                                ))}
-                            </div>
+                        <div className="space-y-2">
+                            <Label htmlFor="notes">Notes (Optional)</Label>
+                            <Textarea
+                                id="notes"
+                                placeholder="Any notable moments or struggles..."
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className="resize-none"
+                            />
                         </div>
-                    ))}
-
-                    <div className="space-y-2">
-                        <Label htmlFor="notes">Notes (Optional)</Label>
-                        <Textarea
-                            id="notes"
-                            placeholder="Any notable moments or struggles..."
-                            value={notes}
-                            onChange={(e) => setNotes(e.target.value)}
-                            className="resize-none"
-                        />
                     </div>
-                </div>
 
-                <DialogFooter className="gap-2 sm:justify-between flex-col sm:flex-row">
-                    <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
-                        Cancel
-                    </Button>
-                    <div className="flex gap-2 flex-1 sm:flex-initial">
-                        <Button
-                            variant="outline"
-                            onClick={handleQuickComplete}
-                            disabled={isSubmitting}
-                            className="flex-1 sm:flex-initial"
-                        >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Quick Complete
+                    <DialogFooter className="gap-2 sm:justify-between flex-col sm:flex-row">
+                        <Button variant="ghost" onClick={onClose} disabled={isSubmitting}>
+                            Cancel
                         </Button>
-                        <Button
-                            onClick={handleSubmit}
-                            disabled={isSubmitting}
-                            className="flex-1 sm:flex-initial"
-                        >
-                            {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-                            Save Progress
-                        </Button>
-                    </div>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
+                        <div className="flex gap-2 flex-1 sm:flex-initial">
+                            <Button
+                                variant="outline"
+                                onClick={handleQuickComplete}
+                                disabled={isSubmitting}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Quick Complete
+                            </Button>
+                            <Button
+                                onClick={handleSubmit}
+                                disabled={isSubmitting}
+                                className="flex-1 sm:flex-initial"
+                            >
+                                {isSubmitting && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                                Save Progress
+                            </Button>
+                        </div>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </>
     );
 }

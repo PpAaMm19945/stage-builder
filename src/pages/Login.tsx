@@ -1,7 +1,6 @@
-import { GraduationCap } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
-import { Target, ChartLineUp, Lightbulb } from '@phosphor-icons/react';
+import { Target, ChartLineUp, Lightbulb, Student } from '@phosphor-icons/react';
 
 export default function Login() {
   const handleLogin = () => {
@@ -15,7 +14,7 @@ export default function Login() {
       <header className="p-4 md:p-6">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <GraduationCap className="h-6 w-6 text-primary-foreground" />
+            <Student className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
             SchoolOS

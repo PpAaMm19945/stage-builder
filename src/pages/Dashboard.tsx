@@ -33,6 +33,7 @@ import { FamilySession, MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { books } from '@/lib/api';
 import { BookReader } from '@/components/books/BookReader';
+import { UpvoteButton } from '@/components/feedback/UpvoteButton';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -365,6 +366,9 @@ export default function Dashboard() {
                     </div>
                   </div>
                 </div>
+                <div className="flex items-center gap-2">
+                  <UpvoteButton contentType="activity" contentId={session.activity.id} variant="minimal" />
+                </div>
               </div>
 
               <CardContent className="p-0">
@@ -475,14 +479,16 @@ export default function Dashboard() {
         }}
       />
 
-      {readerBook && (
-        <BookReader
-          open={!!readerBook}
-          onOpenChange={(open) => !open && setReaderBook(null)}
-          book={readerBook}
-          childrenIds={data?.children?.map((c: any) => c.id) || []}
-        />
-      )}
-    </div>
+      {
+        readerBook && (
+          <BookReader
+            open={!!readerBook}
+            onOpenChange={(open) => !open && setReaderBook(null)}
+            book={readerBook}
+            childrenIds={data?.children?.map((c: any) => c.id) || []}
+          />
+        )
+      }
+    </div >
   );
 }

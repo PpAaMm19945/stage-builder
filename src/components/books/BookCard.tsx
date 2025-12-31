@@ -4,7 +4,7 @@ import { books } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Books as BooksIcon } from '@phosphor-icons/react';
+import { Books as BooksIcon, Heart } from '@phosphor-icons/react';
 
 interface BookCardProps {
     book: Book;
@@ -61,9 +61,8 @@ export function BookCard({ book, onClick }: BookCardProps) {
                     src={coverUrl}
                     alt={book.title}
                     loading="lazy"
-                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${
-                        imageLoaded ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                        }`}
                     onLoad={() => setImageLoaded(true)}
                     onError={() => {
                         setImageError(true);
@@ -87,6 +86,12 @@ export function BookCard({ book, onClick }: BookCardProps) {
                             {shortenedSeries}
                         </Badge>
                     )}
+                    {(book.upvoteCount || 0) > 0 && (
+                        <Badge variant="secondary" className="text-[10px] px-1.5 gap-1 bg-red-50 text-red-600 border-red-100">
+                            <Heart weight="fill" className="h-3 w-3" />
+                            {book.upvoteCount}
+                        </Badge>
+                    )}
                 </div>
 
                 {book.author && (
@@ -95,6 +100,6 @@ export function BookCard({ book, onClick }: BookCardProps) {
                     </p>
                 )}
             </CardContent>
-        </Card>
+        </Card >
     );
 }

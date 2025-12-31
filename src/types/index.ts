@@ -161,6 +161,9 @@ export interface ApiActivity {
   safety_note?: string;
   success_cue?: string;
   cluster_tag?: string;
+  // Feedback
+  upvote_count?: number;
+  comment_count?: number;
 }
 
 // Family Activity (for sibling-aware recommendations - legacy)
@@ -225,6 +228,8 @@ export interface Book {
   learningStage: string;
   readingPrompts?: { page: number; prompt: string }[];
   coverUrl?: string;
+  upvoteCount?: number;
+  commentCount?: number;
 }
 
 export interface ReadingSession {
@@ -235,4 +240,28 @@ export interface ReadingSession {
   childrenPresent?: string[];
   notes?: string;
   completedAt: string;
+}
+
+// ============================================
+// Feedback & Community
+// ============================================
+
+export interface ContentUpvote {
+  id: string;
+  userId: string;
+  contentType: 'activity' | 'book';
+  contentId: string;
+  createdAt: string;
+}
+
+export interface ParentComment {
+  id: string;
+  userId: string;
+  userName?: string;
+  userAvatar?: string;
+  contentType: 'activity' | 'book';
+  contentId: string;
+  commentText: string;
+  isSuccessStory: boolean;
+  createdAt: string;
 }

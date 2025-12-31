@@ -10,6 +10,8 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ObservationModal } from '@/components/early-years/ObservationModal';
+import { UpvoteButton } from '@/components/feedback/UpvoteButton';
+import { CommentSection } from '@/components/feedback/CommentSection';
 import { toast } from 'sonner';
 import {
   ArrowLeft,
@@ -267,6 +269,7 @@ export default function ActivityViewer() {
               Completed
             </Badge>
           )}
+          <UpvoteButton contentType="activity" contentId={activity.id} />
         </div>
 
         {/* Meta info */}
@@ -512,6 +515,10 @@ export default function ActivityViewer() {
         activityTitle={activity.title}
         onSubmit={handleObservationSubmit}
       />
+
+      <div className="pt-8 border-t">
+        <CommentSection contentType="activity" contentId={activity.id} />
+      </div>
     </div>
   );
 }

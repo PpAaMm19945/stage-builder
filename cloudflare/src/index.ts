@@ -1658,4 +1658,177 @@ app.get('/health', (c) => {
   return c.json({ status: 'ok', timestamp: new Date().toISOString() });
 });
 
+
+// ============ FEEDBACK ROUTES ============
+
+// 1. Toggle Upvote
+app.post('/api/upvotes', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { contentType, contentId } = await c.req.json() as { contentType: 'activity' | 'book'; contentId: string };
+
+    if (!['activity', 'book'].includes(contentType)) {
+      return c.json({ error: 'Invalid content type' }, 400);
+    }
+
+    // Check if already upvoted
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM content_upvotes WHERE user_id = ? AND content_type = ? AND content_id = ?'
+    ).bind(user.id, contentType, contentId).first();
+
+    let upvoted = false;
+
+    if (existing) {
+      // Remove upvote
+      await c.env.DB.prepare(
+        'DELETE FROM content_upvotes WHERE id = ?'
+      ).bind(existing.id).run();
+      upvoted = false;
+    } else {
+      // Add upvote
+      const id = generateId('vote');
+      await c.env.DB.prepare(
+        'INSERT INTO content_upvotes (id, user_id, content_type, content_id) VALUES (?, ?, ?, ?)'
+      ).bind(id, user.id, contentType, contentId).run();
+      upvoted = true;
+    }
+
+    // Update aggregated count
+    // Note: This is a simple counter update. For high scale, we'd use a queue or periodically recalculate.
+    const table = contentType === 'activity' ? 'activities' : 'books';
+    const countResult = await c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM content_upvotes WHERE content_type = ? AND content_id = ?`
+    ).bind(contentType, contentId).first<{ count: number }>();
+
+    const newCount = countResult?.count || 0;
+
+    await c.env.DB.prepare(
+      `UPDATE ${table} SET upvote_count = ? WHERE id = ?`
+    ).bind(newCount, contentId).run();
+
+    return c.json({ upvoted, newCount });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// 2. Check Upvote Status
+app.get('/api/upvotes/check', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const contentType = c.req.query('contentType');
+    const contentId = c.req.query('contentId');
+
+    if (!contentType || !contentId) return c.json({ error: 'Missing params' }, 400);
+
+    const existing = await c.env.DB.prepare(
+      'SELECT 1 FROM content_upvotes WHERE user_id = ? AND content_type = ? AND content_id = ?'
+    ).bind(user.id, contentType, contentId).first();
+
+    return c.json({ upvoted: !!existing });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// 3. List Comments
+app.get('/api/comments', async (c) => {
+  try {
+    const contentType = c.req.query('contentType');
+    const contentId = c.req.query('contentId');
+
+    if (!contentType || !contentId) return c.json({ error: 'Missing params' }, 400);
+
+    const { results } = await c.env.DB.prepare(`
+      SELECT 
+        c.id, c.user_id as userId, c.content_type, c.content_id, 
+        c.comment_text as commentText, c.is_success_story as isSuccessStory, 
+        c.created_at as createdAt,
+        u.name as userName, u.avatar_url as userAvatar
+      FROM parent_comments c
+      JOIN users u ON c.user_id = u.id
+      WHERE c.content_type = ? AND c.content_id = ?
+      ORDER BY c.created_at DESC
+    `).bind(contentType, contentId).all();
+
+    return c.json({ comments: results, count: results.length });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// 4. Add Comment
+app.post('/api/comments', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { contentType, contentId, text, isSuccessStory } = await c.req.json() as any;
+
+    if (!text || !text.trim()) return c.json({ error: 'Comment required' }, 400);
+
+    const id = generateId('comment');
+    const now = new Date().toISOString();
+
+    await c.env.DB.prepare(`
+      INSERT INTO parent_comments (id, user_id, content_type, content_id, comment_text, is_success_story, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, user.id, contentType, contentId, text.trim(), isSuccessStory ? 1 : 0, now, now).run();
+
+    // Update count
+    const table = contentType === 'activity' ? 'activities' : 'books';
+    const countResult = await c.env.DB.prepare(
+      `SELECT COUNT(*) as count FROM parent_comments WHERE content_type = ? AND content_id = ?`
+    ).bind(contentType, contentId).first<{ count: number }>();
+
+    const newCount = countResult?.count || 0;
+
+    await c.env.DB.prepare(
+      `UPDATE ${table} SET comment_count = ? WHERE id = ?`
+    ).bind(newCount, contentId).run();
+
+    const newComment = {
+      id,
+      userId: user.id,
+      userName: user.name,
+      userAvatar: user.avatar_url,
+      contentType,
+      contentId,
+      commentText: text.trim(),
+      isSuccessStory: !!isSuccessStory,
+      createdAt: now
+    };
+
+    return c.json({ comment: newComment });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// 5. Delete Comment
+app.delete('/api/comments/:id', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const commentId = c.req.param('id');
+
+    // Verify ownership
+    const comment = await c.env.DB.prepare(
+      'SELECT * FROM parent_comments WHERE id = ?'
+    ).bind(commentId).first<{ user_id: string, content_type: string, content_id: string }>();
+
+    if (!comment) return c.json({ error: 'Not found' }, 404);
+    if (comment.user_id !== user.id) return c.json({ error: 'Unauthorized' }, 403);
+
+    await c.env.DB.prepare('DELETE FROM parent_comments WHERE id = ?').bind(commentId).run();
+
+    // Update count
+    const table = comment.content_type === 'activity' ? 'activities' : 'books';
+    await c.env.DB.prepare(
+      `UPDATE ${table} SET comment_count = (SELECT COUNT(*) FROM parent_comments WHERE content_type = ? AND content_id = ?) WHERE id = ?`
+    ).bind(comment.content_type, comment.content_id, comment.content_id).run();
+
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 export default app;
