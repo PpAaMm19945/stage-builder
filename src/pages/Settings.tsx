@@ -5,7 +5,25 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { User, Bell, Shield, LogOut, Users, Pencil, Trash2, Loader2, Baby, Plus, Box, Check, CheckCircle2, Circle, AlertCircle } from 'lucide-react';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import {
+  User,
+  Bell,
+  ShieldCheck,
+  SignOut,
+  UsersThree,
+  PencilSimple,
+  Trash,
+  CircleNotch,
+  Baby,
+  Plus,
+  Package,
+  Check,
+  CheckCircle,
+  Circle,
+  WarningCircle,
+  SunDim
+} from '@phosphor-icons/react';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { students, family } from '@/lib/api';
@@ -185,7 +203,7 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Users className="h-5 w-5" />
+            <UsersThree className="h-5 w-5" />
             Children
           </CardTitle>
           <CardDescription>
@@ -231,7 +249,7 @@ export default function Settings() {
                       onClick={() => setEditingChild(child)}
                       className="h-8 w-8"
                     >
-                      <Pencil className="h-4 w-4" />
+                      <PencilSimple className="h-4 w-4" />
                       <span className="sr-only">Edit {child.name}</span>
                     </Button>
                     <Button
@@ -240,7 +258,7 @@ export default function Settings() {
                       onClick={() => setDeletingChild(child)}
                       className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
                     >
-                      <Trash2 className="h-4 w-4" />
+                      <Trash className="h-4 w-4" />
                       <span className="sr-only">Delete {child.name}</span>
                     </Button>
                   </div>
@@ -261,12 +279,12 @@ export default function Settings() {
         <CardHeader>
           <div className="flex items-center justify-between">
             <CardTitle className="flex items-center gap-2 text-lg">
-              <Box className="h-5 w-5" />
+              <Package className="h-5 w-5" />
               My Family's Materials
             </CardTitle>
             {hasChanges && (
               <Button size="sm" onClick={handleSaveMaterials} disabled={updateMaterialsMutation.isPending}>
-                {updateMaterialsMutation.isPending && <Loader2 className="w-3 h-3 mr-2 animate-spin" />}
+                {updateMaterialsMutation.isPending && <CircleNotch className="w-3 h-3 mr-2 animate-spin" />}
                 Save Changes
               </Button>
             )}
@@ -278,12 +296,12 @@ export default function Settings() {
         <CardContent>
           {isMaterialsLoading ? (
             <div className="flex justify-center py-8">
-              <Loader2 className="h-6 w-6 animate-spin text-muted-foreground" />
+              <CircleNotch className="h-6 w-6 animate-spin text-muted-foreground" />
             </div>
           ) : materialsError ? (
             <div className="flex flex-col items-center justify-center py-8 space-y-4">
               <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <AlertCircle className="h-6 w-6 text-destructive" />
+                <WarningCircle className="h-6 w-6 text-destructive" />
               </div>
               <div className="text-center space-y-1">
                 <p className="font-semibold text-foreground">Failed to load materials</p>
@@ -300,7 +318,7 @@ export default function Settings() {
                 <p className="text-sm font-semibold text-foreground">How this works:</p>
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
                   <div className="flex items-center gap-2">
-                    <CheckCircle2 className="w-4 h-4 text-green-600" />
+                    <CheckCircle className="w-4 h-4 text-green-600" />
                     <span className="text-muted-foreground">Have at home</span>
                   </div>
                   <div className="flex items-center gap-2">
@@ -382,7 +400,7 @@ export default function Settings() {
                             <div className="flex items-center">
                               {material.status === 'have' && (
                                 <div className="flex items-center gap-1.5 text-green-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
-                                  <CheckCircle2 className="w-3.5 h-3.5" /> Have
+                                  <CheckCircle className="w-3.5 h-3.5" /> Have
                                 </div>
                               )}
                               {material.status === 'willing_to_buy' && (
@@ -392,7 +410,7 @@ export default function Settings() {
                               )}
                               {material.status === 'not_interested' && (
                                 <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium bg-black/5 px-2 py-1 rounded-full">
-                                  <LogOut className="w-3.5 h-3.5" /> No
+                                  <SignOut className="w-3.5 h-3.5" /> No
                                 </div>
                               )}
                               {material.status === 'unknown' && (
@@ -411,6 +429,30 @@ export default function Settings() {
               })()}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Appearance Section */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <SunDim className="h-5 w-5" weight="duotone" />
+            Appearance
+          </CardTitle>
+          <CardDescription>
+            Customize how SchoolOS looks
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="font-medium">Theme</p>
+              <p className="text-sm text-muted-foreground">
+                Choose light, dark, or match your device
+              </p>
+            </div>
+            <ThemeToggle />
+          </div>
         </CardContent>
       </Card>
 
@@ -452,7 +494,7 @@ export default function Settings() {
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2 text-lg">
-            <Shield className="h-5 w-5" />
+            <ShieldCheck className="h-5 w-5" />
             Privacy & Security
           </CardTitle>
         </CardHeader>
@@ -491,7 +533,7 @@ export default function Settings() {
       <Card className="border-destructive/20">
         <CardContent className="pt-6">
           <Button variant="destructive" onClick={logout} className="gap-2">
-            <LogOut className="h-4 w-4" />
+            <SignOut className="h-4 w-4" />
             Sign Out
           </Button>
         </CardContent>

@@ -10,7 +10,7 @@ import {
   GraduationCap,
   Plant,
   BookOpen,
-  Student,
+  Student as StudentIcon,
   SignOut,
   Pencil,
 } from '@phosphor-icons/react';
@@ -53,7 +53,7 @@ const earlyYearsLinks = [
 const stageIcons = {
   'early-years': Plant,
   'lower-primary': BookOpen,
-  'middle-school': Student,
+  'middle-school': StudentIcon,
   'upper-school': GraduationCap,
 };
 

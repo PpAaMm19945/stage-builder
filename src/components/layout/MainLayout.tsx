@@ -11,7 +11,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { ChevronDown, User } from 'lucide-react';
+import { CaretDown } from '@phosphor-icons/react';
+import { ThemeToggle } from '@/components/theme/ThemeToggle';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
@@ -50,12 +51,18 @@ export function MainLayout() {
       <div className="flex min-h-screen w-full bg-background">
         <AppSidebar />
         <main className="flex-1 flex flex-col">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-6">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6">
             <SidebarTrigger className="-ml-2" />
+
+            {/* Spacer to push items right */}
+            <div className="flex-1" />
+
+            {/* Theme Toggle */}
+            <ThemeToggle />
 
             {/* Child Selector - Prominent display */}
             {selectedChild && children.length > 0 && (
-              <div className="ml-auto flex items-center">
+              <div className="flex items-center">
                 {children.length > 1 ? (
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
@@ -66,10 +73,10 @@ export function MainLayout() {
                           </AvatarFallback>
                         </Avatar>
                         <span className="font-medium">{selectedChild.name}</span>
-                        <span className="text-muted-foreground text-sm">
+                        <span className="text-muted-foreground text-sm hidden sm:inline">
                           ({formatAge(selectedChild.ageInMonths)})
                         </span>
-                        <ChevronDown className="h-4 w-4 text-muted-foreground" />
+                        <CaretDown className="h-4 w-4 text-muted-foreground" weight="bold" />
                       </Button>
                     </DropdownMenuTrigger>
                     <DropdownMenuContent align="end" className="bg-popover">
@@ -93,7 +100,7 @@ export function MainLayout() {
                     </DropdownMenuContent>
                   </DropdownMenu>
                 ) : (
-                  <div className="flex items-center gap-2 text-sm">
+                  <div className="flex items-center gap-2 text-sm pr-2">
                     <Avatar className="h-6 w-6">
                       <AvatarFallback className="bg-primary/10 text-primary text-xs">
                         {getInitials(selectedChild.name)}
@@ -108,7 +115,7 @@ export function MainLayout() {
               </div>
             )}
           </header>
-          <div className="flex-1 p-6">
+          <div className="flex-1 p-4 md:p-6 pb-safe">
             <Outlet />
           </div>
           {/* Footer with legal links */}
