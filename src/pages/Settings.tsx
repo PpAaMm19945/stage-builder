@@ -39,6 +39,7 @@ import {
   AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
 import type { Student, MaterialItem } from '@/types';
+import { FundingProgress } from '@/components/funding/FundingProgress';
 
 // Common core kit items to suggest
 const COMMON_MATERIALS = [
@@ -198,6 +199,9 @@ export default function Settings() {
         <h1 className="text-3xl font-display font-bold text-foreground">Settings</h1>
         <p className="text-muted-foreground">Manage your account, family, and materials</p>
       </div>
+
+      {/* Community Funding */}
+      <FundingProgress />
 
       {/* Children Management */}
       <Card>

@@ -34,6 +34,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { books } from '@/lib/api';
 import { BookReader } from '@/components/books/BookReader';
 import { UpvoteButton } from '@/components/feedback/UpvoteButton';
+import { FundingProgress } from '@/components/funding/FundingProgress';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -193,6 +194,9 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-8 max-w-4xl mx-auto pb-12">
+      {/* Funding Status (Minimal) */}
+      <FundingProgress variant="minimal" />
+
       {/* Header */}
       <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 rounded-2xl border border-primary/10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">

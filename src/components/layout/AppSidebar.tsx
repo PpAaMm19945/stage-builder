@@ -6,13 +6,14 @@ import {
   TrendUp,
   Gear,
   Lock,
-  CaretDown,
   GraduationCap,
   Plant,
   BookOpen,
   Student as StudentIcon,
   SignOut,
   Pencil,
+  House,
+  UsersThree,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
@@ -31,12 +32,6 @@ import {
   SidebarMenuItem,
   SidebarSeparator,
 } from '@/components/ui/sidebar';
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-} from '@/components/ui/dropdown-menu';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
@@ -96,76 +91,13 @@ export function AppSidebar() {
               SchoolOS
             </span>
           </button>
-
-          {/* Child Selector */}
-          {children.length > 0 && (
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <button className="mt-4 flex w-full items-center gap-3 rounded-lg bg-muted/50 p-3 text-left transition-colors hover:bg-muted">
-                  <Avatar className="h-10 w-10 border-2 border-primary/20">
-                    <AvatarFallback className="bg-primary/10 text-primary font-medium">
-                      {selectedChild ? getInitials(selectedChild.name) : '?'}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-medium text-foreground truncate">
-                      {selectedChild?.name || 'Select child'}
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {selectedChild ? `${selectedChild.ageInMonths} months` : ''}
-                    </p>
-                  </div>
-                  <CaretDown className="h-4 w-4 text-muted-foreground shrink-0" weight="duotone" />
-                </button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="start" className="w-[--radix-dropdown-menu-trigger-width]">
-                {children.map((child) => (
-                  <DropdownMenuItem
-                    key={child.id}
-                    className={cn(
-                      'flex items-center gap-3 p-3',
-                      selectedChild?.id === child.id && 'bg-muted'
-                    )}
-                  >
-                    <div
-                      className="flex items-center gap-3 flex-1 cursor-pointer"
-                      onClick={() => setSelectedChild(child)}
-                    >
-                      <Avatar className="h-8 w-8">
-                        <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                          {getInitials(child.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div>
-                        <p className="font-medium">{child.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {child.ageInMonths} months
-                        </p>
-                      </div>
-                    </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 shrink-0"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        setEditingChild(child);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" weight="duotone" />
-                    </Button>
-                  </DropdownMenuItem>
-                ))}
-              </DropdownMenuContent>
-            </DropdownMenu>
-          )}
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Family Navigation (Primary) */}
+          {/* Global / Family Navigation */}
           <SidebarGroup>
             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Family
+              Overview
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
@@ -177,8 +109,8 @@ export function AppSidebar() {
                       className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                       activeClassName="bg-primary/10 text-primary font-medium"
                     >
-                      <Plant className="h-4 w-4" weight="duotone" />
-                      <span className="font-semibold">Family Plan</span>
+                      <House className="h-4 w-4" weight="duotone" />
+                      <span className="font-semibold">Dashboard</span>
                     </NavLink>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
@@ -188,70 +120,116 @@ export function AppSidebar() {
 
           <SidebarSeparator />
 
-          {/* Individual Child Navigation (Secondary) */}
+          {/* Children List (Explicit) */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Individual {selectedChild ? `· ${selectedChild.name}` : ''}
+            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider flex items-center justify-between">
+              <span>My Children</span>
+              <Badge variant="secondary" className="text-[10px] h-5 px-1.5">{children.length}</Badge>
             </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {earlyYearsLinks.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        activeClassName="bg-primary/10 text-primary font-medium"
+                {children.map((child) => (
+                  <div key={child.id}>
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        onClick={() => setSelectedChild(child)}
+                        className={cn(
+                          "w-full flex items-center gap-3 px-3 py-2 rounded-lg transition-all",
+                          selectedChild?.id === child.id
+                            ? "bg-primary/5 text-primary"
+                            : "text-muted-foreground hover:bg-muted hover:text-foreground"
+                        )}
                       >
-                        <item.icon className="h-4 w-4" weight="duotone" />
-                        <span>{item.title}</span>
-                      </NavLink>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
+                        <Avatar className={cn("h-6 w-6 transition-transform", selectedChild?.id === child.id ? "scale-110 border-2 border-primary/20" : "")}>
+                          <AvatarFallback className={cn("text-[10px]", selectedChild?.id === child.id ? "bg-primary/20 text-primary" : "bg-muted text-muted-foreground")}>
+                            {getInitials(child.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <span className={cn("font-medium flex-1 truncate", selectedChild?.id === child.id ? "font-semibold" : "")}>
+                          {child.name}
+                        </span>
+                        <div
+                          className="opacity-0 group-hover:opacity-100 p-1 hover:bg-background rounded-md transition-opacity"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setEditingChild(child);
+                          }}
+                        >
+                          <Pencil className="h-3 w-3" />
+                        </div>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+
+                    {/* Expanded Sub-Menu for Selected Child */}
+                    {selectedChild?.id === child.id && (
+                       <div className="ml-9 border-l-2 border-primary/10 pl-2 mt-1 mb-2 space-y-1 animate-in slide-in-from-top-2 duration-200">
+                         {earlyYearsLinks.map((link) => (
+                           <NavLink
+                             key={link.title}
+                             to={link.url}
+                             className="flex items-center gap-2 px-2 py-1.5 text-sm rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                             activeClassName="text-primary bg-primary/5 font-medium"
+                           >
+                             <link.icon className="h-3.5 w-3.5" weight="duotone" />
+                             <span>{link.title}</span>
+                           </NavLink>
+                         ))}
+                       </div>
+                    )}
+                  </div>
                 ))}
+
+                {children.length === 0 && (
+                  <div className="px-3 py-4 text-center">
+                    <p className="text-xs text-muted-foreground mb-3">No children added yet</p>
+                    <Button variant="outline" size="sm" className="w-full h-8 text-xs" onClick={() => navigate('/settings')}>
+                      Add Child
+                    </Button>
+                  </div>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
 
           <SidebarSeparator />
 
-          {/* Other Stages */}
+          {/* Learning Stages (Reference Only) */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Learning Stages
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {STAGE_INFO.filter((stage) => stage.id !== 'early-years').map((stage) => {
-                  const Icon = stageIcons[stage.id];
-                  const isEnabled = isStageEnabled(stage.id);
+             <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
+               Curriculum
+             </SidebarGroupLabel>
+             <SidebarGroupContent>
+               <SidebarMenu>
+                 {STAGE_INFO.filter((stage) => stage.id !== 'early-years').map((stage) => {
+                   const Icon = stageIcons[stage.id];
+                   const isEnabled = isStageEnabled(stage.id);
 
-                  return (
-                    <SidebarMenuItem key={stage.id}>
-                      <SidebarMenuButton
-                        onClick={() => handleStageClick(stage.id, isEnabled)}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full',
-                          isEnabled
-                            ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            : 'text-muted-foreground/50 cursor-pointer'
-                        )}
-                      >
-                        <Icon className="h-4 w-4" weight="duotone" />
-                        <span className="flex-1">{stage.shortLabel}</span>
-                        {!isEnabled && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30">
-                            <Lock className="h-2.5 w-2.5 mr-1" weight="duotone" />
-                            Soon
-                          </Badge>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
+                   return (
+                     <SidebarMenuItem key={stage.id}>
+                       <SidebarMenuButton
+                         onClick={() => handleStageClick(stage.id, isEnabled)}
+                         className={cn(
+                           'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full',
+                           isEnabled
+                             ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
+                             : 'text-muted-foreground/50 cursor-pointer'
+                         )}
+                       >
+                         <Icon className="h-4 w-4" weight="duotone" />
+                         <span className="flex-1">{stage.shortLabel}</span>
+                         {!isEnabled && (
+                           <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30">
+                             <Lock className="h-2.5 w-2.5 mr-1" weight="duotone" />
+                             Soon
+                           </Badge>
+                         )}
+                       </SidebarMenuButton>
+                     </SidebarMenuItem>
+                   );
+                 })}
+               </SidebarMenu>
+             </SidebarGroupContent>
+           </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter className="p-4">
