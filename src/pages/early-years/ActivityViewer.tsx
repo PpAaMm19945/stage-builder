@@ -26,6 +26,7 @@ import {
   ArrowRight,
   Sparkles,
   Users,
+  Book
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -66,6 +67,7 @@ interface ApiActivity {
   uses_core_kit?: number;
   mess_level?: string;
   setting?: string;
+  parent_script?: string;
 }
 
 interface Activity {
@@ -89,6 +91,7 @@ interface Activity {
   usesCoreKit?: boolean;
   messLevel?: string;
   setting?: string;
+  parentScript?: string;
 }
 
 const mapApiActivity = (activity: ApiActivity): Activity => ({
@@ -112,6 +115,7 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   usesCoreKit: activity.uses_core_kit === 1,
   messLevel: activity.mess_level,
   setting: activity.setting,
+  parentScript: activity.parent_script,
 });
 
 export default function ActivityViewer() {
@@ -293,6 +297,20 @@ export default function ActivityViewer() {
           <span>Ages {activity.minAgeMonths}-{activity.maxAgeMonths} months</span>
         </div>
       </div>
+
+      {/* Shepherd's Script */}
+      {activity.parentScript && (
+        <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
+          <div className="flex items-start gap-3">
+            <Book className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+            <div className="space-y-1">
+              <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Shepherd's Script</p>
+              <p className="text-amber-900 dark:text-amber-100 italic text-lg leading-relaxed">"{activity.parentScript}"</p>
+              <p className="text-xs text-amber-700 dark:text-amber-300/80 pt-1">Read this to your child to connect this activity to God's truth.</p>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Materials */}
       <Card>

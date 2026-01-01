@@ -17,6 +17,7 @@ import {
 import { CaretDown, Sliders } from '@phosphor-icons/react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useState } from 'react';
+import { DOMAIN_LABELS } from '@/types';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
@@ -180,11 +181,11 @@ export function MainLayout() {
                       <label className="text-xs font-medium text-muted-foreground">Domain</label>
                       <select className="w-full mt-1 border rounded-md p-2 text-sm bg-background">
                         <option>All Domains</option>
-                        <option>Motor Skills</option>
-                        <option>Language</option>
-                        <option>Cognitive</option>
-                        <option>Social-Emotional</option>
-                        <option>Pre-Academic</option>
+                        <option value="motor">{DOMAIN_LABELS['motor']}</option>
+                        <option value="language">{DOMAIN_LABELS['language']}</option>
+                        <option value="cognitive">{DOMAIN_LABELS['cognitive']}</option>
+                        <option value="social-emotional">{DOMAIN_LABELS['social-emotional']}</option>
+                        <option value="pre-academic">{DOMAIN_LABELS['pre-academic']}</option>
                       </select>
                     </div>
                     <div>
@@ -231,4 +232,3 @@ export function MainLayout() {
     </SidebarProvider>
   );
 }
-

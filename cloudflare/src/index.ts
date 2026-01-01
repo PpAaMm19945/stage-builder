@@ -723,7 +723,8 @@ app.get('/api/family/today', async (c) => {
         })),
         messLevel: 'none',
         prepMinutes: 0,
-        materialsAvailable: true
+        materialsAvailable: true,
+        reasoning: "Selected for gentle interaction and bonding."
       }));
 
       // No complicated materials logic for infancy mode usually
@@ -750,6 +751,16 @@ app.get('/api/family/today', async (c) => {
           };
         });
 
+        // Determine domain label for reasoning
+        const domainLabels: Record<string, string> = {
+          'motor': 'Stewardship & Dominion',
+          'language': 'Word & Truth',
+          'cognitive': 'Wisdom & Order',
+          'social-emotional': 'Virtue & Sanctification',
+          'pre-academic': 'Foundations & Patterns'
+        };
+        const domainName = domainLabels[activity.domain] || activity.domain;
+
         return {
           activity: {
             ...activity,
@@ -760,7 +771,8 @@ app.get('/api/family/today', async (c) => {
           childTiers,
           messLevel: activity.mess_level,
           prepMinutes: activity.prep_time_minutes,
-          materialsAvailable: true
+          materialsAvailable: true,
+          reasoning: `Because you have ${activity.duration_minutes} minutes and your children are developing ${domainName}, we selected '${activity.title}' to work on both.`
         };
       });
 
