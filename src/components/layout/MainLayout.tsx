@@ -1,6 +1,9 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, useLocation } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
+import { BottomNav } from './BottomNav';
+import { RightPanel, RightPanelSection } from './RightPanel';
+import { FundingWidget } from '@/components/funding/FundingWidget';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { Avatar, AvatarFallback } from '@/components/ui/avatar';
@@ -11,11 +14,14 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CaretDown } from '@phosphor-icons/react';
+import { CaretDown, Sliders } from '@phosphor-icons/react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useState } from 'react';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
+  const location = useLocation();
+  const [rightPanelOpen, setRightPanelOpen] = useState(false);
 
   if (isLoading) {
     return (
@@ -46,6 +52,14 @@ export function MainLayout() {
     return `${years}y ${remainingMonths}m`;
   };
 
+  // Determine right panel title based on current route
+  const getRightPanelTitle = () => {
+    if (location.pathname === '/') return 'Quick Actions';
+    if (location.pathname.includes('/activities')) return 'Filters';
+    if (location.pathname.includes('/progress')) return 'Overview';
+    return 'Options';
+  };
+
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background">
@@ -56,6 +70,16 @@ export function MainLayout() {
 
             {/* Spacer to push items right */}
             <div className="flex-1" />
+
+            {/* Right Panel Toggle - Mobile only */}
+            <Button
+              variant="ghost"
+              size="icon"
+              className="lg:hidden"
+              onClick={() => setRightPanelOpen(!rightPanelOpen)}
+            >
+              <Sliders className="h-5 w-5" weight="duotone" />
+            </Button>
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -115,8 +139,80 @@ export function MainLayout() {
               </div>
             )}
           </header>
-          <div className="flex-1 p-4 md:p-6 pb-safe">
-            <Outlet />
+          <div className="flex-1 flex">
+            {/* Main Content */}
+            <div className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto">
+              <Outlet />
+            </div>
+
+            {/* Right Panel - Contextual */}
+            <RightPanel
+              title={getRightPanelTitle()}
+              isOpen={rightPanelOpen}
+              onClose={() => setRightPanelOpen(false)}
+            >
+              {/* Route-specific content */}
+              {location.pathname === '/' && (
+                <>
+                  <RightPanelSection title="Quick Filters">
+                    <div className="space-y-2">
+                      <Button variant="outline" size="sm" className="w-full justify-start gap-2">
+                        🕐 5-minute activities
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start gap-2">
+                        🧹 Low mess only
+                      </Button>
+                      <Button variant="outline" size="sm" className="w-full justify-start gap-2">
+                        📦 Things I have
+                      </Button>
+                    </div>
+                  </RightPanelSection>
+                  <RightPanelSection title="Materials Needed Today">
+                    <p className="text-sm text-muted-foreground">Loading...</p>
+                  </RightPanelSection>
+                </>
+              )}
+
+              {location.pathname.includes('/activities') && (
+                <RightPanelSection title="Filter Activities">
+                  <div className="space-y-3">
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Domain</label>
+                      <select className="w-full mt-1 border rounded-md p-2 text-sm bg-background">
+                        <option>All Domains</option>
+                        <option>Motor Skills</option>
+                        <option>Language</option>
+                        <option>Cognitive</option>
+                        <option>Social-Emotional</option>
+                        <option>Pre-Academic</option>
+                      </select>
+                    </div>
+                    <div>
+                      <label className="text-xs font-medium text-muted-foreground">Duration</label>
+                      <select className="w-full mt-1 border rounded-md p-2 text-sm bg-background">
+                        <option>Any duration</option>
+                        <option>Under 10 min</option>
+                        <option>10-20 min</option>
+                        <option>Over 20 min</option>
+                      </select>
+                    </div>
+                  </div>
+                </RightPanelSection>
+              )}
+
+              {location.pathname.includes('/progress') && (
+                <RightPanelSection title="Child Stats">
+                  <p className="text-sm text-muted-foreground">
+                    Select a child to see detailed progress
+                  </p>
+                </RightPanelSection>
+              )}
+
+              {/* Funding Widget - Always visible */}
+              <RightPanelSection>
+                <FundingWidget raised={412} goal={500} />
+              </RightPanelSection>
+            </RightPanel>
           </div>
           {/* Footer with legal links */}
           <footer className="py-6 text-center text-xs text-muted-foreground">
@@ -130,6 +226,9 @@ export function MainLayout() {
         {/* Floating Feedback Button */}
         <FeedbackButton />
       </div>
+      {/* Mobile Bottom Navigation */}
+      <BottomNav />
     </SidebarProvider>
   );
 }
+

@@ -1,22 +1,20 @@
 import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
-  CalendarCheck,
-  Lightbulb,
+  House,
+  Books,
   TrendUp,
   Gear,
   Lock,
   CaretDown,
+  CaretRight,
   GraduationCap,
-  Plant,
-  BookOpen,
-  Student as StudentIcon,
+  Heart,
   SignOut,
   Pencil,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
-import { STAGE_INFO, isStageEnabled } from '@/config/featureFlags';
 import { cn } from '@/lib/utils';
 import {
   Sidebar,
@@ -37,25 +35,30 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import type { Student } from '@/types';
 
-const earlyYearsLinks = [
-  { title: 'Individual Today', url: '/early-years/today', icon: CalendarCheck },
-  { title: 'Activities', url: '/early-years/activities', icon: Lightbulb },
-  { title: 'Reading', url: '/early-years/reading', icon: BookOpen },
+// Simplified primary navigation - 3 main items
+const primaryLinks = [
+  { title: 'Today', url: '/', icon: House },
+  { title: 'Library', url: '/early-years/activities', icon: Books },
   { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
 ];
 
-const stageIcons = {
-  'early-years': Plant,
-  'lower-primary': BookOpen,
-  'middle-school': StudentIcon,
-  'upper-school': GraduationCap,
-};
+// Coming soon stages
+const comingSoonStages = [
+  { id: 'lower-primary', label: 'Lower Primary', ages: '5-8' },
+  { id: 'middle-school', label: 'Middle School', ages: '9-12' },
+  { id: 'upper-school', label: 'Upper School', ages: '13+' },
+];
 
 export function AppSidebar() {
   const { user, children, selectedChild, setSelectedChild, logout } = useAuth();
@@ -72,13 +75,7 @@ export function AppSidebar() {
       .slice(0, 2);
   };
 
-  const handleStageClick = (stageId: string, enabled: boolean) => {
-    if (enabled) {
-      navigate(`/${stageId}/today`);
-    } else {
-      navigate(`/${stageId}`);
-    }
-  };
+
 
   return (
     <>
@@ -162,49 +159,21 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Family Navigation (Primary) */}
+          {/* Primary Navigation */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Family
-            </SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                <SidebarMenuItem>
-                  <SidebarMenuButton asChild>
-                    <NavLink
-                      to="/"
-                      end
-                      className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                      activeClassName="bg-primary/10 text-primary font-medium"
-                    >
-                      <Plant className="h-4 w-4" weight="duotone" />
-                      <span className="font-semibold">Family Plan</span>
-                    </NavLink>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              </SidebarMenu>
-            </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarSeparator />
-
-          {/* Individual Child Navigation (Secondary) */}
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Individual {selectedChild ? `· ${selectedChild.name}` : ''}
-            </SidebarGroupLabel>
-            <SidebarGroupContent>
-              <SidebarMenu>
-                {earlyYearsLinks.map((item) => (
+                {primaryLinks.map((item) => (
                   <SidebarMenuItem key={item.title}>
                     <SidebarMenuButton asChild>
                       <NavLink
                         to={item.url}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                        end={item.url === '/'}
+                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
                         activeClassName="bg-primary/10 text-primary font-medium"
                       >
-                        <item.icon className="h-4 w-4" weight="duotone" />
-                        <span>{item.title}</span>
+                        <item.icon className="h-5 w-5" weight="duotone" />
+                        <span className="font-medium">{item.title}</span>
                       </NavLink>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
@@ -215,40 +184,51 @@ export function AppSidebar() {
 
           <SidebarSeparator />
 
-          {/* Other Stages */}
+          {/* Coming Soon - Collapsible */}
           <SidebarGroup>
-            <SidebarGroupLabel className="text-xs font-medium text-muted-foreground uppercase tracking-wider">
-              Learning Stages
-            </SidebarGroupLabel>
+            <Collapsible defaultOpen={false}>
+              <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors group">
+                <span>Coming Soon</span>
+                <CaretRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" weight="bold" />
+              </CollapsibleTrigger>
+              <CollapsibleContent>
+                <SidebarGroupContent>
+                  <SidebarMenu>
+                    {comingSoonStages.map((stage) => (
+                      <SidebarMenuItem key={stage.id}>
+                        <SidebarMenuButton
+                          onClick={() => navigate(`/${stage.id}`)}
+                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground/60 transition-colors hover:bg-muted/50 w-full"
+                        >
+                          <Lock className="h-4 w-4" weight="duotone" />
+                          <span className="flex-1">{stage.label}</span>
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30 opacity-60">
+                            {stage.ages}
+                          </Badge>
+                        </SidebarMenuButton>
+                      </SidebarMenuItem>
+                    ))}
+                  </SidebarMenu>
+                </SidebarGroupContent>
+              </CollapsibleContent>
+            </Collapsible>
+          </SidebarGroup>
+
+          <SidebarSeparator />
+
+          {/* Support Link */}
+          <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {STAGE_INFO.filter((stage) => stage.id !== 'early-years').map((stage) => {
-                  const Icon = stageIcons[stage.id];
-                  const isEnabled = isStageEnabled(stage.id);
-
-                  return (
-                    <SidebarMenuItem key={stage.id}>
-                      <SidebarMenuButton
-                        onClick={() => handleStageClick(stage.id, isEnabled)}
-                        className={cn(
-                          'flex items-center gap-3 rounded-lg px-3 py-2 transition-colors w-full',
-                          isEnabled
-                            ? 'text-muted-foreground hover:bg-muted hover:text-foreground'
-                            : 'text-muted-foreground/50 cursor-pointer'
-                        )}
-                      >
-                        <Icon className="h-4 w-4" weight="duotone" />
-                        <span className="flex-1">{stage.shortLabel}</span>
-                        {!isEnabled && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30">
-                            <Lock className="h-2.5 w-2.5 mr-1" weight="duotone" />
-                            Soon
-                          </Badge>
-                        )}
-                      </SidebarMenuButton>
-                    </SidebarMenuItem>
-                  );
-                })}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => navigate('/settings#support')}
+                    className="flex items-center gap-3 rounded-lg px-3 py-2 text-green-600 dark:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 w-full"
+                  >
+                    <Heart className="h-4 w-4" weight="fill" />
+                    <span className="font-medium">Support SchoolOS</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>

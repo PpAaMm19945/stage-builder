@@ -45,45 +45,45 @@ const App = () => (
             <Toaster />
             <Sonner />
             <BrowserRouter>
-            <Routes>
-              {/* Auth Callback - Must be outside PublicLayout */}
-              <Route path="/auth/callback" element={<AuthCallback />} />
+              <Routes>
+                {/* Auth Callback - Must be outside PublicLayout */}
+                <Route path="/auth/callback" element={<AuthCallback />} />
 
-              {/* Public Routes */}
-              <Route element={<PublicLayout />}>
-                <Route path="/login" element={<Login />} />
-                <Route path="/privacy" element={<PrivacyPolicy />} />
-                <Route path="/terms" element={<TermsOfService />} />
-              </Route>
+                {/* Public Routes */}
+                <Route element={<PublicLayout />}>
+                  <Route path="/login" element={<Login />} />
+                  <Route path="/privacy" element={<PrivacyPolicy />} />
+                  <Route path="/terms" element={<TermsOfService />} />
+                </Route>
 
-              {/* Protected Routes */}
-              <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                <Route path="/" element={<Dashboard />} />
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                  <Route path="/" element={<Dashboard />} />
 
-                {/* Early Years */}
-                <Route path="/early-years/today" element={<Today />} />
-                <Route path="/early-years/activities" element={<Activities />} />
-                <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
-                <Route path="/early-years/reading" element={<Reading />} />
-                <Route path="/early-years/progress" element={<ProgressPage />} />
+                  {/* Early Years */}
+                  <Route path="/early-years/today" element={<Navigate to="/" replace />} />
+                  <Route path="/early-years/activities" element={<Activities />} />
+                  <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
+                  <Route path="/early-years/reading" element={<Reading />} />
+                  <Route path="/early-years/progress" element={<ProgressPage />} />
 
-                {/* Locked Stages */}
-                <Route path="/lower-primary" element={<LockedStage />} />
-                <Route path="/middle-school" element={<LockedStage />} />
-                <Route path="/upper-school" element={<LockedStage />} />
+                  {/* Locked Stages */}
+                  <Route path="/lower-primary" element={<LockedStage />} />
+                  <Route path="/middle-school" element={<LockedStage />} />
+                  <Route path="/upper-school" element={<LockedStage />} />
 
-                {/* Settings */}
-                <Route path="/settings" element={<Settings />} />
-              </Route>
+                  {/* Settings */}
+                  <Route path="/settings" element={<Settings />} />
+                </Route>
 
-              {/* Catch-all */}
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </TooltipProvider>
-      </AuthProvider>
-    </QueryClientProvider>
-  </ThemeProvider>
+                {/* Catch-all */}
+                <Route path="*" element={<NotFound />} />
+              </Routes>
+            </BrowserRouter>
+          </TooltipProvider>
+        </AuthProvider>
+      </QueryClientProvider>
+    </ThemeProvider>
   </ErrorBoundary>
 );
 

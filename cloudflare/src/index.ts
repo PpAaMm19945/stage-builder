@@ -174,6 +174,53 @@ function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// ============ DEV BYPASS AUTH (Development Only) ============
+// Access: GET /auth/dev-bypass?email=test@example.com&name=Test%20User
+// This creates or finds a user and returns a JWT token
+app.get('/auth/dev-bypass', async (c) => {
+  // Only allow in development
+  if (c.env.ENVIRONMENT === 'production') {
+    return c.json({ error: 'Dev bypass not available in production' }, 403);
+  }
+
+  const email = c.req.query('email') || 'test.family@schoolos.dev';
+  const name = c.req.query('name') || 'Test Family';
+
+  try {
+    // Find or create user
+    let user = await c.env.DB.prepare(
+      'SELECT * FROM users WHERE email = ?'
+    ).bind(email).first<User>();
+
+    if (!user) {
+      const userId = generateId('user');
+      await c.env.DB.prepare(
+        'INSERT INTO users (id, email, name, avatar_url, provider) VALUES (?, ?, ?, NULL, ?)'
+      ).bind(userId, email, name, 'dev-bypass').run();
+
+      user = { id: userId, email, name, avatar_url: null, provider: 'dev-bypass' };
+    }
+
+    // Generate JWT
+    const jwt = await signJWT({
+      sub: user.id,
+      email: user.email,
+      name: user.name,
+      exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days for dev
+    }, c.env.JWT_SECRET);
+
+    // Return token (frontend can store and use)
+    return c.json({
+      token: jwt,
+      user: { id: user.id, email: user.email, name: user.name },
+      message: 'Dev bypass successful. Store this token in localStorage as "schoolos_token"'
+    });
+  } catch (error) {
+    console.error('Dev bypass error:', error);
+    return c.json({ error: 'Dev bypass failed' }, 500);
+  }
+});
+
 // ============ AUTH ROUTES ============
 
 // Start Google OAuth flow
@@ -644,125 +691,122 @@ app.get('/api/family/today', async (c) => {
       });
     }
 
-  });
-    }
+    // Get ages for Infancy Mode check
+    const ages = children.map((c: any) => c.age_in_months);
+    const youngestAge = Math.min(...ages);
+    const isInfancyMode = youngestAge <= 12;
 
-// Get ages for Infancy Mode check
-const ages = children.map((c: any) => c.age_in_months);
-const youngestAge = Math.min(...ages);
-const isInfancyMode = youngestAge <= 12;
+    let familySessions: any[] = [];
+    let materialsList: any[] = [];
 
-let familySessions: any[] = [];
-let materialsList: any[] = [];
-
-if (isInfancyMode) {
-  // Infancy Mode: Return Daily Practices instead of generic family sessions
-  const { results: practices } = await c.env.DB.prepare(`
+    if (isInfancyMode) {
+      // Infancy Mode: Return Daily Practices instead of generic family sessions
+      const { results: practices } = await c.env.DB.prepare(`
         SELECT * FROM activities 
         WHERE activity_type = 'daily_practice'
         ORDER BY RANDOM() LIMIT 3
       `).all();
 
-  familySessions = practices.map((activity: any) => ({
-    activity: {
-      ...activity,
-      materials: JSON.parse((activity as any).materials || '[]'),
-      instructions: JSON.parse((activity as any).instructions || '[]'),
-      learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
-    },
-    childTiers: children.map((c: any) => ({
-      childId: c.id,
-      childName: c.name,
-      tier: 'Infant',
-      expectation: 'Gentle participation',
-      childAge: c.age_in_months
-    })),
-    messLevel: 'none',
-    prepMinutes: 0,
-    materialsAvailable: true
-  }));
+      familySessions = practices.map((activity: any) => ({
+        activity: {
+          ...activity,
+          materials: JSON.parse((activity as any).materials || '[]'),
+          instructions: JSON.parse((activity as any).instructions || '[]'),
+          learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
+        },
+        childTiers: children.map((c: any) => ({
+          childId: c.id,
+          childName: c.name,
+          tier: 'Infant',
+          expectation: 'Gentle participation',
+          childAge: c.age_in_months
+        })),
+        messLevel: 'none',
+        prepMinutes: 0,
+        materialsAvailable: true
+      }));
 
-  // No complicated materials logic for infancy mode usually
+      // No complicated materials logic for infancy mode usually
 
-} else {
-  // Standard Family Mode
-  const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
+    } else {
+      // Standard Family Mode
+      const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
 
-  familySessions = recommendedActivities.map((activity: any) => {
-    const tiers = JSON.parse(activity.tiered_expectations || '[]');
-    const childTiers = children.map((child: any) => {
-      const age = child.age_in_months;
-      let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
-      if (!tier) {
-        if (age < tiers[0]?.age_min) tier = tiers[0];
-        else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
-      }
-      return {
-        childId: child.id,
-        childName: child.name,
-        tier: tier?.tier || 'Standard',
-        expectation: tier?.expectation || 'Participate with support',
-        childAge: age
-      };
-    });
+      familySessions = recommendedActivities.map((activity: any) => {
+        const tiers = JSON.parse(activity.tiered_expectations || '[]');
+        const childTiers = children.map((child: any) => {
+          const age = child.age_in_months;
+          let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+          if (!tier) {
+            if (age < tiers[0]?.age_min) tier = tiers[0];
+            else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+          }
+          return {
+            childId: child.id,
+            childName: child.name,
+            tier: tier?.tier || 'Standard',
+            expectation: tier?.expectation || 'Participate with support',
+            childAge: age
+          };
+        });
 
-    return {
-      activity: {
-        ...activity,
-        materials: JSON.parse(activity.materials || '[]'),
-        instructions: JSON.parse(activity.instructions || '[]'),
-        learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
-      },
-      childTiers,
-      messLevel: activity.mess_level,
-      prepMinutes: activity.prep_time_minutes,
-      materialsAvailable: true
-    };
-  });
+        return {
+          activity: {
+            ...activity,
+            materials: JSON.parse(activity.materials || '[]'),
+            instructions: JSON.parse(activity.instructions || '[]'),
+            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          },
+          childTiers,
+          messLevel: activity.mess_level,
+          prepMinutes: activity.prep_time_minutes,
+          materialsAvailable: true
+        };
+      });
 
-  // Collect materials
-  const neededMaterials = new Set<string>();
-  familySessions.forEach((session: any) => {
-    session.activity.materials.forEach((m: string) => neededMaterials.add(m));
-  });
+      // Collect materials
+      const neededMaterials = new Set<string>();
+      familySessions.forEach((session: any) => {
+        session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+      });
 
-  if (neededMaterials.size > 0) {
-    const marks = Array(neededMaterials.size).fill('?').join(',');
-    const { results: existing } = await c.env.DB.prepare(`
+      if (neededMaterials.size > 0) {
+        const marks = Array(neededMaterials.size).fill('?').join(',');
+        const { results: existing } = await c.env.DB.prepare(`
               SELECT material_name, status FROM family_materials 
               WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
           `).bind(user.id, ...Array.from(neededMaterials)).all();
 
-    const statusMap = new Map();
-    existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
+        const statusMap = new Map();
+        existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
 
-    neededMaterials.forEach(m => {
-      materialsList.push({
-        name: m,
-        status: statusMap.get(m) || 'unknown'
-      });
+        neededMaterials.forEach(m => {
+          materialsList.push({
+            name: m,
+            status: statusMap.get(m) || 'unknown'
+          });
+        });
+      }
+    }
+
+    // Compute metrics
+    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
+    const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
+    const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
+
+    return c.json({
+      date: new Date().toISOString().split('T')[0],
+      children,
+      familySessions,
+      materials: materialsList,
+      totalDuration,
+      coreKitCoverage
     });
-  }
-}
-
-// Compute metrics
-const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
-const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
-const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
-
-return c.json({
-  date: new Date().toISOString().split('T')[0],
-  children,
-  familySessions,
-  materials: materialsList,
-  totalDuration,
-  coreKitCoverage
-});
   } catch (error: any) {
-  console.error('Family today error:', error);
-  const status = error.message === 'Unauthorized' ? 401 : 500;
-  return c.json({ error: error.message || 'Internal Server Error' }, status);
-}
+    console.error('Family today error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
 });
 
 // ============ FAMILY MATERIALS ROUTES ============
