@@ -42,19 +42,19 @@ export type EarlyYearsDomain =
   | 'pre-academic';   // Sorting, patterns, sequencing
 
 export const DOMAIN_LABELS: Record<EarlyYearsDomain, string> = {
-  'motor': 'Motor Skills',
-  'language': 'Language & Communication',
-  'cognitive': 'Cognitive Development',
-  'social-emotional': 'Social & Emotional',
-  'pre-academic': 'Pre-Academic Skills'
+  'motor': 'Stewardship & Dominion',
+  'language': 'Word & Truth',
+  'cognitive': 'Wisdom & Order',
+  'social-emotional': 'Virtue & Sanctification',
+  'pre-academic': 'Foundations & Patterns'
 };
 
 export const DOMAIN_DESCRIPTIONS: Record<EarlyYearsDomain, string> = {
-  'motor': 'Gross and fine motor skill development',
-  'language': 'Speech, vocabulary, and listening comprehension',
-  'cognitive': 'Problem-solving, memory, and critical thinking',
-  'social-emotional': 'Sharing, emotional regulation, and cooperation',
-  'pre-academic': 'Sorting, patterns, sequencing, and early numeracy'
+  'motor': 'Physical skills & body care',
+  'language': 'Speech, listening & communication',
+  'cognitive': 'Thinking, problem-solving & memory',
+  'social-emotional': 'Character, emotions & relationships',
+  'pre-academic': 'Sorting, counting & readiness'
 };
 
 // Mastery Levels
@@ -197,6 +197,7 @@ export interface FamilySession {
   messLevel: string | number;
   prepMinutes: number;
   materialsAvailable: boolean;
+  reasoning?: string;
 }
 
 // Family Dashboard Response

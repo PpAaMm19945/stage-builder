@@ -23,11 +23,11 @@ const domainColors: Record<EarlyYearsDomain, string> = {
 
 const domainFilters: { id: EarlyYearsDomain | 'all'; label: string }[] = [
   { id: 'all', label: 'All Domains' },
-  { id: 'motor', label: 'Motor' },
-  { id: 'language', label: 'Language' },
-  { id: 'cognitive', label: 'Cognitive' },
-  { id: 'social-emotional', label: 'Social' },
-  { id: 'pre-academic', label: 'Pre-Academic' },
+  { id: 'motor', label: 'Stewardship & Dominion' },
+  { id: 'language', label: 'Word & Truth' },
+  { id: 'cognitive', label: 'Wisdom & Order' },
+  { id: 'social-emotional', label: 'Virtue & Sanctification' },
+  { id: 'pre-academic', label: 'Foundations & Patterns' },
 ];
 
 // Map API response fields to UI expected fields

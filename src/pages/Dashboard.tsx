@@ -7,6 +7,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { useNavigate } from 'react-router-dom';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 import {
   CalendarBlank,
@@ -16,17 +22,17 @@ import {
   Cube,
   PaintBrush,
   PlayCircle,
-  Check,
   CheckCircle,
   Gear,
   BookOpen,
   Smiley,
-  Star,
   CircleNotch,
   WarningCircle,
   Circle,
   Info,
   Lightning,
+  Question,
+  BookBookmark
 } from '@phosphor-icons/react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem, Book } from '@/types';
@@ -352,7 +358,21 @@ export default function Dashboard() {
                     {index + 1}
                   </div>
                   <div>
-                    <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
+                    <div className="flex items-center gap-2">
+                      <h3 className="font-bold text-lg leading-none">{session.activity.title}</h3>
+                      {session.reasoning && (
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Question className="h-4 w-4 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent>
+                              <p className="max-w-xs text-sm">{session.reasoning}</p>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      )}
+                    </div>
                     <div className="flex items-center gap-3 mt-1.5 text-xs text-muted-foreground uppercase tracking-wide font-semibold">
                       <span className="flex items-center gap-1"><Clock className="w-3 h-3" weight="duotone" /> {session.activity.duration_minutes} min</span>
                       {session.activity.context_embedding && (
@@ -373,6 +393,19 @@ export default function Dashboard() {
 
               <CardContent className="p-0">
                 <div className="p-6 space-y-6">
+                  {/* Shepherd's Script */}
+                  {session.activity.parent_script && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-4 rounded-r-lg">
+                      <div className="flex items-start gap-3">
+                        <BookBookmark className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" weight="duotone" />
+                        <div className="space-y-1">
+                          <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Shepherd's Script</p>
+                          <p className="text-amber-900 dark:text-amber-100 italic">"{session.activity.parent_script}"</p>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   <p className="text-foreground/80 leading-relaxed">
                     {session.activity.description}
                   </p>
