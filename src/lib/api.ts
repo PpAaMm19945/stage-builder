@@ -197,16 +197,8 @@ export const feedback = {
 
 // Liturgy
 export const liturgy = {
-  getToday: async (): Promise<LiturgyTodayResponse> => {
-    const data = await apiRequest<any>('/api/liturgy/today');
-    // Convert SQLite 1/0 to booleans for the frontend
-    if (data.settings) {
-      data.settings.catechism_enabled = !!data.settings.catechism_enabled;
-      data.settings.hymnal_enabled = !!data.settings.hymnal_enabled;
-      data.settings.scripture_enabled = !!data.settings.scripture_enabled;
-    }
-    return data;
-  },
+  getToday: (): Promise<LiturgyTodayResponse> =>
+    apiRequest('/api/liturgy/today'),
 
   complete: (itemId: string): Promise<{ success: boolean }> =>
     apiRequest('/api/liturgy/complete', {
@@ -226,35 +218,14 @@ export const liturgy = {
       body: JSON.stringify({ type }),
     }),
 
-  getSettings: async (): Promise<FamilyLiturgySettings> => {
-    const settings = await apiRequest<any>('/api/liturgy/settings');
-    // Convert SQLite 1/0 to booleans for the frontend
-    if (settings) {
-      settings.catechism_enabled = !!settings.catechism_enabled;
-      settings.hymnal_enabled = !!settings.hymnal_enabled;
-      settings.scripture_enabled = !!settings.scripture_enabled;
-    }
-    return settings;
-  },
+  getSettings: (): Promise<FamilyLiturgySettings> =>
+    apiRequest('/api/liturgy/settings'),
 
-  updateSettings: (settings: Partial<FamilyLiturgySettings>): Promise<{ success: boolean }> => {
-    // Convert booleans to 1/0 for SQLite
-    const converted: any = { ...settings };
-    if (typeof settings.catechism_enabled === 'boolean') {
-      converted.catechism_enabled = settings.catechism_enabled ? 1 : 0;
-    }
-    if (typeof settings.hymnal_enabled === 'boolean') {
-      converted.hymnal_enabled = settings.hymnal_enabled ? 1 : 0;
-    }
-    if (typeof settings.scripture_enabled === 'boolean') {
-      converted.scripture_enabled = settings.scripture_enabled ? 1 : 0;
-    }
-
-    return apiRequest('/api/liturgy/settings', {
+  updateSettings: (settings: Partial<FamilyLiturgySettings>): Promise<{ success: boolean }> =>
+    apiRequest('/api/liturgy/settings', {
       method: 'PUT',
-      body: JSON.stringify(converted),
-    });
-  },
+      body: JSON.stringify(settings),
+    }),
 };
 
 export const api = { auth, students, activities, observations, family, books, reading, feedback, liturgy };
