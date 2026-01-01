@@ -1782,9 +1782,20 @@ app.get('/api/liturgy/today', async (c) => {
 
   const completedIds = new Set(completions.results?.map((r: any) => r.liturgy_item_id) || []);
 
+  // Convert settings integers to booleans
+  let safeSettings = null;
+  if (settings) {
+    safeSettings = {
+      ...settings,
+      catechism_enabled: !!(settings as any).catechism_enabled,
+      hymnal_enabled: !!(settings as any).hymnal_enabled,
+      scripture_enabled: !!(settings as any).scripture_enabled,
+    };
+  }
+
   return c.json({
     date: today,
-    settings,
+    settings: safeSettings,
     items: items.map((item: any) => ({
       ...item,
       completedToday: completedIds.has(item.id)
@@ -1863,7 +1874,17 @@ app.get('/api/liturgy/settings', async (c) => {
     'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
   ).bind(user.id).first();
 
-  return c.json(settings || null);
+  if (!settings) return c.json(null);
+
+  // Convert integers to booleans
+  const safeSettings = {
+    ...settings,
+    catechism_enabled: !!(settings as any).catechism_enabled,
+    hymnal_enabled: !!(settings as any).hymnal_enabled,
+    scripture_enabled: !!(settings as any).scripture_enabled,
+  };
+
+  return c.json(safeSettings);
 });
 
 // PUT /api/liturgy/settings - Update family liturgy settings
@@ -1878,8 +1899,9 @@ app.put('/api/liturgy/settings', async (c) => {
     'current_catechism_week', 'current_hymn_week', 'current_scripture_week'
   ];
 
-  const setClause = Object.keys(updates)
-    .filter(k => allowedFields.includes(k))
+  const validUpdates = Object.keys(updates).filter(k => allowedFields.includes(k));
+
+  const setClause = validUpdates
     .map(k => `${k} = ?`)
     .join(', ');
 
@@ -1887,9 +1909,14 @@ app.put('/api/liturgy/settings', async (c) => {
     return c.json({ error: 'No valid fields to update' }, 400);
   }
 
-  const values = Object.keys(updates)
-    .filter(k => allowedFields.includes(k))
-    .map(k => updates[k]);
+  const values = validUpdates.map(k => {
+    const val = updates[k];
+    // Convert booleans to integers for SQLite
+    if (typeof val === 'boolean') {
+      return val ? 1 : 0;
+    }
+    return val;
+  });
 
   await c.env.DB.prepare(`
     UPDATE family_liturgy_settings
