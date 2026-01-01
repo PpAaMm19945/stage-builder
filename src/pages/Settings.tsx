@@ -23,12 +23,17 @@ import {
   Circle,
   WarningCircle,
   SunDim,
-  Heart
+  Heart,
+  BookBookmark,
+  MusicNotes,
+  Scroll,
+  Cross
 } from '@phosphor-icons/react';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
-import { students, family } from '@/lib/api';
+import { students, family, liturgy } from '@/lib/api';
 import { toast } from 'sonner';
+import { Switch } from '@/components/ui/switch';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -60,6 +65,20 @@ export default function Settings() {
   const { data: serverMaterials, isLoading: isMaterialsLoading, error: materialsError, refetch: refetchMaterials } = useQuery({
     queryKey: ['family-materials'],
     queryFn: family.getMaterials,
+  });
+
+  // Liturgy Settings Query
+  const { data: liturgySettings, refetch: refetchLiturgy } = useQuery({
+    queryKey: ['liturgy-settings'],
+    queryFn: liturgy.getSettings,
+  });
+
+  const updateLiturgyMutation = useMutation({
+    mutationFn: liturgy.updateSettings,
+    onSuccess: () => {
+      refetchLiturgy();
+      toast.success('Liturgy settings updated');
+    },
   });
 
   // Local state for materials editing
@@ -271,6 +290,105 @@ export default function Settings() {
                 </div>
               )}
             </div>
+          )}
+        </CardContent>
+      </Card>
+
+      {/* Daily Liturgy Settings */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Cross className="h-5 w-5" weight="duotone" />
+            Daily Liturgy Settings
+          </CardTitle>
+          <CardDescription>
+            Configure your family's catechism, hymn, and scripture memorization
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {liturgySettings && (
+            <>
+              {/* Catechism */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
+                    <BookBookmark className="h-5 w-5" weight="duotone" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Catechism</p>
+                    <p className="text-sm text-muted-foreground">Westminster Shorter Catechism</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={liturgySettings.catechism_enabled}
+                  onCheckedChange={(checked) =>
+                    updateLiturgyMutation.mutate({ catechism_enabled: checked })
+                  }
+                />
+              </div>
+
+              {/* Hymns */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
+                    <MusicNotes className="h-5 w-5" weight="duotone" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Hymn of the Week</p>
+                    <p className="text-sm text-muted-foreground">Classic Reformed Hymns</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={liturgySettings.hymnal_enabled}
+                  onCheckedChange={(checked) =>
+                    updateLiturgyMutation.mutate({ hymnal_enabled: checked })
+                  }
+                />
+              </div>
+
+              {/* Scripture */}
+              <div className="flex items-center justify-between">
+                <div className="flex items-start gap-3">
+                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
+                    <Scroll className="h-5 w-5" weight="duotone" />
+                  </div>
+                  <div>
+                    <p className="font-medium">Memory Verse</p>
+                    <p className="text-sm text-muted-foreground">ESV Translation</p>
+                  </div>
+                </div>
+                <Switch
+                  checked={liturgySettings.scripture_enabled}
+                  onCheckedChange={(checked) =>
+                    updateLiturgyMutation.mutate({ scripture_enabled: checked })
+                  }
+                />
+              </div>
+
+              <Separator />
+
+              {/* Progress Reset */}
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="font-medium text-destructive">Reset Progress</p>
+                  <p className="text-sm text-muted-foreground">Start over from Week 1</p>
+                </div>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  className="text-destructive hover:bg-destructive/10 border-destructive/20"
+                  onClick={() =>
+                    updateLiturgyMutation.mutate({
+                      current_catechism_week: 1,
+                      current_hymn_week: 1,
+                      current_scripture_week: 1
+                    })
+                  }
+                >
+                  Reset All
+                </Button>
+              </div>
+            </>
           )}
         </CardContent>
       </Card>

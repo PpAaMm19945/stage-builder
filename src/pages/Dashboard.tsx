@@ -40,6 +40,7 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { books } from '@/lib/api';
 import { BookReader } from '@/components/books/BookReader';
 import { UpvoteButton } from '@/components/feedback/UpvoteButton';
+import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -227,6 +228,9 @@ export default function Dashboard() {
           </div>
         </div>
       </div>
+
+      {/* Daily Liturgy */}
+      <DailyLiturgy />
 
       {/* Materials Reminder Banner */}
       {needsMaterialsSetup && (

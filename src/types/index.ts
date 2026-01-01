@@ -244,6 +244,58 @@ export interface ReadingSession {
 }
 
 // ============================================
+// Daily Liturgy System
+// ============================================
+
+export type LiturgyType = 'catechism' | 'hymn' | 'scripture';
+
+export interface LiturgyItem {
+  id: string;
+  type: LiturgyType;
+  source: string;
+  sequence_number: number;
+  title: string;
+  content: string;
+  reference?: string;
+  audio_url?: string;
+  min_age_months: number;
+  max_age_months: number;
+  completedToday?: boolean;
+}
+
+export interface FamilyLiturgySettings {
+  id: string;
+  parent_id: string;
+  catechism_enabled: boolean;
+  catechism_source: string;
+  hymnal_enabled: boolean;
+  hymnal_source: string;
+  scripture_enabled: boolean;
+  bible_translation: string;
+  current_catechism_week: number;
+  current_hymn_week: number;
+  current_scripture_week: number;
+}
+
+export interface LiturgyTodayResponse {
+  date: string;
+  settings: FamilyLiturgySettings;
+  items: LiturgyItem[];
+}
+
+export const LITURGY_TYPE_LABELS: Record<LiturgyType, string> = {
+  catechism: 'Catechism',
+  hymn: 'Hymn of the Week',
+  scripture: 'Memory Verse'
+};
+
+export const LITURGY_TYPE_ICONS: Record<LiturgyType, string> = {
+  catechism: 'BookBookmark',
+  hymn: 'MusicNotes',
+  scripture: 'Scroll'
+};
+
+// ============================================
 // Feedback & Community
 // ============================================
 

@@ -1715,6 +1715,191 @@ app.get('/health', (c) => {
 });
 
 
+// ============ LITURGY ENDPOINTS ============
+
+// GET /api/liturgy/today - Get today's liturgy items + completion status
+app.get('/api/liturgy/today', async (c) => {
+  const user = requireAuth(c);
+  const today = new Date().toISOString().split('T')[0];
+
+  // Get or create family settings
+  let settings = await c.env.DB.prepare(
+    'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
+  ).bind(user.id).first();
+
+  if (!settings) {
+    const settingsId = generateId('fls');
+    await c.env.DB.prepare(`
+      INSERT INTO family_liturgy_settings (id, parent_id) VALUES (?, ?)
+    `).bind(settingsId, user.id).run();
+    settings = {
+      id: settingsId,
+      parent_id: user.id,
+      catechism_enabled: 1,
+      catechism_source: 'westminster_shorter',
+      hymnal_enabled: 1,
+      hymnal_source: 'classic_hymns',
+      scripture_enabled: 1,
+      bible_translation: 'esv',
+      current_catechism_week: 1,
+      current_hymn_week: 1,
+      current_scripture_week: 1
+    };
+  }
+
+  // Fetch current items based on week positions
+  const items = [];
+
+  if ((settings as any).catechism_enabled) {
+    const catechism = await c.env.DB.prepare(`
+      SELECT * FROM liturgy_items
+      WHERE type = 'catechism' AND source = ? AND sequence_number = ? AND is_active = 1
+    `).bind((settings as any).catechism_source, (settings as any).current_catechism_week).first();
+    if (catechism) items.push({ ...catechism, itemType: 'catechism' });
+  }
+
+  if ((settings as any).hymnal_enabled) {
+    const hymn = await c.env.DB.prepare(`
+      SELECT * FROM liturgy_items
+      WHERE type = 'hymn' AND source = ? AND sequence_number = ? AND is_active = 1
+    `).bind((settings as any).hymnal_source, (settings as any).current_hymn_week).first();
+    if (hymn) items.push({ ...hymn, itemType: 'hymn' });
+  }
+
+  if ((settings as any).scripture_enabled) {
+    const scripture = await c.env.DB.prepare(`
+      SELECT * FROM liturgy_items
+      WHERE type = 'scripture' AND source = ? AND sequence_number = ? AND is_active = 1
+    `).bind((settings as any).bible_translation, (settings as any).current_scripture_week).first();
+    if (scripture) items.push({ ...scripture, itemType: 'scripture' });
+  }
+
+  // Get today's completions
+  const completions = await c.env.DB.prepare(`
+    SELECT liturgy_item_id FROM liturgy_completions
+    WHERE parent_id = ? AND completed_date = ?
+  `).bind(user.id, today).all();
+
+  const completedIds = new Set(completions.results?.map((r: any) => r.liturgy_item_id) || []);
+
+  return c.json({
+    date: today,
+    settings,
+    items: items.map((item: any) => ({
+      ...item,
+      completedToday: completedIds.has(item.id)
+    }))
+  });
+});
+
+// POST /api/liturgy/complete - Mark item as completed for today
+app.post('/api/liturgy/complete', async (c) => {
+  const user = requireAuth(c);
+  const { itemId } = await c.req.json();
+  const today = new Date().toISOString().split('T')[0];
+
+  const completionId = generateId('lc');
+
+  try {
+    await c.env.DB.prepare(`
+      INSERT INTO liturgy_completions (id, parent_id, liturgy_item_id, completed_date)
+      VALUES (?, ?, ?, ?)
+    `).bind(completionId, user.id, itemId, today).run();
+
+    return c.json({ success: true, completionId });
+  } catch (e: any) {
+    // Already completed today (unique constraint)
+    if (e.message?.includes('UNIQUE constraint')) {
+      return c.json({ success: true, alreadyCompleted: true });
+    }
+    throw e;
+  }
+});
+
+// POST /api/liturgy/uncomplete - Remove today's completion
+app.post('/api/liturgy/uncomplete', async (c) => {
+  const user = requireAuth(c);
+  const { itemId } = await c.req.json();
+  const today = new Date().toISOString().split('T')[0];
+
+  await c.env.DB.prepare(`
+    DELETE FROM liturgy_completions
+    WHERE parent_id = ? AND liturgy_item_id = ? AND completed_date = ?
+  `).bind(user.id, itemId, today).run();
+
+  return c.json({ success: true });
+});
+
+// POST /api/liturgy/advance - Move to next week for a type
+app.post('/api/liturgy/advance', async (c) => {
+  const user = requireAuth(c);
+  const { type } = await c.req.json(); // 'catechism' | 'hymn' | 'scripture'
+
+  const columnMap: Record<string, string> = {
+    catechism: 'current_catechism_week',
+    hymn: 'current_hymn_week',
+    scripture: 'current_scripture_week'
+  };
+
+  const column = columnMap[type];
+  if (!column) {
+    return c.json({ error: 'Invalid type' }, 400);
+  }
+
+  await c.env.DB.prepare(`
+    UPDATE family_liturgy_settings
+    SET ${column} = ${column} + 1, updated_at = datetime('now')
+    WHERE parent_id = ?
+  `).bind(user.id).run();
+
+  return c.json({ success: true });
+});
+
+// GET /api/liturgy/settings - Get family liturgy settings
+app.get('/api/liturgy/settings', async (c) => {
+  const user = requireAuth(c);
+
+  const settings = await c.env.DB.prepare(
+    'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
+  ).bind(user.id).first();
+
+  return c.json(settings || null);
+});
+
+// PUT /api/liturgy/settings - Update family liturgy settings
+app.put('/api/liturgy/settings', async (c) => {
+  const user = requireAuth(c);
+  const updates: any = await c.req.json();
+
+  const allowedFields = [
+    'catechism_enabled', 'catechism_source',
+    'hymnal_enabled', 'hymnal_source',
+    'scripture_enabled', 'bible_translation',
+    'current_catechism_week', 'current_hymn_week', 'current_scripture_week'
+  ];
+
+  const setClause = Object.keys(updates)
+    .filter(k => allowedFields.includes(k))
+    .map(k => `${k} = ?`)
+    .join(', ');
+
+  if (!setClause) {
+    return c.json({ error: 'No valid fields to update' }, 400);
+  }
+
+  const values = Object.keys(updates)
+    .filter(k => allowedFields.includes(k))
+    .map(k => updates[k]);
+
+  await c.env.DB.prepare(`
+    UPDATE family_liturgy_settings
+    SET ${setClause}, updated_at = datetime('now')
+    WHERE parent_id = ?
+  `).bind(...values, user.id).run();
+
+  return c.json({ success: true });
+});
+
 // ============ FEEDBACK ROUTES ============
 
 // 1. Toggle Upvote

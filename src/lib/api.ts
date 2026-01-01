@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -195,6 +195,39 @@ export const feedback = {
     apiRequest<{ success: boolean }>(`/api/comments/${commentId}`, { method: 'DELETE' }),
 };
 
-export const api = { auth, students, activities, observations, family, books, reading, feedback };
+// Liturgy
+export const liturgy = {
+  getToday: (): Promise<LiturgyTodayResponse> =>
+    apiRequest('/api/liturgy/today'),
+
+  complete: (itemId: string): Promise<{ success: boolean }> =>
+    apiRequest('/api/liturgy/complete', {
+      method: 'POST',
+      body: JSON.stringify({ itemId }),
+    }),
+
+  uncomplete: (itemId: string): Promise<{ success: boolean }> =>
+    apiRequest('/api/liturgy/uncomplete', {
+      method: 'POST',
+      body: JSON.stringify({ itemId }),
+    }),
+
+  advance: (type: LiturgyType): Promise<{ success: boolean }> =>
+    apiRequest('/api/liturgy/advance', {
+      method: 'POST',
+      body: JSON.stringify({ type }),
+    }),
+
+  getSettings: (): Promise<FamilyLiturgySettings> =>
+    apiRequest('/api/liturgy/settings'),
+
+  updateSettings: (settings: Partial<FamilyLiturgySettings>): Promise<{ success: boolean }> =>
+    apiRequest('/api/liturgy/settings', {
+      method: 'PUT',
+      body: JSON.stringify(settings),
+    }),
+};
+
+export const api = { auth, students, activities, observations, family, books, reading, feedback, liturgy };
 export default api;
 
