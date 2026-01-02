@@ -35,6 +35,13 @@ migrations_dir = "migrations"
 binding = "BOOKS_BUCKET"
 bucket_name = "schoolos-books"
 
+[ai]
+binding = "AI"
+
+[[vectorize]]
+binding = "CURRICULUM_INDEX"
+index_name = "schoolos-curriculum-docs"
+
 [vars]
 ENVIRONMENT = "production"
 GOOGLE_REDIRECT_URI = "https://stage-builder.antmwes104-1.workers.dev/auth/google/callback"
