@@ -2537,7 +2537,7 @@ app.get('/api/family/weekly-plan', async (c) => {
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
-    `).bind(youngestAge, oldestAge).all();
+    `).bind(oldestAge, youngestAge).all();
 
     // Parse materials
     const parsedActivities = activities.map((a: any) => ({
