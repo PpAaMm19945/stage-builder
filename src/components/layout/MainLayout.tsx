@@ -14,7 +14,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
-import { CaretDown, Sliders } from '@phosphor-icons/react';
+import { CaretDown, DotsThreeVertical } from '@phosphor-icons/react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useState } from 'react';
 import { DOMAIN_LABELS } from '@/types';
@@ -79,70 +79,17 @@ export function MainLayout() {
               className="lg:hidden"
               onClick={() => setRightPanelOpen(!rightPanelOpen)}
             >
-              <Sliders className="h-5 w-5" weight="duotone" />
+              <DotsThreeVertical className="h-5 w-5" weight="bold" />
             </Button>
 
             {/* Theme Toggle */}
             <ThemeToggle />
 
-            {/* Child Selector - Prominent display */}
-            {selectedChild && children.length > 0 && (
-              <div className="flex items-center">
-                {children.length > 1 ? (
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" className="gap-2 h-9 px-3">
-                        <Avatar className="h-6 w-6">
-                          <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                            {getInitials(selectedChild.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <span className="font-medium">{selectedChild.name}</span>
-                        <span className="text-muted-foreground text-sm hidden sm:inline">
-                          ({formatAge(selectedChild.ageInMonths)})
-                        </span>
-                        <CaretDown className="h-4 w-4 text-muted-foreground" weight="bold" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end" className="bg-popover">
-                      {children.map((child) => (
-                        <DropdownMenuItem
-                          key={child.id}
-                          onClick={() => setSelectedChild(child)}
-                          className={selectedChild?.id === child.id ? 'bg-muted' : ''}
-                        >
-                          <Avatar className="h-6 w-6 mr-2">
-                            <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                              {getInitials(child.name)}
-                            </AvatarFallback>
-                          </Avatar>
-                          <span>{child.name}</span>
-                          <span className="ml-2 text-muted-foreground text-sm">
-                            ({formatAge(child.ageInMonths)})
-                          </span>
-                        </DropdownMenuItem>
-                      ))}
-                    </DropdownMenuContent>
-                  </DropdownMenu>
-                ) : (
-                  <div className="flex items-center gap-2 text-sm pr-2">
-                    <Avatar className="h-6 w-6">
-                      <AvatarFallback className="bg-primary/10 text-primary text-xs">
-                        {getInitials(selectedChild.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <span className="font-medium">{selectedChild.name}</span>
-                    <span className="text-muted-foreground">
-                      ({formatAge(selectedChild.ageInMonths)})
-                    </span>
-                  </div>
-                )}
-              </div>
-            )}
+            {/* Child Selector - REMOVED (Now only in Sidebar) */}
           </header>
-          <div className="flex-1 flex">
+          <div className="flex-1 flex overflow-hidden">
             {/* Main Content */}
-            <div className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto">
+            <div className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto overflow-x-hidden">
               <Outlet />
             </div>
 

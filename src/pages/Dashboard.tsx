@@ -271,7 +271,7 @@ export default function Dashboard() {
           {data.materials.length > 0 ? (
             <div className="flex flex-wrap gap-3">
               {data.materials.map((m: MaterialItem, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
+                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
                   {m.status === 'have' ? (
                     <CheckCircle className="w-4 h-4 text-green-600" weight="fill" />
                   ) : m.status === 'willing_to_buy' ? (

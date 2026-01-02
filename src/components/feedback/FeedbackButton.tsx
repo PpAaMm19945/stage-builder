@@ -16,7 +16,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
-import { MessageSquare, Send, Loader2 } from 'lucide-react';
+import {
+    Popover,
+    PopoverContent,
+    PopoverTrigger,
+} from '@/components/ui/popover';
+import { ChatCircle, EnvelopeSimple, WhatsappLogo, PaperPlaneTilt, CircleNotch } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 
 type FeedbackType = 'bug' | 'suggestion' | 'question' | 'other';
@@ -30,6 +35,7 @@ const feedbackTypes: { value: FeedbackType; label: string }[] = [
 
 export function FeedbackButton() {
     const [open, setOpen] = useState(false);
+    const [popoverOpen, setPopoverOpen] = useState(false);
     const [feedbackType, setFeedbackType] = useState<FeedbackType>('suggestion');
     const [description, setDescription] = useState('');
     const [isSubmitting, setIsSubmitting] = useState(false);
@@ -66,23 +72,60 @@ export function FeedbackButton() {
         }
     };
 
+    const handleWhatsApp = () => {
+        const message = encodeURIComponent(
+            `Hi SchoolOS Team! I'm reaching out from the app.\n\nPage: ${window.location.pathname}\n\nMy feedback/question:\n`
+        );
+        window.open(`https://wa.me/256781888609?text=${message}`, '_blank');
+        setPopoverOpen(false);
+        toast.success('Opening WhatsApp...');
+    };
+
+    const handleEmail = () => {
+        setPopoverOpen(false);
+        setOpen(true);
+    };
+
     return (
         <>
-            {/* Floating Action Button */}
-            <button
-                onClick={() => setOpen(true)}
-                className="fixed bottom-6 right-6 z-50 flex items-center justify-center h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
-                aria-label="Send feedback"
-            >
-                <MessageSquare className="h-6 w-6" />
-            </button>
+            {/* Floating Action Button with Popover */}
+            <Popover open={popoverOpen} onOpenChange={setPopoverOpen}>
+                <PopoverTrigger asChild>
+                    <button
+                        className="fixed bottom-20 lg:bottom-6 right-6 z-50 flex items-center justify-center h-14 w-14 rounded-full bg-primary text-primary-foreground shadow-lg hover:bg-primary/90 transition-all hover:scale-105 focus:outline-none focus:ring-2 focus:ring-primary focus:ring-offset-2"
+                        aria-label="Send feedback"
+                    >
+                        <ChatCircle className="h-6 w-6" weight="fill" />
+                    </button>
+                </PopoverTrigger>
+                <PopoverContent side="top" align="end" className="w-48 p-2">
+                    <div className="flex flex-col gap-1">
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start gap-2 h-10"
+                            onClick={handleEmail}
+                        >
+                            <EnvelopeSimple className="h-5 w-5 text-blue-600" weight="duotone" />
+                            Email Us
+                        </Button>
+                        <Button
+                            variant="ghost"
+                            className="w-full justify-start gap-2 h-10"
+                            onClick={handleWhatsApp}
+                        >
+                            <WhatsappLogo className="h-5 w-5 text-green-600" weight="fill" />
+                            WhatsApp
+                        </Button>
+                    </div>
+                </PopoverContent>
+            </Popover>
 
             {/* Feedback Modal */}
             <Dialog open={open} onOpenChange={setOpen}>
                 <DialogContent className="sm:max-w-md">
                     <DialogHeader>
                         <DialogTitle className="flex items-center gap-2">
-                            <MessageSquare className="h-5 w-5 text-primary" />
+                            <ChatCircle className="h-5 w-5 text-primary" weight="duotone" />
                             Send Feedback
                         </DialogTitle>
                         <DialogDescription>
@@ -140,12 +183,12 @@ export function FeedbackButton() {
                             >
                                 {isSubmitting ? (
                                     <>
-                                        <Loader2 className="h-4 w-4 animate-spin" />
+                                        <CircleNotch className="h-4 w-4 animate-spin" />
                                         Sending...
                                     </>
                                 ) : (
                                     <>
-                                        <Send className="h-4 w-4" />
+                                        <PaperPlaneTilt className="h-4 w-4" weight="fill" />
                                         Send Feedback
                                     </>
                                 )}

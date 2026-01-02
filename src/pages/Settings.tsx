@@ -508,8 +508,8 @@ export default function Settings() {
                             key={material.name}
                             className={`
                                 flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
-                                ${material.status === 'have' ? 'bg-green-50 border-green-200' : ''}
-                                ${material.status === 'willing_to_buy' ? 'bg-blue-50 border-blue-200' : ''}
+                                ${material.status === 'have' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''}
+                                ${material.status === 'willing_to_buy' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : ''}
                                 ${material.status === 'not_interested' ? 'bg-muted/50 opacity-60' : ''}
                             `}
                             onClick={() => handleMaterialToggle(material.name)}
@@ -518,12 +518,12 @@ export default function Settings() {
 
                             <div className="flex items-center">
                               {material.status === 'have' && (
-                                <div className="flex items-center gap-1.5 text-green-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                                <div className="flex items-center gap-1.5 text-green-700 dark:text-green-300 text-xs font-medium bg-white/50 dark:bg-green-900/30 px-2 py-1 rounded-full">
                                   <CheckCircle className="w-3.5 h-3.5" /> Have
                                 </div>
                               )}
                               {material.status === 'willing_to_buy' && (
-                                <div className="flex items-center gap-1.5 text-blue-700 text-xs font-medium bg-white/50 px-2 py-1 rounded-full">
+                                <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 text-xs font-medium bg-white/50 dark:bg-blue-900/30 px-2 py-1 rounded-full">
                                   <Circle className="w-3.5 h-3.5" /> Will Buy
                                 </div>
                               )}

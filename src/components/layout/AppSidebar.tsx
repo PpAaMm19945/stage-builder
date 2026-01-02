@@ -12,6 +12,7 @@ import {
   Heart,
   SignOut,
   Pencil,
+  Baby,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
@@ -28,6 +29,7 @@ import {
   SidebarMenuButton,
   SidebarMenuItem,
   SidebarSeparator,
+  useSidebar,
 } from '@/components/ui/sidebar';
 import {
   DropdownMenu,
@@ -62,6 +64,7 @@ const comingSoonStages = [
 
 export function AppSidebar() {
   const { user, children, selectedChild, setSelectedChild, logout } = useAuth();
+  const { setOpenMobile, isMobile } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
   const [editingChild, setEditingChild] = useState<Student | null>(null);
@@ -75,7 +78,12 @@ export function AppSidebar() {
       .slice(0, 2);
   };
 
-
+  const handleNavigation = (path: string) => {
+    navigate(path);
+    if (isMobile) {
+      setOpenMobile(false);
+    }
+  };
 
   return (
     <>
@@ -83,7 +91,7 @@ export function AppSidebar() {
         <SidebarHeader className="p-4">
           {/* Logo - Clickable to Dashboard */}
           <button
-            onClick={() => navigate('/')}
+            onClick={() => handleNavigation('/')}
             className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -126,7 +134,10 @@ export function AppSidebar() {
                   >
                     <div
                       className="flex items-center gap-3 flex-1 cursor-pointer"
-                      onClick={() => setSelectedChild(child)}
+                      onClick={() => {
+                        setSelectedChild(child);
+                        if (isMobile) setOpenMobile(false);
+                      }}
                     >
                       <Avatar className="h-8 w-8">
                         <AvatarFallback className="bg-primary/10 text-primary text-sm">
@@ -147,6 +158,7 @@ export function AppSidebar() {
                       onClick={(e) => {
                         e.stopPropagation();
                         setEditingChild(child);
+                        if (isMobile) setOpenMobile(false);
                       }}
                     >
                       <Pencil className="h-4 w-4" weight="duotone" />
@@ -159,59 +171,52 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Primary Navigation */}
+          {/* Stages Navigation */}
           <SidebarGroup>
+            <SidebarGroupLabel>Stages</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {primaryLinks.map((item) => (
-                  <SidebarMenuItem key={item.title}>
-                    <SidebarMenuButton asChild>
-                      <NavLink
-                        to={item.url}
-                        end={item.url === '/'}
-                        className="flex items-center gap-3 rounded-lg px-3 py-2.5 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                        activeClassName="bg-primary/10 text-primary font-medium"
-                      >
-                        <item.icon className="h-5 w-5" weight="duotone" />
-                        <span className="font-medium">{item.title}</span>
-                      </NavLink>
+                {/* Early Years - Active */}
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    isActive={location.pathname === '/' || location.pathname.startsWith('/early-years')}
+                    onClick={() => handleNavigation('/')}
+                    className="h-auto py-3"
+                  >
+                    <div className="flex items-start gap-3">
+                      <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md text-indigo-600 dark:text-indigo-400 mt-0.5">
+                        <Baby className="h-5 w-5" weight="duotone" />
+                      </div>
+                      <div className="flex-1 text-left">
+                        <span className="font-medium block text-foreground">Early Years</span>
+                        <span className="text-xs text-muted-foreground">0-5 years</span>
+                      </div>
+                      <div className={`w-1.5 h-1.5 rounded-full mt-2 ${location.pathname === '/' || location.pathname.startsWith('/early-years') ? 'bg-primary' : 'bg-transparent'}`} />
+                    </div>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+
+                {/* Locked Stages */}
+                {comingSoonStages.map((stage) => (
+                  <SidebarMenuItem key={stage.id}>
+                    <SidebarMenuButton
+                      onClick={() => handleNavigation(`/${stage.id}`)}
+                      className="h-auto py-2 opacity-60 hover:opacity-100 transition-opacity"
+                    >
+                      <div className="flex items-center gap-3 w-full">
+                        <div className="p-1.5 bg-muted rounded-md text-muted-foreground">
+                          <Lock className="h-4 w-4" weight="duotone" />
+                        </div>
+                        <div className="flex-1 text-left">
+                          <span className="font-medium block text-sm">{stage.label}</span>
+                          <span className="text-[10px] text-muted-foreground">{stage.ages}</span>
+                        </div>
+                      </div>
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
               </SidebarMenu>
             </SidebarGroupContent>
-          </SidebarGroup>
-
-          <SidebarSeparator />
-
-          {/* Coming Soon - Collapsible */}
-          <SidebarGroup>
-            <Collapsible defaultOpen={false}>
-              <CollapsibleTrigger className="flex w-full items-center justify-between px-3 py-2 text-xs font-medium text-muted-foreground uppercase tracking-wider hover:text-foreground transition-colors group">
-                <span>Coming Soon</span>
-                <CaretRight className="h-3 w-3 transition-transform group-data-[state=open]:rotate-90" weight="bold" />
-              </CollapsibleTrigger>
-              <CollapsibleContent>
-                <SidebarGroupContent>
-                  <SidebarMenu>
-                    {comingSoonStages.map((stage) => (
-                      <SidebarMenuItem key={stage.id}>
-                        <SidebarMenuButton
-                          onClick={() => navigate(`/${stage.id}`)}
-                          className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground/60 transition-colors hover:bg-muted/50 w-full"
-                        >
-                          <Lock className="h-4 w-4" weight="duotone" />
-                          <span className="flex-1">{stage.label}</span>
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0 h-5 border-muted-foreground/30 opacity-60">
-                            {stage.ages}
-                          </Badge>
-                        </SidebarMenuButton>
-                      </SidebarMenuItem>
-                    ))}
-                  </SidebarMenu>
-                </SidebarGroupContent>
-              </CollapsibleContent>
-            </Collapsible>
           </SidebarGroup>
 
           <SidebarSeparator />
@@ -222,7 +227,7 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => navigate('/settings#support')}
+                    onClick={() => handleNavigation('/settings#support')}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-green-600 dark:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 w-full"
                   >
                     <Heart className="h-4 w-4" weight="fill" />
@@ -237,15 +242,13 @@ export function AppSidebar() {
         <SidebarFooter className="p-4">
           <SidebarMenu>
             <SidebarMenuItem>
-              <SidebarMenuButton asChild>
-                <NavLink
-                  to="/settings"
-                  className="flex items-center gap-3 rounded-lg px-3 py-2 text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  activeClassName="bg-primary/10 text-primary font-medium"
-                >
-                  <Gear className="h-4 w-4" weight="duotone" />
-                  <span>Settings</span>
-                </NavLink>
+              <SidebarMenuButton
+                onClick={() => handleNavigation('/settings')}
+                isActive={location.pathname === '/settings'}
+                className="flex items-center gap-3"
+              >
+                <Gear className="h-4 w-4" weight="duotone" />
+                <span>Settings</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>
