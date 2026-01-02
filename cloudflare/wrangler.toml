@@ -17,7 +17,8 @@
 # - GOOGLE_REDIRECT_URI = https://your-worker.workers.dev/auth/google/callback
 # - FRONTEND_URL = https://your-app.lovable.app
 
-name = "schoolos-api"
+name = "stage-builder"
+account_id = "4b9e1f0f3d5f50f35db086b8ae9431e1"
 main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
