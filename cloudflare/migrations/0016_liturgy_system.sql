@@ -1,3 +1,6 @@
+-- Migration 0016: Liturgy System Schema
+-- Adds support for family worship: Catechisms, Hymns, and Scripture
+
 -- Liturgy Items: Catechism questions, hymns, and scripture passages
 CREATE TABLE IF NOT EXISTS liturgy_items (
   id TEXT PRIMARY KEY,
