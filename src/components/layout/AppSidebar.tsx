@@ -89,7 +89,7 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="border-r border-border/50">
+      <Sidebar className="border-r border-border/50" collapsible="icon">
         <SidebarHeader className="p-4">
           {/* Logo - Clickable to Dashboard */}
           <button
@@ -181,7 +181,10 @@ export function AppSidebar() {
                 {primaryLinks.map((link) => (
                   <SidebarMenuItem key={link.url}>
                     <SidebarMenuButton
-                      isActive={location.pathname === link.url}
+                      isActive={
+                        location.pathname === link.url ||
+                        (link.url !== '/' && location.pathname.startsWith(link.url))
+                      }
                       onClick={() => handleNavigation(link.url)}
                       className="flex items-center gap-3"
                     >

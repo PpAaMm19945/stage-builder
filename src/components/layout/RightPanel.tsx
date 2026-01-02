@@ -39,12 +39,19 @@ export function RightPanel({
                 className={cn(
                     // Base styles
                     "bg-background border-l border-border/50 flex flex-col",
-                    // Desktop: sticky to viewport, doesn't scroll with content
-                    "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-72 lg:shrink-0",
-                    // Mobile: full-height overlay that slides in
+
+                    // DESKTOP: Sticky in-flow
+                    "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-72 lg:shrink-0 lg:z-0",
+                    "lg:translate-x-0 lg:border-l",
+
+                    // MOBILE: Fixed overlay
                     "fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50",
+                    "shadow-2xl lg:shadow-none", // Shadow only on mobile overlay
+
+                    // TRANSITIONS (Mobile only effectively)
                     "transform transition-transform duration-300 ease-out",
                     isOpen ? "translate-x-0" : "translate-x-full lg:translate-x-0",
+
                     className
                 )}
             >

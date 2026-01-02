@@ -1726,7 +1726,7 @@ app.post('/api/reading/complete', async (c) => {
     await c.env.DB.prepare(`
       INSERT INTO reading_sessions (id, parent_id, book_id, children_present, notes, completed_at)
       VALUES (?, ?, ?, ?, ?, datetime('now'))
-    `).bind(sessionId, user.id, `${series}/${bookId}`, childrenJson, notes || null).run();
+    `).bind(sessionId, user.id, bookId, childrenJson, notes || null).run();
 
     const session = await c.env.DB.prepare(
       'SELECT * FROM reading_sessions WHERE id = ?'
