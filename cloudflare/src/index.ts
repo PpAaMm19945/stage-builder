@@ -3,11 +3,24 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { generateWeeklyPlan, getCurrentWeekStart } from './planner';
 
 // Types
 interface Env {
+  // Core bindings
   DB: D1Database;
   BOOKS_BUCKET: R2Bucket;
+
+  // AI bindings
+  AI: any;  // Workers AI binding
+  CURRICULUM_INDEX: VectorizeIndex;  // Vectorize for curriculum RAG
+
+  // AI Gateway config
+  AI_GATEWAY_HOST: string;
+  AI_GATEWAY_ACCOUNT_ID: string;
+  AI_GATEWAY_NAME: string;
+
+  // Auth & Config
   GOOGLE_CLIENT_ID: string;
   GOOGLE_CLIENT_SECRET: string;
   GOOGLE_REDIRECT_URI: string;
@@ -2218,6 +2231,575 @@ app.delete('/api/comments/:id', async (c) => {
     return c.json({ success: true });
   } catch (e: any) {
     return c.json({ error: e.message }, 500);
+  }
+});
+
+// ============================================
+// PHASE 2: PARENT OVERRIDES API
+// ============================================
+
+// Get all overrides for current user
+app.get('/api/overrides', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1 ORDER BY created_at DESC'
+    ).bind(user.id).all();
+
+    const overrides = results.map((r: any) => ({
+      ...r,
+      constraints: JSON.parse(r.constraints_json || '{}')
+    }));
+
+    return c.json(overrides);
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Create a new override
+app.post('/api/overrides', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, overrideType, description, constraints } = await c.req.json();
+
+    if (!overrideType || !description || !constraints) {
+      return c.json({ error: 'overrideType, description, and constraints are required' }, 400);
+    }
+
+    const id = generateId('override');
+    await c.env.DB.prepare(`
+      INSERT INTO parent_overrides (id, parent_id, student_id, override_type, description, constraints_json)
+      VALUES (?, ?, ?, ?, ?, ?)
+    `).bind(id, user.id, studentId || null, overrideType, description, JSON.stringify(constraints)).run();
+
+    const override = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE id = ?'
+    ).bind(id).first();
+
+    return c.json({
+      ...override,
+      constraints: JSON.parse((override as any)?.constraints_json || '{}')
+    }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Update an override
+app.put('/api/overrides/:id', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const overrideId = c.req.param('id');
+    const { isActive, constraints } = await c.req.json();
+
+    // Verify ownership
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE id = ? AND parent_id = ?'
+    ).bind(overrideId, user.id).first();
+
+    if (!existing) return c.json({ error: 'Override not found' }, 404);
+
+    await c.env.DB.prepare(`
+      UPDATE parent_overrides 
+      SET is_active = COALESCE(?, is_active),
+          constraints_json = COALESCE(?, constraints_json),
+          updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(
+      isActive !== undefined ? (isActive ? 1 : 0) : null,
+      constraints ? JSON.stringify(constraints) : null,
+      overrideId
+    ).run();
+
+    const updated = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE id = ?'
+    ).bind(overrideId).first();
+
+    return c.json({
+      ...updated,
+      constraints: JSON.parse((updated as any)?.constraints_json || '{}')
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete an override
+app.delete('/api/overrides/:id', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const overrideId = c.req.param('id');
+
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE id = ? AND parent_id = ?'
+    ).bind(overrideId, user.id).first();
+
+    if (!existing) return c.json({ error: 'Override not found' }, 404);
+
+    await c.env.DB.prepare('DELETE FROM parent_overrides WHERE id = ?').bind(overrideId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================
+// WEEKLY TIME MODEL API
+// ============================================
+
+// Get time model for current user
+app.get('/api/time-model', async (c) => {
+  try {
+    const user = requireAuth(c);
+    let model = await c.env.DB.prepare(
+      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    if (!model) {
+      // Return defaults if not set
+      model = {
+        available_days: '["Mon","Tue","Wed","Thu","Fri"]',
+        minutes_per_day: 45,
+        preferred_times: '["morning"]',
+        max_sessions_per_day: 2,
+        field_trip_days: '[]'
+      };
+    }
+
+    return c.json({
+      ...model,
+      availableDays: JSON.parse((model as any).available_days),
+      preferredTimes: JSON.parse((model as any).preferred_times),
+      fieldTripDays: JSON.parse((model as any).field_trip_days || '[]')
+    });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Update time model
+app.put('/api/time-model', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { availableDays, minutesPerDay, preferredTimes, maxSessionsPerDay, fieldTripDays } = await c.req.json();
+
+    // Upsert
+    const existing = await c.env.DB.prepare(
+      'SELECT id FROM weekly_time_model WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    if (existing) {
+      await c.env.DB.prepare(`
+        UPDATE weekly_time_model SET
+          available_days = COALESCE(?, available_days),
+          minutes_per_day = COALESCE(?, minutes_per_day),
+          preferred_times = COALESCE(?, preferred_times),
+          max_sessions_per_day = COALESCE(?, max_sessions_per_day),
+          field_trip_days = COALESCE(?, field_trip_days),
+          updated_at = datetime('now')
+        WHERE parent_id = ?
+      `).bind(
+        availableDays ? JSON.stringify(availableDays) : null,
+        minutesPerDay || null,
+        preferredTimes ? JSON.stringify(preferredTimes) : null,
+        maxSessionsPerDay || null,
+        fieldTripDays ? JSON.stringify(fieldTripDays) : null,
+        user.id
+      ).run();
+    } else {
+      const id = generateId('tm');
+      await c.env.DB.prepare(`
+        INSERT INTO weekly_time_model (id, parent_id, available_days, minutes_per_day, preferred_times, max_sessions_per_day, field_trip_days)
+        VALUES (?, ?, ?, ?, ?, ?, ?)
+      `).bind(
+        id,
+        user.id,
+        JSON.stringify(availableDays || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']),
+        minutesPerDay || 45,
+        JSON.stringify(preferredTimes || ['morning']),
+        maxSessionsPerDay || 2,
+        JSON.stringify(fieldTripDays || [])
+      ).run();
+    }
+
+    const model = await c.env.DB.prepare(
+      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    return c.json({
+      ...model,
+      availableDays: JSON.parse((model as any).available_days),
+      preferredTimes: JSON.parse((model as any).preferred_times),
+      fieldTripDays: JSON.parse((model as any).field_trip_days || '[]')
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================
+// PHASE 5: DETERMINISTIC WEEKLY PLANNER
+// ============================================
+
+// Import moved to top of file
+
+// Get or generate weekly plan
+app.get('/api/family/weekly-plan', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const weekStart = c.req.query('weekStart') || getCurrentWeekStart();
+
+    // Get children
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT id, name, age_in_months FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    if (children.length === 0) {
+      return c.json({ error: 'No children found. Add a child first.' }, 400);
+    }
+
+    // Check for cached plan
+    const cachedPlan = await c.env.DB.prepare(
+      'SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
+    ).bind(user.id, weekStart).first();
+
+    if (cachedPlan) {
+      return c.json({
+        ...cachedPlan,
+        plan: JSON.parse((cachedPlan as any).plan_json),
+        cached: true
+      });
+    }
+
+    // Get time model
+    const timeModelRow = await c.env.DB.prepare(
+      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    const timeModel = timeModelRow ? {
+      available_days: JSON.parse((timeModelRow as any).available_days),
+      minutes_per_day: (timeModelRow as any).minutes_per_day,
+      preferred_times: JSON.parse((timeModelRow as any).preferred_times),
+      max_sessions_per_day: (timeModelRow as any).max_sessions_per_day,
+      field_trip_days: JSON.parse((timeModelRow as any).field_trip_days || '[]')
+    } : {
+      available_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      minutes_per_day: 45,
+      preferred_times: ['morning'],
+      max_sessions_per_day: 2,
+      field_trip_days: []
+    };
+
+    // Get overrides
+    const { results: overrideRows } = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1'
+    ).bind(user.id).all();
+
+    // Get activities
+    const ages = children.map((c: any) => c.age_in_months);
+    const youngestAge = Math.min(...ages);
+    const oldestAge = Math.max(...ages);
+
+    const { results: activities } = await c.env.DB.prepare(`
+      SELECT id, title, domain, min_age_months, max_age_months, duration_minutes, 
+             materials, cluster_tag, mess_level, activity_type
+      FROM activities 
+      WHERE min_age_months <= ? AND max_age_months >= ?
+        AND is_active = 1
+        AND (is_archived = 0 OR is_archived IS NULL)
+        AND (content_status != 'blacklisted' OR content_status IS NULL)
+    `).bind(youngestAge, oldestAge).all();
+
+    // Parse materials
+    const parsedActivities = activities.map((a: any) => ({
+      ...a,
+      materials: JSON.parse(a.materials || '[]')
+    }));
+
+    // Get recent activity IDs (last 14 days)
+    const { results: recentObs } = await c.env.DB.prepare(`
+      SELECT DISTINCT activity_id FROM observations 
+      WHERE student_id IN (${children.map(() => '?').join(',')})
+        AND completed_at > datetime('now', '-14 days')
+    `).bind(...children.map((c: any) => c.id)).all();
+
+    const recentActivityIds = recentObs.map((r: any) => r.activity_id);
+
+    // Generate plan
+    const plan = generateWeeklyPlan(
+      children as any,
+      parsedActivities as any,
+      timeModel,
+      overrideRows as any,
+      recentActivityIds
+    );
+
+    // Cache the plan
+    const planId = generateId('plan');
+    await c.env.DB.prepare(`
+      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, override_version)
+      VALUES (?, ?, ?, ?, 1)
+    `).bind(planId, user.id, weekStart, JSON.stringify(plan)).run();
+
+    return c.json({
+      id: planId,
+      weekStart,
+      plan,
+      cached: false
+    });
+  } catch (error: any) {
+    console.error('Weekly plan error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Regenerate weekly plan (clears cache)
+app.post('/api/family/weekly-plan/regenerate', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const weekStart = getCurrentWeekStart();
+
+    // Delete cached plan
+    await c.env.DB.prepare(
+      'DELETE FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
+    ).bind(user.id, weekStart).run();
+
+    // Redirect to GET to generate fresh plan
+    return c.redirect('/api/family/weekly-plan');
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============================================
+// PHASE 3: AI INPUT NORMALIZATION
+// ============================================
+
+// Parse free-text parent input into structured override
+app.post('/api/overrides/parse', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { freeText, studentId } = await c.req.json();
+
+    if (!freeText || typeof freeText !== 'string') {
+      return c.json({ error: 'freeText is required' }, 400);
+    }
+
+    const systemPrompt = `You are a helper that converts parent descriptions of their child's needs into a structured JSON format.
+
+You may ONLY output valid JSON matching this schema:
+{
+  "overrideType": "sensory" | "motor" | "schedule" | "content" | "pacing",
+  "constraints": {
+    "exclude_tags": ["list of activity types to avoid"],
+    "exclude_materials": ["specific materials to avoid"],
+    "prefer_tags": ["activity types to prioritize"],
+    "prefer_domains": ["domains to emphasize"],
+    "reduce_duration": boolean,
+    "require_quiet": boolean,
+    "require_low_mess": boolean,
+    "require_outdoor": boolean,
+    "require_seated": boolean,
+    "custom_note": "any additional context"
+  },
+  "confidence": 0.0-1.0,
+  "clarification_needed": "question to ask if unclear" or null
+}
+
+Common mappings:
+- "loud sounds" / "noise sensitive" → require_quiet: true
+- "struggles with sitting still" / "high energy" → exclude_tags: ["seated"], prefer_tags: ["outdoor", "movement"]
+- "gets overwhelmed easily" → require_quiet: true, reduce_duration: true
+- "messy activities are hard" / "hates mess" → require_low_mess: true
+- "loves being outside" → require_outdoor: true
+- "needs movement breaks" → reduce_duration: true
+- "sensory issues with textures" → exclude_materials: ["playdough", "slime", "paint"]
+- "speech delay" → prefer_domains: ["language"]
+- "very active" → prefer_tags: ["movement", "outdoor"], exclude_tags: ["seated"]
+
+Be conservative. Only include constraints you are confident about.
+If unsure, set confidence < 0.7 and provide a clarifying question.
+Do NOT invent constraints not supported by the input.`;
+
+    try {
+      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: freeText }
+        ],
+        max_tokens: 500
+      });
+
+      // Extract JSON from response (may have markdown code blocks)
+      let jsonStr = response.response;
+      const jsonMatch = jsonStr.match(/```json\s*([\s\S]*?)\s*```/) ||
+        jsonStr.match(/```\s*([\s\S]*?)\s*```/) ||
+        [null, jsonStr];
+      jsonStr = jsonMatch[1] || jsonStr;
+
+      const parsed = JSON.parse(jsonStr.trim());
+
+      return c.json({
+        success: true,
+        originalText: freeText,
+        parsed,
+        requiresConfirmation: parsed.confidence < 0.7 || !!parsed.clarification_needed
+      });
+    } catch (parseError) {
+      console.error('AI parse error:', parseError);
+      // Fallback: return a generic response asking for more details
+      return c.json({
+        success: false,
+        originalText: freeText,
+        parsed: null,
+        requiresConfirmation: true,
+        fallbackMessage: "I couldn't fully understand that. Could you describe your child's needs in simpler terms? For example: 'My child is sensitive to loud sounds' or 'She needs lots of movement.'"
+      });
+    }
+  } catch (error: any) {
+    console.error('Override parse error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// ============================================
+// PHASE 4: VECTORIZE CURRICULUM EXPLANATIONS
+// ============================================
+
+// Explain curriculum decisions using RAG
+app.post('/api/explain', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { question, context } = await c.req.json();
+
+    if (!question || typeof question !== 'string') {
+      return c.json({ error: 'question is required' }, 400);
+    }
+
+    // Generate embedding for the question
+    let contextDocs = '';
+    let sources: string[] = [];
+
+    try {
+      const embeddingResult = await c.env.AI.run('@cf/baai/bge-base-en-v1.5', {
+        text: question
+      });
+
+      // Query Vectorize for relevant curriculum docs
+      const matches = await c.env.CURRICULUM_INDEX.query(embeddingResult.data[0], {
+        topK: 3,
+        returnMetadata: true
+      });
+
+      sources = matches.matches?.map((m: any) => m.id) || [];
+      contextDocs = matches.matches
+        ?.map((m: any) => m.metadata?.content || '')
+        .filter(Boolean)
+        .join('\n\n') || '';
+    } catch (vectorError) {
+      console.log('Vectorize query failed (index may be empty):', vectorError);
+      // Continue without vector context - will use fallback
+    }
+
+    // Build system prompt
+    const systemPrompt = `You are SchoolOS, a Christian homeschool planning assistant built on Reformed principles.
+You answer questions about why certain activities are recommended for children.
+
+${contextDocs ? `Use the following curriculum context to inform your answer:
+---
+${contextDocs}
+---` : ''}
+
+Guidelines:
+- Speak with warmth and encouragement to parents
+- Reference biblical principles when relevant (stewardship, dominion, wisdom)
+- Be practical and specific
+- If you don't have information about something, say so honestly
+- Never invent curriculum content or developmental claims
+- Keep answers concise (2-3 paragraphs max)
+
+${context?.activityId ? `The parent is asking about activity ID: ${context.activityId}` : ''}
+${context?.domain ? `Context domain: ${context.domain}` : ''}
+${context?.childAge ? `Child's age: ${context.childAge} months` : ''}`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question }
+      ],
+      max_tokens: 600
+    });
+
+    // Log for transparency
+    const logId = generateId('explainlog');
+    await c.env.DB.prepare(`
+      INSERT INTO explanation_logs (id, parent_id, question, answer, sources_json)
+      VALUES (?, ?, ?, ?, ?)
+    `).bind(logId, user.id, question, response.response, JSON.stringify(sources)).run();
+
+    return c.json({
+      answer: response.response,
+      sources,
+      confidence: sources.length > 0 ? 0.8 : 0.5
+    });
+  } catch (error: any) {
+    console.error('Explain error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Narrate a weekly plan in human-friendly language
+app.post('/api/plan/narrate', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { plan, tone = 'encouraging' } = await c.req.json();
+
+    if (!plan) {
+      return c.json({ error: 'plan is required' }, 400);
+    }
+
+    const toneInstructions: Record<string, string> = {
+      'encouraging': 'Be warm, positive, and motivating. Celebrate what the family will accomplish.',
+      'calm': 'Be gentle and reassuring. Emphasize that flexibility is okay.',
+      'concise': 'Be brief and practical. Focus on actionable steps only.'
+    };
+
+    const systemPrompt = `You are SchoolOS, helping a homeschooling parent understand their weekly learning plan.
+Convert this structured plan into a warm, encouraging narrative.
+
+Tone: ${toneInstructions[tone] || toneInstructions['encouraging']}
+
+Rules:
+- Do NOT invent activities or change the plan
+- Do NOT add activities not in the plan
+- Focus on practical tips for implementation
+- Reference the specific days and activities
+- Keep it to 2-3 short paragraphs
+- End with an encouraging note`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: JSON.stringify(plan, null, 2) }
+      ],
+      max_tokens: 500
+    });
+
+    return c.json({
+      narrative: response.response,
+      originalPlan: plan
+    });
+  } catch (error: any) {
+    console.error('Narrate error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
   }
 });
 
