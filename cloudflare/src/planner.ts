@@ -73,9 +73,10 @@ function parseConstraints(json: string): any {
     }
 }
 
-// Check if activity is suitable for all given children
+// Check if activity is suitable for at least one child
+// (Changed from every() to some() to support multi-child families with varying ages)
 function isSuitableForChildren(activity: Activity, children: Student[]): boolean {
-    return children.every(child =>
+    return children.some(child =>
         child.age_in_months >= activity.min_age_months &&
         child.age_in_months <= activity.max_age_months
     );

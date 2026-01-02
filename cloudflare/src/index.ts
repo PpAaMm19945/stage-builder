@@ -1720,13 +1720,26 @@ app.post('/api/reading/complete', async (c) => {
       return c.json({ error: 'Series and bookId are required' }, 400);
     }
 
+    // Try to find the book with either simple bookId or series/bookId format
+    const book = await c.env.DB.prepare(
+      'SELECT id FROM books WHERE id = ? OR id = ?'
+    ).bind(bookId, `${series}/${bookId}`).first<{ id: string }>();
+
+    if (!book) {
+      return c.json({
+        error: 'Book not found',
+        tried: [bookId, `${series}/${bookId}`],
+        help: 'Ensure the book is seeded in the books table with a matching id'
+      }, 404);
+    }
+
     const sessionId = generateId('read');
     const childrenJson = childrenPresent ? JSON.stringify(childrenPresent) : null;
 
     await c.env.DB.prepare(`
       INSERT INTO reading_sessions (id, parent_id, book_id, children_present, notes, completed_at)
       VALUES (?, ?, ?, ?, ?, datetime('now'))
-    `).bind(sessionId, user.id, bookId, childrenJson, notes || null).run();
+    `).bind(sessionId, user.id, book.id, childrenJson, notes || null).run();
 
     const session = await c.env.DB.prepare(
       'SELECT * FROM reading_sessions WHERE id = ?'

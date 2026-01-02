@@ -21,8 +21,6 @@ import { DOMAIN_LABELS } from '@/types';
 import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 import { useQuery } from '@tanstack/react-query';
 import { family } from '@/lib/api';
-import { Button } from '@/components/ui/button';
-import { useNavigate } from 'react-router-dom';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
