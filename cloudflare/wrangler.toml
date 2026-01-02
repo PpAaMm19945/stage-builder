@@ -1,21 +1,5 @@
 # SchoolOS Cloudflare Worker Configuration
 # ========================================
-# SETUP INSTRUCTIONS (No CLI needed!):
-#
-# 1. In Cloudflare Dashboard → D1 → Create Database → name it "schoolos-db"
-# 2. Copy the Database ID and paste it below
-# 3. Go to Workers & Pages → Create → Worker → "Import from GitHub"
-# 4. Select your repo, set "cloudflare" as the root directory
-# 5. Add secrets in Worker Settings → Variables → Secrets
-#
-# Required Secrets (add in Cloudflare Dashboard):
-# - GOOGLE_CLIENT_ID
-# - GOOGLE_CLIENT_SECRET  
-# - JWT_SECRET (generate a random 32+ character string)
-#
-# Required Variables (add in Cloudflare Dashboard):
-# - GOOGLE_REDIRECT_URI = https://your-worker.workers.dev/auth/google/callback
-# - FRONTEND_URL = https://your-app.lovable.app
 
 name = "stage-builder"
 account_id = "4b9e1f0f3d5f50f35db086b8ae9431e1"
@@ -23,26 +7,51 @@ main = "src/index.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
+# ------------------------
 # D1 Database binding
+# ------------------------
 [[d1_databases]]
 binding = "DB"
 database_name = "schoolos-db"
 database_id = "acb84cf7-fd3b-4083-b08a-9f28f131fc3f"
 migrations_dir = "migrations"
 
+# ------------------------
 # R2 Storage for books and media
+# ------------------------
 [[r2_buckets]]
 binding = "BOOKS_BUCKET"
 bucket_name = "schoolos-books"
 
+# ------------------------
+# Workers AI binding
+# ------------------------
 [ai]
 binding = "AI"
 
+# ------------------------
+# Vectorize (Curriculum Memory)
+# ------------------------
 [[vectorize]]
 binding = "CURRICULUM_INDEX"
 index_name = "schoolos-curriculum-docs"
 
+# ------------------------
+# Runtime variables
+# ------------------------
 [vars]
 ENVIRONMENT = "production"
+
+# App URLs
 GOOGLE_REDIRECT_URI = "https://stage-builder.antmwes104-1.workers.dev/auth/google/callback"
 FRONTEND_URL = "https://stage-builder-9hh.pages.dev"
+
+# ------------------------
+# AI Gateway configuration
+# ------------------------
+AI_GATEWAY_HOST = "https://gateway.ai.cloudflare.com"
+AI_GATEWAY_ACCOUNT_ID = "4b9e1f0f3d5f50f35db086b8ae9431e1"
+AI_GATEWAY_NAME = "schoolos-gateway"
+
+# Derived usage (do NOT hardcode in code):
+# ${AI_GATEWAY_HOST}/v1/${AI_GATEWAY_ACCOUNT_ID}/${AI_GATEWAY_NAME}/compat
