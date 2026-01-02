@@ -190,6 +190,19 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
+                {/* Daily Practices - Only visible for families with infants */}
+                {children.some(c => c.ageInMonths <= 12) && (
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      isActive={location.pathname === '/early-years/daily-practices'}
+                      onClick={() => handleNavigation('/early-years/daily-practices')}
+                      className="flex items-center gap-3"
+                    >
+                      <Baby className="h-4 w-4" weight="duotone" />
+                      <span>Daily Practices</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                )}
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
