@@ -121,6 +121,12 @@ export const family = {
       method: 'PUT',
       body: JSON.stringify({ materials }),
     }),
+
+  swapActivity: (activityId: string) =>
+    apiRequest<{ session: any }>('/api/family/swap', {
+      method: 'POST',
+      body: JSON.stringify({ activityId }),
+    }),
 };
 
 // Observations

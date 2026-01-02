@@ -4,7 +4,7 @@ import {
   House,
   Books,
   TrendUp,
-  Gear,
+  SlidersHorizontal,
   Lock,
   CaretDown,
   CaretRight,
@@ -247,8 +247,8 @@ export function AppSidebar() {
                 isActive={location.pathname === '/settings'}
                 className="flex items-center gap-3"
               >
-                <Gear className="h-4 w-4" weight="duotone" />
-                <span>Settings</span>
+                <SlidersHorizontal className="h-4 w-4" weight="duotone" />
+                <span>Command Center</span>
               </SidebarMenuButton>
             </SidebarMenuItem>
           </SidebarMenu>

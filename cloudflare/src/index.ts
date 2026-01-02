@@ -890,6 +890,128 @@ app.put('/api/family/materials', async (c) => {
   }
 });
 
+// Swap activity - get an alternative activity
+app.post('/api/family/swap', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+    const { activityId } = body;
+
+    if (!activityId) {
+      return c.json({ error: 'activityId is required' }, 400);
+    }
+
+    // Get the current activity to understand criteria
+    const currentActivity = await c.env.DB.prepare(
+      'SELECT * FROM activities WHERE id = ?'
+    ).bind(activityId).first();
+
+    if (!currentActivity) {
+      return c.json({ error: 'Activity not found' }, 404);
+    }
+
+    // Get children for age range
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    if (children.length === 0) {
+      return c.json({ error: 'No children registered' }, 400);
+    }
+
+    const ages = children.map((c: any) => c.age_in_months);
+    const youngestAge = Math.min(...ages);
+    const oldestAge = Math.max(...ages);
+
+    // Get parent's materials
+    const { results: materialPrefs } = await c.env.DB.prepare(
+      'SELECT material_name, status FROM family_materials WHERE parent_id = ?'
+    ).bind(user.id).all();
+
+    const haveMaterials = new Set(
+      materialPrefs
+        .filter((m: any) => m.status === 'have' || m.status === 'willing_to_buy')
+        .map((m: any) => m.material_name.toLowerCase())
+    );
+
+    // Find alternative activity with same criteria but different ID
+    const { results: alternatives } = await c.env.DB.prepare(`
+      SELECT * FROM activities 
+      WHERE activity_type = 'family_session'
+        AND id != ?
+        AND min_age_months <= ? 
+        AND max_age_months >= ?
+        AND tiered_expectations IS NOT NULL
+        AND is_active = 1
+        AND (is_archived = 0 OR is_archived IS NULL)
+        AND (content_status != 'blacklisted' OR content_status IS NULL)
+      ORDER BY uses_core_kit DESC, RANDOM()
+      LIMIT 5
+    `).bind(activityId, youngestAge, oldestAge).all();
+
+    if (alternatives.length === 0) {
+      return c.json({ error: 'No alternative activities available' }, 404);
+    }
+
+    // Score by material match and pick best
+    const scored = alternatives.map((activity: any) => {
+      const materials = JSON.parse(activity.materials || '[]');
+      const matchCount = materials.filter((m: string) => haveMaterials.has(m.toLowerCase())).length;
+      const matchRatio = materials.length > 0 ? matchCount / materials.length : 1;
+      return { activity, score: matchRatio };
+    }).sort((a, b) => b.score - a.score);
+
+    const selectedActivity = scored[0].activity;
+
+    // Build session response same as /api/family/today format
+    const tiers = JSON.parse(selectedActivity.tiered_expectations || '[]');
+    const childTiers = children.map((child: any) => {
+      const age = child.age_in_months;
+      let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+      if (!tier) {
+        if (age < tiers[0]?.age_min) tier = tiers[0];
+        else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+      }
+      return {
+        childId: child.id,
+        childName: child.name,
+        tier: tier?.tier || 'Standard',
+        expectation: tier?.expectation || 'Participate with support',
+        childAge: age
+      };
+    });
+
+    const domainLabels: Record<string, string> = {
+      'motor': 'Stewardship & Dominion',
+      'language': 'Word & Truth',
+      'cognitive': 'Wisdom & Order',
+      'social-emotional': 'Virtue & Sanctification',
+      'pre-academic': 'Foundations & Patterns'
+    };
+    const domainName = domainLabels[selectedActivity.domain] || selectedActivity.domain;
+
+    return c.json({
+      session: {
+        activity: {
+          ...selectedActivity,
+          materials: JSON.parse(selectedActivity.materials || '[]'),
+          instructions: JSON.parse(selectedActivity.instructions || '[]'),
+          learning_outcomes: JSON.parse(selectedActivity.learning_outcomes || '[]'),
+        },
+        childTiers,
+        messLevel: selectedActivity.mess_level,
+        prepMinutes: selectedActivity.prep_time_minutes,
+        materialsAvailable: true,
+        reasoning: `Swapped to '${selectedActivity.title}' - great for developing ${domainName}.`
+      }
+    });
+  } catch (error: any) {
+    console.error('Swap activity error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
 // ============ FAMILY COMPOSER (NEW) ============
 
 // Compose a custom family session plan

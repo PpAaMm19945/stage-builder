@@ -72,6 +72,15 @@ export const MASTERY_DESCRIPTIONS: Record<MasteryLevel, string> = {
   'secure': 'Confident and consistent with this skill'
 };
 
+// Child Role Labels (for tiered expectations)
+export type ChildRole = 'Observer' | 'Participant' | 'Leader';
+
+export function getChildRole(ageInMonths: number): ChildRole {
+  if (ageInMonths <= 12) return 'Observer';
+  if (ageInMonths <= 36) return 'Participant';
+  return 'Leader';
+}
+
 // Activity Definition
 export interface Activity {
   id: string;

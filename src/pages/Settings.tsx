@@ -215,8 +215,8 @@ export default function Settings() {
   return (
     <div className="space-y-8 max-w-2xl mx-auto pb-12">
       <div className="space-y-2">
-        <h1 className="text-3xl font-display font-bold text-foreground">Settings</h1>
-        <p className="text-muted-foreground">Manage your account, family, and materials</p>
+        <h1 className="text-3xl font-display font-bold text-foreground">Command Center</h1>
+        <p className="text-muted-foreground">Your Family's Learning Headquarters</p>
       </div>
 
       {/* Children Management */}

@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { toast } from 'sonner';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -32,10 +32,14 @@ import {
   Info,
   Lightning,
   Question,
-  BookBookmark
+  BookBookmark,
+  Eye,
+  HandPalm,
+  Crown,
+  ArrowsClockwise
 } from '@phosphor-icons/react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
-import { FamilySession, MaterialItem, Book } from '@/types';
+import { FamilySession, MaterialItem, Book, getChildRole } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { books } from '@/lib/api';
 import { BookReader } from '@/components/books/BookReader';
@@ -45,7 +49,9 @@ import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [selectedSession, setSelectedSession] = useState<FamilySession | null>(null);
+  const [swappingActivityId, setSwappingActivityId] = useState<string | null>(null);
 
   const { data, isLoading, error, refetch } = useQuery({
     queryKey: ['family-today'],
@@ -391,6 +397,41 @@ export default function Dashboard() {
                   </div>
                 </div>
                 <div className="flex items-center gap-2">
+                  {!isInfancyMode && (
+                    <TooltipProvider>
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-8 w-8"
+                            disabled={swappingActivityId === session.activity.id}
+                            onClick={async () => {
+                              setSwappingActivityId(session.activity.id);
+                              try {
+                                const result = await family.swapActivity(session.activity.id);
+                                queryClient.invalidateQueries({ queryKey: ['family-today'] });
+                                toast.success(`Swapped to "${result.session.activity.title}"`);
+                              } catch (err: any) {
+                                toast.error(err.message || 'No alternatives available');
+                              } finally {
+                                setSwappingActivityId(null);
+                              }
+                            }}
+                          >
+                            {swappingActivityId === session.activity.id ? (
+                              <CircleNotch className="h-4 w-4 animate-spin" />
+                            ) : (
+                              <ArrowsClockwise className="h-4 w-4" weight="duotone" />
+                            )}
+                          </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>Swap for another activity</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    </TooltipProvider>
+                  )}
                   <UpvoteButton contentType="activity" contentId={session.activity.id} variant="minimal" />
                 </div>
               </div>
@@ -422,11 +463,16 @@ export default function Dashboard() {
                           <span className="font-bold text-foreground">
                             {tier.childName}
                           </span>
-                          {!isInfancyMode && (
-                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto opacity-70">
-                              {tier.tier}
-                            </Badge>
-                          )}
+                          {!isInfancyMode && (() => {
+                            const role = getChildRole(tier.childAge);
+                            const RoleIcon = role === 'Observer' ? Eye : role === 'Participant' ? HandPalm : Crown;
+                            return (
+                              <Badge variant="secondary" className="text-[10px] h-5 px-1.5 ml-auto opacity-70 flex items-center gap-1">
+                                <RoleIcon className="h-3 w-3" weight="duotone" />
+                                {role}
+                              </Badge>
+                            );
+                          })()}
                         </div>
                         <div className="flex gap-3 pl-1">
                           <Sparkle className="w-4 h-4 text-indigo-500 mt-1 shrink-0" weight="duotone" />

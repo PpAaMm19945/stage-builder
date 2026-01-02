@@ -18,8 +18,16 @@ import {
     ArrowRight,
     Check
 } from 'lucide-react';
+import { BookOpen, UsersThree, Heart } from '@phosphor-icons/react';
 
 const ONBOARDING_COMPLETE_KEY = 'schoolos_onboarding_complete';
+const IDENTITY_PREFS_KEY = 'schoolos_identity_prefs';
+
+interface IdentityPrefs {
+    scriptureGrounded: boolean;
+    siblingLearning: boolean;
+    godlyCharacter: boolean;
+}
 
 interface WelcomeFlowProps {
     onComplete?: () => void;
@@ -28,6 +36,11 @@ interface WelcomeFlowProps {
 export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
     const [open, setOpen] = useState(false);
     const [step, setStep] = useState(0);
+    const [identityPrefs, setIdentityPrefs] = useState<IdentityPrefs>({
+        scriptureGrounded: false,
+        siblingLearning: false,
+        godlyCharacter: false,
+    });
     const { children, isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
@@ -45,13 +58,14 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
 
     const handleComplete = () => {
         localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+        localStorage.setItem(IDENTITY_PREFS_KEY, JSON.stringify(identityPrefs));
         setOpen(false);
         onComplete?.();
     };
 
     const handleChildAdded = () => {
-        // Move to quick tour step
-        setStep(2);
+        // Move to quick tour step (now step 3 after identity step)
+        setStep(3);
     };
 
     const handleSkip = () => {
@@ -60,7 +74,11 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
 
     const handleStartExploring = () => {
         handleComplete();
-        navigate('/early-years/today');
+        navigate('/');
+    };
+
+    const handleIdentityAnswer = (key: keyof IdentityPrefs, value: boolean) => {
+        setIdentityPrefs(prev => ({ ...prev, [key]: value }));
     };
 
     const steps = [
@@ -116,7 +134,118 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                 </div>
             ),
         },
-        // Step 1: Add Child
+        // Step 1: Identity Questions
+        {
+            content: (
+                <div className="space-y-6 text-center">
+                    <div className="space-y-2">
+                        <DialogTitle className="text-2xl font-display">
+                            Before we begin...
+                        </DialogTitle>
+                        <DialogDescription className="text-base">
+                            Help us personalize your family's experience
+                        </DialogDescription>
+                    </div>
+
+                    <div className="space-y-4 text-left">
+                        {/* Scripture Question */}
+                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
+                                    <BookOpen className="h-5 w-5 text-amber-600 dark:text-amber-400" weight="duotone" />
+                                </div>
+                                <p className="font-medium text-foreground">Is raising children grounded in Scripture important to you?</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={identityPrefs.scriptureGrounded ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('scriptureGrounded', true)}
+                                    className="flex-1"
+                                >
+                                    Yes
+                                </Button>
+                                <Button
+                                    variant={identityPrefs.scriptureGrounded === false ? "secondary" : "ghost"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('scriptureGrounded', false)}
+                                    className="flex-1"
+                                >
+                                    Not right now
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Sibling Learning Question */}
+                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
+                                    <UsersThree className="h-5 w-5 text-blue-600 dark:text-blue-400" weight="duotone" />
+                                </div>
+                                <p className="font-medium text-foreground">Do you want your children to learn alongside their siblings?</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={identityPrefs.siblingLearning ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('siblingLearning', true)}
+                                    className="flex-1"
+                                >
+                                    Yes
+                                </Button>
+                                <Button
+                                    variant={identityPrefs.siblingLearning === false ? "secondary" : "ghost"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('siblingLearning', false)}
+                                    className="flex-1"
+                                >
+                                    Not right now
+                                </Button>
+                            </div>
+                        </div>
+
+                        {/* Godly Character Question */}
+                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
+                            <div className="flex items-center gap-3">
+                                <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
+                                    <Heart className="h-5 w-5 text-rose-600 dark:text-rose-400" weight="duotone" />
+                                </div>
+                                <p className="font-medium text-foreground">Is developing godly character a priority in your home?</p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button
+                                    variant={identityPrefs.godlyCharacter ? "default" : "outline"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('godlyCharacter', true)}
+                                    className="flex-1"
+                                >
+                                    Yes
+                                </Button>
+                                <Button
+                                    variant={identityPrefs.godlyCharacter === false ? "secondary" : "ghost"}
+                                    size="sm"
+                                    onClick={() => handleIdentityAnswer('godlyCharacter', false)}
+                                    className="flex-1"
+                                >
+                                    Not right now
+                                </Button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div className="flex flex-col gap-3 pt-4">
+                        <Button onClick={() => setStep(2)} size="lg" className="gap-2">
+                            Continue
+                            <ArrowRight className="h-4 w-4" />
+                        </Button>
+                        <Button variant="ghost" size="sm" onClick={handleSkip}>
+                            Skip for now
+                        </Button>
+                    </div>
+                </div>
+            ),
+        },
+        // Step 2: Add Child
         {
             content: (
                 <div className="space-y-6">
@@ -141,7 +270,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                 </div>
             ),
         },
-        // Step 2: Quick Tour
+        // Step 3: Quick Tour
         {
             content: (
                 <div className="space-y-6 text-center">

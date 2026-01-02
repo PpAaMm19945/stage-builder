@@ -18,6 +18,7 @@ import { CaretDown, DotsThreeVertical } from '@phosphor-icons/react';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { useState } from 'react';
 import { DOMAIN_LABELS } from '@/types';
+import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
@@ -176,6 +177,8 @@ export function MainLayout() {
       </div>
       {/* Mobile Bottom Navigation */}
       <BottomNav />
+      {/* Evening Prep Modal */}
+      <TomorrowsPrepModal />
     </SidebarProvider>
   );
 }
