@@ -39,8 +39,8 @@ export function RightPanel({
                 className={cn(
                     // Base styles
                     "bg-background border-l border-border/50 flex flex-col",
-                    // Desktop: fixed width, always visible
-                    "lg:relative lg:w-72 lg:shrink-0",
+                    // Desktop: sticky to viewport, doesn't scroll with content
+                    "lg:sticky lg:top-14 lg:h-[calc(100vh-3.5rem)] lg:w-72 lg:shrink-0",
                     // Mobile: full-height overlay that slides in
                     "fixed top-0 right-0 h-full w-80 max-w-[85vw] z-50",
                     "transform transition-transform duration-300 ease-out",

@@ -173,31 +173,34 @@ export function AppSidebar() {
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Stages Navigation */}
+          {/* Primary Navigation Links */}
           <SidebarGroup>
-            <SidebarGroupLabel>Stages</SidebarGroupLabel>
+            <SidebarGroupLabel>Early Years</SidebarGroupLabel>
             <SidebarGroupContent>
               <SidebarMenu>
-                {/* Early Years - Active */}
-                <SidebarMenuItem>
-                  <SidebarMenuButton
-                    isActive={location.pathname === '/' || location.pathname.startsWith('/early-years')}
-                    onClick={() => handleNavigation('/')}
-                    className="h-auto py-3"
-                  >
-                    <div className="flex items-start gap-3">
-                      <div className="p-1.5 bg-indigo-100 dark:bg-indigo-900/30 rounded-md text-indigo-600 dark:text-indigo-400 mt-0.5">
-                        <Baby className="h-5 w-5" weight="duotone" />
-                      </div>
-                      <div className="flex-1 text-left">
-                        <span className="font-medium block text-foreground">Early Years</span>
-                        <span className="text-xs text-muted-foreground">0-5 years</span>
-                      </div>
-                      <div className={`w-1.5 h-1.5 rounded-full mt-2 ${location.pathname === '/' || location.pathname.startsWith('/early-years') ? 'bg-primary' : 'bg-transparent'}`} />
-                    </div>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
+                {primaryLinks.map((link) => (
+                  <SidebarMenuItem key={link.url}>
+                    <SidebarMenuButton
+                      isActive={location.pathname === link.url}
+                      onClick={() => handleNavigation(link.url)}
+                      className="flex items-center gap-3"
+                    >
+                      <link.icon className="h-4 w-4" weight="duotone" />
+                      <span>{link.title}</span>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                ))}
+              </SidebarMenu>
+            </SidebarGroupContent>
+          </SidebarGroup>
 
+          <SidebarSeparator />
+
+          {/* Stages Navigation */}
+          <SidebarGroup>
+            <SidebarGroupLabel>Coming Soon</SidebarGroupLabel>
+            <SidebarGroupContent>
+              <SidebarMenu>
                 {/* Locked Stages */}
                 {comingSoonStages.map((stage) => (
                   <SidebarMenuItem key={stage.id}>

@@ -3,6 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 import {
   Collapsible,
   CollapsibleContent,
@@ -15,11 +16,13 @@ import {
   CaretDown,
   CaretUp,
   CheckCircle,
-  ArrowRight
+  ArrowRight,
+  Info
 } from '@phosphor-icons/react';
 import { liturgy } from '@/lib/api';
 import { LiturgyItem, LiturgyType } from '@/types';
 import { toast } from 'sonner';
+import { useAuth } from '@/contexts/AuthContext';
 
 const ICONS: Record<LiturgyType, any> = {
   catechism: BookBookmark,
@@ -33,9 +36,36 @@ const LABELS: Record<LiturgyType, string> = {
   scripture: 'Memory Verse',
 };
 
+// Age-appropriate guidance based on youngest child's age
+const getAgeGuidance = (ageMonths: number): { tip: string; approach: string } => {
+  if (ageMonths < 24) {
+    return {
+      tip: 'Infants & Toddlers (0-2)',
+      approach: 'Simply read aloud in a calm, rhythmic voice. Your baby absorbs tone, cadence, and the comfort of your voice. Don\'t worry about comprehension—this is planting seeds.'
+    };
+  } else if (ageMonths < 48) {
+    return {
+      tip: 'Toddlers & Preschoolers (2-4)',
+      approach: 'Read slowly and have your child repeat short phrases after you. Use hand motions for hymns. They\'re learning rhythm, language patterns, and the joy of participating—not memorizing yet.'
+    };
+  } else {
+    return {
+      tip: 'Preschoolers & Kindergarteners (4-5)',
+      approach: 'Encourage them to recite parts they remember. Ask simple questions like "Who made you?" Point to words as you read. They can start learning first answers and short verses.'
+    };
+  }
+};
+
 export function DailyLiturgy() {
   const queryClient = useQueryClient();
+  const { children } = useAuth();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
+
+  // Get youngest child for age-appropriate guidance
+  const youngestChild = children?.length > 0 
+    ? [...children].sort((a, b) => a.ageInMonths - b.ageInMonths)[0] 
+    : null;
+  const ageGuidance = youngestChild ? getAgeGuidance(youngestChild.ageInMonths) : null;
 
   const { data, isLoading } = useQuery({
     queryKey: ['liturgy-today'],
@@ -94,6 +124,18 @@ export function DailyLiturgy() {
         </div>
       </CardHeader>
       <CardContent className="p-0">
+        {/* Age-appropriate guidance banner */}
+        {ageGuidance && (
+          <div className="px-4 py-3 bg-amber-100/50 dark:bg-amber-900/20 border-b border-amber-200/50 dark:border-amber-800/30">
+            <div className="flex items-start gap-2">
+              <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" weight="fill" />
+              <div className="text-xs text-amber-800 dark:text-amber-200">
+                <span className="font-semibold">{ageGuidance.tip}:</span>{' '}
+                <span className="text-amber-700 dark:text-amber-300">{ageGuidance.approach}</span>
+              </div>
+            </div>
+          </div>
+        )}
         {data.items.map((item) => {
           const Icon = ICONS[item.type as LiturgyType];
           const isExpanded = expandedItem === item.id;
