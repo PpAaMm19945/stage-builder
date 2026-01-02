@@ -64,10 +64,16 @@ export default function Settings() {
   const [isDeleting, setIsDeleting] = useState(false);
   const queryClient = useQueryClient();
 
-  // Materials Query
+  // Materials Query - includes user preferences
   const { data: serverMaterials, isLoading: isMaterialsLoading, error: materialsError, refetch: refetchMaterials } = useQuery({
     queryKey: ['family-materials'],
     queryFn: family.getMaterials,
+  });
+
+  // Also fetch today's data to get materials needed for current activities
+  const { data: todayData } = useQuery({
+    queryKey: ['family-today'],
+    queryFn: family.getToday,
   });
 
   // Liturgy Settings Query
@@ -89,34 +95,44 @@ export default function Settings() {
   const [hasChanges, setHasChanges] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Sync server data to local state
+  // Sync server data to local state - include materials from today's activities
   useEffect(() => {
     if (serverMaterials) {
-      // Merge common materials with server materials
-      const merged = COMMON_MATERIALS.map(name => {
+      // Start with common materials
+      const allMaterialNames = new Set(COMMON_MATERIALS);
+
+      // Add any materials from today's activities
+      if (todayData?.materials) {
+        todayData.materials.forEach((m: MaterialItem) => {
+          if (m?.name) allMaterialNames.add(m.name);
+        });
+      }
+
+      // Add any existing server materials
+      serverMaterials.forEach((m: MaterialItem) => {
+        if (m?.name) allMaterialNames.add(m.name);
+      });
+
+      // Build merged list with status
+      const merged = Array.from(allMaterialNames).map(name => {
+        // First check server materials for existing status
         const existing = serverMaterials.find((m: MaterialItem) => m?.name === name);
+        // Also check today's data for status (backend returns status from family_materials)
+        const fromToday = todayData?.materials?.find((m: MaterialItem) => m?.name === name);
         return {
           name,
-          status: existing?.status || 'unknown'
+          status: existing?.status || fromToday?.status || 'unknown'
         } as MaterialItem;
       });
 
-      // Also add any server materials that aren't in common list
-      serverMaterials.forEach((m: MaterialItem) => {
-        // Defensive check: ensure m has a valid name
-        if (m?.name && typeof m.name === 'string' && !COMMON_MATERIALS.includes(m.name)) {
-          merged.push(m);
-        }
-      });
-
-      // Defensive sorting: ensure both names exist before comparing
+      // Sort alphabetically
       setMaterialsState(merged.sort((a, b) => {
         const nameA = a?.name || '';
         const nameB = b?.name || '';
         return nameA.localeCompare(nameB);
       }));
     }
-  }, [serverMaterials]);
+  }, [serverMaterials, todayData]);
 
   // Update Material Mutation
   const updateMaterialsMutation = useMutation({

@@ -88,8 +88,8 @@ export function MainLayout() {
 
             {/* Child Selector - REMOVED (Now only in Sidebar) */}
           </header>
-          <div className="flex-1 flex overflow-hidden">
-            {/* Main Content */}
+          <div className="flex-1 flex overflow-hidden relative">
+            {/* Main Content - scrolls independently */}
             <div className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto overflow-x-hidden">
               <Outlet />
             </div>
