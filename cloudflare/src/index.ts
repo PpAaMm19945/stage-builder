@@ -434,6 +434,8 @@ app.put('/api/students/:id', async (c) => {
 app.get('/api/activities', async (c) => {
   const domain = c.req.query('domain');
   const ageMonths = c.req.query('ageMonths');
+  const activityType = c.req.query('activityType');
+  const context = c.req.query('context');
   const limit = c.req.query('limit') || '50';
 
   let query = "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)";
@@ -448,6 +450,16 @@ app.get('/api/activities', async (c) => {
     const age = parseInt(ageMonths);
     query += ' AND min_age_months <= ? AND max_age_months >= ?';
     params.push(age, age);
+  }
+
+  if (activityType) {
+    query += ' AND activity_type = ?';
+    params.push(activityType);
+  }
+
+  if (context) {
+    query += ' AND context_embedding = ?';
+    params.push(context);
   }
 
   query += ' ORDER BY domain, min_age_months LIMIT ?';

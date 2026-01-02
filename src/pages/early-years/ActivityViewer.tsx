@@ -26,7 +26,8 @@ import {
   ArrowRight,
   Sparkles,
   Users,
-  Book
+  Book,
+  Smile
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -62,12 +63,15 @@ interface ApiActivity {
   min_age_months: number;
   max_age_months: number;
   // New fields for family sessions
-  activity_type?: 'family_session' | 'individual';
+  activity_type?: 'family_session' | 'individual' | 'daily_practice';
   tiered_expectations?: TieredExpectation[];
   uses_core_kit?: number;
   mess_level?: string;
   setting?: string;
   parent_script?: string;
+  // Infancy mode fields
+  assessment_prohibited?: number;
+  context_embedding?: string;
 }
 
 interface Activity {
@@ -86,12 +90,15 @@ interface Activity {
   minAgeMonths: number;
   maxAgeMonths: number;
   // Family session fields
-  activityType?: 'family_session' | 'individual';
+  activityType?: 'family_session' | 'individual' | 'daily_practice';
   tieredExpectations?: TieredExpectation[];
   usesCoreKit?: boolean;
   messLevel?: string;
   setting?: string;
   parentScript?: string;
+  // Infancy mode fields
+  assessmentProhibited?: boolean;
+  contextEmbedding?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor' | null;
 }
 
 const mapApiActivity = (activity: ApiActivity): Activity => ({
@@ -116,6 +123,9 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   messLevel: activity.mess_level,
   setting: activity.setting,
   parentScript: activity.parent_script,
+  // Infancy mode fields
+  assessmentProhibited: activity.assessment_prohibited === 1,
+  contextEmbedding: activity.context_embedding as Activity['contextEmbedding'] || null,
 });
 
 export default function ActivityViewer() {
@@ -481,7 +491,23 @@ export default function ActivityViewer() {
 
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 pt-4">
-        {isCompleted ? (
+        {/* Daily practices: No assessment - just a soft acknowledgement */}
+        {activity.assessmentProhibited || activity.activityType === 'daily_practice' ? (
+          <Button
+            size="lg"
+            variant="outline"
+            onClick={() => {
+              toast.success('What a lovely moment together!', {
+                description: 'These small connections matter more than any milestone.',
+              });
+              navigate('/early-years/activities');
+            }}
+            className="w-full sm:w-auto gap-2"
+          >
+            <Smile className="h-4 w-4" />
+            That was lovely
+          </Button>
+        ) : isCompleted ? (
           <>
             <Button
               size="lg"

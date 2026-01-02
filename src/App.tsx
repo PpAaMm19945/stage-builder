@@ -24,6 +24,7 @@ import Login from "./pages/Login";
 import AuthCallback from "./pages/auth/Callback";
 import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/early-years/Planner";
+import DailyPractices from "./pages/early-years/DailyPractices";
 import Today from "./pages/early-years/Today";
 import Activities from "./pages/early-years/Activities";
 import ActivityViewer from "./pages/early-years/ActivityViewer";
@@ -63,6 +64,7 @@ const App = () => (
 
                   {/* Early Years */}
                   <Route path="/early-years/planner" element={<Planner />} />
+                  <Route path="/early-years/daily-practices" element={<DailyPractices />} />
                   <Route path="/early-years/today" element={<Navigate to="/" replace />} />
                   <Route path="/early-years/activities" element={<Activities />} />
                   <Route path="/early-years/activities/:id" element={<ActivityViewer />} />

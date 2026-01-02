@@ -98,10 +98,17 @@ export const students = {
 
 // Activities
 export const activities = {
-  list: (params?: { domain?: string; ageMonths?: number }) => {
+  list: (params?: { 
+    domain?: string; 
+    ageMonths?: number;
+    activityType?: 'family_session' | 'individual' | 'daily_practice';
+    context?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor';
+  }) => {
     const query = new URLSearchParams();
     if (params?.domain) query.set('domain', params.domain);
     if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
+    if (params?.activityType) query.set('activityType', params.activityType);
+    if (params?.context) query.set('context', params.context);
     return apiRequest<any[]>(`/api/activities?${query}`);
   },
 
