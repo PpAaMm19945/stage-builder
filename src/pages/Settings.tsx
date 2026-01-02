@@ -32,6 +32,9 @@ import {
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { students, family, liturgy } from '@/lib/api';
+import { OverrideManager } from '@/components/overrides/OverrideManager';
+import { TimeModelEditor } from '@/components/planning/TimeModelEditor';
+
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
 import {
@@ -390,6 +393,41 @@ export default function Settings() {
               </div>
             </>
           )}
+        </CardContent>
+      </Card>
+
+
+
+
+      {/* Learning Accommodations */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <ShieldCheck className="h-5 w-5" />
+            Learning Accommodations
+          </CardTitle>
+          <CardDescription>
+            Customize the AI planner for your child's specific needs
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <OverrideManager />
+        </CardContent>
+      </Card>
+
+      {/* Weekly Schedule */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Bell className="h-5 w-5" />
+            Weekly Schedule
+          </CardTitle>
+          <CardDescription>
+            Set your family's availability and pacing preferences
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <TimeModelEditor />
         </CardContent>
       </Card>
 

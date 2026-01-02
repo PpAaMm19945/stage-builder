@@ -234,6 +234,42 @@ export const liturgy = {
     }),
 };
 
-export const api = { auth, students, activities, observations, family, books, reading, feedback, liturgy };
+// Overrides
+export const overrides = {
+  list: () => apiRequest<any[]>('/api/overrides'),
+  create: (data: { studentId?: string; overrideType: any; description: string; constraints: any }) =>
+    apiRequest<any>('/api/overrides', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: { isActive?: boolean; constraints?: any }) =>
+    apiRequest<any>(`/api/overrides/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  delete: (id: string) =>
+    apiRequest<{ success: boolean }>(`/api/overrides/${id}`, { method: 'DELETE' }),
+  parse: (freeText: string, studentId?: string) =>
+    apiRequest<any>('/api/overrides/parse', { method: 'POST', body: JSON.stringify({ freeText, studentId }) }),
+};
+
+// Time Model
+export const timeModel = {
+  get: () => apiRequest<any>('/api/time-model'),
+  update: (data: Partial<any>) =>
+    apiRequest<any>('/api/time-model', { method: 'PUT', body: JSON.stringify(data) }),
+};
+
+// Weekly Plan
+export const weeklyPlan = {
+  get: (weekStart?: string) =>
+    apiRequest<{ id: string; weekStart: string; plan: any; cached: boolean }>(`/api/family/weekly-plan${weekStart ? `?weekStart=${weekStart}` : ''}`),
+  regenerate: () =>
+    apiRequest<{ id: string; plan: any }>('/api/family/weekly-plan/regenerate', { method: 'POST' }),
+};
+
+// AI
+export const ai = {
+  explain: (question: string, context?: { activityId?: string; domain?: string; childAge?: number }) =>
+    apiRequest<any>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
+  narrate: (plan: any, tone?: 'encouraging' | 'calm' | 'concise') =>
+    apiRequest<{ narrative: string; originalPlan: any }>('/api/plan/narrate', { method: 'POST', body: JSON.stringify({ plan, tone }) }),
+};
+
+export const api = { auth, students, activities, observations, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai };
 export default api;
 

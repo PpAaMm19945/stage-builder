@@ -23,6 +23,7 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 import Login from "./pages/Login";
 import AuthCallback from "./pages/auth/Callback";
 import Dashboard from "./pages/Dashboard";
+import Planner from "./pages/early-years/Planner";
 import Today from "./pages/early-years/Today";
 import Activities from "./pages/early-years/Activities";
 import ActivityViewer from "./pages/early-years/ActivityViewer";
@@ -61,6 +62,7 @@ const App = () => (
                   <Route path="/" element={<Dashboard />} />
 
                   {/* Early Years */}
+                  <Route path="/early-years/planner" element={<Planner />} />
                   <Route path="/early-years/today" element={<Navigate to="/" replace />} />
                   <Route path="/early-years/activities" element={<Activities />} />
                   <Route path="/early-years/activities/:id" element={<ActivityViewer />} />

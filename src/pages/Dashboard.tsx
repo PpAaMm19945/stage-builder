@@ -45,6 +45,7 @@ import { books } from '@/lib/api';
 import { BookReader } from '@/components/books/BookReader';
 import { UpvoteButton } from '@/components/feedback/UpvoteButton';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
+import { ExplainButton } from '@/components/ai/ExplainButton';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -432,6 +433,12 @@ export default function Dashboard() {
                       </Tooltip>
                     </TooltipProvider>
                   )}
+                  <ExplainButton
+                    activityId={session.activity.id}
+                    domain={session.activity.domain}
+                    childAge={youngestChild?.ageInMonths}
+                    triggerData={{ title: session.activity.title, description: session.activity.description }}
+                  />
                   <UpvoteButton contentType="activity" contentId={session.activity.id} variant="minimal" />
                 </div>
               </div>
