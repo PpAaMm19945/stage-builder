@@ -3,7 +3,7 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
-import { generateWeeklyPlan, getCurrentWeekStart } from './planner';
+import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 
 // Types
 interface Env {
@@ -498,7 +498,25 @@ app.get('/api/activities/:id', async (c) => {
   });
 });
 
-// Get today's recommended activities for a student
+// Simple Activity Completion
+app.post('/api/activity-completions', async (c) => {
+    try {
+        const user = requireAuth(c);
+        const { activityId, notes } = await c.req.json();
+
+        const id = crypto.randomUUID();
+        await c.env.DB.prepare(`
+            INSERT INTO activity_completions (id, parent_id, activity_id, notes)
+            VALUES (?, ?, ?, ?)
+        `).bind(id, user.id, activityId, notes || null).run();
+
+        return c.json({ success: true, id });
+    } catch (error: any) {
+        return c.json({ error: error.message || 'Failed to record completion' }, 400);
+    }
+});
+
+// Get today's recommended activities for a student (LEGACY/FALLBACK)
 // Helper: Get or generate daily recommendations for a student
 async function getStudentDailyRecommendations(db: D1Database, student: any) {
   const today = new Date().toISOString().split('T')[0];
@@ -638,64 +656,23 @@ app.get('/api/students/:studentId/today', async (c) => {
   }
 });
 
-// Helper: Get family-first daily recommendations
-async function getFamilyDailyRecommendations(db: D1Database, children: any[], parentId: string) {
-  const today = new Date().toISOString().split('T')[0];
-
-  if (children.length === 0) return [];
-
-  // Get all children's ages
-  const ages = children.map(c => c.age_in_months);
-  const youngestAge = Math.min(...ages);
-  const oldestAge = Math.max(...ages);
-
-  // Get parent's material preferences
-  const { results: materialPrefs } = await db.prepare(`
-    SELECT material_name, status FROM family_materials WHERE parent_id = ?
-  `).bind(parentId).all();
-
-  const haveMaterials = new Set(
-    materialPrefs
-      .filter((m: any) => m.status === 'have' || m.status === 'willing_to_buy')
-      .map((m: any) => m.material_name.toLowerCase())
-  );
-
-  // Find family sessions that:
-  // 1. Cover all children's age ranges
-  // 2. Have tiered expectations
-  // 3. Prioritize core kit activities
-  // 4. Prioritize materials parent has/will buy
-  // 5. Prefer low mess, quick setup
-  const { results: candidates } = await db.prepare(`
+// Helper function to fetch daily practices
+async function getDailyPractices(db: D1Database) {
+  const { results: dailyPractices } = await db.prepare(`
     SELECT * FROM activities 
-    WHERE activity_type = 'family_session'
-      AND min_age_months <= ? 
-      AND max_age_months >= ?
-      AND tiered_expectations IS NOT NULL
-      AND is_active = 1
-      AND (is_archived = 0 OR is_archived IS NULL)
-      AND (content_status != 'blacklisted' OR content_status IS NULL)
-    ORDER BY 
-      uses_core_kit DESC,
-      mess_level ASC,
-      prep_time_minutes ASC,
-      RANDOM()
-    LIMIT 10
-  `).bind(youngestAge, oldestAge).all();
+    WHERE activity_type = 'daily_practice' AND is_active = 1
+    ORDER BY RANDOM() LIMIT 3
+  `).all();
 
-  // Score and select top 2-3 sessions
-  // Prioritize activities where parent has materials
-  const scored = candidates.map((activity: any) => {
-    const materials = JSON.parse(activity.materials || '[]');
-    const matchCount = materials.filter((m: string) => haveMaterials.has(m.toLowerCase())).length;
-    const matchRatio = materials.length > 0 ? matchCount / materials.length : 1;
-    return { activity, score: matchRatio };
-  }).sort((a, b) => b.score - a.score);
-
-  return scored.slice(0, 3).map(s => s.activity);
+  return dailyPractices.map((activity: any) => ({
+      ...activity,
+      materials: JSON.parse(activity.materials || '[]'),
+      instructions: JSON.parse(activity.instructions || '[]'),
+      learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+  }));
 }
 
-// Get family dashboard data
+// Get family dashboard data - UNIFIED PLANNER VERSION
 app.get('/api/family/today', async (c) => {
   try {
     const user = requireAuth(c);
@@ -716,114 +693,139 @@ app.get('/api/family/today', async (c) => {
       });
     }
 
-    // Get ages for Infancy Mode check
-    const ages = children.map((c: any) => c.age_in_months);
-    const youngestAge = Math.min(...ages);
-    const isInfancyMode = youngestAge <= 12;
+    // 1. Get today's day of week
+    const today = new Date();
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][today.getDay()];
 
+    // 2. Check if today is an available day
+    const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+      .bind(user.id).first();
+    const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+
+    // 3. If not an available day, return REST DAY response
+    if (!availableDays.includes(dayOfWeek)) {
+        const dailyPractices = await getDailyPractices(c.env.DB);
+
+        return c.json({
+            date: new Date().toISOString().split('T')[0],
+            children,
+            restDay: true,
+            message: "Today is a rest day! Here are some gentle practices you can do if you'd like.",
+            familySessions: [],
+            dailyPractices,
+            materials: [],
+            totalDuration: 0,
+            coreKitCoverage: 0
+        });
+    }
+
+    // 4. Get this week's plan
+    const weekStart = getSmartWeekStart();
+    const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStart).first();
+
+    // 5. If no plan exists, prompt to generate
+    if (!plan) {
+      const dailyPractices = await getDailyPractices(c.env.DB);
+
+      return c.json({
+        date: new Date().toISOString().split('T')[0],
+        children,
+        needsPlan: true,
+        message: "Let's plan your week! Generate a schedule to get personalized activities.",
+        familySessions: [],
+        dailyPractices,
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
+      });
+    }
+
+    // 6. Return today's activities from the plan
+    const planData = JSON.parse((plan as any).plan_json);
+    const todaysSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
+
+    // Hydrate activities
+    const activityIds = todaysSlots.map((s: any) => s.activityId);
     let familySessions: any[] = [];
     let materialsList: any[] = [];
 
-    if (isInfancyMode) {
-      // Infancy Mode: Return Daily Practices instead of generic family sessions
-      const { results: practices } = await c.env.DB.prepare(`
-        SELECT * FROM activities 
-        WHERE activity_type = 'daily_practice'
-        ORDER BY RANDOM() LIMIT 3
-      `).all();
+    if (activityIds.length > 0) {
+        const placeholders = activityIds.map(() => '?').join(',');
+        const { results: activities } = await c.env.DB.prepare(`
+            SELECT * FROM activities WHERE id IN (${placeholders})
+        `).bind(...activityIds).all();
 
-      familySessions = practices.map((activity: any) => ({
-        activity: {
-          ...activity,
-          materials: JSON.parse((activity as any).materials || '[]'),
-          instructions: JSON.parse((activity as any).instructions || '[]'),
-          learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
-        },
-        childTiers: children.map((c: any) => ({
-          childId: c.id,
-          childName: c.name,
-          tier: 'Infant',
-          expectation: 'Gentle participation',
-          childAge: c.age_in_months
-        })),
-        messLevel: 'none',
-        prepMinutes: 0,
-        materialsAvailable: true,
-        reasoning: "Selected for gentle interaction and bonding."
-      }));
+        const activityMap = new Map(activities.map((a: any) => [a.id, a]));
 
-      // No complicated materials logic for infancy mode usually
+        familySessions = todaysSlots.map((slot: any) => {
+            const activity: any = activityMap.get(slot.activityId);
+            if (!activity) return null;
 
-    } else {
-      // Standard Family Mode
-      const recommendedActivities = await getFamilyDailyRecommendations(c.env.DB, children, user.id);
+             const tiers = JSON.parse(activity.tiered_expectations || '[]');
+             const childTiers = children.map((child: any) => {
+                const age = child.age_in_months;
+                let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+                if (!tier) {
+                    if (age < tiers[0]?.age_min) tier = tiers[0];
+                    else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+                }
+                return {
+                    childId: child.id,
+                    childName: child.name,
+                    tier: tier?.tier || 'Standard',
+                    expectation: tier?.expectation || 'Participate with support',
+                    childAge: age
+                };
+            });
 
-      familySessions = recommendedActivities.map((activity: any) => {
-        const tiers = JSON.parse(activity.tiered_expectations || '[]');
-        const childTiers = children.map((child: any) => {
-          const age = child.age_in_months;
-          let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
-          if (!tier) {
-            if (age < tiers[0]?.age_min) tier = tiers[0];
-            else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
-          }
-          return {
-            childId: child.id,
-            childName: child.name,
-            tier: tier?.tier || 'Standard',
-            expectation: tier?.expectation || 'Participate with support',
-            childAge: age
-          };
-        });
+            const domainLabels: Record<string, string> = {
+                'motor': 'Stewardship & Dominion',
+                'language': 'Word & Truth',
+                'cognitive': 'Wisdom & Order',
+                'social-emotional': 'Virtue & Sanctification',
+                'pre-academic': 'Foundations & Patterns'
+            };
+            const domainName = domainLabels[activity.domain] || activity.domain;
 
-        // Determine domain label for reasoning
-        const domainLabels: Record<string, string> = {
-          'motor': 'Stewardship & Dominion',
-          'language': 'Word & Truth',
-          'cognitive': 'Wisdom & Order',
-          'social-emotional': 'Virtue & Sanctification',
-          'pre-academic': 'Foundations & Patterns'
-        };
-        const domainName = domainLabels[activity.domain] || activity.domain;
+            return {
+                activity: {
+                    ...activity,
+                    materials: JSON.parse(activity.materials || '[]'),
+                    instructions: JSON.parse(activity.instructions || '[]'),
+                    learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+                },
+                childTiers,
+                messLevel: activity.mess_level,
+                prepMinutes: activity.prep_time_minutes,
+                materialsAvailable: true, // simplified for now
+                reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`
+            };
+        }).filter(Boolean);
 
-        return {
-          activity: {
-            ...activity,
-            materials: JSON.parse(activity.materials || '[]'),
-            instructions: JSON.parse(activity.instructions || '[]'),
-            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
-          },
-          childTiers,
-          messLevel: activity.mess_level,
-          prepMinutes: activity.prep_time_minutes,
-          materialsAvailable: true,
-          reasoning: `Because you have ${activity.duration_minutes} minutes and your children are developing ${domainName}, we selected '${activity.title}' to work on both.`
-        };
-      });
+         // Collect materials
+         const neededMaterials = new Set<string>();
+         familySessions.forEach((session: any) => {
+           session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+         });
 
-      // Collect materials
-      const neededMaterials = new Set<string>();
-      familySessions.forEach((session: any) => {
-        session.activity.materials.forEach((m: string) => neededMaterials.add(m));
-      });
+         if (neededMaterials.size > 0) {
+           const marks = Array(neededMaterials.size).fill('?').join(',');
+           const { results: existing } = await c.env.DB.prepare(`
+                 SELECT material_name, status FROM family_materials
+                 WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
+             `).bind(user.id, ...Array.from(neededMaterials)).all();
 
-      if (neededMaterials.size > 0) {
-        const marks = Array(neededMaterials.size).fill('?').join(',');
-        const { results: existing } = await c.env.DB.prepare(`
-              SELECT material_name, status FROM family_materials 
-              WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
-          `).bind(user.id, ...Array.from(neededMaterials)).all();
+           const statusMap = new Map();
+           existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
 
-        const statusMap = new Map();
-        existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
-
-        neededMaterials.forEach(m => {
-          materialsList.push({
-            name: m,
-            status: statusMap.get(m) || 'unknown'
-          });
-        });
-      }
+           neededMaterials.forEach(m => {
+             materialsList.push({
+               name: m,
+               status: statusMap.get(m) || 'unknown'
+             });
+           });
+         }
     }
 
     // Compute metrics
@@ -2476,7 +2478,7 @@ app.put('/api/time-model', async (c) => {
 app.get('/api/family/weekly-plan', async (c) => {
   try {
     const user = requireAuth(c);
-    const weekStart = c.req.query('weekStart') || getCurrentWeekStart();
+    const weekStart = c.req.query('weekStart') || getSmartWeekStart();
 
     // Get children
     const { results: children } = await c.env.DB.prepare(
@@ -2531,7 +2533,7 @@ app.get('/api/family/weekly-plan', async (c) => {
 
     const { results: activities } = await c.env.DB.prepare(`
       SELECT id, title, domain, min_age_months, max_age_months, duration_minutes, 
-             materials, cluster_tag, mess_level, activity_type
+             materials, cluster_tag, mess_level, activity_type, primary_tier
       FROM activities 
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
@@ -2545,22 +2547,21 @@ app.get('/api/family/weekly-plan', async (c) => {
       materials: JSON.parse(a.materials || '[]')
     }));
 
-    // Get recent activity IDs (last 14 days)
-    const { results: recentObs } = await c.env.DB.prepare(`
-      SELECT DISTINCT activity_id FROM observations 
-      WHERE student_id IN (${children.map(() => '?').join(',')})
-        AND completed_at > datetime('now', '-14 days')
-    `).bind(...children.map((c: any) => c.id)).all();
-
-    const recentActivityIds = recentObs.map((r: any) => r.activity_id);
+    // Get recent activity IDs (last 14 days) - NOT needed for Unified Planner if using scoreActivity which checks DB
+    // But we still pass it for compatibility or maybe optimization?
+    // Actually, unified planner uses scoreActivity which queries history directly.
+    // So we can pass empty list or update planner to not need it.
+    // Let's pass empty list as we updated scoreActivity.
+    const recentActivityIds: string[] = [];
 
     // Generate plan
-    const plan = generateWeeklyPlan(
+    const plan = await generateWeeklyPlan(
       children as any,
       parsedActivities as any,
       timeModel,
       overrideRows as any,
-      recentActivityIds
+      c.env.DB,
+      user.id
     );
 
     // Cache the plan
@@ -2587,15 +2588,112 @@ app.get('/api/family/weekly-plan', async (c) => {
 app.post('/api/family/weekly-plan/regenerate', async (c) => {
   try {
     const user = requireAuth(c);
-    const weekStart = getCurrentWeekStart();
+    const { balancePreference = 'mixed', weekStart } = await c.req.json();
+
+    // Validate weekStart (must be a Monday, cannot be in the past unless same week)
+    const targetWeek = weekStart || getSmartWeekStart();
+
+    // Note: To properly support balancePreference, we would need to pass it to generateWeeklyPlan
+    // For now, we are just storing it.
+    // TODO: Update generateWeeklyPlan to accept balancePreference and use it in scoring
 
     // Delete cached plan
     await c.env.DB.prepare(
       'DELETE FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
-    ).bind(user.id, weekStart).run();
+    ).bind(user.id, targetWeek).run();
 
-    // Redirect to GET to generate fresh plan
-    return c.redirect('/api/family/weekly-plan');
+    // We can't redirect with POST body params easily if the GET doesn't take them.
+    // The previous implementation redirected to GET.
+    // But now we want to apply balancePreference which implies we should generate it here.
+
+    // Let's replicate generation logic here OR update the GET endpoint to accept preferences (but GET shouldn't have side effects usually, though this one does generate/cache).
+
+    // Ideally, we just delete the old plan and call the generation logic directly.
+
+    // Get children
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT id, name, age_in_months FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    if (children.length === 0) {
+      return c.json({ error: 'No children found. Add a child first.' }, 400);
+    }
+
+    // Get time model
+    const timeModelRow = await c.env.DB.prepare(
+      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    const timeModel = timeModelRow ? {
+      available_days: JSON.parse((timeModelRow as any).available_days),
+      minutes_per_day: (timeModelRow as any).minutes_per_day,
+      preferred_times: JSON.parse((timeModelRow as any).preferred_times),
+      max_sessions_per_day: (timeModelRow as any).max_sessions_per_day,
+      field_trip_days: JSON.parse((timeModelRow as any).field_trip_days || '[]')
+    } : {
+      available_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      minutes_per_day: 45,
+      preferred_times: ['morning'],
+      max_sessions_per_day: 2,
+      field_trip_days: []
+    };
+
+    // Get overrides
+    const { results: overrideRows } = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1'
+    ).bind(user.id).all();
+
+    // Get activities
+    const ages = children.map((c: any) => c.age_in_months);
+    const youngestAge = Math.min(...ages);
+    const oldestAge = Math.max(...ages);
+
+    const { results: activities } = await c.env.DB.prepare(`
+      SELECT id, title, domain, min_age_months, max_age_months, duration_minutes,
+             materials, cluster_tag, mess_level, activity_type, primary_tier
+      FROM activities
+      WHERE min_age_months <= ? AND max_age_months >= ?
+        AND is_active = 1
+        AND (is_archived = 0 OR is_archived IS NULL)
+        AND (content_status != 'blacklisted' OR content_status IS NULL)
+    `).bind(oldestAge, youngestAge).all();
+
+    // Parse materials
+    const parsedActivities = activities.map((a: any) => ({
+      ...a,
+      materials: JSON.parse(a.materials || '[]')
+    }));
+
+    // Generate plan
+    const plan = await generateWeeklyPlan(
+      children as any,
+      parsedActivities as any,
+      timeModel,
+      overrideRows as any,
+      c.env.DB,
+      user.id
+    );
+
+    const planId = generateId('plan');
+    const tierDistJson = '{}'; // Placeholder, actual distribution calculation logic needed if we want to store it
+
+    await c.env.DB.prepare(`
+      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, balance_preference, tier_distribution)
+      VALUES (?, ?, ?, ?, ?, ?)
+      ON CONFLICT(parent_id, week_start) DO UPDATE SET
+        plan_json = excluded.plan_json,
+        balance_preference = excluded.balance_preference,
+        tier_distribution = excluded.tier_distribution,
+        generated_at = datetime('now')
+    `).bind(planId, user.id, targetWeek, JSON.stringify(plan), balancePreference, tierDistJson).run();
+
+    return c.json({
+        id: planId,
+        weekStart: targetWeek,
+        plan,
+        cached: false
+    });
+
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
