@@ -151,6 +151,15 @@ export const observations = {
     }),
 };
 
+// Activity Completions (Simple)
+export const activityCompletions = {
+    create: (data: { activityId: string; notes?: string }) =>
+        apiRequest<{ success: boolean; id: string }>('/api/activity-completions', {
+            method: 'POST',
+            body: JSON.stringify(data),
+        }),
+};
+
 // Books
 export const books = {
   list: (params?: { stage?: string; ageMonths?: number }) => {
@@ -265,8 +274,8 @@ export const timeModel = {
 export const weeklyPlan = {
   get: (weekStart?: string) =>
     apiRequest<{ id: string; weekStart: string; plan: any; cached: boolean }>(`/api/family/weekly-plan${weekStart ? `?weekStart=${weekStart}` : ''}`),
-  regenerate: () =>
-    apiRequest<{ id: string; plan: any }>('/api/family/weekly-plan/regenerate', { method: 'POST' }),
+  regenerate: (params?: { balancePreference?: 'baby_focused' | 'mixed' | 'older_focused'; weekStart?: string }) =>
+    apiRequest<{ id: string; plan: any }>('/api/family/weekly-plan/regenerate', { method: 'POST', body: JSON.stringify(params || {}) }),
 };
 
 // AI
@@ -277,6 +286,5 @@ export const ai = {
     apiRequest<{ narrative: string; originalPlan: any }>('/api/plan/narrate', { method: 'POST', body: JSON.stringify({ plan, tone }) }),
 };
 
-export const api = { auth, students, activities, observations, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai };
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai };
 export default api;
-

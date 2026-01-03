@@ -4,10 +4,10 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
-import { observations } from '@/lib/api';
+import { observations, activityCompletions } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2 } from 'lucide-react';
-import { FamilySession, MasteryLevel } from '@/types';
+import { FamilySession, MasteryLevel, getChildRole } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
 
 interface FamilyCompletionModalProps {
@@ -31,6 +31,14 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     // State for child ratings: { [childId]: MasteryLevel }
     // Initialize with 'developing' as default or null
     const [ratings, setRatings] = useState<Record<string, MasteryLevel>>({});
+    const [showStoryPrompt, setShowStoryPrompt] = useState(false);
+
+    // Initial effect to handle simple completion (Daily Practice) immediately or showing modal
+    // Actually, react component shouldn't have side effects in render.
+    // We'll handle this in the useEffect when session changes if needed, but better to let user click "Complete"
+    // in Dashboard which opens this modal, and this modal decides what to show.
+
+    const isDailyPractice = session?.activity.activity_type === 'daily_practice';
 
     const handleRatingChange = (childId: string, rating: MasteryLevel) => {
         setRatings(prev => ({
@@ -39,14 +47,62 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
         }));
     };
 
+    const handleSimpleCompletion = async () => {
+        if (!session) return;
+        setIsSubmitting(true);
+        try {
+            await activityCompletions.create({
+                activityId: session.activity.id,
+                notes: notes || undefined
+            });
+            toast({
+                title: "That was lovely!",
+                description: "Activity marked as complete.",
+            });
+            onSuccess();
+            onClose();
+        } catch (error) {
+            toast({
+                title: "Error",
+                description: "Failed to save completion.",
+                variant: "destructive",
+            });
+        } finally {
+            setIsSubmitting(false);
+        }
+    };
+
     const handleSubmit = async () => {
         if (!session) return;
+
+        // Branch for daily practice
+        if (isDailyPractice) {
+            await handleSimpleCompletion();
+            return;
+        }
+
         setIsSubmitting(true);
 
         try {
             // Submit observations for each child
             const promises = session.childTiers.map(child => {
-                const rating = ratings[child.childId] || 'developing'; // Default if skipped
+                // If child is observer, we might skip rating or auto-set to emerging/developing?
+                // Or just use whatever is selected.
+                // If role is observer, maybe we don't need a rating?
+                // The prompt says: "In mastery modal, for Observer-role children: ... (Observer) — watching and learning"
+
+                const role = getChildRole(child.childAge);
+                let rating = ratings[child.childId];
+
+                // If no rating selected:
+                if (!rating) {
+                     if (role === 'Observer') {
+                         rating = 'emerging'; // Default for observer? Or maybe we don't record mastery for observer?
+                         // For now, let's record emerging so it counts as done.
+                     } else {
+                         rating = 'developing';
+                     }
+                }
 
                 return observations.create({
                     studentId: child.childId,
@@ -119,9 +175,39 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
         }
     };
 
-    const [showStoryPrompt, setShowStoryPrompt] = useState(false);
-
     if (!session) return null;
+
+    // Special view for Daily Practice (Simple completion)
+    if (isDailyPractice) {
+         return (
+            <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
+                <DialogContent className="max-w-sm">
+                    <DialogHeader>
+                        <DialogTitle>Lovely!</DialogTitle>
+                        <DialogDescription>
+                           Glad you enjoyed this moment. Add a note if you like?
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="py-2">
+                        <Label htmlFor="notes" className="sr-only">Notes</Label>
+                         <Textarea
+                                id="notes"
+                                placeholder="Any sweet moments to remember..."
+                                value={notes}
+                                onChange={(e) => setNotes(e.target.value)}
+                                className="resize-none"
+                            />
+                    </div>
+                    <DialogFooter>
+                        <Button variant="ghost" onClick={onClose}>Cancel</Button>
+                        <Button onClick={handleSimpleCompletion} disabled={isSubmitting}>
+                            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : "Save"}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+         )
+    }
 
     const onAllDone = () => {
         onSuccess();
@@ -152,38 +238,49 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                     </DialogHeader>
 
                     <div className="space-y-6 py-4">
-                        {session.childTiers.map(child => (
-                            <div key={child.childId} className="space-y-3 pb-4 border-b last:border-0 last:pb-0">
-                                <div className="flex items-start justify-between">
-                                    <div>
-                                        <h4 className="font-semibold flex items-center gap-2">
-                                            {child.childName}
-                                            <Badge variant="outline" className="text-[10px] font-normal">
-                                                {child.tier}
-                                            </Badge>
-                                        </h4>
-                                        <p className="text-xs text-muted-foreground mt-0.5">
-                                            Goal: {child.expectation}
-                                        </p>
-                                    </div>
-                                </div>
+                        {session.childTiers.map(child => {
+                            const role = getChildRole(child.childAge);
+                            const isObserver = role === 'Observer';
 
-                                <div className="flex gap-2 w-full">
-                                    {MASTERY_OPTIONS.map(option => (
-                                        <button
-                                            key={option.value}
-                                            onClick={() => handleRatingChange(child.childId, option.value)}
-                                            className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
-                                                ? `ring-2 ring-primary ring-offset-1 ${option.color}`
-                                                : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
-                                                }`}
-                                        >
-                                            {option.label}
-                                        </button>
-                                    ))}
+                            return (
+                                <div key={child.childId} className="space-y-3 pb-4 border-b last:border-0 last:pb-0">
+                                    <div className="flex items-start justify-between">
+                                        <div>
+                                            <h4 className="font-semibold flex items-center gap-2">
+                                                {child.childName}
+                                                <Badge variant="outline" className="text-[10px] font-normal">
+                                                    {child.tier}
+                                                </Badge>
+                                            </h4>
+                                            <p className="text-xs text-muted-foreground mt-0.5">
+                                                Goal: {child.expectation}
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    {isObserver ? (
+                                        <div className="text-sm text-muted-foreground italic bg-muted/20 p-2 rounded text-center">
+                                            Watching and learning (Observer)
+                                        </div>
+                                    ) : (
+                                        <div className="flex gap-2 w-full">
+                                            {MASTERY_OPTIONS.map(option => (
+                                                <button
+                                                    key={option.value}
+                                                    onClick={() => handleRatingChange(child.childId, option.value)}
+                                                    className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
+                                                        ? `ring-2 ring-primary ring-offset-1 ${option.color}`
+                                                        : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
+                                                        }`}
+                                                >
+                                                    {option.label}
+                                                </button>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
-                            </div>
-                        ))}
+                            );
+                        })}
 
                         <div className="space-y-2">
                             <Label htmlFor="notes">Notes (Optional)</Label>

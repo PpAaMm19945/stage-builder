@@ -5,6 +5,8 @@
 // It applies matrix logic, parent overrides, and time constraints.
 // AI is ONLY used downstream to explain or narrate these plans.
 
+import type { D1Database } from '@cloudflare/workers-types';
+
 interface Student {
     id: string;
     name: string;
@@ -22,6 +24,7 @@ interface Activity {
     cluster_tag?: string;
     mess_level?: string | number;
     activity_type?: string;
+    primary_tier?: string;
 }
 
 interface Override {
@@ -81,6 +84,45 @@ function isSuitableForChildren(activity: Activity, children: Student[]): boolean
         child.age_in_months <= activity.max_age_months
     );
 }
+
+// Unified History Query helper
+async function getActivityHistory(db: D1Database, parentId: string, activityId: string): Promise<{
+    lastCompleted: string | null;
+    masteryLevel: string | null;
+    completionCount: number;
+}> {
+    // Query both tables with UNION
+    const result = await db.prepare(`
+    SELECT completed_at, mastery_level, 'observation' as source
+    FROM observations o
+    JOIN students s ON o.student_id = s.id
+    WHERE s.parent_id = ? AND o.activity_id = ?
+
+    UNION ALL
+
+    SELECT completed_at, NULL as mastery_level, 'completion' as source
+    FROM activity_completions
+    WHERE parent_id = ? AND activity_id = ?
+
+    ORDER BY completed_at DESC
+    LIMIT 10
+  `).bind(parentId, activityId, parentId, activityId).all();
+
+    const records = result.results || [];
+    return {
+        lastCompleted: (records[0] as any)?.completed_at || null,
+        masteryLevel: (records.find((r: any) => r.mastery_level) as any)?.mastery_level || null,
+        completionCount: records.length
+    };
+}
+
+function daysBetween(d1: string | Date, d2: string | Date): number {
+    const date1 = new Date(d1);
+    const date2 = new Date(d2);
+    const diffTime = Math.abs(date2.getTime() - date1.getTime());
+    return Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+}
+
 
 // Apply override constraints to filter activities
 function applyOverrides(
@@ -144,12 +186,13 @@ function applyOverrides(
 }
 
 // Score an activity based on matrix weights and preferences
-function scoreActivity(
+async function scoreActivity(
     activity: Activity,
     domainCounts: Record<string, number>,
     overrides: Override[],
-    recentActivityIds: Set<string>
-): number {
+    db: D1Database,
+    parentId: string
+): Promise<number> {
     let score = 50; // Base score
 
     // Domain balance: boost underrepresented domains
@@ -164,9 +207,26 @@ function scoreActivity(
         score -= 15; // Penalize overrepresented domain
     }
 
-    // Penalize recently done activities
-    if (recentActivityIds.has(activity.id)) {
-        score -= 30;
+    // Get unified history
+    const history = await getActivityHistory(db, parentId, activity.id);
+
+    if (history.lastCompleted) {
+        const daysSince = daysBetween(history.lastCompleted, new Date());
+
+        // For babies (observer tier): repetition is GOOD
+        if (activity.primary_tier === 'observer') {
+            if (daysSince >= 3) score += 15;  // Boost repeats for babies
+        } else {
+            // For older children: mastery-based repetition
+            if (history.masteryLevel === 'emerging' && daysSince >= 3) {
+                score += 25;  // Needs more practice
+            } else if (history.masteryLevel === 'secure' && daysSince < 30) {
+                score -= 40;  // Recently mastered, skip for now
+            } else if (daysSince < 7) {
+                // General penalty for recent activities if not mastering
+                score -= 30;
+            }
+        }
     }
 
     // Apply override preferences (boost)
@@ -214,16 +274,16 @@ function generateReasoning(
 }
 
 // Main planner function
-export function generateWeeklyPlan(
+export async function generateWeeklyPlan(
     children: Student[],
     activities: Activity[],
     timeModel: TimeModel,
     overrides: Override[],
-    recentActivityIds: string[] = []
-): PlanResult {
+    db: D1Database,
+    parentId: string
+): Promise<PlanResult> {
     const slots: PlanSlot[] = [];
     const domainCounts: Record<string, number> = {};
-    const recentSet = new Set(recentActivityIds);
     const usedActivityIds = new Set<string>();
 
     // Filter activities suitable for all children
@@ -245,14 +305,20 @@ export function generateWeeklyPlan(
 
         while (dayMinutesRemaining > 0 && daySessions < timeModel.max_sessions_per_day) {
             // Score all remaining activities
-            const candidates = suitableActivities
-                .filter(a => !usedActivityIds.has(a.id))
-                .filter(a => a.duration_minutes <= dayMinutesRemaining)
-                .map(a => ({
-                    activity: a,
-                    score: scoreActivity(a, domainCounts, overrides, recentSet)
-                }))
-                .sort((a, b) => b.score - a.score);
+            // We do this inside the loop because scores might change (e.g. domain balance)
+            // Note: History check is constant for the run, but scoreActivity is async now.
+
+            const candidates = [];
+
+            for (const a of suitableActivities) {
+                 if (usedActivityIds.has(a.id)) continue;
+                 if (a.duration_minutes > dayMinutesRemaining) continue;
+
+                 const score = await scoreActivity(a, domainCounts, overrides, db, parentId);
+                 candidates.push({ activity: a, score });
+            }
+
+            candidates.sort((a, b) => b.score - a.score);
 
             if (candidates.length === 0) break;
 
@@ -294,11 +360,22 @@ export function generateWeeklyPlan(
     };
 }
 
-// Get the Monday of the current week
-export function getCurrentWeekStart(): string {
-    const now = new Date();
-    const day = now.getDay();
-    const diff = now.getDate() - day + (day === 0 ? -6 : 1); // Adjust for Sunday
-    const monday = new Date(now.setDate(diff));
-    return monday.toISOString().split('T')[0];
+// Get the Monday of the current week (Smart Week Start)
+export function getSmartWeekStart(targetDate?: string): string {
+  const date = targetDate ? new Date(targetDate) : new Date();
+  const day = date.getDay();
+
+  // If Saturday (6) or Sunday (0), target NEXT Monday
+  if (day === 0 || day === 6) {
+    const daysUntilMonday = day === 0 ? 1 : 2;
+    date.setDate(date.getDate() + daysUntilMonday);
+  } else {
+    // Mon-Fri: target THIS Monday
+    date.setDate(date.getDate() - (day - 1));
+  }
+
+  return date.toISOString().split('T')[0];
 }
+
+// Backward compatibility wrapper for imports that might expect getCurrentWeekStart
+export const getCurrentWeekStart = getSmartWeekStart;

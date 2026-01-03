@@ -10,6 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { InlineAddChildForm } from '@/components/children/InlineAddChildForm';
 import { useAuth } from '@/contexts/AuthContext';
+import { useMutation } from '@tanstack/react-query';
+import { weeklyPlan } from '@/lib/api';
 import {
     Sparkles,
     Calendar,
@@ -18,7 +20,9 @@ import {
     ArrowRight,
     Check
 } from 'lucide-react';
-import { BookOpen, UsersThree, Heart } from '@phosphor-icons/react';
+import { BookOpen, UsersThree, Heart, Baby, Crown } from '@phosphor-icons/react';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
 
 const ONBOARDING_COMPLETE_KEY = 'schoolos_onboarding_complete';
 const IDENTITY_PREFS_KEY = 'schoolos_identity_prefs';
@@ -41,8 +45,20 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
         siblingLearning: false,
         godlyCharacter: false,
     });
+    const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
+
     const { children, isAuthenticated } = useAuth();
     const navigate = useNavigate();
+
+    // Generate Mutation
+    const generateMutation = useMutation({
+        mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused' }) =>
+            weeklyPlan.regenerate(prefs),
+        onSuccess: () => {
+            handleComplete();
+            navigate('/early-years/planner'); // Redirect to planner to see the result
+        }
+    });
 
     useEffect(() => {
         // Show onboarding if:
@@ -64,7 +80,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
     };
 
     const handleChildAdded = () => {
-        // Move to quick tour step (now step 3 after identity step)
+        // Move to planning step (Step 3) instead of Quick Tour (Step 4)
         setStep(3);
     };
 
@@ -79,6 +95,10 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
 
     const handleIdentityAnswer = (key: keyof IdentityPrefs, value: boolean) => {
         setIdentityPrefs(prev => ({ ...prev, [key]: value }));
+    };
+
+    const handleGeneratePlan = () => {
+        generateMutation.mutate({ balancePreference });
     };
 
     const steps = [
@@ -270,7 +290,60 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                 </div>
             ),
         },
-        // Step 3: Quick Tour
+        // Step 3: Plan Generation (New)
+        {
+            content: (
+                <div className="space-y-6 text-center">
+                    <div className="space-y-2">
+                        <DialogTitle className="text-2xl font-display">
+                            Let's Plan Your First Week
+                        </DialogTitle>
+                        <DialogDescription>
+                            We'll create a personalized schedule based on your family.
+                        </DialogDescription>
+                    </div>
+
+                    <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3 text-left">
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="baby_focused" id="r1" />
+                            <Label htmlFor="r1" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Baby className="w-4 h-4 text-indigo-500" />
+                                    Baby Focused
+                                </div>
+                                <span className="text-xs text-muted-foreground">Prioritize sensory & bonding. Older kids help lead.</span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="mixed" id="r2" />
+                            <Label htmlFor="r2" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <UsersThree className="w-4 h-4 text-green-500" />
+                                    Balanced Mix
+                                </div>
+                                <span className="text-xs text-muted-foreground">Equal focus across all age groups.</span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="older_focused" id="r3" />
+                            <Label htmlFor="r3" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Crown className="w-4 h-4 text-amber-500" />
+                                    Older Focused
+                                </div>
+                                <span className="text-xs text-muted-foreground">More complex activities. Babies observe/tag along.</span>
+                            </Label>
+                        </div>
+                    </RadioGroup>
+
+                    <Button onClick={handleGeneratePlan} size="lg" className="w-full gap-2" disabled={generateMutation.isPending}>
+                        {generateMutation.isPending ? 'Creating your plan...' : 'Generate Week'}
+                        {!generateMutation.isPending && <ArrowRight className="h-4 w-4" />}
+                    </Button>
+                </div>
+            )
+        },
+        // Step 4: Quick Tour (Shifted)
         {
             content: (
                 <div className="space-y-6 text-center">

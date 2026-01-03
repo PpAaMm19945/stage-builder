@@ -36,7 +36,8 @@ import {
   Eye,
   HandPalm,
   Crown,
-  ArrowsClockwise
+  ArrowsClockwise,
+  MoonStars
 } from '@phosphor-icons/react';
 import { FamilyCompletionModal } from '@/components/family/FamilyCompletionModal';
 import { FamilySession, MaterialItem, Book, getChildRole } from '@/types';
@@ -112,6 +113,106 @@ export default function Dashboard() {
         </Button>
       </div>
     );
+  }
+
+  // Handle Needs Plan State
+  if (data.needsPlan) {
+    return (
+        <div className="max-w-4xl mx-auto py-12 px-4">
+             {/* Daily Liturgy is always available */}
+             <div className="mb-8">
+                <DailyLiturgy />
+             </div>
+
+            <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mb-8">
+                <CardHeader className="text-center space-y-2">
+                    <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+                        <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
+                    </div>
+                    <CardTitle className="text-2xl">Let's Plan Your Week!</CardTitle>
+                    <CardDescription className="text-base max-w-lg mx-auto">
+                        {data.message || "We need to generate a new schedule to give you personalized activities."}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="flex justify-center pb-8">
+                    <Button onClick={() => navigate('/early-years/planner')} size="lg" className="gap-2">
+                        <CalendarBlank className="w-5 h-5" />
+                        Generate Weekly Plan
+                    </Button>
+                </CardContent>
+            </Card>
+
+            {/* Show Daily Practices if available */}
+             {data.dailyPractices && data.dailyPractices.length > 0 && (
+                <div className="space-y-4">
+                    <h3 className="font-semibold text-lg flex items-center gap-2">
+                         <Smiley className="w-5 h-5 text-indigo-500" />
+                         While you're here: Daily Practices
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        {data.dailyPractices.map((practice: any, idx: number) => (
+                             <Card key={idx} className="bg-muted/10 border-muted">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base">{practice.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{practice.description}</p>
+                                    <Button size="sm" variant="outline" className="w-full" onClick={() => setSelectedSession({ activity: practice, childTiers: [], messLevel: 'none', prepMinutes: 0, materialsAvailable: true })}>
+                                        Mark Complete
+                                    </Button>
+                                </CardContent>
+                             </Card>
+                        ))}
+                    </div>
+                </div>
+             )}
+        </div>
+    );
+  }
+
+  // Handle Rest Day State
+  if (data.restDay) {
+    return (
+        <div className="max-w-4xl mx-auto py-12 px-4 space-y-8">
+             <div className="bg-gradient-to-r from-blue-50 to-indigo-50 dark:from-blue-950 dark:to-indigo-950 p-8 rounded-2xl border border-blue-100 dark:border-blue-900 text-center">
+                 <div className="h-16 w-16 bg-white dark:bg-blue-900 rounded-full flex items-center justify-center mx-auto mb-4 shadow-sm">
+                     <MoonStars className="h-8 w-8 text-blue-500" weight="duotone" />
+                 </div>
+                 <h1 className="text-3xl font-display font-bold text-blue-900 dark:text-blue-100 mb-2">Rest Day</h1>
+                 <p className="text-blue-700 dark:text-blue-200 max-w-xl mx-auto">
+                     {data.message || "Today is a scheduled rest day. Take time to rest, play, and enjoy your family."}
+                 </p>
+             </div>
+
+             {/* Daily Liturgy */}
+             <DailyLiturgy />
+
+             {/* Optional Daily Practices */}
+             {data.dailyPractices && data.dailyPractices.length > 0 && (
+                <div className="space-y-4">
+                     <h3 className="font-semibold text-lg flex items-center gap-2">
+                         <Smiley className="w-5 h-5 text-indigo-500" />
+                         Optional: Daily Practices
+                    </h3>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        {data.dailyPractices.map((practice: any, idx: number) => (
+                             <Card key={idx} className="bg-muted/10 border-muted">
+                                <CardHeader className="pb-2">
+                                    <CardTitle className="text-base">{practice.title}</CardTitle>
+                                </CardHeader>
+                                <CardContent>
+                                    <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{practice.description}</p>
+                                    <Button size="sm" variant="outline" className="w-full" onClick={() => setSelectedSession({ activity: practice, childTiers: [], messLevel: 'none', prepMinutes: 0, materialsAvailable: true })}>
+                                        Do this
+                                    </Button>
+                                </CardContent>
+                             </Card>
+                        ))}
+                    </div>
+                </div>
+             )}
+        </div>
+    )
   }
 
   // Check if user is first-time (all materials are unknown)
@@ -493,16 +594,12 @@ export default function Dashboard() {
                 </div>
 
                 <div className="bg-muted/10 p-4 border-t flex gap-3">
-                  {isInfancyMode ? (
-                    // Soft UI for Infancy
+                  {isInfancyMode || isDailyPractice ? (
+                    // Soft UI for Infancy or Daily Practice
                     <Button
                       className="w-full gap-2 bg-primary/10 text-primary hover:bg-primary/20 border-primary/10 shadow-none"
                       variant="outline"
-                      onClick={() => {
-                        // Just a feel-good click, no API call intended for daily practices
-                        // Once API protects it, this button is just UI candy or could dismiss the item locally
-                        toast.success("That was lovely!");
-                      }}
+                      onClick={() => setSelectedSession(session)} // Now opens modal/handler
                     >
                       <Smiley className="w-4 h-4" weight="duotone" />
                       That was lovely
@@ -526,7 +623,7 @@ export default function Dashboard() {
           );
         })}
 
-        {data.familySessions.length === 0 && (
+        {data.familySessions.length === 0 && !data.needsPlan && !data.restDay && (
           <div className="text-center py-12 border-2 border-dashed rounded-xl space-y-4">
             <div className="space-y-2">
               <p className="text-lg font-semibold text-foreground">

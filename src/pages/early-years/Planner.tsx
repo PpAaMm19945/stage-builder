@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { weeklyPlan, ai } from '@/lib/api';
+import { weeklyPlan, ai, students } from '@/lib/api';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -15,21 +15,61 @@ import {
     WarningCircle,
     CheckCircle,
     ChatCircleText,
-    Baby
+    Baby,
+    UsersThree,
+    Crown
 } from '@phosphor-icons/react';
-import { format, addWeeks, subWeeks, startOfWeek, isSameDay, parseISO } from 'date-fns';
+import { format, addWeeks, subWeeks, startOfWeek, isSameDay, parseISO, isPast, isFuture, startOfDay } from 'date-fns';
 import { ExplainButton } from '@/components/ai/ExplainButton';
 import { WeeklyPlan, PlanSlot, DOMAIN_LABELS } from '@/types';
 import { toast } from 'sonner';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+
+// Helper to get smart week start (matches backend)
+function getSmartWeekStart(date = new Date()) {
+  const day = date.getDay();
+  const d = new Date(date);
+  // If Saturday (6) or Sunday (0), target NEXT Monday
+  if (day === 0 || day === 6) {
+    const daysUntilMonday = day === 0 ? 1 : 2;
+    d.setDate(d.getDate() + daysUntilMonday);
+  } else {
+    // Mon-Fri: target THIS Monday
+    d.setDate(d.getDate() - (day - 1));
+  }
+  return startOfDay(d);
+}
 
 export default function Planner() {
-    const [currentWeek, setCurrentWeek] = useState(startOfWeek(new Date(), { weekStartsOn: 1 }));
+    // Initial week based on smart start
+    const [currentWeek, setCurrentWeek] = useState(() => getSmartWeekStart());
     const [viewMode, setViewMode] = useState<'grid' | 'narrative'>('grid');
     const [narrative, setNarrative] = useState<string | null>(null);
     const [narrativeTone, setNarrativeTone] = useState<'encouraging' | 'concise'>('encouraging');
+    const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
+    const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
 
     const queryClient = useQueryClient();
     const weekStartStr = format(currentWeek, 'yyyy-MM-dd');
+
+    // Fetch Children (for balance dialog context)
+    const { data: childrenData } = useQuery({
+        queryKey: ['students'],
+        queryFn: students.list,
+    });
+
+    const childAges = childrenData?.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
+    const hasBabies = childrenData?.some((c: any) => c.age_in_months <= 18);
+    const hasOlder = childrenData?.some((c: any) => c.age_in_months >= 48);
 
     // Fetch Plan
     const { data: planData, isLoading, error, refetch } = useQuery({
@@ -39,16 +79,29 @@ export default function Planner() {
 
     // Regenerate Mutation
     const regenerateMutation = useMutation({
-        mutationFn: weeklyPlan.regenerate,
+        mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused'; weekStart: string }) =>
+            weeklyPlan.regenerate(prefs),
         onSuccess: (data) => {
             queryClient.setQueryData(['weekly-plan', weekStartStr], data);
             toast.success('Plan regenerated!');
             setNarrative(null); // Clear old narrative
+            setIsBalanceDialogOpen(false);
         },
         onError: (err: any) => {
             toast.error('Failed to regenerate', { description: err.message });
         }
     });
+
+    const handleRegenerateClick = () => {
+        setIsBalanceDialogOpen(true);
+    };
+
+    const confirmRegenerate = () => {
+        regenerateMutation.mutate({
+            balancePreference,
+            weekStart: weekStartStr
+        });
+    };
 
     // Narrate Mutation
     const narrateMutation = useMutation({
@@ -81,6 +134,12 @@ export default function Planner() {
         'cognitive': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
         'social-emotional': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
         'pre-academic': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    };
+
+    const isPastWeek = (date: Date) => {
+        const endOfWeekDate = new Date(date);
+        endOfWeekDate.setDate(endOfWeekDate.getDate() + 6);
+        return isPast(endOfWeekDate) && !isSameDay(new Date(), endOfWeekDate);
     };
 
     return (
@@ -133,15 +192,67 @@ export default function Planner() {
                     <Button
                         variant="outline"
                         size="sm"
-                        onClick={() => regenerateMutation.mutate()}
-                        disabled={regenerateMutation.isPending || isLoading}
+                        onClick={handleRegenerateClick}
+                        disabled={regenerateMutation.isPending || isLoading || isPastWeek(currentWeek)}
                         className="text-xs"
                     >
                         <ArrowsClockwise className={`w-4 h-4 mr-2 ${regenerateMutation.isPending ? 'animate-spin' : ''}`} />
-                        Regenerate Plan
+                        {isPastWeek(currentWeek) ? 'Read Only' : 'Regenerate Plan'}
                     </Button>
                 </div>
             </div>
+
+            {/* Balance Dialog */}
+            <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Customize this Week</DialogTitle>
+                        <DialogDescription>
+                            How should we balance activities for your children ({childAges.join(', ')})?
+                        </DialogDescription>
+                    </DialogHeader>
+
+                    <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="baby_focused" id="r1" />
+                            <Label htmlFor="r1" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Baby className="w-4 h-4 text-indigo-500" />
+                                    Baby Focused
+                                </div>
+                                <span className="text-xs text-muted-foreground">Prioritize sensory & bonding. Older kids help lead.</span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="mixed" id="r2" />
+                            <Label htmlFor="r2" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <UsersThree className="w-4 h-4 text-green-500" />
+                                    Balanced Mix
+                                </div>
+                                <span className="text-xs text-muted-foreground">Equal focus across all age groups.</span>
+                            </Label>
+                        </div>
+                        <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                            <RadioGroupItem value="older_focused" id="r3" />
+                            <Label htmlFor="r3" className="flex-1 cursor-pointer">
+                                <div className="flex items-center gap-2 font-semibold">
+                                    <Crown className="w-4 h-4 text-amber-500" />
+                                    Older Focused
+                                </div>
+                                <span className="text-xs text-muted-foreground">More complex activities. Babies observe/tag along.</span>
+                            </Label>
+                        </div>
+                    </RadioGroup>
+
+                    <DialogFooter>
+                        <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>Cancel</Button>
+                        <Button onClick={confirmRegenerate} disabled={regenerateMutation.isPending}>
+                            {regenerateMutation.isPending ? 'Generating...' : 'Generate Week'}
+                        </Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
 
             {/* Content */}
             {isLoading ? (
@@ -162,8 +273,6 @@ export default function Planner() {
                     {viewMode === 'grid' && (
                         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
                             {['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((dayStr, index) => {
-                                const date = addWeeks(currentWeek, 0); // Need actual date logic if dates matched, but slots use 'Mon'
-                                // We'll iterate days based on index from currentWeek
                                 const dayDate = new Date(currentWeek);
                                 dayDate.setDate(currentWeek.getDate() + index);
 
