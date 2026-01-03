@@ -217,6 +217,11 @@ export interface FamilyTodayResponse {
   materials: MaterialItem[];
   totalDuration: number;
   coreKitCoverage: number;
+  // Unified Plan System additions (optional states)
+  restDay?: boolean;
+  needsPlan?: boolean;
+  message?: string;
+  dailyPractices?: ApiActivity[];
 }
 
 // ============================================
