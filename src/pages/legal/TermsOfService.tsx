@@ -46,11 +46,15 @@ export default function TermsOfService() {
                 </section>
 
                 <section className="space-y-4">
-                    <h2 className="text-2xl font-bold">5. Limitations of Liability</h2>
+                    <h2 className="text-2xl font-bold">5. Educational Disclaimer & Parental Authority</h2>
                     <p>
-                        The educational content and developmental milestones provided in SchoolOS are for
-                        informational purposes only. They are not a substitute for professional medical or
-                        educational advice. We are not liable for any actions taken based on this information.
+                        <strong>Covenantal Responsibility:</strong> We affirm that parents are the primary educators of their children, ordained by God (Deut 6, Eph 6). This platform serves as a tool to assist parents in this duty, not to replace them.
+                    </p>
+                    <p>
+                        <strong>No Guarantee of Outcome:</strong> While we provide resources based on Reformed Christian pedagogy, we do not guarantee specific educational outcomes. The formation of a child's soul is a work of God's grace and parental stewardship.
+                    </p>
+                    <p>
+                        <strong>Sphere Sovereignty:</strong> We respect the sphere sovereignty of the family. We claim no authority over your children or their educational path beyond the service you explicitly engage us to provide.
                     </p>
                 </section>
 
@@ -59,6 +63,9 @@ export default function TermsOfService() {
                     <p>
                         We may terminate or suspend your account immediately, without prior notice or liability,
                         for any reason whatsoever, including without limitation if you breach the Terms.
+                    </p>
+                    <p>
+                        In the event of termination, you retain the right to export your family's educational records, as these belong to you by right of your parental authority.
                     </p>
                     <p>
                         Upon termination, your right to use the Service will immediately cease. You can terminate
