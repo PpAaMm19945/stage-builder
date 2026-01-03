@@ -1,101 +1,86 @@
-# Activity Guidelines for SchoolOS Early Years
+---
+version: "2.0"
+last_updated: "2024-05-22"
+derived_from: "PEDAGOGICAL_PHILOSOPHY.md"
+---
 
-This document provides quality standards for creating and reviewing activities in the SchoolOS Early Years curriculum.
+# Activity Guidelines
 
-## Age-Appropriateness Guidelines
+## Table of Contents
+1. [Theological Framing](#1-theological-framing)
+2. [Domain Taxonomy (Luke 2:52)](#2-domain-taxonomy-luke-252)
+3. [Activity Audit Table](#3-activity-audit-table)
+4. [Liturgical Integration](#4-liturgical-integration)
+5. [Shepherd's Role](#5-shepherds-role)
 
-Activities should align with CDC Developmental Milestones:
+---
 
-| Age Band | Key Development Focus |
-|----------|----------------------|
-| 0-12 months | Sensory exploration, tummy time, first sounds, attachment |
-| 12-24 months | Walking, first words (1-2 word phrases), object permanence |
-| 24-36 months | Running, 2-3 word sentences, parallel play, simple pretend |
-| 36-48 months | Hopping, complete sentences, cooperative play, counting |
-| 48-60 months | Skipping, storytelling, letter recognition, rule-following |
+## 1. Theological Framing
 
-## Developmental Domains
+Every activity in this platform must answer the question: **"How does this help the child know God, love neighbor, or steward creation?"**
 
-### Cognitive
-- Problem-solving, memory, attention, cause-effect, reasoning
-- Examples: Puzzles, sorting, matching, sequencing
+We reject "busy work." Activities are not time-fillers; they are formation exercises.
+-   **NOT:** "Color the picture to keep busy."
+-   **BUT:** "Color the bird to observe the beauty God gave it."
 
-### Motor
-- **Gross motor**: Balance, coordination, strength, movement
-- **Fine motor**: Hand control, grip, manipulation, pre-writing
-- Examples: Obstacle courses, ball play, scissors, drawing
+**Summary:** Activities are intentional acts of discipleship, framed by the purpose of glorifying God.
 
-### Language
-- Vocabulary, comprehension, expression, phonological awareness
-- Examples: Story time, rhyming, conversations, describing
+---
 
-### Social-Emotional
-- Self-regulation, empathy, relationships, coping
-- Examples: Turn-taking, emotion naming, calming strategies
+## 2. Domain Taxonomy (Luke 2:52)
 
-### Pre-Academic
-- Pre-math, pre-literacy, patterns, scientific thinking
-- Examples: Counting, letter recognition, sorting, experiments
+All activities must be categorized using the Luke 2:52 framework.
 
-## Safety Considerations
+| Domain | Focus | Sample Activity Type |
+| :--- | :--- | :--- |
+| **Wisdom & Order** | Cognitive / Math / Logic | Sorting, Counting, Puzzles, Logic Games |
+| **Stature & Stewardship** | Physical / Motor | Cutting, Pasting, Running, Gardening |
+| **Favor with God** | Spiritual / Liturgical | Prayer, Hymn Singing, Scripture Memory |
+| **Favor with Man** | Social-Emotional / Virtue | Sharing, Manners, Service, Peacemaking |
+| **Foundations & Patterns** | Pre-Academic / Literacy | Read Aloud, Narration, Phonics, Copywork |
 
-### All Ages
-- Adult supervision required unless explicitly marked
-- Check for choking hazards (items smaller than 1.25")
-- Ensure materials are non-toxic
+**Summary:** We rigorously adhere to these domains to ensure whole-person formation (Head, Heart, Hands).
 
-### Under 12 Months
-- No small parts, strings, or balloons
-- Tummy time supervision essential
-- Soft, washable materials only
+---
 
-### 12-36 Months
-- Mouthing still common - ensure safety
-- Falls frequent - soft surfaces for gross motor
-- Water play requires constant supervision
+## 3. Activity Audit Table
 
-### 36-60 Months
-- Scissors must be safety scissors
-- Art materials should be washable
-- Explain rules before activities
+Use this checklist to audit any new activity proposed for the platform.
 
-## Writing Activity Instructions
+| Criteria | Question | Pass Condition |
+| :--- | :--- | :--- |
+| **Telos** | What is the ultimate goal? | Must align with knowing God or serving others. |
+| **Role** | Does it usurp the parent? | Must position parent as Shepherd/Guide. |
+| **Truth** | Is it factually and biblically true? | No secular myths or relative truth. |
+| **Beauty** | Is it aesthetically pleasing? | No "cartoonish" or ugly graphics. |
+| **Goodness** | Does it encourage virtue? | Must not reward vice or folly. |
+| **Memory** | Is it worth remembering? | Focus on "permanent things" (classics/scripture). |
 
-### Use Action Verbs
-✅ "Roll the ball gently toward your child"
-❌ "You might want to roll the ball"
+**Summary:** If an activity fails the audit (e.g., replaces the parent or trivializes truth), it is rejected.
 
-### Include Time Estimates
-✅ "Hold for 5 seconds, then release"
-❌ "Hold for a while"
+---
 
-### Age-Appropriate Language
-- For parent to understand and adapt
-- Simple enough to explain to child
+## 4. Liturgical Integration
 
-### 5-Step Format
-Each activity should have 5 clear steps:
-1. Setup / preparation
-2. Introduction / demonstration
-3. Child participation
-4. Variation or extension
-5. Celebration / closure
+Activities should not be isolated "lessons" but integrated into the family liturgy.
 
-## Quality Checklist
+-   **Morning:** Focus on *Wisdom* and *Foundations* when the mind is fresh.
+-   **Mid-Day:** Focus on *Stature* (active play) and *Stewardship* (chores).
+-   **Evening:** Focus on *Favor with God* (worship) and *Favor with Man* (family time).
 
-Before adding any activity, verify:
+**Tip:** Connect activities to the weekly Psalm or Hymn. E.g., if learning about "birds" (Stewardship), sing "All Creatures of Our God and King."
 
-- [ ] Age range is appropriate for developmental stage
-- [ ] Domain correctly categorized
-- [ ] Materials are accessible and affordable
-- [ ] Instructions are clear and actionable
-- [ ] Learning outcomes are realistic
-- [ ] Safety has been considered
-- [ ] Activity has been tested or research-backed
+**Summary:** Activities flow with the natural rhythm of the day, supporting the "Liturgy of Life."
 
-## Research Sources
+---
 
-- [CDC Developmental Milestones](https://www.cdc.gov/ncbddd/actearly/milestones/index.html)
-- [AAP - American Academy of Pediatrics](https://www.aap.org)
-- [Zero to Three](https://www.zerotothree.org)
-- [Harvard Center on the Developing Child](https://developingchild.harvard.edu)
+## 5. Shepherd's Role
+
+The instructions for every activity must address the parent as the **Shepherd/Teacher**, not a passive observer.
+
+-   **Bad Instruction:** "Give the child the tablet."
+-   **Good Instruction:** "Read this verse to your child, then ask them..."
+-   **Bad Instruction:** "The AI will grade this."
+-   **Good Instruction:** "Review your child's work and discuss their effort."
+
+**Summary:** The platform empowers the parent to lead. The activity text must reinforce this authority structure.

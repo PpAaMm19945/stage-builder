@@ -39,8 +39,8 @@ export default function PrivacyPolicy() {
                 </section>
 
                 <section className="space-y-4">
-                    <h2 className="text-2xl font-bold">3. Data Usage</h2>
-                    <p>We use your data solely for the following purposes:</p>
+                    <h2 className="text-2xl font-bold">3. Data Usage & Stewardship</h2>
+                    <p>We view your family's data as a stewardship trust. We use your data solely for the following purposes:</p>
                     <ul className="list-disc pl-6 space-y-2">
                         <li>Providing and improving the SchoolOS educational platform.</li>
                         <li>Personalizing activity recommendations based on child age and progress.</li>
@@ -48,16 +48,22 @@ export default function PrivacyPolicy() {
                         <li>Authenticating your account and securing your data.</li>
                     </ul>
                     <p>
-                        <strong>We do not sell your personal data to third parties.</strong>
+                        <strong>We do not sell your personal data to third parties.</strong> Your children are not commodities.
+                    </p>
+                    <p>
+                        <strong>AI & Privacy:</strong> We use Artificial Intelligence to assist in summarizing data and recommending resources. However, we do not train public AI models on your specific family data in a way that would expose your private information to the world.
                     </p>
                 </section>
 
                 <section className="space-y-4">
-                    <h2 className="text-2xl font-bold">4. Children's Privacy</h2>
+                    <h2 className="text-2xl font-bold">4. Children's Privacy & Parental Ownership</h2>
                     <p>
                         We take children's privacy seriously. SchoolOS is designed for use by parents and guardians.
                         We do not knowingly collect personal information directly from children under 13. All data
                         about children is provided and managed by the parent or guardian account holder.
+                    </p>
+                    <p>
+                        You, the parent, retain full ownership of all educational records generated on this platform. You may export them at any time for use in other contexts (e.g., state reporting, college applications).
                     </p>
                 </section>
 
