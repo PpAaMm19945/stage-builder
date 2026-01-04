@@ -354,3 +354,20 @@ export interface PortfolioItem {
 }
 
 export * from './overrides';
+
+// ============================================
+// Unified Weekly Planner
+// ============================================
+
+export interface ActivityCompletion {
+  completedAt: string;
+  type: 'completion' | 'observation';
+}
+
+export interface WeeklyPlanResponse {
+  id: string;
+  weekStart: string;
+  plan: any; // We can refine this later if needed
+  cached: boolean;
+  completions?: Record<string, ActivityCompletion>;
+}

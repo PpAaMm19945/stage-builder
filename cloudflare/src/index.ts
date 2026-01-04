@@ -2785,11 +2785,35 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
         generated_at = datetime('now')
     `).bind(planId, user.id, targetWeek, JSON.stringify(plan), balancePreference, tierDistJson).run();
 
+    // Fetch completions for this week
+    const weekEndDate = new Date(targetWeek);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const weekEnd = weekEndDate.toISOString().split('T')[0];
+
+    const completionsResult = await c.env.DB.prepare(`
+        SELECT activity_id, completed_at, 'completion' as type FROM activity_completions
+        WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
+        UNION
+        SELECT activity_id, completed_at, 'observation' as type FROM observations
+        WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
+    `).bind(user.id, targetWeek, weekEnd, user.id, targetWeek, weekEnd).all();
+
+    const completions: Record<string, any> = {};
+    if (completionsResult.results) {
+        completionsResult.results.forEach((r: any) => {
+            completions[r.activity_id] = {
+                completedAt: r.completed_at,
+                type: r.type
+            };
+        });
+    }
+
     return c.json({
         id: planId,
         weekStart: targetWeek,
         plan,
-        cached: false
+        cached: false,
+        completions
     });
 
   } catch (error: any) {
