@@ -67,6 +67,25 @@ const DOMAIN_WEIGHTS: Record<string, number> = {
     'pre-academic': 0.15,
 };
 
+// Balance preference modifiers (added to base score)
+const BALANCE_WEIGHTS: Record<string, Record<string, number>> = {
+    'baby_focused': {
+        'observer': 20,
+        'participant': -10,
+        'leader': -15
+    },
+    'older_focused': {
+        'observer': -10,
+        'participant': 15,
+        'leader': 20
+    },
+    'mixed': {
+        'observer': 0,
+        'participant': 0,
+        'leader': 0
+    }
+};
+
 // Parse constraints from JSON string
 function parseConstraints(json: string): any {
     try {
@@ -191,7 +210,8 @@ async function scoreActivity(
     domainCounts: Record<string, number>,
     overrides: Override[],
     db: D1Database,
-    parentId: string
+    parentId: string,
+    balancePreference: string = 'mixed'
 ): Promise<number> {
     let score = 50; // Base score
 
@@ -242,6 +262,11 @@ async function scoreActivity(
         }
     }
 
+    // Apply balance preference
+    if (activity.primary_tier && BALANCE_WEIGHTS[balancePreference]) {
+        score += BALANCE_WEIGHTS[balancePreference][activity.primary_tier] || 0;
+    }
+
     return score;
 }
 
@@ -280,7 +305,8 @@ export async function generateWeeklyPlan(
     timeModel: TimeModel,
     overrides: Override[],
     db: D1Database,
-    parentId: string
+    parentId: string,
+    balancePreference: string = 'mixed'
 ): Promise<PlanResult> {
     const slots: PlanSlot[] = [];
     const domainCounts: Record<string, number> = {};
@@ -314,7 +340,7 @@ export async function generateWeeklyPlan(
                  if (usedActivityIds.has(a.id)) continue;
                  if (a.duration_minutes > dayMinutesRemaining) continue;
 
-                 const score = await scoreActivity(a, domainCounts, overrides, db, parentId);
+                 const score = await scoreActivity(a, domainCounts, overrides, db, parentId, balancePreference);
                  candidates.push({ activity: a, score });
             }
 
