@@ -1,4 +1,4 @@
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
@@ -6,7 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Upload, Camera, X, Image as ImageIcon, FileAudio, FileText } from 'lucide-react';
+import { UploadSimple, Camera, X, Image as ImageIcon, FileAudio, FileText, SpinnerGap } from '@phosphor-icons/react';
 import { portfolio } from '@/lib/api';
 import { PortfolioItemType, EarlyYearsDomain } from '@/types';
 
@@ -35,6 +35,24 @@ export function PortfolioUploadModal({
     const [uploadProgress, setUploadProgress] = useState(0);
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
+
+    // Fix memory leak with object URLs
+    const [previewUrl, setPreviewUrl] = useState<string | null>(null);
+
+    useEffect(() => {
+        if (!file) {
+            setPreviewUrl(null);
+            return;
+        }
+
+        if (file.type.startsWith('image/')) {
+            const url = URL.createObjectURL(file);
+            setPreviewUrl(url);
+
+            // Cleanup
+            return () => URL.revokeObjectURL(url);
+        }
+    }, [file]);
 
     const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
         if (e.target.files && e.target.files[0]) {
@@ -144,9 +162,9 @@ export function PortfolioUploadModal({
                     >
                         {file ? (
                             <div className="flex flex-col items-center gap-2">
-                                {file.type.startsWith('image/') ? (
+                                {file.type.startsWith('image/') && previewUrl ? (
                                     <img
-                                        src={URL.createObjectURL(file)}
+                                        src={previewUrl}
                                         alt="Preview"
                                         className="h-32 object-contain rounded-md"
                                     />
@@ -163,7 +181,7 @@ export function PortfolioUploadModal({
                         ) : (
                             <div className="flex flex-col items-center gap-2 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
                                 <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mb-2">
-                                    <Upload className="h-6 w-6 text-muted-foreground" />
+                                    <UploadSimple className="h-6 w-6 text-muted-foreground" />
                                 </div>
                                 <div className="text-sm font-medium">Click to upload or drag & drop</div>
                                 <div className="text-xs text-muted-foreground">Images, Audio, or PDF</div>
@@ -220,7 +238,7 @@ export function PortfolioUploadModal({
                     <Button onClick={handleUpload} disabled={!file || !title || isUploading}>
                         {isUploading ? (
                             <>
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                                <SpinnerGap className="mr-2 h-4 w-4 animate-spin" />
                                 {uploadProgress > 0 ? `Uploading ${uploadProgress}%` : 'Uploading...'}
                             </>
                         ) : (
