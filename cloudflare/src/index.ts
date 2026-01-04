@@ -2562,6 +2562,29 @@ app.get('/api/family/weekly-plan', async (c) => {
       return c.json({ error: 'No children found. Add a child first.' }, 400);
     }
 
+    // Fetch completions for this week
+    const weekEndDate = new Date(weekStart);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const weekEnd = weekEndDate.toISOString().split('T')[0];
+
+    const completionsResult = await c.env.DB.prepare(`
+        SELECT activity_id, completed_at, 'completion' as type FROM activity_completions
+        WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
+        UNION
+        SELECT activity_id, completed_at, 'observation' as type FROM observations
+        WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
+    `).bind(user.id, weekStart, weekEnd, user.id, weekStart, weekEnd).all();
+
+    const completions: Record<string, any> = {};
+    if (completionsResult.results) {
+        completionsResult.results.forEach((r: any) => {
+            completions[r.activity_id] = {
+                completedAt: r.completed_at,
+                type: r.type
+            };
+        });
+    }
+
     // Check for cached plan
     const cachedPlan = await c.env.DB.prepare(
       'SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
@@ -2571,7 +2594,8 @@ app.get('/api/family/weekly-plan', async (c) => {
       return c.json({
         ...cachedPlan,
         plan: JSON.parse((cachedPlan as any).plan_json),
-        cached: true
+        cached: true,
+        completions
       });
     }
 
@@ -2648,7 +2672,8 @@ app.get('/api/family/weekly-plan', async (c) => {
       id: planId,
       weekStart,
       plan,
-      cached: false
+      cached: false,
+      completions
     });
   } catch (error: any) {
     console.error('Weekly plan error:', error);
