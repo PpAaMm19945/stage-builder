@@ -2658,7 +2658,8 @@ app.get('/api/family/weekly-plan', async (c) => {
       timeModel,
       overrideRows as any,
       c.env.DB,
-      user.id
+      user.id,
+      'mixed' // Default for new plans
     );
 
     // Cache the plan
@@ -2693,7 +2694,6 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
 
     // Note: To properly support balancePreference, we would need to pass it to generateWeeklyPlan
     // For now, we are just storing it.
-    // TODO: Update generateWeeklyPlan to accept balancePreference and use it in scoring
 
     // Delete cached plan
     await c.env.DB.prepare(
@@ -2769,7 +2769,8 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
       timeModel,
       overrideRows as any,
       c.env.DB,
-      user.id
+      user.id,
+      balancePreference
     );
 
     const planId = generateId('plan');
