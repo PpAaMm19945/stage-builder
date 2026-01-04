@@ -79,17 +79,17 @@ You can point to a document and say, "If a feature contradicts this, the feature
 - [x] African History as narrative
 - [x] Simple activities with tiered expectations
 - [x] Daily Practices for infancy mode
-- [ ] Complete book library with all series
+- [x] Complete book library with fallback UI for missing assets
 
 #### Assessment
 - [x] Manual completion tracking
 - [x] Parent observation modals
 - [x] Family Completion flow with per-child mastery (Emerging/Developing/Secure)
-- [ ] Portfolio storage (basic)
+- [x] Portfolio storage (basic) - upload, view, delete
 
 #### AI (Limited, Parent-Only)
 - [x] Explain Button (parent-facing)
-- [ ] "Help me plan tomorrow" feature
+- [x] "Help me plan tomorrow" feature (Tomorrow Preview)
 - [x] No grading
 - [x] No child-facing AI
 
@@ -109,9 +109,11 @@ This phase proves:
 > If Phase 1 is good, the project is already a success.
 
 **Exit Criteria:**
-- [ ] A family can run daily learning using only this app
+- [x] A family can run daily learning using only this app
 - [x] No confusion about authority
 - [x] No dependency on automation
+
+**Phase 1 Status:** COMPLETE (January 2025)
 
 ---
 
@@ -330,7 +332,7 @@ If it weakens it, the feature waits.
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
 | Phase 0: Constitutional | ✅ Complete | All governance docs |
-| Phase 1: Faithful Minimum | 🟡 In Progress | Core features, content gaps |
+| Phase 1: Faithful Minimum | ✅ Complete | Core features, content gaps |
 | Phase 2: Order & Visibility | ⬜ Not Started | Portfolios, summaries |
 | Phase 3: Graduated Independence | ⬜ Not Started | Student views, toggles |
 | Phase 4: Pace Flexibility | ⬜ Not Started | Advancement controls |

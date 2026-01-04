@@ -8,7 +8,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { useToast } from '@/hooks/use-toast';
 import { UploadSimple, Camera, X, Image as ImageIcon, FileAudio, FileText, SpinnerGap } from '@phosphor-icons/react';
 import { portfolio } from '@/lib/api';
-import { PortfolioItemType, EarlyYearsDomain } from '@/types';
+import { PortfolioItemType } from '@/types';
 
 interface PortfolioUploadModalProps {
     studentId: string;
