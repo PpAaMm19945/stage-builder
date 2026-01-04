@@ -36,6 +36,17 @@ export function BookCard({ book, onClick }: BookCardProps) {
         .replace('African Men of Faith', 'Faith')
         .replace('The Gospel Series', 'Gospel');
 
+    // Generate a consistent color based on the book series string
+    const getSeriesColor = (series: string) => {
+        let hash = 0;
+        for (let i = 0; i < series.length; i++) {
+            hash = series.charCodeAt(i) + ((hash << 5) - hash);
+        }
+        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
+        return '#' + '00000'.substring(0, 6 - c.length) + c;
+    };
+    const seriesColor = getSeriesColor(book.series);
+
     return (
         <Card
             className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
@@ -52,8 +63,14 @@ export function BookCard({ book, onClick }: BookCardProps) {
 
                 {/* Fallback for error state */}
                 {imageError && (
-                    <div className="absolute inset-0 flex items-center justify-center bg-muted">
-                        <BooksIcon className="h-12 w-12 text-muted-foreground" weight="duotone" />
+                    <div
+                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"
+                        style={{ backgroundColor: seriesColor }}
+                    >
+                        <BooksIcon className="h-12 w-12 text-white/80 mb-2" weight="duotone" />
+                        <span className="text-white font-bold text-sm leading-tight line-clamp-3">
+                            {book.title}
+                        </span>
                     </div>
                 )}
 
@@ -61,7 +78,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
                     src={coverUrl}
                     alt={book.title}
                     loading="lazy"
-                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded ? 'opacity-100' : 'opacity-0'
+                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
                         }`}
                     onLoad={() => setImageLoaded(true)}
                     onError={() => {

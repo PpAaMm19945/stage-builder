@@ -47,6 +47,7 @@ import { BookReader } from '@/components/books/BookReader';
 import { UpvoteButton } from '@/components/feedback/UpvoteButton';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { ExplainButton } from '@/components/ai/ExplainButton';
+import { TomorrowPreview } from '@/components/planning/TomorrowPreview';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -339,6 +340,9 @@ export default function Dashboard() {
 
       {/* Daily Liturgy */}
       <DailyLiturgy />
+
+      {/* Tomorrow Preview */}
+      <TomorrowPreview />
 
       {/* Materials Reminder Banner */}
       {needsMaterialsSetup && (

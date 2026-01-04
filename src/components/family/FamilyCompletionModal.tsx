@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { observations, activityCompletions } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
-import { Loader2, CheckCircle2 } from 'lucide-react';
+import { Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
 import { FamilySession, MasteryLevel, getChildRole } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
+import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
 
 interface FamilyCompletionModalProps {
     isOpen: boolean;
@@ -32,6 +33,8 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     // Initialize with 'developing' as default or null
     const [ratings, setRatings] = useState<Record<string, MasteryLevel>>({});
     const [showStoryPrompt, setShowStoryPrompt] = useState(false);
+    const [showPortfolioModal, setShowPortfolioModal] = useState(false);
+    const [selectedStudentForPortfolio, setSelectedStudentForPortfolio] = useState<string | null>(null);
 
     // Initial effect to handle simple completion (Daily Practice) immediately or showing modal
     // Actually, react component shouldn't have side effects in render.
@@ -283,7 +286,23 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                         })}
 
                         <div className="space-y-2">
-                            <Label htmlFor="notes">Notes (Optional)</Label>
+                            <div className="flex justify-between items-center">
+                                <Label htmlFor="notes">Notes (Optional)</Label>
+                                {session.childTiers.length > 0 && (
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
+                                        className="h-8 text-xs text-primary gap-1"
+                                        onClick={() => {
+                                            setSelectedStudentForPortfolio(session.childTiers[0].childId); // Default to first child or handle selection
+                                            setShowPortfolioModal(true);
+                                        }}
+                                    >
+                                        <ImagePlus className="h-3 w-3" />
+                                        Add Photo to Portfolio
+                                    </Button>
+                                )}
+                            </div>
                             <Textarea
                                 id="notes"
                                 placeholder="Any notable moments or struggles..."
@@ -320,6 +339,22 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {selectedStudentForPortfolio && (
+                <PortfolioUploadModal
+                    studentId={selectedStudentForPortfolio}
+                    isOpen={showPortfolioModal}
+                    onClose={() => {
+                        setShowPortfolioModal(false);
+                        setSelectedStudentForPortfolio(null);
+                    }}
+                    onUploadComplete={() => {
+                        toast({ title: "Added to portfolio" });
+                    }}
+                    relatedActivityId={session.activity.id}
+                    preselectedDomain={session.activity.domain}
+                />
+            )}
         </>
     );
 }

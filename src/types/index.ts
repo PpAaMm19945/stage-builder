@@ -333,4 +333,24 @@ export interface ParentComment {
   createdAt: string;
 }
 
+// ============================================
+// Portfolio System
+// ============================================
+
+export type PortfolioItemType = 'image' | 'audio' | 'document' | 'text';
+
+export interface PortfolioItem {
+  id: string;
+  studentId: string;
+  parentId: string;
+  title: string;
+  description?: string;
+  itemType: PortfolioItemType;
+  r2Key?: string;
+  publicUrl?: string; // Generated signed URL
+  domain?: EarlyYearsDomain | string;
+  relatedActivityId?: string;
+  createdAt: string;
+}
+
 export * from './overrides';

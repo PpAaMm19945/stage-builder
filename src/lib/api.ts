@@ -134,6 +134,8 @@ export const family = {
       method: 'POST',
       body: JSON.stringify({ activityId }),
     }),
+
+  getTomorrowPreview: () => apiRequest<any>('/api/family/tomorrow-preview'),
 };
 
 // Observations
@@ -286,5 +288,46 @@ export const ai = {
     apiRequest<{ narrative: string; originalPlan: any }>('/api/plan/narrate', { method: 'POST', body: JSON.stringify({ plan, tone }) }),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai };
+// Portfolio
+export const portfolio = {
+  // Get upload URL for a new item
+  getUploadUrl: async (filename: string, contentType: string) => {
+    return apiRequest<{ uploadUrl: string; key: string; publicUrl: string }>('/api/portfolio/upload', {
+      method: 'POST',
+      body: JSON.stringify({ filename, contentType }),
+    });
+  },
+
+  // Create portfolio item record
+  createItem: async (data: {
+    studentId: string;
+    title: string;
+    description?: string;
+    itemType: 'image' | 'audio' | 'document' | 'text';
+    r2Key?: string;
+    domain?: string;
+    relatedActivityId?: string;
+  }) => {
+    return apiRequest<any>('/api/portfolio/items', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  // List items for a student
+  listItems: async (studentId: string, domain?: string) => {
+    const query = new URLSearchParams();
+    if (domain) query.set('domain', domain);
+    return apiRequest<any[]>(`/api/portfolio/${studentId}?${query}`);
+  },
+
+  // Delete item
+  deleteItem: async (itemId: string) => {
+    return apiRequest<{ success: boolean }>(`/api/portfolio/${itemId}`, {
+      method: 'DELETE',
+    });
+  }
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio };
 export default api;

@@ -30,6 +30,7 @@ import Activities from "./pages/early-years/Activities";
 import ActivityViewer from "./pages/early-years/ActivityViewer";
 import ProgressPage from "./pages/early-years/Progress";
 import Reading from "./pages/early-years/Reading";
+import PortfolioPage from "./pages/early-years/Portfolio";
 import Settings from "./pages/Settings";
 import LockedStage from "./pages/stages/LockedStage";
 import NotFound from "./pages/NotFound";
@@ -70,6 +71,7 @@ const App = () => (
                   <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
                   <Route path="/early-years/reading" element={<Reading />} />
                   <Route path="/early-years/progress" element={<ProgressPage />} />
+                  <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
 
                   {/* Locked Stages */}
                   <Route path="/lower-primary" element={<LockedStage />} />
