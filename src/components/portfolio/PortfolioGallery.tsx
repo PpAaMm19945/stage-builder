@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { portfolio } from '@/lib/api';
-import { Loader2, Trash2, FileText, FileAudio, Image as ImageIcon } from 'lucide-react';
+import { SpinnerGap, Trash, FileText, FileAudio, Image as ImageIcon } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
@@ -58,7 +58,7 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
     };
 
     if (loading) {
-        return <div className="flex justify-center p-8"><Loader2 className="h-8 w-8 animate-spin" /></div>;
+        return <div className="flex justify-center p-8"><SpinnerGap className="h-8 w-8 animate-spin" /></div>;
     }
 
     if (items.length === 0) {
@@ -107,7 +107,7 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
                     </CardContent>
                     <CardFooter className="p-4 pt-0 flex justify-end">
                         <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
-                            <Trash2 className="h-4 w-4 mr-1" /> Delete
+                            <Trash className="h-4 w-4 mr-1" /> Delete
                         </Button>
                     </CardFooter>
                 </Card>
