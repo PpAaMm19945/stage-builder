@@ -316,6 +316,12 @@ export default function Planner() {
                                                             <Badge variant="outline" className={`text-[9px] px-1.5 py-0 h-4 border-0 ${domainColors[slot.domain] || 'bg-gray-100'}`}>
                                                                 {slot.domain}
                                                             </Badge>
+                                                            {planData?.completions && planData.completions[slot.activityId] && (
+                                                                <Badge variant="secondary" className="text-[9px] px-1.5 py-0 h-4 bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300 gap-1">
+                                                                    <CheckCircle className="w-3 h-3" weight="fill" />
+                                                                    Done
+                                                                </Badge>
+                                                            )}
                                                         </div>
 
                                                         {slot.reasoning && (
