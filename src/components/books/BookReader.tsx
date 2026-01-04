@@ -52,9 +52,9 @@ function BookSlide({
     };
 
     const getErrorText = () => {
-        if (slideInfo.type === 'cover') return 'Cover not found';
-        if (slideInfo.type === 'copyright') return 'Copyright page not found';
-        return `Page ${slideInfo.pageNum} not found`;
+        if (slideInfo.type === 'cover') return 'Cover Coming Soon';
+        if (slideInfo.type === 'copyright') return 'Copyright Info Coming Soon';
+        return 'Content Coming Soon';
     };
 
     return (
@@ -67,17 +67,20 @@ function BookSlide({
                         </div>
                     )}
                     {error && (
-                        <div className="flex flex-col items-center justify-center text-muted-foreground">
-                            <span className="text-4xl mb-2">📄</span>
-                            <span className="text-sm">{getErrorText()}</span>
+                        <div className="flex flex-col items-center justify-center text-center p-8 bg-muted/30 rounded-lg max-w-md mx-auto">
+                            <BookOpen className="h-16 w-16 text-muted-foreground/50 mb-4" weight="duotone" />
+                            <h3 className="text-lg font-semibold mb-2">{getErrorText()}</h3>
+                            <p className="text-sm text-muted-foreground">
+                                We're currently digitizing this book. If you have the physical copy, you can read along!
+                            </p>
                         </div>
                     )}
                     <img
                         src={getImageUrl()}
                         alt={getAltText()}
                         loading="lazy"
-                        className={`max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-lg transition-opacity duration-300 ${loaded ? 'opacity-100' : 'opacity-0'
-                            }`}
+                        className={`max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-lg transition-opacity duration-300 ${loaded && !error ? 'opacity-100' : 'opacity-0'
+                            } ${error ? 'hidden' : ''}`}
                         onLoad={() => setLoaded(true)}
                         onError={() => {
                             setError(true);

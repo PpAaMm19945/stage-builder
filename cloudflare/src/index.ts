@@ -357,6 +357,79 @@ app.get('/api/students', async (c) => {
   }
 });
 
+// Get tomorrow's preview
+app.get('/api/family/tomorrow-preview', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    // Calculate tomorrow's date
+    const today = new Date();
+    const tomorrow = new Date(today);
+    tomorrow.setDate(today.getDate() + 1);
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][tomorrow.getDay()];
+
+    // Check available days
+    const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+      .bind(user.id).first();
+    const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+
+    if (!availableDays.includes(dayOfWeek)) {
+        return c.json({
+            date: tomorrow.toISOString().split('T')[0],
+            restDay: true,
+            summary: "Tomorrow is a rest day. Enjoy time together!"
+        });
+    }
+
+    // Get plan
+    const weekStart = getSmartWeekStart(); // Assuming same week, handling week crossover is trickier but this is MVP
+    // If tomorrow is Monday, it might be a new week.
+    // Simplified logic: Just fetch current plan. If tomorrow is in current plan, return it.
+
+    const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStart).first();
+
+    if (!plan) {
+         return c.json({
+            date: tomorrow.toISOString().split('T')[0],
+            needsPlan: true,
+            summary: "You don't have a plan for tomorrow yet."
+        });
+    }
+
+    const planData = JSON.parse((plan as any).plan_json);
+    const tomorrowSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
+
+    // Fetch details
+    const activityIds = tomorrowSlots.map((s: any) => s.activityId);
+    let activities: any[] = [];
+
+    if (activityIds.length > 0) {
+        const placeholders = activityIds.map(() => '?').join(',');
+        const { results } = await c.env.DB.prepare(`
+            SELECT id, title, description, domain FROM activities WHERE id IN (${placeholders})
+        `).bind(...activityIds).all();
+        activities = results;
+    }
+
+    // Generate AI Summary (lightweight)
+    let summary = `You have ${activities.length} activities planned for tomorrow.`;
+    if (activities.length > 0) {
+        const domains = [...new Set(activities.map((a: any) => a.domain))];
+        summary += ` Focus areas include ${domains.join(', ')}.`;
+    }
+
+    return c.json({
+        date: tomorrow.toISOString().split('T')[0],
+        activities,
+        summary
+    });
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Add a child (max 5)
 app.post('/api/students', async (c) => {
   try {
@@ -2923,6 +2996,177 @@ Rules:
     console.error('Narrate error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
+  }
+});
+
+// ============================================
+// PHASE 1: PORTFOLIO STORAGE
+// ============================================
+
+// Get upload URL for portfolio item
+app.post('/api/portfolio/upload', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { filename, contentType } = await c.req.json();
+
+    if (!filename || !contentType) {
+      return c.json({ error: 'filename and contentType required' }, 400);
+    }
+
+    const key = `${user.id}/${Date.now()}-${filename}`;
+
+    // In a real R2 setup, we would generate a presigned URL here.
+    // Since we are using R2 bindings directly in the worker for now,
+    // we might need a different approach for direct uploads from frontend.
+    // For MVP, we can proxy the upload or use a PUT endpoint.
+
+    // However, the standard R2 way is presigned URLs.
+    // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
+    // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
+
+    return c.json({
+      uploadUrl: `${c.env.FRONTEND_URL}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
+      key,
+      publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Handle direct upload (MVP alternative to presigned URLs)
+app.put('/api/portfolio/upload-handler', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const key = c.req.query('key');
+
+    if (!key || !key.startsWith(user.id)) {
+      return c.json({ error: 'Invalid key or unauthorized' }, 403);
+    }
+
+    const body = await c.req.arrayBuffer();
+
+    // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
+    // Ideally we add PORTFOLIO_BUCKET to Env
+    // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
+    // Using BOOKS_BUCKET for now as "storage" bucket
+    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
+
+    return c.json({ success: true, key: `portfolio/${key}` });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Create portfolio item record
+app.post('/api/portfolio/items', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+    const { studentId, title, description, itemType, r2Key, domain, relatedActivityId } = body;
+
+    if (!studentId || !title || !itemType) {
+      return c.json({ error: 'studentId, title, and itemType are required' }, 400);
+    }
+
+    const id = generateId('port');
+    await c.env.DB.prepare(`
+      INSERT INTO portfolio_items (id, student_id, parent_id, title, description, item_type, r2_key, domain, related_activity_id)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, studentId, user.id, title, description, itemType, r2Key, domain, relatedActivityId).run();
+
+    return c.json({ id, success: true }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// List portfolio items
+app.get('/api/portfolio/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+    const domain = c.req.query('domain');
+
+    let query = 'SELECT * FROM portfolio_items WHERE student_id = ? AND parent_id = ?';
+    const params: any[] = [studentId, user.id];
+
+    if (domain) {
+      query += ' AND domain = ?';
+      params.push(domain);
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Map results to include public URLs
+    const items = results.map((item: any) => ({
+      ...item,
+      // If r2_key exists, generate a view URL (this would be a proxied endpoint)
+      publicUrl: item.r2_key ? `/api/portfolio/file/${encodeURIComponent(item.r2_key)}` : null
+    }));
+
+    return c.json(items);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Serve portfolio file
+app.get('/api/portfolio/file/:key', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
+
+    // Check ownership by ensuring the key contains the user ID (part of the path strategy)
+    // The key structure we defined is `portfolio/USER_ID/filename`
+    // So we check if key contains user.id
+    if (!key.includes(user.id)) {
+       return c.json({ error: 'Unauthorized access to file' }, 403);
+    }
+
+    const object = await c.env.BOOKS_BUCKET.get(key);
+
+    if (!object) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('etag', object.httpEtag);
+
+    return new Response(object.body, {
+      headers,
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete portfolio item
+app.delete('/api/portfolio/:itemId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const itemId = c.req.param('itemId');
+
+    const item = await c.env.DB.prepare(
+      'SELECT * FROM portfolio_items WHERE id = ? AND parent_id = ?'
+    ).bind(itemId, user.id).first();
+
+    if (!item) return c.json({ error: 'Item not found' }, 404);
+
+    // Delete from R2 if key exists
+    if ((item as any).r2_key) {
+      await c.env.BOOKS_BUCKET.delete((item as any).r2_key);
+    }
+
+    // Delete from DB
+    await c.env.DB.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(itemId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
   }
 });
 
