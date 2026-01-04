@@ -129,6 +129,20 @@ function ChildSettings({ childId, childName, settings, onUpdate, isUpdating }: C
                         disabled={isUpdating}
                     />
                 </div>
+
+                <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                        <Eye className="w-4 h-4 text-blue-600" />
+                        <span className="text-sm">Can view portfolio</span>
+                    </div>
+                    <Switch
+                        checked={allSetting?.canViewPortfolio ?? true}
+                        onCheckedChange={(checked) =>
+                            onUpdate('all', { canViewPortfolio: checked })
+                        }
+                        disabled={isUpdating}
+                    />
+                </div>
             </div>
 
             {/* Per-subject settings (optional, collapsed by default) */}

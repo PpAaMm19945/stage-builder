@@ -31,6 +31,7 @@ import ActivityViewer from "./pages/early-years/ActivityViewer";
 import ProgressPage from "./pages/early-years/Progress";
 import Reading from "./pages/early-years/Reading";
 import PortfolioPage from "./pages/early-years/Portfolio";
+import ScopeSequence from "./pages/early-years/ScopeSequence";
 import Settings from "./pages/Settings";
 import StudentView from "./pages/StudentView";
 import LockedStage from "./pages/stages/LockedStage";
@@ -73,6 +74,7 @@ const App = () => (
                   <Route path="/early-years/reading" element={<Reading />} />
                   <Route path="/early-years/progress" element={<ProgressPage />} />
                   <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
+                  <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
 
                   {/* Locked Stages */}
                   <Route path="/lower-primary" element={<LockedStage />} />

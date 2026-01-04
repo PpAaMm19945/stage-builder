@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,6 +11,7 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { ProgressChart } from '@/components/progress/ProgressChart';
 import {
   TrendUp,
   Pulse,
@@ -23,8 +25,11 @@ import {
   CalendarBlank,
   CheckCircle,
   ChatCircleText,
-  SmileyMelting
+  SmileyMelting,
+  Image,
+  Plus
 } from '@phosphor-icons/react';
+import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
   'motor': HandGrabbing,
@@ -53,6 +58,7 @@ const domainBadgeColors: Record<EarlyYearsDomain, string> = {
 export default function ProgressPage() {
   const { selectedChild } = useAuth();
   const navigate = useNavigate();
+  const [isUploadOpen, setIsUploadOpen] = useState(false);
 
   // Fetch progress from API
   const { data: progressData, isLoading, isError, error, refetch } = useQuery({
@@ -223,6 +229,25 @@ export default function ProgressPage() {
         </p>
       </div>
 
+      <div className="flex gap-2">
+        <Button variant="outline" onClick={() => navigate(`/early-years/portfolio/${selectedChild.id}`)} className="gap-2">
+          <Image className="h-4 w-4" />
+          View Portfolio
+        </Button>
+        <Button onClick={() => setIsUploadOpen(true)} className="gap-2">
+          <Plus className="h-4 w-4" />
+          Add to Portfolio
+        </Button>
+      </div>
+
+      <PortfolioUploadModal
+        studentId={selectedChild?.id || ''}
+        isOpen={isUploadOpen}
+        onClose={() => setIsUploadOpen(false)}
+        onUploadComplete={() => refetch()}
+        preselectedDomain="wisdom"
+      />
+
       {/* Summary Cards */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <Card>
@@ -266,6 +291,12 @@ export default function ProgressPage() {
             </div>
           </CardContent>
         </Card>
+      </div>
+
+      {/* Long-term Progress Chart */}
+      <div className="pt-4">
+        <h2 className="text-lg font-semibold text-foreground mb-4">Long-term Progress</h2>
+        <ProgressChart />
       </div>
 
       {/* Domain Progress */}

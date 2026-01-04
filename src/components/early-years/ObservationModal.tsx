@@ -17,31 +17,33 @@ interface ObservationModalProps {
   onOpenChange: (open: boolean) => void;
   activityTitle: string;
   onSubmit: (masteryLevel: MasteryLevel, notes?: string) => void;
+  onAddToPortfolio?: () => void;
 }
 
 const masteryOptions: { level: MasteryLevel; icon: typeof Sparkles; color: string }[] = [
-  { 
-    level: 'emerging', 
-    icon: Sparkles, 
-    color: 'border-mastery-emerging text-mastery-emerging bg-mastery-emerging/10 hover:bg-mastery-emerging/20' 
+  {
+    level: 'emerging',
+    icon: Sparkles,
+    color: 'border-mastery-emerging text-mastery-emerging bg-mastery-emerging/10 hover:bg-mastery-emerging/20'
   },
-  { 
-    level: 'developing', 
-    icon: TrendingUp, 
-    color: 'border-mastery-developing text-mastery-developing bg-mastery-developing/10 hover:bg-mastery-developing/20' 
+  {
+    level: 'developing',
+    icon: TrendingUp,
+    color: 'border-mastery-developing text-mastery-developing bg-mastery-developing/10 hover:bg-mastery-developing/20'
   },
-  { 
-    level: 'secure', 
-    icon: CheckCircle2, 
-    color: 'border-mastery-secure text-mastery-secure bg-mastery-secure/10 hover:bg-mastery-secure/20' 
+  {
+    level: 'secure',
+    icon: CheckCircle2,
+    color: 'border-mastery-secure text-mastery-secure bg-mastery-secure/10 hover:bg-mastery-secure/20'
   },
 ];
 
-export function ObservationModal({ 
-  open, 
-  onOpenChange, 
-  activityTitle, 
-  onSubmit 
+export function ObservationModal({
+  open,
+  onOpenChange,
+  activityTitle,
+  onSubmit,
+  onAddToPortfolio
 }: ObservationModalProps) {
   const [selectedLevel, setSelectedLevel] = useState<MasteryLevel | null>(null);
   const [notes, setNotes] = useState('');
@@ -130,18 +132,26 @@ export function ObservationModal({
         </div>
 
         {/* Actions */}
-        <div className="flex gap-3 justify-end">
-          <Button variant="outline" onClick={() => handleOpenChange(false)}>
-            Cancel
-          </Button>
-          <Button 
-            onClick={handleSubmit} 
-            disabled={!selectedLevel}
-            className="gap-2"
-          >
-            <CheckCircle2 className="h-4 w-4" />
-            Save Observation
-          </Button>
+        <div className="flex gap-3 justify-between items-center w-full">
+          {onAddToPortfolio && (
+            <Button type="button" variant="secondary" onClick={onAddToPortfolio} className="gap-2">
+              <Sparkles className="h-4 w-4" />
+              Add to Portfolio
+            </Button>
+          )}
+          <div className="flex gap-3 ml-auto">
+            <Button variant="outline" onClick={() => handleOpenChange(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={handleSubmit}
+              disabled={!selectedLevel}
+              className="gap-2"
+            >
+              <CheckCircle2 className="h-4 w-4" />
+              Save Observation
+            </Button>
+          </div>
         </div>
       </DialogContent>
     </Dialog>

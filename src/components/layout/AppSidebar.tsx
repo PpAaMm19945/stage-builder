@@ -14,6 +14,7 @@ import {
   Pencil,
   Baby,
   Calendar,
+  ListBullets,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
@@ -49,12 +50,13 @@ import { Button } from '@/components/ui/button';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import type { Student } from '@/types';
 
-// Simplified primary navigation - 3 main items
+// Simplified primary navigation
 const primaryLinks = [
   { title: 'Today', url: '/', icon: House },
   { title: 'Weekly Plan', url: '/early-years/planner', icon: Calendar },
   { title: 'Library', url: '/early-years/activities', icon: Books },
   { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
+  { title: 'Scope & Sequence', url: '/early-years/scope-sequence', icon: ListBullets },
 ];
 
 // Coming soon stages

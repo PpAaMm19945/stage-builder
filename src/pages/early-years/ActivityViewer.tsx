@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ObservationModal } from '@/components/early-years/ObservationModal';
+import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
 import { UpvoteButton } from '@/components/feedback/UpvoteButton';
 import { CommentSection } from '@/components/feedback/CommentSection';
 import { toast } from 'sonner';
@@ -136,7 +137,9 @@ export default function ActivityViewer() {
 
   const [showEasier, setShowEasier] = useState(false);
   const [showHarder, setShowHarder] = useState(false);
+
   const [observationModalOpen, setObservationModalOpen] = useState(false);
+  const [portfolioUploadOpen, setPortfolioUploadOpen] = useState(false);
 
   // Fetch activity from API
   const { data: activityData, isLoading: isLoadingActivity, isError: isActivityError, error: activityError } = useQuery({
@@ -558,6 +561,21 @@ export default function ActivityViewer() {
         onOpenChange={setObservationModalOpen}
         activityTitle={activity.title}
         onSubmit={handleObservationSubmit}
+        onAddToPortfolio={() => {
+          setObservationModalOpen(false);
+          setPortfolioUploadOpen(true);
+        }}
+      />
+
+      <PortfolioUploadModal
+        studentId={selectedChild?.id || ''}
+        isOpen={portfolioUploadOpen}
+        onClose={() => setPortfolioUploadOpen(false)}
+        onUploadComplete={() => {
+          toast.success('Added to portfolio!');
+        }}
+        relatedActivityId={activity.id}
+        preselectedDomain={activity.domain}
       />
 
       <div className="pt-8 border-t">
