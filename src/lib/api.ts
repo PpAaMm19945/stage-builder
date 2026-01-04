@@ -98,8 +98,8 @@ export const students = {
 
 // Activities
 export const activities = {
-  list: (params?: { 
-    domain?: string; 
+  list: (params?: {
+    domain?: string;
     ageMonths?: number;
     activityType?: 'family_session' | 'individual' | 'daily_practice';
     context?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor';
@@ -155,11 +155,11 @@ export const observations = {
 
 // Activity Completions (Simple)
 export const activityCompletions = {
-    create: (data: { activityId: string; notes?: string }) =>
-        apiRequest<{ success: boolean; id: string }>('/api/activity-completions', {
-            method: 'POST',
-            body: JSON.stringify(data),
-        }),
+  create: (data: { activityId: string; notes?: string }) =>
+    apiRequest<{ success: boolean; id: string }>('/api/activity-completions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
 };
 
 // Books
@@ -286,7 +286,29 @@ export const ai = {
     apiRequest<any>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
   narrate: (plan: any, tone?: 'encouraging' | 'calm' | 'concise') =>
     apiRequest<{ narrative: string; originalPlan: any }>('/api/plan/narrate', { method: 'POST', body: JSON.stringify({ plan, tone }) }),
+
+  // Phase 2: Weekly summaries
+  generateWeeklySummary: (weekStart: string) =>
+    apiRequest<{
+      weekStart: string;
+      weekEnd: string;
+      completionCount: number;
+      observationCount: number;
+      summary: string;
+      patterns: string[];
+      suggestedQuestions: string[];
+    }>('/api/ai/weekly-summary', { method: 'POST', body: JSON.stringify({ weekStart }) }),
+
+  // Phase 2: Feedback draft
+  generateFeedbackDraft: (studentId: string, options?: { weekStart?: string; context?: string }) =>
+    apiRequest<{
+      draft: string;
+      studentName: string;
+      isEditable: boolean;
+      note: string;
+    }>('/api/ai/feedback-draft', { method: 'POST', body: JSON.stringify({ studentId, ...options }) }),
 };
+
 
 // Portfolio
 export const portfolio = {
@@ -307,6 +329,7 @@ export const portfolio = {
     r2Key?: string;
     domain?: string;
     relatedActivityId?: string;
+    milestoneTag?: string;
   }) => {
     return apiRequest<any>('/api/portfolio/items', {
       method: 'POST',
@@ -314,10 +337,18 @@ export const portfolio = {
     });
   },
 
-  // List items for a student
-  listItems: async (studentId: string, domain?: string) => {
+  // List items for a student with filtering
+  listItems: async (studentId: string, filters?: {
+    domain?: string;
+    itemType?: 'image' | 'audio' | 'document' | 'text';
+    timePeriod?: 'week' | 'month' | 'year' | 'all';
+    milestoneOnly?: boolean;
+  }) => {
     const query = new URLSearchParams();
-    if (domain) query.set('domain', domain);
+    if (filters?.domain) query.set('domain', filters.domain);
+    if (filters?.itemType) query.set('itemType', filters.itemType);
+    if (filters?.timePeriod) query.set('timePeriod', filters.timePeriod);
+    if (filters?.milestoneOnly) query.set('milestoneOnly', 'true');
     return apiRequest<any[]>(`/api/portfolio/${studentId}?${query}`);
   },
 
@@ -328,6 +359,7 @@ export const portfolio = {
     });
   }
 };
+
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio };
 export default api;

@@ -5,10 +5,11 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
-import { UploadSimple, Camera, X, Image as ImageIcon, FileAudio, FileText, SpinnerGap } from '@phosphor-icons/react';
+import { UploadSimple, Camera, X, Image as ImageIcon, FileAudio, FileText, SpinnerGap, Star } from '@phosphor-icons/react';
 import { portfolio } from '@/lib/api';
-import { PortfolioItemType } from '@/types';
+import { PortfolioItemType, MILESTONE_TAGS } from '@/types';
 
 interface PortfolioUploadModalProps {
     studentId: string;
@@ -33,6 +34,8 @@ export function PortfolioUploadModal({
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
+    const [isMilestone, setIsMilestone] = useState(false);
+    const [milestoneTag, setMilestoneTag] = useState<string>('');
     const fileInputRef = useRef<HTMLInputElement>(null);
     const { toast } = useToast();
 
@@ -113,7 +116,8 @@ export function PortfolioUploadModal({
                 itemType: getItemType(file),
                 r2Key: key, // We stored it with 'portfolio/' prefix in the handler if using proxy
                 domain,
-                relatedActivityId
+                relatedActivityId,
+                milestoneTag: isMilestone ? milestoneTag : undefined
             });
 
             toast({
@@ -128,6 +132,8 @@ export function PortfolioUploadModal({
             setDescription('');
             setFile(null);
             setUploadProgress(0);
+            setIsMilestone(false);
+            setMilestoneTag('');
 
         } catch (error) {
             console.error(error);
@@ -154,9 +160,8 @@ export function PortfolioUploadModal({
                 <div className="space-y-4 py-4">
                     {/* File Drop Zone */}
                     <div
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                            file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-                        }`}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+                            }`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                     >
@@ -230,6 +235,36 @@ export function PortfolioUploadModal({
                             value={description}
                             onChange={(e) => setDescription(e.target.value)}
                         />
+                    </div>
+
+                    {/* Milestone Toggle */}
+                    <div className="space-y-3 p-4 border rounded-lg bg-muted/30">
+                        <div className="flex items-center space-x-3">
+                            <Checkbox
+                                id="milestone"
+                                checked={isMilestone}
+                                onCheckedChange={(checked) => setIsMilestone(checked as boolean)}
+                            />
+                            <Label htmlFor="milestone" className="flex items-center gap-2 cursor-pointer">
+                                <Star className="h-4 w-4 text-amber-500" weight={isMilestone ? "fill" : "regular"} />
+                                Mark as Milestone
+                            </Label>
+                        </div>
+                        {isMilestone && (
+                            <Select value={milestoneTag} onValueChange={setMilestoneTag}>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select milestone type" />
+                                </SelectTrigger>
+                                <SelectContent>
+                                    {MILESTONE_TAGS.map((tag) => (
+                                        <SelectItem key={tag} value={tag}>{tag}</SelectItem>
+                                    ))}
+                                </SelectContent>
+                            </Select>
+                        )}
+                        <p className="text-xs text-muted-foreground">
+                            Milestones mark special achievements and appear highlighted in the portfolio.
+                        </p>
                     </div>
                 </div>
 

@@ -374,11 +374,11 @@ app.get('/api/family/tomorrow-preview', async (c) => {
     const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
 
     if (!availableDays.includes(dayOfWeek)) {
-        return c.json({
-            date: tomorrow.toISOString().split('T')[0],
-            restDay: true,
-            summary: "Tomorrow is a rest day. Enjoy time together!"
-        });
+      return c.json({
+        date: tomorrow.toISOString().split('T')[0],
+        restDay: true,
+        summary: "Tomorrow is a rest day. Enjoy time together!"
+      });
     }
 
     // Get plan
@@ -390,11 +390,11 @@ app.get('/api/family/tomorrow-preview', async (c) => {
       .bind(user.id, weekStart).first();
 
     if (!plan) {
-         return c.json({
-            date: tomorrow.toISOString().split('T')[0],
-            needsPlan: true,
-            summary: "You don't have a plan for tomorrow yet."
-        });
+      return c.json({
+        date: tomorrow.toISOString().split('T')[0],
+        needsPlan: true,
+        summary: "You don't have a plan for tomorrow yet."
+      });
     }
 
     const planData = JSON.parse((plan as any).plan_json);
@@ -405,24 +405,24 @@ app.get('/api/family/tomorrow-preview', async (c) => {
     let activities: any[] = [];
 
     if (activityIds.length > 0) {
-        const placeholders = activityIds.map(() => '?').join(',');
-        const { results } = await c.env.DB.prepare(`
+      const placeholders = activityIds.map(() => '?').join(',');
+      const { results } = await c.env.DB.prepare(`
             SELECT id, title, description, domain FROM activities WHERE id IN (${placeholders})
         `).bind(...activityIds).all();
-        activities = results;
+      activities = results;
     }
 
     // Generate AI Summary (lightweight)
     let summary = `You have ${activities.length} activities planned for tomorrow.`;
     if (activities.length > 0) {
-        const domains = [...new Set(activities.map((a: any) => a.domain))];
-        summary += ` Focus areas include ${domains.join(', ')}.`;
+      const domains = [...new Set(activities.map((a: any) => a.domain))];
+      summary += ` Focus areas include ${domains.join(', ')}.`;
     }
 
     return c.json({
-        date: tomorrow.toISOString().split('T')[0],
-        activities,
-        summary
+      date: tomorrow.toISOString().split('T')[0],
+      activities,
+      summary
     });
 
   } catch (error: any) {
@@ -573,20 +573,20 @@ app.get('/api/activities/:id', async (c) => {
 
 // Simple Activity Completion
 app.post('/api/activity-completions', async (c) => {
-    try {
-        const user = requireAuth(c);
-        const { activityId, notes } = await c.req.json();
+  try {
+    const user = requireAuth(c);
+    const { activityId, notes } = await c.req.json();
 
-        const id = crypto.randomUUID();
-        await c.env.DB.prepare(`
+    const id = crypto.randomUUID();
+    await c.env.DB.prepare(`
             INSERT INTO activity_completions (id, parent_id, activity_id, notes)
             VALUES (?, ?, ?, ?)
         `).bind(id, user.id, activityId, notes || null).run();
 
-        return c.json({ success: true, id });
-    } catch (error: any) {
-        return c.json({ error: error.message || 'Failed to record completion' }, 400);
-    }
+    return c.json({ success: true, id });
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to record completion' }, 400);
+  }
 });
 
 // Get today's recommended activities for a student (LEGACY/FALLBACK)
@@ -738,10 +738,10 @@ async function getDailyPractices(db: D1Database) {
   `).all();
 
   return dailyPractices.map((activity: any) => ({
-      ...activity,
-      materials: JSON.parse(activity.materials || '[]'),
-      instructions: JSON.parse(activity.instructions || '[]'),
-      learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+    ...activity,
+    materials: JSON.parse(activity.materials || '[]'),
+    instructions: JSON.parse(activity.instructions || '[]'),
+    learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
   }));
 }
 
@@ -777,19 +777,19 @@ app.get('/api/family/today', async (c) => {
 
     // 3. If not an available day, return REST DAY response
     if (!availableDays.includes(dayOfWeek)) {
-        const dailyPractices = await getDailyPractices(c.env.DB);
+      const dailyPractices = await getDailyPractices(c.env.DB);
 
-        return c.json({
-            date: new Date().toISOString().split('T')[0],
-            children,
-            restDay: true,
-            message: "Today is a rest day! Here are some gentle practices you can do if you'd like.",
-            familySessions: [],
-            dailyPractices,
-            materials: [],
-            totalDuration: 0,
-            coreKitCoverage: 0
-        });
+      return c.json({
+        date: new Date().toISOString().split('T')[0],
+        children,
+        restDay: true,
+        message: "Today is a rest day! Here are some gentle practices you can do if you'd like.",
+        familySessions: [],
+        dailyPractices,
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
+      });
     }
 
     // 4. Get this week's plan
@@ -824,81 +824,81 @@ app.get('/api/family/today', async (c) => {
     let materialsList: any[] = [];
 
     if (activityIds.length > 0) {
-        const placeholders = activityIds.map(() => '?').join(',');
-        const { results: activities } = await c.env.DB.prepare(`
+      const placeholders = activityIds.map(() => '?').join(',');
+      const { results: activities } = await c.env.DB.prepare(`
             SELECT * FROM activities WHERE id IN (${placeholders})
         `).bind(...activityIds).all();
 
-        const activityMap = new Map(activities.map((a: any) => [a.id, a]));
+      const activityMap = new Map(activities.map((a: any) => [a.id, a]));
 
-        familySessions = todaysSlots.map((slot: any) => {
-            const activity: any = activityMap.get(slot.activityId);
-            if (!activity) return null;
+      familySessions = todaysSlots.map((slot: any) => {
+        const activity: any = activityMap.get(slot.activityId);
+        if (!activity) return null;
 
-             const tiers = JSON.parse(activity.tiered_expectations || '[]');
-             const childTiers = children.map((child: any) => {
-                const age = child.age_in_months;
-                let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
-                if (!tier) {
-                    if (age < tiers[0]?.age_min) tier = tiers[0];
-                    else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
-                }
-                return {
-                    childId: child.id,
-                    childName: child.name,
-                    tier: tier?.tier || 'Standard',
-                    expectation: tier?.expectation || 'Participate with support',
-                    childAge: age
-                };
-            });
+        const tiers = JSON.parse(activity.tiered_expectations || '[]');
+        const childTiers = children.map((child: any) => {
+          const age = child.age_in_months;
+          let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+          if (!tier) {
+            if (age < tiers[0]?.age_min) tier = tiers[0];
+            else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+          }
+          return {
+            childId: child.id,
+            childName: child.name,
+            tier: tier?.tier || 'Standard',
+            expectation: tier?.expectation || 'Participate with support',
+            childAge: age
+          };
+        });
 
-            const domainLabels: Record<string, string> = {
-                'motor': 'Stewardship & Dominion',
-                'language': 'Word & Truth',
-                'cognitive': 'Wisdom & Order',
-                'social-emotional': 'Virtue & Sanctification',
-                'pre-academic': 'Foundations & Patterns'
-            };
-            const domainName = domainLabels[activity.domain] || activity.domain;
+        const domainLabels: Record<string, string> = {
+          'motor': 'Stewardship & Dominion',
+          'language': 'Word & Truth',
+          'cognitive': 'Wisdom & Order',
+          'social-emotional': 'Virtue & Sanctification',
+          'pre-academic': 'Foundations & Patterns'
+        };
+        const domainName = domainLabels[activity.domain] || activity.domain;
 
-            return {
-                activity: {
-                    ...activity,
-                    materials: JSON.parse(activity.materials || '[]'),
-                    instructions: JSON.parse(activity.instructions || '[]'),
-                    learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
-                },
-                childTiers,
-                messLevel: activity.mess_level,
-                prepMinutes: activity.prep_time_minutes,
-                materialsAvailable: true, // simplified for now
-                reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`
-            };
-        }).filter(Boolean);
+        return {
+          activity: {
+            ...activity,
+            materials: JSON.parse(activity.materials || '[]'),
+            instructions: JSON.parse(activity.instructions || '[]'),
+            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          },
+          childTiers,
+          messLevel: activity.mess_level,
+          prepMinutes: activity.prep_time_minutes,
+          materialsAvailable: true, // simplified for now
+          reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`
+        };
+      }).filter(Boolean);
 
-         // Collect materials
-         const neededMaterials = new Set<string>();
-         familySessions.forEach((session: any) => {
-           session.activity.materials.forEach((m: string) => neededMaterials.add(m));
-         });
+      // Collect materials
+      const neededMaterials = new Set<string>();
+      familySessions.forEach((session: any) => {
+        session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+      });
 
-         if (neededMaterials.size > 0) {
-           const marks = Array(neededMaterials.size).fill('?').join(',');
-           const { results: existing } = await c.env.DB.prepare(`
+      if (neededMaterials.size > 0) {
+        const marks = Array(neededMaterials.size).fill('?').join(',');
+        const { results: existing } = await c.env.DB.prepare(`
                  SELECT material_name, status FROM family_materials
                  WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
              `).bind(user.id, ...Array.from(neededMaterials)).all();
 
-           const statusMap = new Map();
-           existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
+        const statusMap = new Map();
+        existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
 
-           neededMaterials.forEach(m => {
-             materialsList.push({
-               name: m,
-               status: statusMap.get(m) || 'unknown'
-             });
-           });
-         }
+        neededMaterials.forEach(m => {
+          materialsList.push({
+            name: m,
+            status: statusMap.get(m) || 'unknown'
+          });
+        });
+      }
     }
 
     // Compute metrics
@@ -2577,12 +2577,12 @@ app.get('/api/family/weekly-plan', async (c) => {
 
     const completions: Record<string, any> = {};
     if (completionsResult.results) {
-        completionsResult.results.forEach((r: any) => {
-            completions[r.activity_id] = {
-                completedAt: r.completed_at,
-                type: r.type
-            };
-        });
+      completionsResult.results.forEach((r: any) => {
+        completions[r.activity_id] = {
+          completedAt: r.completed_at,
+          type: r.type
+        };
+      });
     }
 
     // Check for cached plan
@@ -2801,20 +2801,20 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
 
     const completions: Record<string, any> = {};
     if (completionsResult.results) {
-        completionsResult.results.forEach((r: any) => {
-            completions[r.activity_id] = {
-                completedAt: r.completed_at,
-                type: r.type
-            };
-        });
+      completionsResult.results.forEach((r: any) => {
+        completions[r.activity_id] = {
+          completedAt: r.completed_at,
+          type: r.type
+        };
+      });
     }
 
     return c.json({
-        id: planId,
-        weekStart: targetWeek,
-        plan,
-        cached: false,
-        completions
+      id: planId,
+      weekStart: targetWeek,
+      plan,
+      cached: false,
+      completions
     });
 
   } catch (error: any) {
@@ -3047,180 +3047,422 @@ Rules:
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
   }
-});
+  // ============================================
+  // PHASE 2: AI WEEKLY SUMMARIES & FEEDBACK
+  // ============================================
 
-// ============================================
-// PHASE 1: PORTFOLIO STORAGE
-// ============================================
+  // Generate weekly summary with patterns (Phase 2)
+  app.post('/api/ai/weekly-summary', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const { weekStart } = await c.req.json();
 
-// Get upload URL for portfolio item
-app.post('/api/portfolio/upload', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const { filename, contentType } = await c.req.json();
+      if (!weekStart) {
+        return c.json({ error: 'weekStart is required' }, 400);
+      }
 
-    if (!filename || !contentType) {
-      return c.json({ error: 'filename and contentType required' }, 400);
+      // Calculate week end
+      const weekEndDate = new Date(weekStart);
+      weekEndDate.setDate(weekEndDate.getDate() + 6);
+      const weekEnd = weekEndDate.toISOString().split('T')[0];
+
+      // Get children
+      const { results: children } = await c.env.DB.prepare(
+        'SELECT id, name, age_in_months FROM students WHERE parent_id = ?'
+      ).bind(user.id).all();
+
+      // Get completions for the week
+      const { results: completions } = await c.env.DB.prepare(`
+      SELECT ac.activity_id, ac.completed_at, ac.notes, a.title, a.domain
+      FROM activity_completions ac
+      JOIN activities a ON ac.activity_id = a.id
+      WHERE ac.parent_id = ? AND date(ac.completed_at) >= ? AND date(ac.completed_at) <= ?
+    `).bind(user.id, weekStart, weekEnd).all();
+
+      // Get observations for the week
+      const { results: observations } = await c.env.DB.prepare(`
+      SELECT o.activity_id, o.mastery_level, o.parent_notes, o.completed_at, 
+             a.title, a.domain, s.name as child_name
+      FROM observations o
+      JOIN activities a ON o.activity_id = a.id
+      JOIN students s ON o.student_id = s.id
+      WHERE s.parent_id = ? AND date(o.completed_at) >= ? AND date(o.completed_at) <= ?
+    `).bind(user.id, weekStart, weekEnd).all();
+
+      if (completions.length === 0 && observations.length === 0) {
+        return c.json({
+          summary: "This week hasn't had any recorded activities yet. That's perfectly okay – rest and family time are valuable too!",
+          patterns: [],
+          suggestedQuestions: []
+        });
+      }
+
+      // Build context for AI
+      const completionContext = completions.map((c: any) =>
+        `- ${c.title} (${c.domain}) completed on ${c.completed_at}${c.notes ? ': ' + c.notes : ''}`
+      ).join('\n');
+
+      const observationContext = observations.map((o: any) =>
+        `- ${o.child_name} on "${o.title}" (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' - ' + o.parent_notes : ''}`
+      ).join('\n');
+
+      const systemPrompt = `You are SchoolOS, a Christian homeschool assistant. Generate a warm, encouraging weekly summary for parents.
+
+IMPORTANT: Your language must be ADVISORY, never AUTHORITATIVE. Use phrases like:
+- "I noticed..." instead of "Your child should..."
+- "You might consider..." instead of "You need to..."
+- "It seems like..." instead of "Your child is..."
+
+Children: ${children.map((c: any) => `${c.name} (${Math.floor(c.age_in_months / 12)} years)`).join(', ')}
+
+Activities completed this week:
+${completionContext || 'No activities recorded'}
+
+Observations recorded:
+${observationContext || 'No observations recorded'}
+
+Generate:
+1. A 2-3 paragraph summary of what happened this week (celebratory, not evaluative)
+2. 2-3 patterns you noticed (phrased as observations, not judgments)
+3. 2-3 discussion questions the parent could use
+
+Output as JSON:
+{
+  "summary": "string",
+  "patterns": ["string", "string"],
+  "suggestedQuestions": ["string", "string"]
+}`;
+
+      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Generate the weekly summary.' }
+        ],
+        max_tokens: 800
+      });
+
+      // Parse response
+      let parsed;
+      try {
+        const jsonStr = response.response.match(/\{[\s\S]*\}/)?.[0] || response.response;
+        parsed = JSON.parse(jsonStr);
+      } catch {
+        parsed = {
+          summary: response.response,
+          patterns: [],
+          suggestedQuestions: []
+        };
+      }
+
+      return c.json({
+        weekStart,
+        weekEnd,
+        completionCount: completions.length,
+        observationCount: observations.length,
+        ...parsed
+      });
+    } catch (error: any) {
+      console.error('Weekly summary error:', error);
+      const status = error.message === 'Unauthorized' ? 401 : 500;
+      return c.json({ error: error.message }, status);
     }
+  });
 
-    const key = `${user.id}/${Date.now()}-${filename}`;
+  // Generate draft feedback text for parents to edit (Phase 2)
+  app.post('/api/ai/feedback-draft', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const { studentId, weekStart, context } = await c.req.json();
 
-    // In a real R2 setup, we would generate a presigned URL here.
-    // Since we are using R2 bindings directly in the worker for now,
-    // we might need a different approach for direct uploads from frontend.
-    // For MVP, we can proxy the upload or use a PUT endpoint.
+      if (!studentId) {
+        return c.json({ error: 'studentId is required' }, 400);
+      }
 
-    // However, the standard R2 way is presigned URLs.
-    // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
-    // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
+      // Get student info
+      const student = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+      ).bind(studentId, user.id).first();
 
-    // Use current worker origin for upload handler
-    const baseUrl = new URL(c.req.url).origin;
+      if (!student) {
+        return c.json({ error: 'Student not found' }, 404);
+      }
 
-    return c.json({
-      uploadUrl: `${baseUrl}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
-      key,
-      publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
+      // Get recent observations
+      const { results: observations } = await c.env.DB.prepare(`
+      SELECT o.mastery_level, o.parent_notes, o.completed_at, a.title, a.domain
+      FROM observations o
+      JOIN activities a ON o.activity_id = a.id
+      WHERE o.student_id = ?
+      ORDER BY o.completed_at DESC
+      LIMIT 10
+    `).bind(studentId).all();
 
-// Handle direct upload (MVP alternative to presigned URLs)
-app.put('/api/portfolio/upload-handler', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const key = c.req.query('key');
+      const observationContext = observations.map((o: any) =>
+        `- ${o.title} (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' – ' + o.parent_notes : ''}`
+      ).join('\n');
 
-    if (!key || !key.startsWith(user.id)) {
-      return c.json({ error: 'Invalid key or unauthorized' }, 403);
+      const systemPrompt = `You are helping a homeschooling parent draft observational notes about their child.
+
+Child: ${(student as any).name}, age ${Math.floor((student as any).age_in_months / 12)} years
+
+Recent observations:
+${observationContext || 'No recent observations'}
+
+${context ? `Additional context from parent: ${context}` : ''}
+
+Write a warm, narrative draft (2-3 paragraphs) that:
+- Uses "I" perspective (parent voice)
+- Focuses on GROWTH and CHARACTER, not metrics
+- Celebrates specific moments
+- Avoids comparisons or grade-level language
+- Can be edited by the parent before saving
+
+The parent will edit this before using it. Make it personal and warm.`;
+
+      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: 'Generate the feedback draft.' }
+        ],
+        max_tokens: 500
+      });
+
+      return c.json({
+        draft: response.response,
+        studentName: (student as any).name,
+        isEditable: true,
+        note: "This is a draft. Please review and edit before saving to the portfolio."
+      });
+    } catch (error: any) {
+      console.error('Feedback draft error:', error);
+      const status = error.message === 'Unauthorized' ? 401 : 500;
+      return c.json({ error: error.message }, status);
     }
+  });
 
-    const body = await c.req.arrayBuffer();
+  // ============================================
+  // PHASE 1: PORTFOLIO STORAGE
+  // ============================================
 
-    // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
-    // Ideally we add PORTFOLIO_BUCKET to Env
-    // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
-    // Using BOOKS_BUCKET for now as "storage" bucket
-    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
+  // Get upload URL for portfolio item
+  app.post('/api/portfolio/upload', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const { filename, contentType } = await c.req.json();
 
-    return c.json({ success: true, key: `portfolio/${key}` });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
+      if (!filename || !contentType) {
+        return c.json({ error: 'filename and contentType required' }, 400);
+      }
 
-// Create portfolio item record
-app.post('/api/portfolio/items', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const body = await c.req.json();
-    const { studentId, title, description, itemType, r2Key, domain, relatedActivityId } = body;
+      const key = `${user.id}/${Date.now()}-${filename}`;
 
-    if (!studentId || !title || !itemType) {
-      return c.json({ error: 'studentId, title, and itemType are required' }, 400);
+      // In a real R2 setup, we would generate a presigned URL here.
+      // Since we are using R2 bindings directly in the worker for now,
+      // we might need a different approach for direct uploads from frontend.
+      // For MVP, we can proxy the upload or use a PUT endpoint.
+
+      // However, the standard R2 way is presigned URLs.
+      // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
+      // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
+
+      // Use current worker origin for upload handler
+      const baseUrl = new URL(c.req.url).origin;
+
+      return c.json({
+        uploadUrl: `${baseUrl}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
+        key,
+        publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
+      });
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     }
+  });
 
-    const id = generateId('port');
-    await c.env.DB.prepare(`
-      INSERT INTO portfolio_items (id, student_id, parent_id, title, description, item_type, r2_key, domain, related_activity_id)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-    `).bind(id, studentId, user.id, title, description, itemType, r2Key, domain, relatedActivityId).run();
+  // Handle direct upload (MVP alternative to presigned URLs)
+  app.put('/api/portfolio/upload-handler', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const key = c.req.query('key');
 
-    return c.json({ id, success: true }, 201);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
+      if (!key || !key.startsWith(user.id)) {
+        return c.json({ error: 'Invalid key or unauthorized' }, 403);
+      }
 
-// List portfolio items
-app.get('/api/portfolio/:studentId', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const studentId = c.req.param('studentId');
-    const domain = c.req.query('domain');
+      const body = await c.req.arrayBuffer();
 
-    let query = 'SELECT * FROM portfolio_items WHERE student_id = ? AND parent_id = ?';
-    const params: any[] = [studentId, user.id];
+      // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
+      // Ideally we add PORTFOLIO_BUCKET to Env
+      // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
+      // Using BOOKS_BUCKET for now as "storage" bucket
+      await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
 
-    if (domain) {
-      query += ' AND domain = ?';
-      params.push(domain);
+      return c.json({ success: true, key: `portfolio/${key}` });
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     }
+  });
 
-    query += ' ORDER BY created_at DESC';
+  // Create portfolio item record
+  app.post('/api/portfolio/items', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const body = await c.req.json();
+      const { studentId, title, description, itemType, r2Key, domain, relatedActivityId, milestoneTag } = body;
 
-    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+      if (!studentId || !title || !itemType) {
+        return c.json({ error: 'studentId, title, and itemType are required' }, 400);
+      }
 
-    // Map results to include public URLs
-    const items = results.map((item: any) => ({
-      ...item,
-      // If r2_key exists, generate a view URL (this would be a proxied endpoint)
-      publicUrl: item.r2_key ? `/api/portfolio/file/${encodeURIComponent(item.r2_key)}` : null
-    }));
+      const id = generateId('port');
+      await c.env.DB.prepare(`
+      INSERT INTO portfolio_items (id, student_id, parent_id, title, description, item_type, r2_key, domain, related_activity_id, milestone_tag)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, studentId, user.id, title, description, itemType, r2Key, domain, relatedActivityId, milestoneTag || null).run();
 
-    return c.json(items);
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
-
-// Serve portfolio file
-app.get('/api/portfolio/file/:key', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
-
-    // Check ownership by ensuring the key contains the user ID (part of the path strategy)
-    // The key structure we defined is `portfolio/USER_ID/filename`
-    // So we check if key contains user.id
-    if (!key.includes(user.id)) {
-       return c.json({ error: 'Unauthorized access to file' }, 403);
+      return c.json({ id, success: true }, 201);
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     }
+  });
 
-    const object = await c.env.BOOKS_BUCKET.get(key);
+  // List portfolio items with filtering
+  app.get('/api/portfolio/:studentId', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const studentId = c.req.param('studentId');
+      const domain = c.req.query('domain');
+      const itemType = c.req.query('itemType');
+      const timePeriod = c.req.query('timePeriod'); // 'week', 'month', 'year', 'all'
+      const milestoneOnly = c.req.query('milestoneOnly') === 'true';
 
-    if (!object) {
-      return c.json({ error: 'File not found' }, 404);
+      let query = 'SELECT * FROM portfolio_items WHERE student_id = ? AND parent_id = ?';
+      const params: any[] = [studentId, user.id];
+
+      if (domain) {
+        query += ' AND domain = ?';
+        params.push(domain);
+      }
+
+      if (itemType) {
+        query += ' AND item_type = ?';
+        params.push(itemType);
+      }
+
+      if (milestoneOnly) {
+        query += ' AND milestone_tag IS NOT NULL';
+      }
+
+      // Time period filtering
+      if (timePeriod && timePeriod !== 'all') {
+        const now = new Date();
+        let startDate: string;
+
+        switch (timePeriod) {
+          case 'week':
+            const weekAgo = new Date(now);
+            weekAgo.setDate(weekAgo.getDate() - 7);
+            startDate = weekAgo.toISOString().split('T')[0];
+            break;
+          case 'month':
+            const monthAgo = new Date(now);
+            monthAgo.setMonth(monthAgo.getMonth() - 1);
+            startDate = monthAgo.toISOString().split('T')[0];
+            break;
+          case 'year':
+            const yearAgo = new Date(now);
+            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+            startDate = yearAgo.toISOString().split('T')[0];
+            break;
+          default:
+            startDate = '';
+        }
+
+        if (startDate) {
+          query += ' AND date(created_at) >= ?';
+          params.push(startDate);
+        }
+      }
+
+      query += ' ORDER BY created_at DESC';
+
+      const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+      // Map results to include public URLs and camelCase fields
+      const items = results.map((item: any) => ({
+        id: item.id,
+        studentId: item.student_id,
+        parentId: item.parent_id,
+        title: item.title,
+        description: item.description,
+        itemType: item.item_type,
+        domain: item.domain,
+        relatedActivityId: item.related_activity_id,
+        milestoneTag: item.milestone_tag,
+        createdAt: item.created_at,
+        publicUrl: item.r2_key ? `/api/portfolio/file/${encodeURIComponent(item.r2_key)}` : null
+      }));
+
+      return c.json(items);
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     }
+  });
 
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('etag', object.httpEtag);
+  // Serve portfolio file
+  app.get('/api/portfolio/file/:key', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
 
-    return new Response(object.body, {
-      headers,
-    });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
+      // Check ownership by ensuring the key contains the user ID (part of the path strategy)
+      // The key structure we defined is `portfolio/USER_ID/filename`
+      // So we check if key contains user.id
+      if (!key.includes(user.id)) {
+        return c.json({ error: 'Unauthorized access to file' }, 403);
+      }
 
-// Delete portfolio item
-app.delete('/api/portfolio/:itemId', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const itemId = c.req.param('itemId');
+      const object = await c.env.BOOKS_BUCKET.get(key);
 
-    const item = await c.env.DB.prepare(
-      'SELECT * FROM portfolio_items WHERE id = ? AND parent_id = ?'
-    ).bind(itemId, user.id).first();
+      if (!object) {
+        return c.json({ error: 'File not found' }, 404);
+      }
 
-    if (!item) return c.json({ error: 'Item not found' }, 404);
+      const headers = new Headers();
+      object.writeHttpMetadata(headers);
+      headers.set('etag', object.httpEtag);
 
-    // Delete from R2 if key exists
-    if ((item as any).r2_key) {
-      await c.env.BOOKS_BUCKET.delete((item as any).r2_key);
+      return new Response(object.body, {
+        headers,
+      });
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
     }
+  });
 
-    // Delete from DB
-    await c.env.DB.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(itemId).run();
+  // Delete portfolio item
+  app.delete('/api/portfolio/:itemId', async (c) => {
+    try {
+      const user = requireAuth(c);
+      const itemId = c.req.param('itemId');
 
-    return c.json({ success: true });
-  } catch (error: any) {
-    return c.json({ error: error.message }, 500);
-  }
-});
+      const item = await c.env.DB.prepare(
+        'SELECT * FROM portfolio_items WHERE id = ? AND parent_id = ?'
+      ).bind(itemId, user.id).first();
 
-export default app;
+      if (!item) return c.json({ error: 'Item not found' }, 404);
+
+      // Delete from R2 if key exists
+      if ((item as any).r2_key) {
+        await c.env.BOOKS_BUCKET.delete((item as any).r2_key);
+      }
+
+      // Delete from DB
+      await c.env.DB.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(itemId).run();
+
+      return c.json({ success: true });
+    } catch (error: any) {
+      return c.json({ error: error.message }, 500);
+    }
+  });
+
+  export default app;

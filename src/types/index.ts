@@ -339,6 +339,27 @@ export interface ParentComment {
 
 export type PortfolioItemType = 'image' | 'audio' | 'document' | 'text';
 
+// Milestone tags for Phase 2 (narrative achievements, not scores)
+export const MILESTONE_TAGS = [
+  'First Steps',
+  'First Words',
+  'Counting to 10',
+  'Recognizing Letters',
+  'Writing Name',
+  'Reading First Book',
+  'Completed Project',
+  'Artistic Achievement',
+  'Musical Achievement',
+  'Scientific Discovery',
+  'Acts of Service',
+  'Biblical Memorization',
+  'Physical Milestone',
+  'Social Achievement',
+  'Other Milestone'
+] as const;
+
+export type MilestoneTag = typeof MILESTONE_TAGS[number];
+
 export interface PortfolioItem {
   id: string;
   studentId: string;
@@ -350,10 +371,12 @@ export interface PortfolioItem {
   publicUrl?: string; // Generated signed URL
   domain?: EarlyYearsDomain | string;
   relatedActivityId?: string;
+  milestoneTag?: MilestoneTag | string;
   createdAt: string;
 }
 
 export * from './overrides';
+
 
 // ============================================
 // Unified Weekly Planner

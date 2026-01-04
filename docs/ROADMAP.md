@@ -127,20 +127,20 @@ This phase proves:
 - [ ] Clear daily/weekly rhythms visualization
 - [ ] Family time vs individual time separation (enhanced UI)
 - [ ] Simple scope & sequence views (read-only parent dashboard)
-- [ ] Week navigation and history view
+- [x] Week navigation and history view
 
 #### Assessment Expansion
-- [ ] Portfolios organized by:
+- [x] Portfolios organized by:
   - Subject
   - Time
   - Type (writing, activity, project)
-- [ ] Milestone tags (not scores)
+- [x] Milestone tags (not scores)
 - [ ] Long-term progress visualization (growth over time)
 
 #### AI (Still Parent-Only)
-- [ ] Weekly summaries: "Here's what happened" / "Here are patterns I noticed"
-- [ ] Draft discussion questions
-- [ ] Draft feedback text for parents to edit
+- [x] Weekly summaries: "Here's what happened" / "Here are patterns I noticed"
+- [x] Draft discussion questions
+- [x] Draft feedback text for parents to edit
 
 ### What Still Does NOT Exist
 - Auto-advancement
@@ -333,7 +333,7 @@ If it weakens it, the feature waits.
 | :--- | :--- | :--- |
 | Phase 0: Constitutional | ✅ Complete | All governance docs |
 | Phase 1: Faithful Minimum | ✅ Complete | Core features, content gaps |
-| Phase 2: Order & Visibility | ⬜ Not Started | Portfolios, summaries |
+| Phase 2: Order & Visibility | 🔄 In Progress | Portfolios, summaries, week nav ✅ |
 | Phase 3: Graduated Independence | ⬜ Not Started | Student views, toggles |
 | Phase 4: Pace Flexibility | ⬜ Not Started | Advancement controls |
 | Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |

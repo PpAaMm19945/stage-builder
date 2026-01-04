@@ -21,32 +21,33 @@ import {
 } from '@phosphor-icons/react';
 import { format, addWeeks, subWeeks, startOfWeek, isSameDay, parseISO, isPast, isFuture, startOfDay } from 'date-fns';
 import { ExplainButton } from '@/components/ai/ExplainButton';
+import { WeeklySummary } from '@/components/planning/WeeklySummary';
 import { WeeklyPlan, PlanSlot, DOMAIN_LABELS } from '@/types';
 import { toast } from 'sonner';
 import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
+    Dialog,
+    DialogContent,
+    DialogDescription,
+    DialogFooter,
+    DialogHeader,
+    DialogTitle,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 
 // Helper to get smart week start (matches backend)
 function getSmartWeekStart(date = new Date()) {
-  const day = date.getDay();
-  const d = new Date(date);
-  // If Saturday (6) or Sunday (0), target NEXT Monday
-  if (day === 0 || day === 6) {
-    const daysUntilMonday = day === 0 ? 1 : 2;
-    d.setDate(d.getDate() + daysUntilMonday);
-  } else {
-    // Mon-Fri: target THIS Monday
-    d.setDate(d.getDate() - (day - 1));
-  }
-  return startOfDay(d);
+    const day = date.getDay();
+    const d = new Date(date);
+    // If Saturday (6) or Sunday (0), target NEXT Monday
+    if (day === 0 || day === 6) {
+        const daysUntilMonday = day === 0 ? 1 : 2;
+        d.setDate(d.getDate() + daysUntilMonday);
+    } else {
+        // Mon-Fri: target THIS Monday
+        d.setDate(d.getDate() - (day - 1));
+    }
+    return startOfDay(d);
 }
 
 export default function Planner() {
@@ -253,6 +254,11 @@ export default function Planner() {
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
+
+            {/* Weekly Summary for Past Weeks */}
+            {isPastWeek(currentWeek) && (
+                <WeeklySummary weekStart={weekStartStr} isPastWeek={isPastWeek(currentWeek)} />
+            )}
 
             {/* Content */}
             {isLoading ? (
