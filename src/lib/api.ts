@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -307,6 +307,51 @@ export const ai = {
       isEditable: boolean;
       note: string;
     }>('/api/ai/feedback-draft', { method: 'POST', body: JSON.stringify({ studentId, ...options }) }),
+
+  // Phase 3: Child-facing explain (logged for parent visibility)
+  childExplain: (studentId: string, question: string, context?: { activityId?: string; activityTitle?: string; domain?: string }) =>
+    apiRequest<{ answer: string; sources?: string[] }>('/api/ai/child-explain', {
+      method: 'POST',
+      body: JSON.stringify({ studentId, question, context }),
+    }),
+
+  // Phase 3: Get AI interaction logs (parent visibility)
+  getInteractionLog: (studentId?: string) =>
+    apiRequest<AIInteractionLog[]>(`/api/ai/interactions${studentId ? `?studentId=${studentId}` : ''}`),
+};
+
+// Phase 3: Independence Settings
+export const independence = {
+  // Get all settings for a student
+  get: (studentId: string) =>
+    apiRequest<IndependenceSettings[]>(`/api/independence-settings/${studentId}`),
+
+  // Update or create a setting for a student/subject pair
+  update: (studentId: string, data: {
+    subject: string;
+    level: 'parent_led' | 'guided' | 'independent';
+    canMarkComplete?: boolean;
+    canAskAi?: boolean;
+    canViewPortfolio?: boolean;
+  }) =>
+    apiRequest<IndependenceSettings>(`/api/independence-settings/${studentId}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    }),
+};
+
+// Phase 3: Student View
+export const studentView = {
+  // Get student view data (tasks, portfolio, permissions based on independence settings)
+  get: (studentId: string) =>
+    apiRequest<StudentViewData>(`/api/student-view/${studentId}`),
+
+  // Mark a task complete (only if permitted)
+  markComplete: (studentId: string, activityId: string, notes?: string) =>
+    apiRequest<{ success: boolean }>(`/api/student-view/${studentId}/complete`, {
+      method: 'POST',
+      body: JSON.stringify({ activityId, notes }),
+    }),
 };
 
 
@@ -361,5 +406,6 @@ export const portfolio = {
 };
 
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio };
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView };
 export default api;
+

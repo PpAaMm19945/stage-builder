@@ -32,6 +32,7 @@ import ProgressPage from "./pages/early-years/Progress";
 import Reading from "./pages/early-years/Reading";
 import PortfolioPage from "./pages/early-years/Portfolio";
 import Settings from "./pages/Settings";
+import StudentView from "./pages/StudentView";
 import LockedStage from "./pages/stages/LockedStage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
@@ -80,6 +81,9 @@ const App = () => (
 
                   {/* Settings */}
                   <Route path="/settings" element={<Settings />} />
+
+                  {/* Phase 3: Student View */}
+                  <Route path="/student/:studentId" element={<StudentView />} />
                 </Route>
 
                 {/* Catch-all */}

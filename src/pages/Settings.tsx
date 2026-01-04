@@ -27,13 +27,17 @@ import {
   BookBookmark,
   MusicNotes,
   Scroll,
-  Cross
+  Cross,
+  GraduationCap,
+  Robot
 } from '@phosphor-icons/react';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { students, family, liturgy } from '@/lib/api';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
 import { TimeModelEditor } from '@/components/planning/TimeModelEditor';
+import { IndependenceManager } from '@/components/independence/IndependenceManager';
+import { AIInteractionLog as AIInteractionLogComponent } from '@/components/ai/AIInteractionLog';
 
 import { toast } from 'sonner';
 import { Switch } from '@/components/ui/switch';
@@ -310,6 +314,38 @@ export default function Settings() {
               )}
             </div>
           )}
+        </CardContent>
+      </Card>
+
+      {/* Phase 3: Child Independence Levels */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <GraduationCap className="h-5 w-5" weight="duotone" />
+            Child Independence Levels
+          </CardTitle>
+          <CardDescription>
+            Control what each child can do independently. This lets older children take more ownership of their learning.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <IndependenceManager />
+        </CardContent>
+      </Card>
+
+      {/* Phase 3: AI Interaction History */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2 text-lg">
+            <Robot className="h-5 w-5" weight="duotone" />
+            AI Interaction History
+          </CardTitle>
+          <CardDescription>
+            Review all AI conversations your children have had. Full visibility ensures you remain in authority.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AIInteractionLogComponent />
         </CardContent>
       </Card>
 

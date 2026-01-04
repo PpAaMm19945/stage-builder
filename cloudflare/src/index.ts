@@ -3047,40 +3047,42 @@ Rules:
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
   }
-  // ============================================
-  // PHASE 2: AI WEEKLY SUMMARIES & FEEDBACK
-  // ============================================
+});
 
-  // Generate weekly summary with patterns (Phase 2)
-  app.post('/api/ai/weekly-summary', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const { weekStart } = await c.req.json();
+// ============================================
+// PHASE 2: AI WEEKLY SUMMARIES & FEEDBACK
+// ============================================
 
-      if (!weekStart) {
-        return c.json({ error: 'weekStart is required' }, 400);
-      }
+// Generate weekly summary with patterns (Phase 2)
+app.post('/api/ai/weekly-summary', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { weekStart } = await c.req.json();
 
-      // Calculate week end
-      const weekEndDate = new Date(weekStart);
-      weekEndDate.setDate(weekEndDate.getDate() + 6);
-      const weekEnd = weekEndDate.toISOString().split('T')[0];
+    if (!weekStart) {
+      return c.json({ error: 'weekStart is required' }, 400);
+    }
 
-      // Get children
-      const { results: children } = await c.env.DB.prepare(
-        'SELECT id, name, age_in_months FROM students WHERE parent_id = ?'
-      ).bind(user.id).all();
+    // Calculate week end
+    const weekEndDate = new Date(weekStart);
+    weekEndDate.setDate(weekEndDate.getDate() + 6);
+    const weekEnd = weekEndDate.toISOString().split('T')[0];
 
-      // Get completions for the week
-      const { results: completions } = await c.env.DB.prepare(`
+    // Get children
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT id, name, age_in_months FROM students WHERE parent_id = ?'
+    ).bind(user.id).all();
+
+    // Get completions for the week
+    const { results: completions } = await c.env.DB.prepare(`
       SELECT ac.activity_id, ac.completed_at, ac.notes, a.title, a.domain
       FROM activity_completions ac
       JOIN activities a ON ac.activity_id = a.id
       WHERE ac.parent_id = ? AND date(ac.completed_at) >= ? AND date(ac.completed_at) <= ?
     `).bind(user.id, weekStart, weekEnd).all();
 
-      // Get observations for the week
-      const { results: observations } = await c.env.DB.prepare(`
+    // Get observations for the week
+    const { results: observations } = await c.env.DB.prepare(`
       SELECT o.activity_id, o.mastery_level, o.parent_notes, o.completed_at, 
              a.title, a.domain, s.name as child_name
       FROM observations o
@@ -3089,24 +3091,24 @@ Rules:
       WHERE s.parent_id = ? AND date(o.completed_at) >= ? AND date(o.completed_at) <= ?
     `).bind(user.id, weekStart, weekEnd).all();
 
-      if (completions.length === 0 && observations.length === 0) {
-        return c.json({
-          summary: "This week hasn't had any recorded activities yet. That's perfectly okay – rest and family time are valuable too!",
-          patterns: [],
-          suggestedQuestions: []
-        });
-      }
+    if (completions.length === 0 && observations.length === 0) {
+      return c.json({
+        summary: "This week hasn't had any recorded activities yet. That's perfectly okay – rest and family time are valuable too!",
+        patterns: [],
+        suggestedQuestions: []
+      });
+    }
 
-      // Build context for AI
-      const completionContext = completions.map((c: any) =>
-        `- ${c.title} (${c.domain}) completed on ${c.completed_at}${c.notes ? ': ' + c.notes : ''}`
-      ).join('\n');
+    // Build context for AI
+    const completionContext = completions.map((c: any) =>
+      `- ${c.title} (${c.domain}) completed on ${c.completed_at}${c.notes ? ': ' + c.notes : ''}`
+    ).join('\n');
 
-      const observationContext = observations.map((o: any) =>
-        `- ${o.child_name} on "${o.title}" (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' - ' + o.parent_notes : ''}`
-      ).join('\n');
+    const observationContext = observations.map((o: any) =>
+      `- ${o.child_name} on "${o.title}" (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' - ' + o.parent_notes : ''}`
+    ).join('\n');
 
-      const systemPrompt = `You are SchoolOS, a Christian homeschool assistant. Generate a warm, encouraging weekly summary for parents.
+    const systemPrompt = `You are SchoolOS, a Christian homeschool assistant. Generate a warm, encouraging weekly summary for parents.
 
 IMPORTANT: Your language must be ADVISORY, never AUTHORITATIVE. Use phrases like:
 - "I noticed..." instead of "Your child should..."
@@ -3133,62 +3135,62 @@ Output as JSON:
   "suggestedQuestions": ["string", "string"]
 }`;
 
-      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Generate the weekly summary.' }
-        ],
-        max_tokens: 800
-      });
+    const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Generate the weekly summary.' }
+      ],
+      max_tokens: 800
+    });
 
-      // Parse response
-      let parsed;
-      try {
-        const jsonStr = response.response.match(/\{[\s\S]*\}/)?.[0] || response.response;
-        parsed = JSON.parse(jsonStr);
-      } catch {
-        parsed = {
-          summary: response.response,
-          patterns: [],
-          suggestedQuestions: []
-        };
-      }
-
-      return c.json({
-        weekStart,
-        weekEnd,
-        completionCount: completions.length,
-        observationCount: observations.length,
-        ...parsed
-      });
-    } catch (error: any) {
-      console.error('Weekly summary error:', error);
-      const status = error.message === 'Unauthorized' ? 401 : 500;
-      return c.json({ error: error.message }, status);
-    }
-  });
-
-  // Generate draft feedback text for parents to edit (Phase 2)
-  app.post('/api/ai/feedback-draft', async (c) => {
+    // Parse response
+    let parsed;
     try {
-      const user = requireAuth(c);
-      const { studentId, weekStart, context } = await c.req.json();
+      const jsonStr = response.response.match(/\{[\s\S]*\}/)?.[0] || response.response;
+      parsed = JSON.parse(jsonStr);
+    } catch {
+      parsed = {
+        summary: response.response,
+        patterns: [],
+        suggestedQuestions: []
+      };
+    }
 
-      if (!studentId) {
-        return c.json({ error: 'studentId is required' }, 400);
-      }
+    return c.json({
+      weekStart,
+      weekEnd,
+      completionCount: completions.length,
+      observationCount: observations.length,
+      ...parsed
+    });
+  } catch (error: any) {
+    console.error('Weekly summary error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
 
-      // Get student info
-      const student = await c.env.DB.prepare(
-        'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-      ).bind(studentId, user.id).first();
+// Generate draft feedback text for parents to edit (Phase 2)
+app.post('/api/ai/feedback-draft', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, weekStart, context } = await c.req.json();
 
-      if (!student) {
-        return c.json({ error: 'Student not found' }, 404);
-      }
+    if (!studentId) {
+      return c.json({ error: 'studentId is required' }, 400);
+    }
 
-      // Get recent observations
-      const { results: observations } = await c.env.DB.prepare(`
+    // Get student info
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    // Get recent observations
+    const { results: observations } = await c.env.DB.prepare(`
       SELECT o.mastery_level, o.parent_notes, o.completed_at, a.title, a.domain
       FROM observations o
       JOIN activities a ON o.activity_id = a.id
@@ -3197,11 +3199,11 @@ Output as JSON:
       LIMIT 10
     `).bind(studentId).all();
 
-      const observationContext = observations.map((o: any) =>
-        `- ${o.title} (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' – ' + o.parent_notes : ''}`
-      ).join('\n');
+    const observationContext = observations.map((o: any) =>
+      `- ${o.title} (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' – ' + o.parent_notes : ''}`
+    ).join('\n');
 
-      const systemPrompt = `You are helping a homeschooling parent draft observational notes about their child.
+    const systemPrompt = `You are helping a homeschooling parent draft observational notes about their child.
 
 Child: ${(student as any).name}, age ${Math.floor((student as any).age_in_months / 12)} years
 
@@ -3219,250 +3221,634 @@ Write a warm, narrative draft (2-3 paragraphs) that:
 
 The parent will edit this before using it. Make it personal and warm.`;
 
-      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: 'Generate the feedback draft.' }
-        ],
-        max_tokens: 500
-      });
+    const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: 'Generate the feedback draft.' }
+      ],
+      max_tokens: 500
+    });
 
-      return c.json({
-        draft: response.response,
-        studentName: (student as any).name,
-        isEditable: true,
-        note: "This is a draft. Please review and edit before saving to the portfolio."
-      });
-    } catch (error: any) {
-      console.error('Feedback draft error:', error);
-      const status = error.message === 'Unauthorized' ? 401 : 500;
-      return c.json({ error: error.message }, status);
+    return c.json({
+      draft: response.response,
+      studentName: (student as any).name,
+      isEditable: true,
+      note: "This is a draft. Please review and edit before saving to the portfolio."
+    });
+  } catch (error: any) {
+    console.error('Feedback draft error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// ============================================
+// PHASE 1: PORTFOLIO STORAGE
+// ============================================
+
+// Get upload URL for portfolio item
+app.post('/api/portfolio/upload', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { filename, contentType } = await c.req.json();
+
+    if (!filename || !contentType) {
+      return c.json({ error: 'filename and contentType required' }, 400);
     }
-  });
 
-  // ============================================
-  // PHASE 1: PORTFOLIO STORAGE
-  // ============================================
+    const key = `${user.id}/${Date.now()}-${filename}`;
 
-  // Get upload URL for portfolio item
-  app.post('/api/portfolio/upload', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const { filename, contentType } = await c.req.json();
+    // In a real R2 setup, we would generate a presigned URL here.
+    // Since we are using R2 bindings directly in the worker for now,
+    // we might need a different approach for direct uploads from frontend.
+    // For MVP, we can proxy the upload or use a PUT endpoint.
 
-      if (!filename || !contentType) {
-        return c.json({ error: 'filename and contentType required' }, 400);
-      }
+    // However, the standard R2 way is presigned URLs.
+    // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
+    // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
 
-      const key = `${user.id}/${Date.now()}-${filename}`;
+    // Use current worker origin for upload handler
+    const baseUrl = new URL(c.req.url).origin;
 
-      // In a real R2 setup, we would generate a presigned URL here.
-      // Since we are using R2 bindings directly in the worker for now,
-      // we might need a different approach for direct uploads from frontend.
-      // For MVP, we can proxy the upload or use a PUT endpoint.
+    return c.json({
+      uploadUrl: `${baseUrl}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
+      key,
+      publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
 
-      // However, the standard R2 way is presigned URLs.
-      // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
-      // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
+// Handle direct upload (MVP alternative to presigned URLs)
+app.put('/api/portfolio/upload-handler', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const key = c.req.query('key');
 
-      // Use current worker origin for upload handler
-      const baseUrl = new URL(c.req.url).origin;
-
-      return c.json({
-        uploadUrl: `${baseUrl}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
-        key,
-        publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
-      });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    if (!key || !key.startsWith(user.id)) {
+      return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
-  });
 
-  // Handle direct upload (MVP alternative to presigned URLs)
-  app.put('/api/portfolio/upload-handler', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const key = c.req.query('key');
+    const body = await c.req.arrayBuffer();
 
-      if (!key || !key.startsWith(user.id)) {
-        return c.json({ error: 'Invalid key or unauthorized' }, 403);
-      }
+    // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
+    // Ideally we add PORTFOLIO_BUCKET to Env
+    // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
+    // Using BOOKS_BUCKET for now as "storage" bucket
+    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
 
-      const body = await c.req.arrayBuffer();
+    return c.json({ success: true, key: `portfolio/${key}` });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
 
-      // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
-      // Ideally we add PORTFOLIO_BUCKET to Env
-      // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
-      // Using BOOKS_BUCKET for now as "storage" bucket
-      await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
+// Create portfolio item record
+app.post('/api/portfolio/items', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+    const { studentId, title, description, itemType, r2Key, domain, relatedActivityId, milestoneTag } = body;
 
-      return c.json({ success: true, key: `portfolio/${key}` });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    if (!studentId || !title || !itemType) {
+      return c.json({ error: 'studentId, title, and itemType are required' }, 400);
     }
-  });
 
-  // Create portfolio item record
-  app.post('/api/portfolio/items', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const body = await c.req.json();
-      const { studentId, title, description, itemType, r2Key, domain, relatedActivityId, milestoneTag } = body;
-
-      if (!studentId || !title || !itemType) {
-        return c.json({ error: 'studentId, title, and itemType are required' }, 400);
-      }
-
-      const id = generateId('port');
-      await c.env.DB.prepare(`
+    const id = generateId('port');
+    await c.env.DB.prepare(`
       INSERT INTO portfolio_items (id, student_id, parent_id, title, description, item_type, r2_key, domain, related_activity_id, milestone_tag)
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).bind(id, studentId, user.id, title, description, itemType, r2Key, domain, relatedActivityId, milestoneTag || null).run();
 
-      return c.json({ id, success: true }, 201);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    return c.json({ id, success: true }, 201);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// List portfolio items with filtering
+app.get('/api/portfolio/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+    const domain = c.req.query('domain');
+    const itemType = c.req.query('itemType');
+    const timePeriod = c.req.query('timePeriod'); // 'week', 'month', 'year', 'all'
+    const milestoneOnly = c.req.query('milestoneOnly') === 'true';
+
+    let query = 'SELECT * FROM portfolio_items WHERE student_id = ? AND parent_id = ?';
+    const params: any[] = [studentId, user.id];
+
+    if (domain) {
+      query += ' AND domain = ?';
+      params.push(domain);
     }
-  });
 
-  // List portfolio items with filtering
-  app.get('/api/portfolio/:studentId', async (c) => {
+    if (itemType) {
+      query += ' AND item_type = ?';
+      params.push(itemType);
+    }
+
+    if (milestoneOnly) {
+      query += ' AND milestone_tag IS NOT NULL';
+    }
+
+    // Time period filtering
+    if (timePeriod && timePeriod !== 'all') {
+      const now = new Date();
+      let startDate: string;
+
+      switch (timePeriod) {
+        case 'week':
+          const weekAgo = new Date(now);
+          weekAgo.setDate(weekAgo.getDate() - 7);
+          startDate = weekAgo.toISOString().split('T')[0];
+          break;
+        case 'month':
+          const monthAgo = new Date(now);
+          monthAgo.setMonth(monthAgo.getMonth() - 1);
+          startDate = monthAgo.toISOString().split('T')[0];
+          break;
+        case 'year':
+          const yearAgo = new Date(now);
+          yearAgo.setFullYear(yearAgo.getFullYear() - 1);
+          startDate = yearAgo.toISOString().split('T')[0];
+          break;
+        default:
+          startDate = '';
+      }
+
+      if (startDate) {
+        query += ' AND date(created_at) >= ?';
+        params.push(startDate);
+      }
+    }
+
+    query += ' ORDER BY created_at DESC';
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Map results to include public URLs and camelCase fields
+    const items = results.map((item: any) => ({
+      id: item.id,
+      studentId: item.student_id,
+      parentId: item.parent_id,
+      title: item.title,
+      description: item.description,
+      itemType: item.item_type,
+      domain: item.domain,
+      relatedActivityId: item.related_activity_id,
+      milestoneTag: item.milestone_tag,
+      createdAt: item.created_at,
+      publicUrl: item.r2_key ? `/api/portfolio/file/${encodeURIComponent(item.r2_key)}` : null
+    }));
+
+    return c.json(items);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Serve portfolio file
+app.get('/api/portfolio/file/:key', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
+
+    // Check ownership by ensuring the key contains the user ID (part of the path strategy)
+    // The key structure we defined is `portfolio/USER_ID/filename`
+    // So we check if key contains user.id
+    if (!key.includes(user.id)) {
+      return c.json({ error: 'Unauthorized access to file' }, 403);
+    }
+
+    const object = await c.env.BOOKS_BUCKET.get(key);
+
+    if (!object) {
+      return c.json({ error: 'File not found' }, 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('etag', object.httpEtag);
+
+    return new Response(object.body, {
+      headers,
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Delete portfolio item
+app.delete('/api/portfolio/:itemId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const itemId = c.req.param('itemId');
+
+    const item = await c.env.DB.prepare(
+      'SELECT * FROM portfolio_items WHERE id = ? AND parent_id = ?'
+    ).bind(itemId, user.id).first();
+
+    if (!item) return c.json({ error: 'Item not found' }, 404);
+
+    // Delete from R2 if key exists
+    if ((item as any).r2_key) {
+      await c.env.BOOKS_BUCKET.delete((item as any).r2_key);
+    }
+
+    // Delete from DB
+    await c.env.DB.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(itemId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============ PHASE 3: GRADUATED INDEPENDENCE ============
+
+// Child AI System Prompt - Follows AI_GOVERNANCE_AND_ETHICS.md
+const CHILD_AI_SYSTEM_PROMPT = `You are helping a young student understand their schoolwork in a Christian homeschool environment.
+
+RULES:
+- Use simple, age-appropriate language
+- Never tell the child they are "wrong" or "not smart"
+- Guide with questions, don't give direct answers (Socratic method)
+- If asked about grades, levels, or readiness, say: "Your parent decides that"
+- If asked to do their work for them, say: "Let's think about it together"
+- Always be encouraging and patient
+- Never assess their character or abilities
+- Never make moral judgments
+- Stick to helping understand the content, not evaluating the child
+
+You are a servant tool helping the child learn, not a teacher or authority figure.`;
+
+// Get independence settings for a student
+app.get('/api/independence-settings/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+
+    // Verify student belongs to parent
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM independence_settings WHERE student_id = ?'
+    ).bind(studentId).all();
+
+    // Transform snake_case to camelCase
+    const settings = results.map((s: any) => ({
+      id: s.id,
+      parentId: s.parent_id,
+      studentId: s.student_id,
+      subject: s.subject,
+      level: s.level,
+      canMarkComplete: !!s.can_mark_complete,
+      canAskAi: !!s.can_ask_ai,
+      canViewPortfolio: !!s.can_view_portfolio,
+      createdAt: s.created_at,
+      updatedAt: s.updated_at,
+    }));
+
+    return c.json(settings);
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Update or create independence settings for a student/subject pair
+app.put('/api/independence-settings/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+    const body = await c.req.json();
+    const { subject, level, canMarkComplete, canAskAi, canViewPortfolio } = body;
+
+    // Verify student belongs to parent
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    // Validate subject
+    const validSubjects = ['all', 'bible', 'history', 'math', 'reading', 'motor', 'language', 'cognitive', 'social-emotional', 'pre-academic'];
+    if (!validSubjects.includes(subject)) {
+      return c.json({ error: 'Invalid subject' }, 400);
+    }
+
+    // Validate level
+    if (!['parent_led', 'guided', 'independent'].includes(level)) {
+      return c.json({ error: 'Invalid independence level' }, 400);
+    }
+
+    // Upsert setting
+    const id = generateId('indep');
+    await c.env.DB.prepare(`
+        INSERT INTO independence_settings (id, parent_id, student_id, subject, level, can_mark_complete, can_ask_ai, can_view_portfolio, updated_at)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+        ON CONFLICT(student_id, subject) DO UPDATE SET
+          level = excluded.level,
+          can_mark_complete = excluded.can_mark_complete,
+          can_ask_ai = excluded.can_ask_ai,
+          can_view_portfolio = excluded.can_view_portfolio,
+          updated_at = datetime('now')
+      `).bind(
+      id,
+      user.id,
+      studentId,
+      subject,
+      level,
+      canMarkComplete ? 1 : 0,
+      canAskAi ? 1 : 0,
+      canViewPortfolio !== false ? 1 : 0
+    ).run();
+
+    // Return updated setting
+    const setting = await c.env.DB.prepare(
+      'SELECT * FROM independence_settings WHERE student_id = ? AND subject = ?'
+    ).bind(studentId, subject).first();
+
+    return c.json({
+      id: (setting as any).id,
+      parentId: (setting as any).parent_id,
+      studentId: (setting as any).student_id,
+      subject: (setting as any).subject,
+      level: (setting as any).level,
+      canMarkComplete: !!(setting as any).can_mark_complete,
+      canAskAi: !!(setting as any).can_ask_ai,
+      canViewPortfolio: !!(setting as any).can_view_portfolio,
+      updatedAt: (setting as any).updated_at,
+    });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Child-facing AI explain (with full logging for parent visibility)
+app.post('/api/ai/child-explain', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, question, context } = await c.req.json();
+
+    if (!studentId || !question) {
+      return c.json({ error: 'studentId and question are required' }, 400);
+    }
+
+    // Verify student belongs to parent
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    // Check if child has AI permission
+    const setting = await c.env.DB.prepare(
+      'SELECT can_ask_ai FROM independence_settings WHERE student_id = ? AND (subject = ? OR subject = ?) ORDER BY CASE WHEN subject = ? THEN 1 ELSE 2 END LIMIT 1'
+    ).bind(studentId, context?.domain || 'all', 'all', context?.domain || 'all').first();
+
+    // Default to parent_led (no AI access) if no settings exist
+    if (!setting || !(setting as any).can_ask_ai) {
+      return c.json({ error: 'AI access not permitted for this child' }, 403);
+    }
+
+    // Call AI with child-appropriate system prompt
+    let answer = '';
     try {
-      const user = requireAuth(c);
-      const studentId = c.req.param('studentId');
-      const domain = c.req.query('domain');
-      const itemType = c.req.query('itemType');
-      const timePeriod = c.req.query('timePeriod'); // 'week', 'month', 'year', 'all'
-      const milestoneOnly = c.req.query('milestoneOnly') === 'true';
+      const messages = [
+        { role: 'system', content: CHILD_AI_SYSTEM_PROMPT },
+        { role: 'user', content: `Context: ${context?.activityTitle || 'General schoolwork'}\n\nQuestion: ${question}` }
+      ];
 
-      let query = 'SELECT * FROM portfolio_items WHERE student_id = ? AND parent_id = ?';
-      const params: any[] = [studentId, user.id];
+      const response = await c.env.AI.run('@cf/meta/llama-3.1-8b-instruct', { messages });
+      answer = response.response || 'I\'m sorry, I couldn\'t generate a response. Please ask your parent for help!';
+    } catch (aiError) {
+      console.error('AI error:', aiError);
+      answer = 'I\'m having trouble right now. Please ask your parent for help!';
+    }
 
-      if (domain) {
-        query += ' AND domain = ?';
-        params.push(domain);
+    // Log the interaction for parent visibility
+    const logId = generateId('ailog');
+    await c.env.DB.prepare(`
+        INSERT INTO ai_interaction_logs (id, parent_id, student_id, interaction_type, question, answer, context_json, created_at)
+        VALUES (?, ?, ?, 'explain', ?, ?, ?, datetime('now'))
+      `).bind(
+      logId,
+      user.id,
+      studentId,
+      question,
+      answer,
+      context ? JSON.stringify(context) : null
+    ).run();
+
+    return c.json({ answer, sources: [] });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Get AI interaction logs (parent visibility of child AI usage)
+app.get('/api/ai/interactions', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.query('studentId');
+
+    let query = `
+        SELECT l.*, s.name as student_name 
+        FROM ai_interaction_logs l
+        LEFT JOIN students s ON l.student_id = s.id
+        WHERE l.parent_id = ?
+      `;
+    const params: any[] = [user.id];
+
+    if (studentId) {
+      query += ' AND l.student_id = ?';
+      params.push(studentId);
+    }
+
+    query += ' ORDER BY l.created_at DESC LIMIT 100';
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Transform to camelCase
+    const logs = results.map((log: any) => ({
+      id: log.id,
+      parentId: log.parent_id,
+      studentId: log.student_id,
+      studentName: log.student_name,
+      interactionType: log.interaction_type,
+      question: log.question,
+      answer: log.answer,
+      context: log.context_json ? JSON.parse(log.context_json) : null,
+      createdAt: log.created_at,
+    }));
+
+    return c.json(logs);
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Get student view data (for child-facing simplified view)
+app.get('/api/student-view/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+
+    // Verify student belongs to parent
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    // Get independence settings
+    const { results: settingsRaw } = await c.env.DB.prepare(
+      'SELECT * FROM independence_settings WHERE student_id = ?'
+    ).bind(studentId).all();
+
+    const independenceSettings = settingsRaw.map((s: any) => ({
+      id: s.id,
+      parentId: s.parent_id,
+      studentId: s.student_id,
+      subject: s.subject,
+      level: s.level,
+      canMarkComplete: !!s.can_mark_complete,
+      canAskAi: !!s.can_ask_ai,
+      canViewPortfolio: !!s.can_view_portfolio,
+    }));
+
+    // Aggregate permissions (any setting with permission grants it)
+    const permissions = {
+      canMarkComplete: independenceSettings.some((s: any) => s.canMarkComplete),
+      canAskAi: independenceSettings.some((s: any) => s.canAskAi),
+      canViewPortfolio: independenceSettings.length === 0 || independenceSettings.some((s: any) => s.canViewPortfolio),
+    };
+
+    // Get today's tasks based on weekly plan
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+    const weekStart = getSmartWeekStart();
+    const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStart).first();
+
+    let tasks: any[] = [];
+    if (plan) {
+      const planData = JSON.parse((plan as any).plan_json);
+      const todaySlots = planData.slots?.filter((s: any) => s.day === dayOfWeek) || [];
+      const activityIds = todaySlots.map((s: any) => s.activityId);
+
+      if (activityIds.length > 0) {
+        const placeholders = activityIds.map(() => '?').join(',');
+        const { results } = await c.env.DB.prepare(`
+            SELECT * FROM activities WHERE id IN (${placeholders})
+          `).bind(...activityIds).all();
+
+        tasks = results.map((a: any) => ({
+          ...a,
+          materials: JSON.parse(a.materials || '[]'),
+          instructions: JSON.parse(a.instructions || '[]'),
+        }));
       }
+    }
 
-      if (itemType) {
-        query += ' AND item_type = ?';
-        params.push(itemType);
-      }
+    // Get portfolio items if permitted
+    let portfolioItems: any[] = [];
+    if (permissions.canViewPortfolio) {
+      const { results: portfolioRaw } = await c.env.DB.prepare(
+        'SELECT * FROM portfolio_items WHERE student_id = ? ORDER BY created_at DESC LIMIT 20'
+      ).bind(studentId).all();
 
-      if (milestoneOnly) {
-        query += ' AND milestone_tag IS NOT NULL';
-      }
-
-      // Time period filtering
-      if (timePeriod && timePeriod !== 'all') {
-        const now = new Date();
-        let startDate: string;
-
-        switch (timePeriod) {
-          case 'week':
-            const weekAgo = new Date(now);
-            weekAgo.setDate(weekAgo.getDate() - 7);
-            startDate = weekAgo.toISOString().split('T')[0];
-            break;
-          case 'month':
-            const monthAgo = new Date(now);
-            monthAgo.setMonth(monthAgo.getMonth() - 1);
-            startDate = monthAgo.toISOString().split('T')[0];
-            break;
-          case 'year':
-            const yearAgo = new Date(now);
-            yearAgo.setFullYear(yearAgo.getFullYear() - 1);
-            startDate = yearAgo.toISOString().split('T')[0];
-            break;
-          default:
-            startDate = '';
-        }
-
-        if (startDate) {
-          query += ' AND date(created_at) >= ?';
-          params.push(startDate);
-        }
-      }
-
-      query += ' ORDER BY created_at DESC';
-
-      const { results } = await c.env.DB.prepare(query).bind(...params).all();
-
-      // Map results to include public URLs and camelCase fields
-      const items = results.map((item: any) => ({
-        id: item.id,
-        studentId: item.student_id,
-        parentId: item.parent_id,
-        title: item.title,
-        description: item.description,
-        itemType: item.item_type,
-        domain: item.domain,
-        relatedActivityId: item.related_activity_id,
-        milestoneTag: item.milestone_tag,
-        createdAt: item.created_at,
-        publicUrl: item.r2_key ? `/api/portfolio/file/${encodeURIComponent(item.r2_key)}` : null
+      portfolioItems = portfolioRaw.map((p: any) => ({
+        id: p.id,
+        studentId: p.student_id,
+        parentId: p.parent_id,
+        title: p.title,
+        description: p.description,
+        itemType: p.item_type,
+        domain: p.domain,
+        milestoneTag: p.milestone_tag,
+        createdAt: p.created_at,
+        publicUrl: p.r2_key ? `/api/portfolio/file/${encodeURIComponent(p.r2_key)}` : null
       }));
-
-      return c.json(items);
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
     }
-  });
 
-  // Serve portfolio file
-  app.get('/api/portfolio/file/:key', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
+    return c.json({
+      student: {
+        id: (student as any).id,
+        parentId: (student as any).parent_id,
+        name: (student as any).name,
+        dateOfBirth: (student as any).date_of_birth,
+        ageInMonths: (student as any).age_in_months,
+        currentStage: (student as any).current_stage,
+      },
+      independenceSettings,
+      tasks,
+      portfolioItems,
+      permissions,
+    });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
 
-      // Check ownership by ensuring the key contains the user ID (part of the path strategy)
-      // The key structure we defined is `portfolio/USER_ID/filename`
-      // So we check if key contains user.id
-      if (!key.includes(user.id)) {
-        return c.json({ error: 'Unauthorized access to file' }, 403);
-      }
+// Student mark complete (only if permitted)
+app.post('/api/student-view/:studentId/complete', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+    const { activityId, notes } = await c.req.json();
 
-      const object = await c.env.BOOKS_BUCKET.get(key);
+    // Verify student belongs to parent
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
 
-      if (!object) {
-        return c.json({ error: 'File not found' }, 404);
-      }
-
-      const headers = new Headers();
-      object.writeHttpMetadata(headers);
-      headers.set('etag', object.httpEtag);
-
-      return new Response(object.body, {
-        headers,
-      });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
     }
-  });
 
-  // Delete portfolio item
-  app.delete('/api/portfolio/:itemId', async (c) => {
-    try {
-      const user = requireAuth(c);
-      const itemId = c.req.param('itemId');
+    // Check permission
+    const { results: settings } = await c.env.DB.prepare(
+      'SELECT can_mark_complete FROM independence_settings WHERE student_id = ?'
+    ).bind(studentId).all();
 
-      const item = await c.env.DB.prepare(
-        'SELECT * FROM portfolio_items WHERE id = ? AND parent_id = ?'
-      ).bind(itemId, user.id).first();
-
-      if (!item) return c.json({ error: 'Item not found' }, 404);
-
-      // Delete from R2 if key exists
-      if ((item as any).r2_key) {
-        await c.env.BOOKS_BUCKET.delete((item as any).r2_key);
-      }
-
-      // Delete from DB
-      await c.env.DB.prepare('DELETE FROM portfolio_items WHERE id = ?').bind(itemId).run();
-
-      return c.json({ success: true });
-    } catch (error: any) {
-      return c.json({ error: error.message }, 500);
+    const hasPermission = settings.some((s: any) => s.can_mark_complete);
+    if (!hasPermission) {
+      return c.json({ error: 'Permission denied: cannot mark complete' }, 403);
     }
-  });
 
-  export default app;
+    // Record completion
+    const id = generateId('comp');
+    await c.env.DB.prepare(`
+        INSERT INTO activity_completions (id, parent_id, activity_id, notes)
+        VALUES (?, ?, ?, ?)
+      `).bind(id, user.id, activityId, notes || `Completed by ${(student as any).name}`).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+export default app;
+

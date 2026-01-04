@@ -394,3 +394,90 @@ export interface WeeklyPlanResponse {
   cached: boolean;
   completions?: Record<string, ActivityCompletion>;
 }
+
+// ============================================
+// Phase 3: Graduated Independence
+// ============================================
+
+export type IndependenceLevel = 'parent_led' | 'guided' | 'independent';
+
+export type IndependenceSubject =
+  | 'all'
+  | 'bible'
+  | 'history'
+  | 'math'
+  | 'reading'
+  | 'motor'
+  | 'language'
+  | 'cognitive'
+  | 'social-emotional'
+  | 'pre-academic';
+
+export interface IndependenceSettings {
+  id: string;
+  parentId: string;
+  studentId: string;
+  subject: IndependenceSubject;
+  level: IndependenceLevel;
+  canMarkComplete: boolean;
+  canAskAi: boolean;
+  canViewPortfolio: boolean;
+  createdAt: string;
+  updatedAt: string;
+}
+
+export type AIInteractionType = 'explain' | 'socratic' | 'feedback';
+
+export interface AIInteractionLog {
+  id: string;
+  parentId: string;
+  studentId?: string;
+  studentName?: string;  // Joined for display
+  interactionType: AIInteractionType;
+  question: string;
+  answer: string;
+  context?: {
+    activityId?: string;
+    activityTitle?: string;
+    domain?: string;
+  };
+  createdAt: string;
+}
+
+export const INDEPENDENCE_LEVEL_LABELS: Record<IndependenceLevel, string> = {
+  'parent_led': 'Parent-Led',
+  'guided': 'Guided',
+  'independent': 'Independent'
+};
+
+export const INDEPENDENCE_LEVEL_DESCRIPTIONS: Record<IndependenceLevel, string> = {
+  'parent_led': 'Parent leads all activities and discussions',
+  'guided': 'Child works with parent oversight and regular check-ins',
+  'independent': 'Child works independently, parent reviews completion'
+};
+
+export const SUBJECT_LABELS: Record<IndependenceSubject, string> = {
+  'all': 'All Subjects',
+  'bible': 'Bible & Faith',
+  'history': 'History',
+  'math': 'Math',
+  'reading': 'Reading',
+  'motor': 'Physical Skills',
+  'language': 'Language',
+  'cognitive': 'Thinking Skills',
+  'social-emotional': 'Character & Emotions',
+  'pre-academic': 'Pre-Academic'
+};
+
+// Student View Data (returned from /api/student-view/:studentId)
+export interface StudentViewData {
+  student: Student;
+  independenceSettings: IndependenceSettings[];
+  tasks: ApiActivity[];
+  portfolioItems: PortfolioItem[];
+  permissions: {
+    canMarkComplete: boolean;
+    canAskAi: boolean;
+    canViewPortfolio: boolean;
+  };
+}
