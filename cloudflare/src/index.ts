@@ -3024,8 +3024,11 @@ app.post('/api/portfolio/upload', async (c) => {
     // Cloudflare Workers with R2 bindings don't support `getSignedUrl` directly on the binding object easily without AWS SDK.
     // For simplicity in this environment, we will use a PUT endpoint on the worker itself to handle the upload.
 
+    // Use current worker origin for upload handler
+    const baseUrl = new URL(c.req.url).origin;
+
     return c.json({
-      uploadUrl: `${c.env.FRONTEND_URL}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
+      uploadUrl: `${baseUrl}/api/portfolio/upload-handler?key=${encodeURIComponent(key)}`,
       key,
       publicUrl: `/api/portfolio/file/${encodeURIComponent(key)}`
     });
