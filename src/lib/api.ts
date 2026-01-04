@@ -1,6 +1,6 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
@@ -275,9 +275,9 @@ export const timeModel = {
 // Weekly Plan
 export const weeklyPlan = {
   get: (weekStart?: string) =>
-    apiRequest<{ id: string; weekStart: string; plan: any; cached: boolean }>(`/api/family/weekly-plan${weekStart ? `?weekStart=${weekStart}` : ''}`),
+    apiRequest<WeeklyPlanResponse>(`/api/family/weekly-plan${weekStart ? `?weekStart=${weekStart}` : ''}`),
   regenerate: (params?: { balancePreference?: 'baby_focused' | 'mixed' | 'older_focused'; weekStart?: string }) =>
-    apiRequest<{ id: string; plan: any }>('/api/family/weekly-plan/regenerate', { method: 'POST', body: JSON.stringify(params || {}) }),
+    apiRequest<WeeklyPlanResponse>('/api/family/weekly-plan/regenerate', { method: 'POST', body: JSON.stringify(params || {}) }),
 };
 
 // AI
