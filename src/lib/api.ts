@@ -425,7 +425,17 @@ export const portfolio = {
   }
 };
 
+export const rhythm = {
+  readjust: (instruction: string) => apiRequest<any>('/api/rhythm/readjust', {
+    method: 'POST',
+    body: JSON.stringify({ instruction }),
+  }),
+};
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView };
+export const notifications = {
+  list: () => apiRequest<any[]>('/api/notifications'),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications };
 export default api;
 

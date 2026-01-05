@@ -359,6 +359,84 @@ app.get('/api/students', async (c) => {
   }
 });
 
+// Get notifications
+app.get('/api/notifications', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const notifications = [];
+    const today = new Date().toISOString().split('T')[0];
+
+    // 1. Milestone Triggers (Simplified: Count completions per domain)
+    const { results: domainCounts } = await c.env.DB.prepare(`
+      SELECT a.domain, COUNT(*) as count
+      FROM observations o
+      JOIN activities a ON o.activity_id = a.id
+      WHERE o.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+      GROUP BY a.domain
+      HAVING count >= 5
+    `).bind(user.id).all();
+
+    domainCounts.forEach((d: any) => {
+      // Logic to determine if this is a "new" milestone could be complex
+      // For now, we just show "Milestone" if count is a multiple of 10
+      if (d.count % 10 === 0 && d.count > 0) {
+        notifications.push({
+          id: `milestone-${d.domain}-${d.count}`,
+          type: 'milestone',
+          title: `Milestone Unlocked!`,
+          message: `Your family has completed ${d.count} activities in ${d.domain}!`,
+          date: today
+        });
+      }
+    });
+
+    // 2. Coverage Alerts (2+ weeks without domain)
+    // Simplified: Check distinct domains in last 14 days
+    const { results: recentDomains } = await c.env.DB.prepare(`
+      SELECT DISTINCT a.domain
+      FROM observations o
+      JOIN activities a ON o.activity_id = a.id
+      WHERE o.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+      AND o.completed_at > datetime('now', '-14 days')
+    `).bind(user.id).all();
+
+    const recentDomainSet = new Set(recentDomains.map((r: any) => r.domain));
+    const allDomains = ['motor', 'language', 'cognitive', 'social-emotional', 'pre-academic'];
+
+    // Only alert if we have SOME activity but missing a domain (avoid alerting new users with 0 activity)
+    if (recentDomains.length > 0) {
+      const missing = allDomains.find(d => !recentDomainSet.has(d));
+      if (missing) {
+         notifications.push({
+          id: `alert-missing-${missing}`,
+          type: 'alert',
+          title: 'Coverage Alert',
+          message: `You haven't done any ${missing} activities recently.`,
+          date: today
+        });
+      }
+    }
+
+    // 3. Encouragement (Weekly Balance)
+    // If > 3 domains covered this week
+    if (recentDomains.length >= 3) {
+       notifications.push({
+          id: `enc-balance-${today}`,
+          type: 'encouragement',
+          title: 'Great Balance!',
+          message: 'You are covering a wide range of developmental areas this week.',
+          date: today
+        });
+    }
+
+    // Limit to 2 for the UI stack
+    return c.json(notifications.slice(0, 2));
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Get tomorrow's preview
 app.get('/api/family/tomorrow-preview', async (c) => {
   try {
