@@ -125,7 +125,8 @@ export function AppSidebar() {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <SidebarMenuButton
-                    onClick={() => handleNavigation('/settings#support')}
+                    onClick={() => handleNavigation('/support')}
+                    isActive={location.pathname === '/support'}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-green-600 dark:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 w-full"
                   >
                     <Heart className="h-4 w-4" weight="fill" />

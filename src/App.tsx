@@ -38,6 +38,7 @@ import LockedStage from "./pages/stages/LockedStage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
 import TermsOfService from "./pages/legal/TermsOfService";
+import SupportPage from "./pages/SupportPage";
 
 const queryClient = new QueryClient();
 
@@ -83,6 +84,9 @@ const App = () => (
 
                   {/* Settings */}
                   <Route path="/settings" element={<Settings />} />
+
+                  {/* Support */}
+                  <Route path="/support" element={<SupportPage />} />
 
                   {/* Phase 3: Student View */}
                   <Route path="/student/:studentId" element={<StudentView />} />
