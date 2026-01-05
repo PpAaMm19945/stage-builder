@@ -4002,5 +4002,26 @@ app.post('/api/ai/explain-plan', async (c) => {
   }
 });
 
+// ============ SUPPORT ANALYTICS ============
+
+app.post('/api/support/log-click', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { source } = await c.req.json();
+
+    if (!source) return c.json({ error: 'Source required' }, 400);
+
+    const id = generateId('click');
+    await c.env.DB.prepare(
+      'INSERT INTO support_clicks (id, user_id, source) VALUES (?, ?, ?)'
+    ).bind(id, user.id, source).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Support log error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
 
