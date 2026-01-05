@@ -128,7 +128,7 @@ function ChildProgressCard({ child }: { child: Student }) {
           {!isOpen && recentActivity && (
             <div className="mt-4 pl-[4rem] text-sm text-muted-foreground flex items-center gap-2">
               <Clock className="w-4 h-4" />
-              Last active: <span className="font-medium text-foreground">{recentActivity.activity?.title || 'Unknown Activity'}</span> ({format(new Date(recentActivity.date), 'MMM d')})
+              Last active: <span className="font-medium text-foreground">{recentActivity.title || 'Unknown Activity'}</span> ({format(new Date(recentActivity.completed_at), 'MMM d')})
             </div>
           )}
         </div>
