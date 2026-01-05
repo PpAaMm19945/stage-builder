@@ -513,7 +513,7 @@ app.get('/api/activities', async (c) => {
   const context = c.req.query('context');
   const limit = c.req.query('limit') || '50';
 
-  let query = "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)";
+  let query = "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (archived = 0 OR archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL) AND (deprecated = 0 OR deprecated IS NULL)";
   const params: any[] = [];
 
   if (domain) {
@@ -1046,7 +1046,9 @@ app.post('/api/family/swap', async (c) => {
         AND tiered_expectations IS NOT NULL
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
+        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
+        AND (deprecated = 0 OR deprecated IS NULL)
       ORDER BY uses_core_kit DESC, RANDOM()
       LIMIT 5
     `).bind(activityId, youngestAge, oldestAge).all();
@@ -1143,7 +1145,9 @@ app.post('/family-sessions/compose', async (c) => {
         AND tiered_expectations IS NOT NULL
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
+        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
+        AND (deprecated = 0 OR deprecated IS NULL)
     `;
 
     const params: any[] = [minAge, maxAge];
@@ -2637,7 +2641,9 @@ app.get('/api/family/weekly-plan', async (c) => {
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
+        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
+        AND (deprecated = 0 OR deprecated IS NULL)
     `).bind(oldestAge, youngestAge).all();
 
     // Parse materials
@@ -2755,7 +2761,9 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
+        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
+        AND (deprecated = 0 OR deprecated IS NULL)
     `).bind(oldestAge, youngestAge).all();
 
     // Parse materials
