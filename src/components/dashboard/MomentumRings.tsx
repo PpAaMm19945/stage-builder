@@ -1,6 +1,7 @@
+```typescript
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
-import { family } from '@/lib/api';
+import { weeklyPlan as weeklyPlanApi } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
@@ -8,9 +9,9 @@ import { CheckCircle, Circle, CaretRight } from '@phosphor-icons/react';
 
 export function MomentumRings() {
     const navigate = useNavigate();
-    const { data: weeklyPlan, isLoading } = useQuery({
+    const { data: planData, isLoading } = useQuery({
         queryKey: ['family-weekly-plan'],
-        queryFn: family.getWeeklyPlan,
+        queryFn: () => weeklyPlanApi.get(),
     });
 
     if (isLoading) {
@@ -36,7 +37,7 @@ export function MomentumRings() {
     // Day order: Mon-Fri (or Sun-Sat depending on start)
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
     // Check if slots exist for these days
-    const slots = weeklyPlan?.slots || [];
+    const slots = planData?.plan?.slots || [];
 
     const rings = days.map(day => {
         const hasActivities = slots.some((s: any) => s.day === day && s.activityId);

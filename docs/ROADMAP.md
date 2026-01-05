@@ -333,8 +333,8 @@ If it weakens it, the feature waits.
 | :--- | :--- | :--- |
 | Phase 0: Constitutional | ✅ Complete | All governance docs |
 | Phase 1: Faithful Minimum | ✅ Complete | Core features, content gaps |
-| Phase 2: Order & Visibility | 🔄 In Progress | Portfolios, summaries, week nav ✅ |
-| Phase 3: Graduated Independence | ⬜ Not Started | Student views, toggles |
+| Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav, daily rhythm ✅ |
+| Phase 3: Graduated Independence | 🔄 In Progress | Coach Chat, AI Explanations |
 | Phase 4: Pace Flexibility | ⬜ Not Started | Advancement controls |
 | Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |
 | Phase 6: Maturity | ⬜ Not Started | Full independence |

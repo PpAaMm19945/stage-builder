@@ -14,7 +14,7 @@ import {
     Sun,
     BookOpen,
     PersonSimpleRun,
-    Utensils,
+    ForkKnife,
     Bed,
     CheckCircle,
     Circle,
@@ -57,7 +57,7 @@ export function DailyRhythm({ items = [], onComplete }: DailyRhythmProps) {
             case 'liturgy': return <HandsPraying weight="duotone" />;
             case 'activity': return <PersonSimpleRun weight="duotone" />;
             case 'book': return <BookOpen weight="duotone" />;
-            case 'meal': return <Utensils weight="duotone" />;
+            case 'meal': return <ForkKnife weight="duotone" />;
             case 'outdoor': return <Sun weight="duotone" />;
             case 'rest': return <Bed weight="duotone" />;
             default: return <Circle weight="duotone" />;

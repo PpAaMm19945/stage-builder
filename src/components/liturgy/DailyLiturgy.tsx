@@ -50,15 +50,19 @@ const getAgeGuidance = (ageMonths: number): { tip: string; approach: string } =>
     };
   } else {
     return {
-      tip: 'Preschoolers & Kindergarteners (4-5)',
-      approach: 'Encourage them to recite parts they remember. Ask simple questions like "Who made you?" Point to words as you read. They can start learning first answers and short verses.'
+      tip: 'Young Children (4-6)',
+      approach: 'Encourage them to memorize short verses or answers. Discuss the meaning simply. Let them lead parts they know well. Focus on hiding God\'s word in their hearts.'
     };
   }
 };
 
-export function DailyLiturgy() {
-  const queryClient = useQueryClient();
+interface DailyLiturgyProps {
+  embedded?: boolean;
+}
+
+export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
   const { children } = useAuth();
+  const queryClient = useQueryClient();
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // Get youngest child for age-appropriate guidance
@@ -177,84 +181,9 @@ export function DailyLiturgy() {
               <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" weight="fill" />
               <div className="text-xs text-amber-800 dark:text-amber-200">
                 <span className="font-semibold">{ageGuidance.tip}:</span>{' '}
-                <span className="text-amber-700 dark:text-amber-300">{ageGuidance.approach}</span>
-              </div>
-            </div>
-          </div>
-        )}
-        {data.items.map((item) => {
-          const Icon = ICONS[item.type as LiturgyType];
-          const isExpanded = expandedItem === item.id;
-
-          return (
-            <div
-              key={item.id}
-              className={`border-b last:border-0 border-amber-100 dark:border-amber-900/30 transition-colors ${item.completedToday ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''
-                }`}
-            >
-              <Collapsible
-                open={isExpanded}
-                onOpenChange={() => setExpandedItem(isExpanded ? null : item.id)}
-              >
-                <div className="flex items-start p-4 gap-3">
-                  <Checkbox
-                    checked={!!item.completedToday}
-                    onCheckedChange={() => handleToggle(item)}
-                    disabled={completeMutation.isPending || uncompleteMutation.isPending}
-                    className="mt-1 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 disabled:opacity-50"
-                  />
-
-                  <div className="flex-1 space-y-1">
-                    <div className="flex items-center gap-2 text-xs font-bold text-amber-600/80 dark:text-amber-400 uppercase tracking-wider">
-                      <Icon weight="duotone" className="w-3.5 h-3.5" />
-                      {LABELS[item.type as LiturgyType]}
-                    </div>
-                    <div className="font-medium text-amber-950 dark:text-amber-50">
-                      {item.title}
-                    </div>
-                  </div>
-
-                  <CollapsibleTrigger asChild>
-                    <Button variant="ghost" size="sm" className="h-8 w-8 p-0 text-amber-800 hover:text-amber-900 hover:bg-amber-100 dark:text-amber-200 dark:hover:bg-amber-900/50">
-                      {isExpanded ? (
-                        <CaretUp className="h-4 w-4" />
-                      ) : (
-                        <CaretDown className="h-4 w-4" />
-                      )}
-                    </Button>
-                  </CollapsibleTrigger>
-                </div>
-
-                <CollapsibleContent>
-                  <div className="px-4 pb-4 pl-11 space-y-4">
-                    <div className="text-sm leading-relaxed whitespace-pre-line text-amber-900/90 dark:text-amber-100/90 bg-white/50 dark:bg-black/20 p-3 rounded-md border border-amber-100 dark:border-amber-900/30">
-                      {item.content}
-                    </div>
-
-                    <div className="flex items-center justify-between">
-                      {item.reference && (
-                        <span className="text-xs font-medium text-amber-700 dark:text-amber-300">
-                          — {item.reference}
-                        </span>
-                      )}
-
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => advanceMutation.mutate(item.type as LiturgyType)}
-                        disabled={advanceMutation.isPending}
-                        className="h-7 text-xs gap-1 ml-auto text-amber-600 hover:text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/40"
-                      >
-                        Next Week <ArrowRight className="w-3 h-3" />
-                      </Button>
-                    </div>
-                  </div>
-                </CollapsibleContent>
-              </Collapsible>
-            </div>
-          );
-        })}
-      </CardContent>
-    </Card>
-  );
+                <CardContent>
+                  {content}
+                </CardContent>
+              </Card>
+              );
 }

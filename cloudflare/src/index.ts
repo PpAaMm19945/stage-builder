@@ -3277,6 +3277,37 @@ Output as JSON:
   }
 });
 
+// Generate streaming chat response (Phase 3)
+app.post('/api/ai/chat', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { message, context } = await c.req.json();
+
+    // Initialize coach with full context
+    const coach = new AiCoach(c.env);
+
+    // Add user to context
+    const fullContext = {
+      ...context,
+      user: { id: user.id, name: user.name }
+    };
+
+    const stream = await coach.chat(message, fullContext);
+
+    return new Response(stream as any, {
+      headers: {
+        'content-type': 'text/event-stream',
+        'cache-control': 'no-cache',
+        'connection': 'keep-alive'
+      }
+    });
+  } catch (error: any) {
+    console.error('Chat error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
 // Generate draft feedback text for parents to edit (Phase 2)
 app.post('/api/ai/feedback-draft', async (c) => {
   try {
