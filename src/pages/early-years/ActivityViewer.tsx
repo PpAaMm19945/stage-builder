@@ -8,6 +8,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Alert, AlertTitle, AlertDescription } from '@/components/ui/alert';
 import { ErrorState } from '@/components/ui/ErrorState';
 import { ObservationModal } from '@/components/early-years/ObservationModal';
 import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
@@ -28,7 +29,9 @@ import {
   Sparkles,
   Users,
   Book,
-  Smile
+  Smile,
+  AlertTriangle,
+  Globe,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -73,6 +76,9 @@ interface ApiActivity {
   // Infancy mode fields
   assessment_prohibited?: number;
   context_embedding?: string;
+  // Phase 4 fields
+  safety_note?: string;
+  cultural_notes?: string;
 }
 
 interface Activity {
@@ -100,6 +106,9 @@ interface Activity {
   // Infancy mode fields
   assessmentProhibited?: boolean;
   contextEmbedding?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor' | null;
+  // Phase 4 fields
+  safetyNote?: string;
+  culturalNotes?: string;
 }
 
 const mapApiActivity = (activity: ApiActivity): Activity => ({
@@ -127,6 +136,8 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   // Infancy mode fields
   assessmentProhibited: activity.assessment_prohibited === 1,
   contextEmbedding: activity.context_embedding as Activity['contextEmbedding'] || null,
+  safetyNote: activity.safety_note,
+  culturalNotes: activity.cultural_notes,
 });
 
 export default function ActivityViewer() {
@@ -310,6 +321,28 @@ export default function ActivityViewer() {
           <span>Ages {activity.minAgeMonths}-{activity.maxAgeMonths} months</span>
         </div>
       </div>
+
+      {/* Safety Note - Critical Warning */}
+      {activity.safetyNote && (
+        <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
+          <AlertTriangle className="h-4 w-4 stroke-red-600 dark:stroke-red-400" />
+          <AlertTitle className="text-red-700 dark:text-red-300">Safety Warning</AlertTitle>
+          <AlertDescription>
+            {activity.safetyNote}
+          </AlertDescription>
+        </Alert>
+      )}
+
+      {/* Cultural Context */}
+      {activity.culturalNotes && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+          <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertTitle className="text-blue-700 dark:text-blue-300">Cultural Context</AlertTitle>
+          <AlertDescription className="text-blue-800 dark:text-blue-200">
+            {activity.culturalNotes}
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Shepherd's Script */}
       {activity.parentScript && (
