@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +19,9 @@ import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
 import { MaterialItem } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Lightning, Gear } from '@phosphor-icons/react';
-import { MomentumRings } from '@/components/dashboard/MomentumRings';
+import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
+import { RhythmPromptBar } from '@/components/dashboard/RhythmPromptBar';
+import { NotificationStack } from '@/components/dashboard/NotificationStack';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -41,21 +43,30 @@ export default function Dashboard() {
 
   const todaysBook = recommendedBooks && recommendedBooks.length > 0 ? recommendedBooks[0] : null;
 
+  // Get weekly plan to check completion status
+  const { data: weeklyPlanData } = useQuery({
+    queryKey: ['family-weekly-plan'],
+    queryFn: () => weeklyPlan.get(),
+  });
+
   // Mutation for completing activities
   const completeActivityFitMutation = useMutation({
     mutationFn: async (item: RhythmItem) => {
       // Depending on type, call different API
-      if (item.type === 'activity') {
-        // Call completion endpoint
-        // For now, we simulate success or use existing API if available
-        // family.completeActivity(item.data.id, ...)
-        return new Promise(resolve => setTimeout(resolve, 500));
+      if (item.type === 'activity' && item.data?.id) {
+         // Use the simple completion endpoint
+         await activityCompletions.create({
+            activityId: item.data.id,
+            notes: 'Completed from Dashboard Rhythm'
+         });
+         return;
       }
       return Promise.resolve();
     },
     onSuccess: () => {
       toast.success("Activity completed!");
       queryClient.invalidateQueries({ queryKey: ['family-today'] });
+      queryClient.invalidateQueries({ queryKey: ['family-weekly-plan'] });
     }
   });
 
@@ -181,13 +192,15 @@ export default function Dashboard() {
       // If multiple, stagger them?
       if (index > 0 && time === '09:00') time = '10:00';
 
+      const isCompleted = weeklyPlanData?.completions && weeklyPlanData.completions[session.activity.id];
+
       timelineItems.push({
         id: `session-${index}`,
         timeSlot: time,
         title: session.activity.title,
         description: session.activity.description,
         type: 'activity',
-        status: 'upcoming', // TODO: check completion
+        status: isCompleted ? 'completed' : 'upcoming',
         data: session.activity
       });
     });
@@ -237,6 +250,10 @@ export default function Dashboard() {
         </p>
       </div>
 
+      <NotificationStack />
+
+      <RhythmPromptBar />
+
       {/* REST DAY Override */}
       {todayData.restDay && (
         <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-xl border border-blue-100 dark:border-blue-900 text-center mb-6">
@@ -248,13 +265,8 @@ export default function Dashboard() {
       {/* Timeline */}
       <DailyRhythm items={timelineItems} onComplete={(item) => completeActivityFitMutation.mutate(item)} />
 
-      {/* Tomorrow Preview */}
-      <div className="pt-8">
-        <TomorrowPreview />
-      </div>
-
-      {/* Momentum Rings */}
-      <MomentumRings />
+      {/* Family Progress */}
+      <FamilyProgressMini />
     </div>
   );
 }

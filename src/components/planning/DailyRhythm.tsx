@@ -81,6 +81,13 @@ export function DailyRhythm({ items = [], onComplete }: DailyRhythmProps) {
         }
     };
 
+    const handleQuickComplete = (e: React.MouseEvent, item: RhythmItem) => {
+        e.stopPropagation();
+        if (onComplete && item.status !== 'completed') {
+            onComplete(item);
+        }
+    }
+
     return (
         <div className="space-y-4 relative">
             <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border/50 -z-10" />
@@ -94,19 +101,38 @@ export function DailyRhythm({ items = [], onComplete }: DailyRhythmProps) {
                     {/* Time Column */}
                     <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
                         <div className={cn(
-                            "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors",
+                            "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
                             getTypeColor(item.type),
                             item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
                         )}>
-                            {item.status === 'completed' ? <CheckCircle weight="fill" className="h-6 w-6" /> : getIcon(item.type)}
+                            {item.status === 'completed' ? (
+                                <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
+                            ) : (
+                                <>
+                                    {getIcon(item.type)}
+                                    {/* Hover checkmark for quick completion */}
+                                    <div
+                                        className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
+                                        onClick={(e) => handleQuickComplete(e, item)}
+                                        title="Mark complete"
+                                    >
+                                        <CheckCircle className="h-6 w-6 text-green-500" />
+                                    </div>
+                                </>
+                            )}
                         </div>
                     </div>
 
                     {/* Content Card */}
                     <Card className={cn(
                         "flex-1 p-4 hover:shadow-md transition-all border-l-4",
-                        item.status === 'completed' ? 'opacity-60 border-l-muted' : 'border-l-primary',
+                        item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
                     )}>
+                         {item.status === 'completed' && (
+                            <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
+                                <CheckCircle weight="fill" className="h-5 w-5" />
+                            </div>
+                        )}
                         <div className="flex justify-between items-start">
                             <div>
                                 <div className="flex items-center gap-2 mb-1">
