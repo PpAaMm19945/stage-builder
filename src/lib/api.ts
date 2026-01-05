@@ -426,10 +426,22 @@ export const portfolio = {
 };
 
 export const rhythm = {
-  readjust: (instruction: string) => apiRequest<any>('/api/rhythm/readjust', {
-    method: 'POST',
-    body: JSON.stringify({ instruction }),
-  }),
+  readjust: (instruction: string, weekStart?: string) => {
+    // Calculate Monday of current week if not provided
+    const today = new Date();
+    const day = today.getDay();
+    const diff = today.getDate() - day + (day === 0 ? -6 : 1);
+    const monday = new Date(today.setDate(diff));
+    const defaultWeekStart = monday.toISOString().split('T')[0];
+
+    return apiRequest<{ success: boolean; plan: any }>('/api/rhythm/readjust', {
+      method: 'POST',
+      body: JSON.stringify({
+        prompt: instruction,
+        weekStart: weekStart || defaultWeekStart
+      }),
+    });
+  },
 };
 
 export const notifications = {

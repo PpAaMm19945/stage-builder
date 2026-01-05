@@ -18,8 +18,8 @@ export function RhythmPromptBar() {
             setInstruction('');
             queryClient.invalidateQueries({ queryKey: ['family-today'] });
         },
-        onError: () => {
-            toast.error("Couldn't adjust rhythm. Please try again.");
+        onError: (error: Error) => {
+            toast.error(error.message || "Couldn't adjust rhythm. Please try again.");
         }
     });
 
