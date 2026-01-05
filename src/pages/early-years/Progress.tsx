@@ -1,470 +1,227 @@
+
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Progress } from '@/components/ui/progress';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ErrorState } from '@/components/ui/ErrorState';
-import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import { students } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
-import { ProgressChart } from '@/components/progress/ProgressChart';
+import { DOMAIN_LABELS, type EarlyYearsDomain, type Student } from '@/types';
 import {
   TrendUp,
-  Pulse,
   Brain,
   Heart,
   BookOpen,
   HandGrabbing,
   Sparkle,
-  Target,
   ChartBar,
-  CalendarBlank,
-  CheckCircle,
+  CaretDown,
+  CaretUp,
   ChatCircleText,
-  SmileyMelting,
-  Image,
-  Plus
+  CheckCircle,
+  WarningCircle,
+  Clock
 } from '@phosphor-icons/react';
-import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from '@/components/ui/collapsible';
+import { Progress } from '@/components/ui/progress';
+import { cn } from '@/lib/utils';
+import { format } from 'date-fns';
 
 const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
   'motor': HandGrabbing,
   'language': ChatCircleText,
   'cognitive': Brain,
-  'social-emotional': Heart, // or SmileyMelting
+  'social-emotional': Heart,
   'pre-academic': BookOpen,
 };
 
-const domainColors: Record<EarlyYearsDomain, { bg: string; text: string; progress: string }> = {
-  'motor': { bg: 'bg-domain-motor/10', text: 'text-domain-motor', progress: 'bg-domain-motor' },
-  'language': { bg: 'bg-domain-language/10', text: 'text-domain-language', progress: 'bg-domain-language' },
-  'cognitive': { bg: 'bg-domain-cognitive/10', text: 'text-domain-cognitive', progress: 'bg-domain-cognitive' },
-  'social-emotional': { bg: 'bg-domain-social/10', text: 'text-domain-social', progress: 'bg-domain-social' },
-  'pre-academic': { bg: 'bg-domain-academic/10', text: 'text-domain-academic', progress: 'bg-domain-academic' },
+// Simplified palette (Phase 1/2 requirement: soft colors, not multi-colored analytics)
+const getDomainColor = (domain: EarlyYearsDomain) => {
+  return 'bg-primary/10 text-primary';
 };
 
-const domainBadgeColors: Record<EarlyYearsDomain, string> = {
-  'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
-  'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
-  'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
-  'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
-  'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
-};
-
-export default function ProgressPage() {
-  const { selectedChild } = useAuth();
-  const navigate = useNavigate();
-  const [isUploadOpen, setIsUploadOpen] = useState(false);
-
-  // Fetch progress from API
-  const { data: progressData, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['progress', selectedChild?.id],
-    queryFn: () => students.getProgress(selectedChild!.id),
-    enabled: !!selectedChild,
-    staleTime: 2 * 60 * 1000, // 2 minutes
-  });
-
-  // Fetch observations for activity history
-  const { data: observationsData } = useQuery({
-    queryKey: ['observations', selectedChild?.id],
-    queryFn: () => students.getObservations(selectedChild!.id),
-    enabled: !!selectedChild,
-    staleTime: 2 * 60 * 1000,
-  });
-
-  const domains = Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[];
-  const totalCompleted = progressData?.totalCompleted || 0;
-
-  // Calculate domains with at least one activity
-  const domainsWithProgress = progressData?.byDomain?.filter((d: any) => d.count > 0).length || 0;
-
-  // Get overall progress label based on total completed
-  const getOverallProgressLabel = () => {
-    if (totalCompleted === 0) return 'Getting Started';
-    if (totalCompleted <= 5) return 'Beginning';
-    if (totalCompleted <= 20) return 'Good Progress';
-    return 'Excellent!';
-  };
-
-  // Get insights based on actual domain data
-  const getInsights = () => {
-    const domainData = progressData?.byDomain || [];
-    if (domainData.length === 0) {
-      return { strongDomain: null, focusDomain: null };
-    }
-
-    // Aggregate counts by domain
-    const domainCounts: Record<string, number> = {};
-    domainData.forEach((d: any) => {
-      domainCounts[d.domain] = (domainCounts[d.domain] || 0) + d.count;
-    });
-
-    const sortedDomains = Object.entries(domainCounts)
-      .sort(([, a], [, b]) => (b as number) - (a as number));
-
-    if (sortedDomains.length === 0) {
-      return { strongDomain: null, focusDomain: null };
-    }
-
-    return {
-      strongDomain: sortedDomains[0] ? { domain: sortedDomains[0][0], count: sortedDomains[0][1] } : null,
-      focusDomain: sortedDomains.length > 1 ? { domain: sortedDomains[sortedDomains.length - 1][0], count: sortedDomains[sortedDomains.length - 1][1] } : null,
-    };
-  };
-
-  if (!selectedChild) {
-    return (
-      <div className="flex flex-col items-center justify-center h-[50vh] text-center">
-        <p className="text-muted-foreground">Please select a child to view progress</p>
-      </div>
-    );
-  }
-
-  // Loading state
-  if (isLoading) {
-    return (
-      <div className="space-y-8 max-w-4xl">
-        <div className="space-y-2">
-          <Skeleton className="h-9 w-48" />
-          <Skeleton className="h-5 w-64" />
-        </div>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-          {[1, 2, 3].map((i) => (
-            <Card key={i}>
-              <CardContent className="pt-6">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
-                  <div>
-                    <Skeleton className="h-8 w-16" />
-                    <Skeleton className="h-4 w-24 mt-1" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-        <div className="space-y-4">
-          <Skeleton className="h-6 w-40" />
-          {[1, 2, 3, 4, 5].map((i) => (
-            <Card key={i}>
-              <CardContent className="p-4">
-                <div className="flex items-center gap-4">
-                  <Skeleton className="h-12 w-12 rounded-xl" />
-                  <div className="flex-1">
-                    <Skeleton className="h-5 w-32" />
-                    <Skeleton className="h-2 w-full mt-2" />
-                    <Skeleton className="h-4 w-48 mt-1" />
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  // Error state
-  if (isError) {
-    return (
-      <ErrorState
-        title="Failed to Load Progress"
-        message={error instanceof Error ? error.message : "We couldn't load your progress data. Please try again."}
-        onRetry={() => refetch()}
-      />
-    );
-  }
-
-  // Empty state - show when no activities completed yet
-  if (totalCompleted === 0) {
-    return (
-      <div className="space-y-8 max-w-4xl">
-        {/* Header */}
-        <div className="space-y-2">
-          <h1 className="text-3xl font-display font-bold text-foreground">
-            {selectedChild.name}'s Progress
-          </h1>
-          <p className="text-muted-foreground">
-            Development overview across all learning domains
-          </p>
-        </div>
-
-        <EmptyState
-          icon={ChartBar}
-          title="Start Your Journey"
-          description="Complete your first activity to begin tracking progress. Every small step counts!"
-          actionLabel="View Today's Activity"
-          actionHref="/early-years/today"
-        />
-      </div>
-    );
-  }
-
-  // Helper to get domain progress from API data
-  const getDomainProgress = (domain: EarlyYearsDomain) => {
-    const domainData = progressData?.byDomain?.filter((d: any) => d.domain === domain) || [];
-    const totalCount = domainData.reduce((sum: number, d: any) => sum + (d.count || 0), 0);
-    const masteryLevel = domainData.length > 0 ? domainData[0].mastery_level : 'Not Started';
-    return {
-      level: masteryLevel || 'Not Started',
-      completed: totalCount,
-    };
-  };
-
-  const insights = getInsights();
+function FamilyHealthCheck({ children }: { children: Student[] }) {
+  // Mock health check logic for Phase 1 (since we don't have full backend analytics yet)
+  const activeChildren = children.length; // Assume all active for now
 
   return (
-    <div className="space-y-8 max-w-4xl">
-      {/* Header */}
-      <div className="space-y-2">
-        <h1 className="text-3xl font-display font-bold text-foreground">
-          {selectedChild.name}'s Progress
-        </h1>
-        <p className="text-muted-foreground">
-          Development overview across all learning domains
-        </p>
-      </div>
-
-      <div className="flex gap-2">
-        <Button variant="outline" onClick={() => navigate(`/early-years/portfolio/${selectedChild.id}`)} className="gap-2">
-          <Image className="h-4 w-4" />
-          View Portfolio
-        </Button>
-        <Button onClick={() => setIsUploadOpen(true)} className="gap-2">
-          <Plus className="h-4 w-4" />
-          Add to Portfolio
-        </Button>
-      </div>
-
-      <PortfolioUploadModal
-        studentId={selectedChild?.id || ''}
-        isOpen={isUploadOpen}
-        onClose={() => setIsUploadOpen(false)}
-        onUploadComplete={() => refetch()}
-        preselectedDomain="wisdom"
-      />
-
-      {/* Summary Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-primary/10 flex items-center justify-center">
-                <TrendUp className="h-6 w-6 text-primary" weight="duotone" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{totalCompleted}</p>
-                <p className="text-sm text-muted-foreground">Activities Completed</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-secondary/10 flex items-center justify-center">
-                <Pulse className="h-6 w-6 text-secondary" weight="duotone" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{domainsWithProgress}</p>
-                <p className="text-sm text-muted-foreground">Domains Tracked</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardContent className="pt-6">
-            <div className="flex items-center gap-4">
-              <div className="h-12 w-12 rounded-xl bg-accent/10 flex items-center justify-center">
-                <Heart className="h-6 w-6 text-accent" weight="duotone" />
-              </div>
-              <div>
-                <p className="text-2xl font-bold text-foreground">{getOverallProgressLabel()}</p>
-                <p className="text-sm text-muted-foreground">Overall Progress</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Long-term Progress Chart */}
-      <div className="pt-4">
-        <h2 className="text-lg font-semibold text-foreground mb-4">Long-term Progress</h2>
-        <ProgressChart />
-      </div>
-
-      {/* Domain Progress */}
-      <div className="space-y-4">
-        <h2 className="text-lg font-semibold text-foreground">Progress by Domain</h2>
-        <div className="grid gap-4">
-          {domains.map((domain) => {
-            const Icon = domainIcons[domain];
-            const colors = domainColors[domain];
-            const progress = getDomainProgress(domain);
-
-            return (
-              <Card key={domain} className="overflow-hidden">
-                <CardContent className="p-0">
-                  <div className="flex items-center gap-4 p-4">
-                    <div className={`h-12 w-12 rounded-xl ${colors.bg} flex items-center justify-center shrink-0`}>
-                      <Icon className={`h-6 w-6 ${colors.text}`} weight="duotone" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center justify-between mb-2">
-                        <h3 className="font-medium text-foreground">
-                          {DOMAIN_LABELS[domain]}
-                        </h3>
-                        <span className={`text-sm font-medium ${colors.text}`}>
-                          {progress.level}
-                        </span>
-                      </div>
-                      <div className="space-y-1">
-                        <Progress
-                          value={progress.completed > 0 ? Math.min(progress.completed * 10, 100) : 0}
-                          className="h-2"
-                        />
-                        <p className="text-xs text-muted-foreground">
-                          {progress.completed} {progress.completed === 1 ? 'activity' : 'activities'} completed
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-                </CardContent>
-              </Card>
-            );
-          })}
+    <Card className="bg-gradient-to-r from-green-50 to-emerald-50 dark:from-green-950/20 dark:to-emerald-950/20 border-green-200 dark:border-green-800/50 mb-8">
+      <CardContent className="pt-6">
+        <div className="flex items-start gap-4">
+          <div className="p-2 bg-green-100 dark:bg-green-900/40 rounded-full shrink-0">
+            <CheckCircle className="w-6 h-6 text-green-600 dark:text-green-400" weight="fill" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold text-green-900 dark:text-green-100">
+              Family Growth Snapshot
+            </h3>
+            <p className="text-green-800/80 dark:text-green-200/80 mt-1">
+              All {activeChildren} children are active and growing.
+              Remember, "growth is slow and steady, like a tree planted by streams of water."
+            </p>
+          </div>
         </div>
-      </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-      {/* Insights */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Insights</CardTitle>
-          <CardDescription>
-            Based on {selectedChild.name}'s recent activities
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {totalCompleted === 0 ? (
-            <div className="flex items-start gap-3 p-3 rounded-lg bg-muted/50 border border-muted">
-              <div className="h-8 w-8 rounded-full bg-muted flex items-center justify-center shrink-0">
-                <Target className="h-4 w-4 text-muted-foreground" weight="duotone" />
+function ChildProgressCard({ child }: { child: Student }) {
+  const navigate = useNavigate();
+  const [isOpen, setIsOpen] = useState(false);
+
+  // Fetch progress for this specific child
+  const { data: progressData, isLoading } = useQuery({
+    queryKey: ['progress', child.id],
+    queryFn: () => students.getProgress(child.id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  const { data: observations } = useQuery({
+    queryKey: ['observations', child.id],
+    queryFn: () => students.getObservations(child.id),
+    staleTime: 5 * 60 * 1000,
+  });
+
+  if (isLoading) {
+    return <Skeleton className="h-24 w-full rounded-xl" />;
+  }
+
+  const totalActivities = progressData?.totalCompleted || 0;
+  const recentActivity = observations && observations.length > 0 ? observations[0] : null;
+
+  // Calculate domains with activity
+  const activeDomains = progressData?.byDomain?.filter((d: any) => d.count > 0).length || 0;
+
+  return (
+    <Card className={cn("transition-all duration-200 border-l-4", isOpen ? "border-l-primary shadow-md" : "border-l-transparent hover:border-l-muted-foreground/30")}>
+      <Collapsible open={isOpen} onOpenChange={setIsOpen}>
+        <div className="p-6">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-lg">
+                {child.name.charAt(0)}
               </div>
               <div>
-                <p className="font-medium text-foreground">Ready to Begin!</p>
-                <p className="text-sm text-muted-foreground">
-                  Complete some activities to see personalized insights about {selectedChild.name}'s progress.
+                <h3 className="text-lg font-semibold text-foreground">{child.name}</h3>
+                <p className="text-sm text-muted-foreground flex items-center gap-2">
+                  {child.ageInMonths} months • {totalActivities} activities completed
                 </p>
               </div>
             </div>
-          ) : (
-            <>
-              {insights.strongDomain && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-secondary/5 border border-secondary/20">
-                  <div className="h-8 w-8 rounded-full bg-secondary/20 flex items-center justify-center shrink-0">
-                    <Sparkle className="h-4 w-4 text-secondary" weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Strong in {DOMAIN_LABELS[insights.strongDomain.domain as EarlyYearsDomain] || insights.strongDomain.domain}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      {selectedChild.name} has completed {insights.strongDomain.count} {insights.strongDomain.count === 1 ? 'activity' : 'activities'} in this domain. Keep up the great work!
-                    </p>
-                  </div>
-                </div>
-              )}
-              {insights.focusDomain && insights.focusDomain.domain !== insights.strongDomain?.domain && (
-                <div className="flex items-start gap-3 p-3 rounded-lg bg-accent/5 border border-accent/20">
-                  <div className="h-8 w-8 rounded-full bg-accent/20 flex items-center justify-center shrink-0">
-                    <Target className="h-4 w-4 text-accent" weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="font-medium text-foreground">
-                      Focus Area: {DOMAIN_LABELS[insights.focusDomain.domain as EarlyYearsDomain] || insights.focusDomain.domain}
-                    </p>
-                    <p className="text-sm text-muted-foreground">
-                      Try some more activities in this domain to build a well-rounded skill set.
-                    </p>
-                  </div>
-                </div>
-              )}
-            </>
+
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="gap-2">
+                {isOpen ? 'Show Less' : 'View Details'}
+                {isOpen ? <CaretUp className="w-4 h-4" /> : <CaretDown className="w-4 h-4" />}
+              </Button>
+            </CollapsibleTrigger>
+          </div>
+
+          {!isOpen && recentActivity && (
+            <div className="mt-4 pl-[4rem] text-sm text-muted-foreground flex items-center gap-2">
+              <Clock className="w-4 h-4" />
+              Last active: <span className="font-medium text-foreground">{recentActivity.activity?.title || 'Unknown Activity'}</span> ({format(new Date(recentActivity.date), 'MMM d')})
+            </div>
           )}
-        </CardContent>
-      </Card>
+        </div>
 
-      {/* Recent Activity History */}
-      {observationsData && observationsData.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center gap-2">
-              <CalendarBlank className="h-5 w-5 text-primary" weight="duotone" />
-              Recent Activity
-            </CardTitle>
-            <CardDescription>
-              Activities completed by {selectedChild.name}
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {(() => {
-              // Group observations by date
-              const grouped = observationsData.reduce((acc: Record<string, any[]>, obs: any) => {
-                const date = new Date(obs.created_at).toLocaleDateString('en-US', {
-                  weekday: 'long',
-                  month: 'short',
-                  day: 'numeric'
-                });
-                if (!acc[date]) acc[date] = [];
-                acc[date].push(obs);
-                return acc;
-              }, {});
+        <CollapsibleContent>
+          <div className="px-6 pb-6 pt-0 space-y-6">
+            <div className="h-px bg-border/50 w-full mb-6" />
 
-              // Take only first 3 days
-              const dates = Object.keys(grouped).slice(0, 3);
+            {/* Domain Progress Grid */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {(Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[]).map((domain) => {
+                const Icon = domainIcons[domain];
+                const domainData = progressData?.byDomain?.find((d: any) => d.domain === domain);
+                const count = domainData?.count || 0;
 
-              return dates.map((date) => (
-                <div key={date} className="space-y-2">
-                  <h4 className="text-sm font-medium text-muted-foreground">{date}</h4>
-                  <div className="space-y-2">
-                    {grouped[date].slice(0, 3).map((obs: any) => (
-                      <div
-                        key={obs.id}
-                        onClick={() => navigate(`/early-years/activities/${obs.activity_id}`)}
-                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/30 hover:bg-muted/50 cursor-pointer transition-colors"
-                      >
-                        <CheckCircle className="h-4 w-4 text-mastery-secure shrink-0" weight="fill" />
-                        <div className="flex-1 min-w-0">
-                          <p className="font-medium text-foreground truncate">
-                            {obs.activity_title || 'Activity'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-1">
-                            <Badge
-                              variant="outline"
-                              className={`text-xs ${domainBadgeColors[obs.domain as EarlyYearsDomain] || ''}`}
-                            >
-                              {DOMAIN_LABELS[obs.domain as EarlyYearsDomain] || obs.domain}
-                            </Badge>
-                            <span className="text-xs text-muted-foreground capitalize">
-                              {obs.mastery_level}
-                            </span>
-                          </div>
-                        </div>
+                // Gentle progress calculation (just based on activity count for now)
+                // In Phase 2/3 this will be milestone-based
+                const level = count > 10 ? 'Well Practiced' : count > 3 ? 'Growing' : 'Getting Started';
+                const progressValue = Math.min((count / 15) * 100, 100); // Cap at 15 for visual fullness
+
+                return (
+                  <div key={domain} className="p-4 rounded-lg bg-muted/30 border border-muted/50 hover:bg-muted/50 transition-colors">
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className={cn("p-2 rounded-md", getDomainColor(domain))}>
+                        <Icon className="w-5 h-5" weight="duotone" />
                       </div>
-                    ))}
+                      <div className="flex-1">
+                        <div className="font-medium text-sm">{DOMAIN_LABELS[domain]}</div>
+                        <div className="text-xs text-muted-foreground">{level}</div>
+                      </div>
+                      <div className="text-xs font-bold text-muted-foreground bg-background px-2 py-1 rounded-full border">
+                        {count} acts
+                      </div>
+                    </div>
+                    <Progress value={progressValue} className="h-2" />
                   </div>
+                );
+              })}
+            </div>
+
+            {/* Encouragement / Insights */}
+            <div className="bg-blue-50 dark:bg-blue-900/10 p-4 rounded-lg border border-blue-100 dark:border-blue-800/30">
+              <div className="flex items-start gap-3">
+                <Sparkle className="w-5 h-5 text-blue-500 mt-0.5" weight="fill" />
+                <div className="text-sm text-blue-900 dark:text-blue-100">
+                  <span className="font-semibold">Observation:</span> {child.name} is showing interest in {activeDomains} different learning areas.
+                  Continue to offer a broad "feast" of ideas from all domains.
                 </div>
-              ));
-            })()}
-          </CardContent>
-        </Card>
-      )}
+              </div>
+            </div>
+
+            <div className="flex justify-end">
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => navigate(`/early-years/portfolio?childId=${child.id}`)}>
+                View Full Portfolio <TrendUp className="w-4 h-4" />
+              </Button>
+            </div>
+          </div>
+        </CollapsibleContent>
+      </Collapsible>
+    </Card>
+  );
+}
+
+export default function ProgressPage() {
+  const { children } = useAuth();
+
+  if (!children || children.length === 0) {
+    return (
+      <div className="flex flex-col items-center justify-center p-12 text-center">
+        <h2 className="text-xl font-bold">No children profiles found</h2>
+        <p className="text-muted-foreground">Add a child in Settings to start tracking progress.</p>
+      </div>
+    );
+  }
+
+  return (
+    <div className="max-w-4xl mx-auto space-y-8 pb-12">
+      <div className="space-y-2">
+        <h1 className="text-3xl font-display font-bold text-foreground">Family Progress</h1>
+        <p className="text-muted-foreground">
+          Celebrating growth and faithfulness in the little things.
+        </p>
+      </div>
+
+      {/* Family Summaries */}
+      <FamilyHealthCheck children={children} />
+
+      {/* One Card Per Child */}
+      <div className="space-y-4">
+        {children.map(child => (
+          <ChildProgressCard key={child.id} child={child} />
+        ))}
+      </div>
     </div>
   );
 }

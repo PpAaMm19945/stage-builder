@@ -282,6 +282,26 @@ export const weeklyPlan = {
 
 // AI
 export const ai = {
+  chat: async (message: string, context: any) => {
+    const token = getAuthToken();
+    const response = await fetch(`${API_URL}/api/ai/chat`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ message, context }),
+    });
+    if (!response.ok) throw new Error('Chat failed');
+    return response.body;
+  },
+
+  explainPlan: (slot: any, childId: string) =>
+    apiRequest<any>('/api/ai/explain-plan', {
+      method: 'POST',
+      body: JSON.stringify({ slot, childId }),
+    }),
+
   explain: (question: string, context?: { activityId?: string; domain?: string; childAge?: number }) =>
     apiRequest<any>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
   narrate: (plan: any, tone?: 'encouraging' | 'calm' | 'concise') =>

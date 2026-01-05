@@ -1,6 +1,5 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import {
     Brain,
@@ -8,15 +7,11 @@ import {
     BookOpen,
     HandGrabbing,
     ChatCircleText,
-    ArrowRight,
-    CheckCircle,
-    Circle,
-    Target,
-    Sparkle,
-    Info
+    Info,
 } from '@phosphor-icons/react';
 import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 // Scope & Sequence data structure
 // This represents the curriculum progression for early years (0-5)
@@ -25,7 +20,6 @@ interface MilestoneMarker {
     title: string;
     description: string;
     ageRangeMonths: [number, number];
-    isAchieved?: boolean;
 }
 
 interface DomainSequence {
@@ -41,276 +35,181 @@ const domainIcons: Record<EarlyYearsDomain, React.ElementType> = {
     'pre-academic': BookOpen,
 };
 
-const domainColors: Record<EarlyYearsDomain, string> = {
-    'motor': 'text-emerald-600 dark:text-emerald-400',
-    'language': 'text-blue-600 dark:text-blue-400',
-    'cognitive': 'text-purple-600 dark:text-purple-400',
-    'social-emotional': 'text-pink-600 dark:text-pink-400',
-    'pre-academic': 'text-orange-600 dark:text-orange-400',
-};
-
-const domainBgColors: Record<EarlyYearsDomain, string> = {
-    'motor': 'bg-emerald-50 dark:bg-emerald-950/30',
-    'language': 'bg-blue-50 dark:bg-blue-950/30',
-    'cognitive': 'bg-purple-50 dark:bg-purple-950/30',
-    'social-emotional': 'bg-pink-50 dark:bg-pink-950/30',
-    'pre-academic': 'bg-orange-50 dark:bg-orange-950/30',
-};
-
 // Sample scope & sequence data based on Reformed/Charlotte Mason approach
 const SCOPE_SEQUENCE_DATA: DomainSequence[] = [
     {
         domain: 'motor',
         milestones: [
-            { id: 'm1', title: 'Tummy Time Master', description: 'Lifts head and chest during tummy time', ageRangeMonths: [0, 4] },
-            { id: 'm2', title: 'Sitting Strong', description: 'Sits independently without support', ageRangeMonths: [5, 8] },
-            { id: 'm3', title: 'First Steps', description: 'Takes first independent steps', ageRangeMonths: [9, 15] },
-            { id: 'm4', title: 'Confident Walker', description: 'Walks and runs with ease', ageRangeMonths: [15, 24] },
-            { id: 'm5', title: 'Fine Motor Skills', description: 'Uses scissors, holds pencil correctly', ageRangeMonths: [36, 48] },
-            { id: 'm6', title: 'Physical Coordination', description: 'Catches balls, climbs playground equipment', ageRangeMonths: [48, 60] },
+            { id: 'm1', title: 'Tummy Time & Head Control', description: 'Lifts head and checks during tummy time. Developing core strength for future upright movement.', ageRangeMonths: [0, 4] },
+            { id: 'm2', title: 'Sitting & Rolling', description: 'Sits independently and rolls over. Gaining stewardship of the body.', ageRangeMonths: [5, 8] },
+            { id: 'm3', title: 'Crawling & First Steps', description: 'Explores the world through crawling and initial walking.', ageRangeMonths: [9, 15] },
+            { id: 'm4', title: 'Confident Walker', description: 'Walks and runs with ease. Stewardship of movement in God\'s creation.', ageRangeMonths: [15, 24] },
+            { id: 'm5', title: 'Fine Motor Control', description: 'Uses simple tools, beads, and crayons. Preparing hands for service.', ageRangeMonths: [36, 48] },
+            { id: 'm6', title: 'Physical Coordination', description: 'Catches balls, balances, climbs. Joyful mastery of the body.', ageRangeMonths: [48, 72] },
         ]
     },
     {
         domain: 'language',
         milestones: [
-            { id: 'l1', title: 'First Sounds', description: 'Coos and babbles in response to speech', ageRangeMonths: [0, 6] },
-            { id: 'l2', title: 'First Words', description: 'Says first meaningful words (mama, dada)', ageRangeMonths: [9, 12] },
-            { id: 'l3', title: 'Word Explosion', description: 'Vocabulary grows to 50+ words', ageRangeMonths: [18, 24] },
-            { id: 'l4', title: 'Simple Sentences', description: 'Combines words into 2-3 word sentences', ageRangeMonths: [24, 30] },
-            { id: 'l5', title: 'Storyteller', description: 'Tells simple stories, uses complete sentences', ageRangeMonths: [36, 48] },
-            { id: 'l6', title: 'Early Reader', description: 'Recognizes letters, rhymes, and some sight words', ageRangeMonths: [48, 60] },
+            { id: 'l1', title: 'Listening & Cooing', description: 'Attends to voices and makes first sounds. The beginning of communication.', ageRangeMonths: [0, 6] },
+            { id: 'l2', title: 'First Words', description: 'Says meaningful words (mama, dada). Naming the world.', ageRangeMonths: [9, 12] },
+            { id: 'l3', title: 'Language Explosion', description: 'Vocabulary grows rapidly. Imitating the language of the home.', ageRangeMonths: [18, 24] },
+            { id: 'l4', title: 'Speaking in Sentences', description: 'Combines words to express thoughts and needs clearly.', ageRangeMonths: [24, 36] },
+            { id: 'l5', title: 'Narrator', description: 'Retells simple stories and events. The art of narration begins.', ageRangeMonths: [36, 48] },
+            { id: 'l6', title: 'Pre-Reader', description: 'Recognizes letters and rhymes. Developing affection for written words.', ageRangeMonths: [48, 72] },
         ]
     },
     {
         domain: 'cognitive',
         milestones: [
-            { id: 'c1', title: 'Object Tracking', description: 'Follows objects with eyes, recognizes faces', ageRangeMonths: [0, 4] },
-            { id: 'c2', title: 'Object Permanence', description: 'Understands objects exist when hidden', ageRangeMonths: [6, 12] },
-            { id: 'c3', title: 'Problem Solver', description: 'Solves simple problems, stacks blocks', ageRangeMonths: [12, 24] },
-            { id: 'c4', title: 'Sorting & Matching', description: 'Sorts by color, shape; matches pairs', ageRangeMonths: [24, 36] },
-            { id: 'c5', title: 'Counting Concepts', description: 'Counts to 10, understands quantity', ageRangeMonths: [36, 48] },
-            { id: 'c6', title: 'Logical Thinking', description: 'Understands sequences, simple patterns', ageRangeMonths: [48, 60] },
+            { id: 'c1', title: 'Observing the World', description: 'Follows objects and recognizes faces. Growing in awareness.', ageRangeMonths: [0, 6] },
+            { id: 'c2', title: 'Object Permanence', description: 'Understands unseen things still exist. Trust and memory.', ageRangeMonths: [6, 12] },
+            { id: 'c3', title: 'Explorer & Solver', description: 'Solves simple problems and explores cause and effect.', ageRangeMonths: [12, 24] },
+            { id: 'c4', title: 'Sorting & Patterns', description: 'Notice order and categories in creation.', ageRangeMonths: [24, 36] },
+            { id: 'c5', title: 'Number Sense', description: 'Counts and understands quantity (1-10). Wisdom in numbering.', ageRangeMonths: [36, 48] },
+            { id: 'c6', title: 'Logical Thinking', description: 'Understands sequences and simple reasoning.', ageRangeMonths: [48, 72] },
         ]
     },
     {
         domain: 'social-emotional',
         milestones: [
-            { id: 's1', title: 'Social Smile', description: 'Smiles in response to faces and voices', ageRangeMonths: [0, 3] },
-            { id: 's2', title: 'Attachment', description: 'Shows preference for caregivers', ageRangeMonths: [6, 12] },
-            { id: 's3', title: 'Parallel Play', description: 'Plays alongside other children', ageRangeMonths: [18, 30] },
-            { id: 's4', title: 'Sharing Begins', description: 'Takes turns with guidance', ageRangeMonths: [30, 42] },
-            { id: 's5', title: 'Friendship', description: 'Forms friendships, shows empathy', ageRangeMonths: [42, 54] },
-            { id: 's6', title: 'Self-Regulation', description: 'Manages emotions with words', ageRangeMonths: [48, 60] },
+            { id: 's1', title: 'Attachment & Trust', description: 'Bonds with caregivers. Learning foundational trust.', ageRangeMonths: [0, 6] },
+            { id: 's2', title: 'Social Engagement', description: 'Responds to others and initiates interaction.', ageRangeMonths: [6, 18] },
+            { id: 's3', title: 'Parallel Play', description: 'Plays alongside others. Learning to be in community.', ageRangeMonths: [18, 30] },
+            { id: 's4', title: 'Cooperative Play', description: 'Plays with others, sharing and taking turns. Practicing love for neighbor.', ageRangeMonths: [30, 48] },
+            { id: 's5', title: 'Empathy & Manners', description: 'Understanding feelings and practicing grace and courtesy.', ageRangeMonths: [48, 60] },
+            { id: 's6', title: 'Self-Control', description: 'Growing in patience and managing emotions.', ageRangeMonths: [60, 72] },
         ]
     },
     {
         domain: 'pre-academic',
         milestones: [
-            { id: 'p1', title: 'Book Lover', description: 'Enjoys being read to, handles books', ageRangeMonths: [6, 18] },
-            { id: 'p2', title: 'Name Recognition', description: 'Recognizes own name in print', ageRangeMonths: [24, 36] },
-            { id: 'p3', title: 'Letter Awareness', description: 'Identifies some alphabet letters', ageRangeMonths: [36, 48] },
-            { id: 'p4', title: 'Number Sense', description: 'Counts objects, writes numbers 1-5', ageRangeMonths: [42, 54] },
-            { id: 'p5', title: 'Writing Ready', description: 'Draws shapes, attempts letters', ageRangeMonths: [48, 60] },
-            { id: 'p6', title: 'Kindergarten Ready', description: 'Writes name, knows letter sounds', ageRangeMonths: [54, 66] },
+            { id: 'p1', title: 'Sensory Exploration', description: 'Learns through touch, sight, and sound.', ageRangeMonths: [0, 12] },
+            { id: 'p2', title: 'Practical Life', description: 'Helps with simple tasks (pouring, wiping). Service in the home.', ageRangeMonths: [18, 36] },
+            { id: 'p3', title: 'Book Lover', description: 'Enjoys being read to and handling books.', ageRangeMonths: [12, 36] },
+            { id: 'p4', title: 'Art & Creativity', description: 'Expresses beauty through drawing and making.', ageRangeMonths: [36, 60] },
+            { id: 'p5', title: 'Focus & Attention', description: 'Sustains attention on short tasks (Habit of Attention).', ageRangeMonths: [48, 72] },
         ]
-    },
+    }
 ];
 
-export default function ScopeSequence() {
-    const { selectedChild } = useAuth();
-    const childAgeMonths = selectedChild?.ageInMonths || 24;
+export default function ScopeSequencePage() {
+    const { children } = useAuth();
 
-    // Determine milestone status based on child's age
-    const getMilestoneStatus = (milestone: MilestoneMarker): 'past' | 'current' | 'future' => {
-        if (childAgeMonths > milestone.ageRangeMonths[1]) return 'past';
-        if (childAgeMonths >= milestone.ageRangeMonths[0] && childAgeMonths <= milestone.ageRangeMonths[1]) return 'current';
-        return 'future';
+    const getChildrenInStage = (min: number, max: number) => {
+        // Handle case where children is undefined
+        if (!children) return [];
+        return children.filter(c => c.ageInMonths >= min && c.ageInMonths <= max);
     };
 
-    const formatAgeRange = (range: [number, number]) => {
-        const formatAge = (months: number) => {
-            if (months < 12) return `${months}m`;
-            const years = Math.floor(months / 12);
-            const remaining = months % 12;
-            return remaining > 0 ? `${years}y ${remaining}m` : `${years}y`;
-        };
-        return `${formatAge(range[0])} - ${formatAge(range[1])}`;
-    };
+    // Helper to get initials
+    const getInitials = (name: string) => name.charAt(0).toUpperCase();
 
     return (
         <div className="space-y-8 max-w-5xl mx-auto pb-12">
-            {/* Header */}
-            <div className="space-y-2">
-                <h1 className="text-3xl font-display font-bold text-foreground">
-                    Scope & Sequence
-                </h1>
-                <p className="text-muted-foreground">
-                    A roadmap of developmental milestones for {selectedChild?.name || 'your child'}
-                </p>
+            <div className="space-y-4">
+                <div>
+                    <h1 className="text-3xl font-display font-bold text-foreground">Family Learning Map</h1>
+                    <p className="text-muted-foreground mt-2">
+                        A guide to the developmental journey of your children, rooted in Wisdom, Stature, and Favor.
+                        This map helps you see where each child is flourishing.
+                    </p>
+                </div>
+
+                <Alert className="bg-primary/5 border-primary/20">
+                    <Info className="h-4 w-4 text-primary" />
+                    <AlertDescription className="text-primary/90 text-sm">
+                        Consider these age ranges as "seasons" rather than deadlines. Every child grows in their own time,
+                        like unique flowers in a garden. Use this map to identify readiness, not to rush growth.
+                    </AlertDescription>
+                </Alert>
             </div>
 
-            {/* Info Banner */}
-            <Alert className="border-primary/20 bg-primary/5">
-                <Info className="h-4 w-4 text-primary" />
-                <AlertDescription className="text-primary/90">
-                    This is a <strong>general guide</strong>, not a checklist. Every child develops at their own pace.
-                    The goal is formation, not comparison. Trust your observations as a parent.
-                </AlertDescription>
-            </Alert>
-
-            {/* Child Age Indicator */}
-            {selectedChild && (
-                <Card className="bg-gradient-to-r from-primary/5 to-transparent border-primary/20">
-                    <CardContent className="py-4">
-                        <div className="flex items-center gap-4">
-                            <div className="h-12 w-12 rounded-full bg-primary/10 flex items-center justify-center">
-                                <Target className="h-6 w-6 text-primary" weight="duotone" />
-                            </div>
-                            <div>
-                                <p className="text-lg font-semibold text-foreground">{selectedChild.name}</p>
-                                <p className="text-sm text-muted-foreground">
-                                    Currently {Math.floor(childAgeMonths / 12)} years, {childAgeMonths % 12} months old
-                                </p>
-                            </div>
-                            <div className="ml-auto">
-                                <Badge variant="outline" className="text-primary border-primary/30">
-                                    <Sparkle className="h-3 w-3 mr-1" weight="fill" />
-                                    Active Stage
-                                </Badge>
-                            </div>
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Domain Sequences */}
-            <div className="space-y-6">
-                {SCOPE_SEQUENCE_DATA.map((sequence) => {
-                    const Icon = domainIcons[sequence.domain];
-                    const textColor = domainColors[sequence.domain];
-                    const bgColor = domainBgColors[sequence.domain];
-
-                    // Calculate current position in this domain
-                    const currentMilestoneIndex = sequence.milestones.findIndex(
-                        m => getMilestoneStatus(m) === 'current'
-                    );
-                    const progressPercent = currentMilestoneIndex >= 0
-                        ? ((currentMilestoneIndex + 0.5) / sequence.milestones.length) * 100
-                        : sequence.milestones.every(m => getMilestoneStatus(m) === 'past') ? 100 : 0;
-
+            <div className="grid gap-8">
+                {SCOPE_SEQUENCE_DATA.map((domainData) => {
+                    const Icon = domainIcons[domainData.domain];
                     return (
-                        <Card key={sequence.domain} className="overflow-hidden">
-                            <CardHeader className={`${bgColor} border-b`}>
-                                <div className="flex items-center justify-between">
-                                    <div className="flex items-center gap-3">
-                                        <div className={`h-10 w-10 rounded-lg bg-white dark:bg-background flex items-center justify-center shadow-sm`}>
-                                            <Icon className={`h-5 w-5 ${textColor}`} weight="duotone" />
-                                        </div>
-                                        <div>
-                                            <CardTitle className="text-lg">{DOMAIN_LABELS[sequence.domain]}</CardTitle>
-                                            <CardDescription>{sequence.milestones.length} milestones</CardDescription>
-                                        </div>
+                        <Card key={domainData.domain} className="overflow-hidden border-none shadow-sm bg-muted/20">
+                            <CardHeader className="bg-background border-b rounded-t-lg">
+                                <div className="flex items-center gap-3">
+                                    <div className="p-2 rounded-lg bg-primary/10 text-primary">
+                                        <Icon className="w-6 h-6" weight="duotone" />
                                     </div>
-                                    <div className="text-right">
-                                        <span className={`text-sm font-medium ${textColor}`}>
-                                            {Math.round(progressPercent)}% journey
-                                        </span>
+                                    <div>
+                                        <CardTitle className="capitalize text-xl">{DOMAIN_LABELS[domainData.domain]}</CardTitle>
+                                        <CardDescription>Developmental milestones & formation</CardDescription>
                                     </div>
                                 </div>
-                                <Progress value={progressPercent} className="h-1.5 mt-3" />
                             </CardHeader>
                             <CardContent className="p-0">
-                                <div className="divide-y">
-                                    {sequence.milestones.map((milestone, idx) => {
-                                        const status = getMilestoneStatus(milestone);
-                                        const isLast = idx === sequence.milestones.length - 1;
+                                <div className="relative">
+                                    {/* Timeline Line */}
+                                    <div className="absolute left-8 top-6 bottom-6 w-0.5 bg-border/50" />
 
-                                        return (
-                                            <div
-                                                key={milestone.id}
-                                                className={`flex items-center gap-4 p-4 transition-colors ${status === 'current'
-                                                        ? `${bgColor} border-l-4 ${textColor.replace('text-', 'border-')}`
-                                                        : status === 'past'
-                                                            ? 'bg-muted/20'
-                                                            : 'opacity-60'
-                                                    }`}
-                                            >
-                                                {/* Status icon */}
-                                                <div className="shrink-0">
-                                                    {status === 'past' ? (
-                                                        <CheckCircle className="h-5 w-5 text-green-500" weight="fill" />
-                                                    ) : status === 'current' ? (
-                                                        <div className={`h-5 w-5 rounded-full ${textColor.replace('text-', 'bg-')} flex items-center justify-center`}>
-                                                            <div className="h-2 w-2 bg-white rounded-full animate-pulse" />
+                                    <div className="space-y-0">
+                                        {domainData.milestones.map((milestone, index) => {
+                                            const activeChildren = getChildrenInStage(milestone.ageRangeMonths[0], milestone.ageRangeMonths[1]);
+                                            const isCurrentStage = activeChildren.length > 0;
+
+                                            return (
+                                                <div key={milestone.id} className={`group relative flex gap-6 p-6 transition-colors ${isCurrentStage ? 'bg-background hover:bg-muted/30' : 'hover:bg-muted/10'}`}>
+                                                    {/* Timeline Dot */}
+                                                    <div className={`relative z-10 flex h-4 w-4 translate-y-1 rounded-full border-2 ${isCurrentStage ? 'border-primary bg-primary' : 'border-muted-foreground/30 bg-background'} transition-colors`} />
+
+                                                    <div className="flex-1 space-y-2">
+                                                        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
+                                                            <div className="flex items-center gap-3">
+                                                                <h4 className={`font-semibold ${isCurrentStage ? 'text-black dark:text-white' : 'text-muted-foreground'}`}>
+                                                                    {milestone.title}
+                                                                </h4>
+                                                                {isCurrentStage && (
+                                                                    <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20 border-0 h-5 text-[10px] px-2">
+                                                                        current focus
+                                                                    </Badge>
+                                                                )}
+                                                            </div>
+                                                            <span className="text-xs font-medium text-muted-foreground bg-muted/50 px-2 py-1 rounded">
+                                                                {milestone.ageRangeMonths[0]}-{milestone.ageRangeMonths[1]} mos
+                                                            </span>
                                                         </div>
-                                                    ) : (
-                                                        <Circle className="h-5 w-5 text-muted-foreground/50" />
-                                                    )}
-                                                </div>
 
-                                                {/* Content */}
-                                                <div className="flex-1 min-w-0">
-                                                    <div className="flex items-center gap-2">
-                                                        <span className={`font-medium ${status === 'past' ? 'text-muted-foreground' : 'text-foreground'}`}>
-                                                            {milestone.title}
-                                                        </span>
-                                                        {status === 'current' && (
-                                                            <Badge variant="secondary" className="text-[10px] h-5 px-1.5">
-                                                                NOW
-                                                            </Badge>
+                                                        <p className="text-sm text-muted-foreground leading-relaxed max-w-3xl">
+                                                            {milestone.description}
+                                                        </p>
+
+                                                        {/* Child Avatars for this stage */}
+                                                        {activeChildren.length > 0 && (
+                                                            <div className="pt-3 flex items-center gap-2 animate-in fade-in slide-in-from-left-2 duration-300">
+                                                                <div className="text-xs text-primary font-medium mr-1">Current season for:</div>
+                                                                <div className="flex -space-x-2">
+                                                                    {activeChildren.map(child => (
+                                                                        <TooltipProvider key={child.id}>
+                                                                            <Tooltip>
+                                                                                <TooltipTrigger>
+                                                                                    <div className="h-8 w-8 rounded-full border-2 border-background bg-primary text-primary-foreground flex items-center justify-center text-xs font-bold ring-2 ring-primary/20">
+                                                                                        {getInitials(child.name)}
+                                                                                    </div>
+                                                                                </TooltipTrigger>
+                                                                                <TooltipContent>
+                                                                                    <p>{child.name} ({child.ageInMonths} mo)</p>
+                                                                                </TooltipContent>
+                                                                            </Tooltip>
+                                                                        </TooltipProvider>
+                                                                    ))}
+                                                                </div>
+                                                            </div>
                                                         )}
                                                     </div>
-                                                    <p className="text-sm text-muted-foreground mt-0.5">
-                                                        {milestone.description}
-                                                    </p>
                                                 </div>
-
-                                                {/* Age range */}
-                                                <div className="shrink-0 text-right">
-                                                    <Badge variant="outline" className={`text-xs ${status === 'current' ? textColor : ''}`}>
-                                                        {formatAgeRange(milestone.ageRangeMonths)}
-                                                    </Badge>
-                                                </div>
-
-                                                {/* Arrow to next */}
-                                                {!isLast && (
-                                                    <ArrowRight className="h-4 w-4 text-muted-foreground/30 hidden md:block" />
-                                                )}
-                                            </div>
-                                        );
-                                    })}
+                                            );
+                                        })}
+                                    </div>
                                 </div>
                             </CardContent>
                         </Card>
                     );
                 })}
             </div>
-
-            {/* Philosophy Note */}
-            <Card className="bg-amber-50/50 dark:bg-amber-950/20 border-amber-200 dark:border-amber-800">
-                <CardContent className="py-6">
-                    <div className="flex items-start gap-4">
-                        <div className="h-10 w-10 rounded-full bg-amber-100 dark:bg-amber-900/30 flex items-center justify-center shrink-0">
-                            <BookOpen className="h-5 w-5 text-amber-700 dark:text-amber-400" weight="duotone" />
-                        </div>
-                        <div className="space-y-2">
-                            <h3 className="font-semibold text-amber-900 dark:text-amber-200">
-                                A Note on Scope & Sequence
-                            </h3>
-                            <p className="text-sm text-amber-800 dark:text-amber-300">
-                                In the Charlotte Mason tradition, we believe children are born persons with their own
-                                God-given pace of development. This scope and sequence serves as a <em>gentle guide</em>,
-                                not a checklist of demands. Your child is not behind if they haven't reached every milestone
-                                on schedule – they are exactly where God intends them to be.
-                            </p>
-                            <p className="text-xs text-amber-700 dark:text-amber-400 italic">
-                                "The question is not – how much does the youth know? when he has finished his education –
-                                but how much does he care?" – Charlotte Mason
-                            </p>
-                        </div>
-                    </div>
-                </CardContent>
-            </Card>
         </div>
     );
 }

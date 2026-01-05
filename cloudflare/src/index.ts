@@ -4,9 +4,11 @@
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
 import { generateWeeklyPlan, getSmartWeekStart } from './planner';
+import { AiCoach } from './ai';
 
 // Types
-interface Env {
+export interface Env {
+
   // Core bindings
   DB: D1Database;
   BOOKS_BUCKET: R2Bucket;
@@ -29,7 +31,7 @@ interface Env {
   ENVIRONMENT: string;
 }
 
-interface BookMetadata {
+export interface BookMetadata {
   id: string;
   series: string;
   seriesTitle?: string;
@@ -46,7 +48,7 @@ interface BookMetadata {
   coverUrl?: string;
 }
 
-interface User {
+export interface User {
   id: string;
   email: string;
   name: string;
@@ -3847,6 +3849,51 @@ app.post('/api/student-view/:studentId/complete', async (c) => {
   } catch (error: any) {
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
+  }
+});
+// ============ AI COACH ROUTES ============
+
+app.post('/api/ai/chat', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { message, context } = await c.req.json();
+
+    // Add user name to context if not present
+    const enrichedContext = { ...context, user: user.name };
+
+    const coach = new AiCoach(c.env);
+
+    // Using streaming response
+    const response = await coach.chat(message, enrichedContext);
+
+    return new Response(response, {
+      headers: { 'Content-Type': 'text/event-stream' }
+    });
+  } catch (error: any) {
+    console.error('AI Chat Error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post('/api/ai/explain-plan', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { slot, childId } = await c.req.json();
+
+    const child = await c.env.DB.prepare('SELECT * FROM students WHERE id = ?').bind(childId).first();
+
+    if (!child) return c.json({ error: 'Child not found' }, 404);
+
+    const coach = new AiCoach(c.env);
+    const response = await coach.explainPlan(slot, child);
+
+    // Response might be a ReadableStream or a string depending on default behavior
+    // For explainPlan we used invoke (non-streaming in ai.ts? wait, ai.ts explainPlan uses run without stream:true)
+    // So it returns a result object { response: string } usually
+
+    return c.json(response);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
   }
 });
 

@@ -309,35 +309,30 @@ export default function Dashboard() {
   };
 
   return (
-    <div className="space-y-8 max-w-4xl mx-auto pb-12">
-      {/* Header */}
-      <div className="bg-gradient-to-r from-primary/10 to-transparent p-6 rounded-2xl border border-primary/10">
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div className="space-y-1">
-            <div className="flex items-center gap-2 text-primary font-medium">
-              <CalendarBlank className="h-4 w-4" weight="duotone" />
-              <span>{new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}</span>
-            </div>
-            <h1 className="text-3xl font-display font-bold text-foreground flex items-center gap-2">
-              {youngestChild?.ageInMonths <= 12 ? 'Gentle Moments for Today' : 'Family Learning Plan'}
-              <Sparkle className="h-6 w-6 text-yellow-500" weight="duotone" />
-            </h1>
-            <p className="text-muted-foreground flex items-center gap-2">
-              <span className="font-semibold text-foreground">
-                {data.familySessions.length} {youngestChild?.ageInMonths <= 12 ? 'ideas' : 'activities'}
-              </span>
-              <span className="w-1 h-1 bg-muted-foreground/30 rounded-full" />
-              <span>~{Math.round(data.totalDuration)} min total</span>
-            </p>
-          </div>
-          <div className="flex gap-2">
-            <Button variant="outline" className="gap-2" onClick={() => navigate('/settings')}>
-              <Cube className="w-4 h-4" weight="duotone" />
-              My Materials
-            </Button>
+    <div className="space-y-6 max-w-4xl mx-auto pb-12 px-4">
+      {/* Warm Greeting Header */}
+      <div className="bg-gradient-to-r from-primary/5 via-primary/3 to-transparent py-8 px-6 rounded-2xl border border-primary/10">
+        <div className="space-y-2">
+          <p className="text-primary font-medium flex items-center gap-2">
+            <CalendarBlank className="h-4 w-4" weight="duotone" />
+            {new Date(data.date).toLocaleDateString('en-US', { weekday: 'long', month: 'long', day: 'numeric' })}
+          </p>
+          <h1 className="text-3xl md:text-4xl font-display font-semibold text-foreground">
+            Good {new Date().getHours() < 12 ? 'morning' : new Date().getHours() < 17 ? 'afternoon' : 'evening'}! ☀️
+          </h1>
+          <p className="text-muted-foreground text-lg">
+            {youngestChild?.ageInMonths <= 12
+              ? "Here are some gentle ideas for today's rhythms together."
+              : "Your family's learning journey continues today."}
+          </p>
+          <div className="pt-2 text-sm text-muted-foreground/80 italic max-w-2xl">
+            "Train up a child in the way he should go; even when he is old he will not depart from it." — Proverbs 22:6
           </div>
         </div>
       </div>
+
+      {/* Notifications Area - Placeholder for Phase 3 */}
+      {/* TODO: Add NotificationBanner components here in Phase 3 */}
 
       {/* Daily Liturgy */}
       <DailyLiturgy />
@@ -347,63 +342,6 @@ export default function Dashboard() {
 
       {/* Daily Rhythm */}
       <DailyRhythm />
-
-      {/* Materials Reminder Banner */}
-      {needsMaterialsSetup && (
-        <Alert className="border-orange-200 bg-orange-50">
-          <Info className="h-4 w-4 text-orange-600" />
-          <AlertDescription className="text-orange-900">
-            <strong>Update your materials:</strong> Some activities need materials you haven't set.
-            <Button
-              variant="link"
-              className="h-auto p-0 ml-1 text-orange-900 underline font-semibold"
-              onClick={() => navigate('/settings')}
-            >
-              Review Materials
-            </Button> to improve suggestions.
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Materials Section */}
-      <Card className="border-muted bg-muted/5">
-        <CardHeader className="pb-3 border-b border-muted/50">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-lg flex items-center gap-2">
-                <Cube className="h-5 w-5 text-primary" weight="duotone" />
-                Materials for Today
-              </CardTitle>
-              <CardDescription>
-                {data.materials.length} items needed for all sessions
-              </CardDescription>
-            </div>
-            <Button variant="ghost" size="sm" onClick={() => navigate('/settings')} className="text-primary hover:text-primary/80">
-              Update My Materials
-            </Button>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-4">
-          {data.materials.length > 0 ? (
-            <div className="flex flex-wrap gap-3">
-              {data.materials.map((m: MaterialItem, idx: number) => (
-                <div key={idx} className={`flex items-center gap-2 px-3 py-1.5 rounded-full border ${m.status === 'have' ? 'bg-green-500/10 border-green-500/20 text-green-700 dark:text-green-300' : 'bg-muted border-dashed border-muted-foreground/30 text-muted-foreground'}`}>
-                  {m.status === 'have' ? (
-                    <CheckCircle className="w-4 h-4 text-green-600" weight="fill" />
-                  ) : m.status === 'willing_to_buy' ? (
-                    <Circle className="w-4 h-4" />
-                  ) : (
-                    <WarningCircle className="w-4 h-4 text-orange-500" />
-                  )}
-                  <span className="text-sm font-medium">{m.name}</span>
-                </div>
-              ))}
-            </div>
-          ) : (
-            <p className="text-muted-foreground text-sm italic">No specific materials needed today!</p>
-          )}
-        </CardContent>
-      </Card>
 
       {/* Today's Reading */}
       {todaysBook && youngestChild && (

@@ -62,8 +62,8 @@ export function DailyLiturgy() {
   const [expandedItem, setExpandedItem] = useState<string | null>(null);
 
   // Get youngest child for age-appropriate guidance
-  const youngestChild = children?.length > 0 
-    ? [...children].sort((a, b) => a.ageInMonths - b.ageInMonths)[0] 
+  const youngestChild = children?.length > 0
+    ? [...children].sort((a, b) => a.ageInMonths - b.ageInMonths)[0]
     : null;
   const ageGuidance = youngestChild ? getAgeGuidance(youngestChild.ageInMonths) : null;
 
@@ -74,13 +74,59 @@ export function DailyLiturgy() {
 
   const completeMutation = useMutation({
     mutationFn: liturgy.complete,
+    onMutate: async (itemId) => {
+      // Cancel outgoing refetches
+      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
+
+      // Snapshot previous value
+      const previousData = queryClient.getQueryData(['liturgy-today']);
+
+      // Optimistically update
+      queryClient.setQueryData(['liturgy-today'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((item: any) =>
+            item.id === itemId ? { ...item, completedToday: true } : item
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, itemId, context: any) => {
+      // Rollback on error
+      queryClient.setQueryData(['liturgy-today'], context.previousData);
+      toast.error('Failed to mark as complete');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
+      toast.success('Marked as complete!');
     },
   });
 
   const uncompleteMutation = useMutation({
     mutationFn: liturgy.uncomplete,
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
+      const previousData = queryClient.getQueryData(['liturgy-today']);
+
+      queryClient.setQueryData(['liturgy-today'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((item: any) =>
+            item.id === itemId ? { ...item, completedToday: false } : item
+          ),
+        };
+      });
+
+      return { previousData };
+    },
+    onError: (err, itemId, context: any) => {
+      queryClient.setQueryData(['liturgy-today'], context.previousData);
+      toast.error('Failed to update');
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
     },
@@ -143,9 +189,8 @@ export function DailyLiturgy() {
           return (
             <div
               key={item.id}
-              className={`border-b last:border-0 border-amber-100 dark:border-amber-900/30 transition-colors ${
-                item.completedToday ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''
-              }`}
+              className={`border-b last:border-0 border-amber-100 dark:border-amber-900/30 transition-colors ${item.completedToday ? 'bg-amber-50/50 dark:bg-amber-900/10' : ''
+                }`}
             >
               <Collapsible
                 open={isExpanded}
@@ -155,7 +200,8 @@ export function DailyLiturgy() {
                   <Checkbox
                     checked={!!item.completedToday}
                     onCheckedChange={() => handleToggle(item)}
-                    className="mt-1 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500"
+                    disabled={completeMutation.isPending || uncompleteMutation.isPending}
+                    className="mt-1 border-amber-400 data-[state=checked]:bg-amber-500 data-[state=checked]:border-amber-500 disabled:opacity-50"
                   />
 
                   <div className="flex-1 space-y-1">
