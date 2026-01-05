@@ -278,6 +278,9 @@ export const weeklyPlan = {
     apiRequest<WeeklyPlanResponse>(`/api/family/weekly-plan${weekStart ? `?weekStart=${weekStart}` : ''}`),
   regenerate: (params?: { balancePreference?: 'baby_focused' | 'mixed' | 'older_focused'; weekStart?: string }) =>
     apiRequest<WeeklyPlanResponse>('/api/family/weekly-plan/regenerate', { method: 'POST', body: JSON.stringify(params || {}) }),
+
+  getStrategicInsights: (plan: any, children: any[]) =>
+    apiRequest<any>('/api/family/weekly-plan/strategic-insight', { method: 'POST', body: JSON.stringify({ plan, children }) }),
 };
 
 // AI
