@@ -181,9 +181,80 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
               <Info className="h-4 w-4 text-amber-600 dark:text-amber-400 mt-0.5 shrink-0" weight="fill" />
               <div className="text-xs text-amber-800 dark:text-amber-200">
                 <span className="font-semibold">{ageGuidance.tip}:</span>{' '}
-                <CardContent>
-                  {content}
-                </CardContent>
-              </Card>
-              );
+                {ageGuidance.approach}
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Liturgy Items List */}
+        <div className="divide-y divide-amber-100 dark:divide-amber-900/30">
+          {data.items.map((item) => {
+            const Icon = ICONS[item.type];
+            const label = LABELS[item.type];
+            const isExpanded = expandedItem === item.id;
+
+            return (
+              <Collapsible
+                key={item.id}
+                open={isExpanded}
+                onOpenChange={(open) => setExpandedItem(open ? item.id : null)}
+              >
+                <div className="p-4">
+                  <div className="flex items-center gap-3">
+                    <Checkbox
+                      checked={item.completedToday}
+                      onCheckedChange={() => handleToggle(item)}
+                      className="border-amber-300 data-[state=checked]:bg-amber-600 data-[state=checked]:border-amber-600"
+                    />
+                    <CollapsibleTrigger className="flex-1 flex items-center justify-between text-left">
+                      <div className="flex items-center gap-2">
+                        <Icon className="h-5 w-5 text-amber-600 dark:text-amber-400" weight="duotone" />
+                        <div>
+                          <p className={`font-medium text-sm ${item.completedToday ? 'line-through text-muted-foreground' : ''}`}>
+                            {item.title}
+                          </p>
+                          <p className="text-xs text-muted-foreground">{label}</p>
+                        </div>
+                      </div>
+                      {isExpanded ? (
+                        <CaretUp className="h-4 w-4 text-muted-foreground" />
+                      ) : (
+                        <CaretDown className="h-4 w-4 text-muted-foreground" />
+                      )}
+                    </CollapsibleTrigger>
+                  </div>
+
+                  <CollapsibleContent className="pt-4 pl-8">
+                    <div className="text-sm whitespace-pre-wrap bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
+                      {item.content}
+                    </div>
+                    {item.reference && (
+                      <p className="text-xs text-muted-foreground mt-2 italic">{item.reference}</p>
+                    )}
+                  </CollapsibleContent>
+                </div>
+              </Collapsible>
+            );
+          })}
+        </div>
+
+        {/* Advance Button */}
+        {allCompleted && (
+          <div className="p-4 border-t border-amber-100 dark:border-amber-900/30">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => advanceMutation.mutate('catechism')}
+              disabled={advanceMutation.isPending}
+              className="w-full border-amber-200 hover:bg-amber-50 dark:border-amber-800 dark:hover:bg-amber-900/30"
+            >
+              <ArrowRight className="h-4 w-4 mr-2" />
+              Advance to Next Week
+            </Button>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
 }

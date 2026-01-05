@@ -1,11 +1,10 @@
-```typescript
 import { useNavigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { weeklyPlan as weeklyPlanApi } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
-import { CheckCircle, Circle, CaretRight } from '@phosphor-icons/react';
+import { Circle, CaretRight } from '@phosphor-icons/react';
 
 export function MomentumRings() {
     const navigate = useNavigate();
@@ -28,21 +27,11 @@ export function MomentumRings() {
         );
     }
 
-    // Process plan to find completion per day
-    // This is simplified: Assume if plan exists for a day, check if all items are done?
-    // Actually, backend doesn't return completion status in getWeeklyPlan easily.
-    // We might need to rely on a different metric or just show "Plan Exists" vs "No Plan".
-    // For now, let's just show "Days Scheduled" as filled rings.
-
-    // Day order: Mon-Fri (or Sun-Sat depending on start)
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    // Check if slots exist for these days
     const slots = planData?.plan?.slots || [];
 
     const rings = days.map(day => {
         const hasActivities = slots.some((s: any) => s.day === day && s.activityId);
-        // We lack "completion" status in weekly plan endpoint currently. 
-        // Phase 5 might need to enhance this. For now, show planned vs unplanned.
         return {
             day,
             status: hasActivities ? 'planned' : 'empty'
