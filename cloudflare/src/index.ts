@@ -3364,10 +3364,21 @@ app.post('/api/ai/chat', async (c) => {
     // Initialize coach with full context
     const coach = new AiCoach(c.env);
 
+    // Fetch active settings to inject into context
+    const { results: overrides } = await c.env.DB.prepare(
+      'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1'
+    ).bind(user.id).all();
+
+    const liturgySettings = await c.env.DB.prepare(
+      'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
+    ).bind(user.id).first();
+
     // Add user to context
     const fullContext = {
       ...context,
-      user: { id: user.id, name: user.name }
+      user: { id: user.id, name: user.name },
+      activeOverrides: overrides,
+      liturgySettings: liturgySettings
     };
 
     const stream = await coach.chat(message, fullContext);
@@ -3383,6 +3394,26 @@ app.post('/api/ai/chat', async (c) => {
     console.error('Chat error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
+  }
+});
+
+// Get strategic insights for weekly plan
+app.post('/api/family/weekly-plan/strategic-insight', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { plan, children } = await c.req.json();
+
+    if (!plan || !children) {
+      return c.json({ error: 'Plan and children data required' }, 400);
+    }
+
+    const coach = new AiCoach(c.env);
+    const insights = await coach.generateStrategicInsights(plan, children);
+
+    return c.json(insights);
+  } catch (error: any) {
+    console.error('Strategic insight error:', error);
+    return c.json({ error: error.message }, 500);
   }
 });
 

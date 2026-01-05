@@ -21,7 +21,7 @@ import { DOMAIN_LABELS } from '@/types';
 import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 import { useQuery } from '@tanstack/react-query';
 import { family } from '@/lib/api';
-import { CoachChat } from '@/components/coach/CoachChat';
+import { SchoolOSChat } from '@/components/coach/CoachChat';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading, children, selectedChild, setSelectedChild } = useAuth();
@@ -96,7 +96,7 @@ export function MainLayout() {
             </Button>
 
             {/* Coach Chat */}
-            <CoachChat />
+            <SchoolOSChat />
 
             {/* Theme Toggle */}
             <ThemeToggle />

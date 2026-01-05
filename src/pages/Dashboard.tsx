@@ -10,7 +10,7 @@ import {
   WarningCircle,
   Baby,
   Sparkle,
-  CalendarBlank,
+  Calendar,
 } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
@@ -20,7 +20,6 @@ import { MaterialItem } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Lightning, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
-import { RhythmPromptBar } from '@/components/dashboard/RhythmPromptBar';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
 
 export default function Dashboard() {
@@ -160,7 +159,7 @@ export default function Dashboard() {
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
             <Button onClick={() => navigate('/early-years/planner')} size="lg" className="gap-2">
-              <CalendarBlank className="w-5 h-5" />
+              <Calendar className="w-5 h-5" />
               Generate Weekly Plan
             </Button>
           </CardContent>
@@ -251,8 +250,6 @@ export default function Dashboard() {
       </div>
 
       <NotificationStack />
-
-      <RhythmPromptBar />
 
       {/* REST DAY Override */}
       {todayData.restDay && (
