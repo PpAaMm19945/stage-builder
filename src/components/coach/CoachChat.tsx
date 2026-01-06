@@ -461,7 +461,13 @@ export function SchoolOSChat() {
                             disabled={isLoading}
                             className="rounded-full"
                         />
-                        <Button type="submit" size="icon" disabled={isLoading} className="rounded-full shrink-0">
+                        <Button
+                            type="submit"
+                            size="icon"
+                            disabled={isLoading}
+                            className="rounded-full shrink-0"
+                            aria-label="Send message"
+                        >
                             <PaperPlaneRight className="w-4 h-4" weight="fill" />
                         </Button>
                     </form>
