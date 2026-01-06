@@ -23,6 +23,7 @@ import { liturgy } from '@/lib/api';
 import { LiturgyItem, LiturgyType } from '@/types';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
+import { HymnPlayer } from './HymnPlayer';
 
 const ICONS: Record<LiturgyType, any> = {
   catechism: BookBookmark,
@@ -225,12 +226,20 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
                     </CollapsibleTrigger>
                   </div>
 
-                  <CollapsibleContent className="pt-4 pl-8">
+                  <CollapsibleContent className="pt-4 pl-8 space-y-4">
+                    {/* Audio Player for Hymns (or any item with audio_url) */}
+                    {item.audio_url && (
+                      <HymnPlayer
+                        url={item.audio_url}
+                        title={item.title}
+                      />
+                    )}
+
                     <div className="text-sm whitespace-pre-wrap bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
                       {item.content}
                     </div>
                     {item.reference && (
-                      <p className="text-xs text-muted-foreground mt-2 italic">{item.reference}</p>
+                      <p className="text-xs text-muted-foreground italic">{item.reference}</p>
                     )}
                   </CollapsibleContent>
                 </div>
