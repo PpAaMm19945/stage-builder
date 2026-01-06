@@ -307,8 +307,7 @@ export const ai = {
 
   explain: (question: string, context?: { activityId?: string; domain?: string; childAge?: number }) =>
     apiRequest<any>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
-  narrate: (plan: any, tone?: 'encouraging' | 'calm' | 'concise') =>
-    apiRequest<{ narrative: string; originalPlan: any }>('/api/plan/narrate', { method: 'POST', body: JSON.stringify({ plan, tone }) }),
+  // narrate removed as it was unused and WeeklySummary component was deleted
 
   // Phase 2: Weekly summaries
   generateWeeklySummary: (weekStart: string) =>
@@ -453,4 +452,3 @@ export const notifications = {
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications };
 export default api;
-
