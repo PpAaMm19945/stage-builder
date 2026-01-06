@@ -1,29 +1,22 @@
 import { useState, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { weeklyPlan, ai, students } from '@/lib/api';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
+import { weeklyPlan, students } from '@/lib/api';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import {
     ArrowLeft,
     ArrowRight,
-    ArrowsClockwise,
     Calendar,
-    MicrophoneStage,
     WarningCircle,
     CheckCircle,
-    ChatCircleText,
     Baby,
     UsersThree,
-    Crown
+    Crown,
+    ArrowsClockwise
 } from '@phosphor-icons/react';
-import { format, addWeeks, subWeeks, startOfWeek, isSameDay, parseISO, isPast, isFuture, startOfDay } from 'date-fns';
-import { ExplainButton } from '@/components/ai/ExplainButton';
-import { WeeklySummary } from '@/components/planning/WeeklySummary';
-import { StrategicInsightBoard } from '@/components/planning/StrategicInsightBoard';
-import { WeeklyPlan, PlanSlot, DOMAIN_LABELS } from '@/types';
+import { format, addWeeks, subWeeks, isSameDay, isPast, startOfDay } from 'date-fns';
 import { toast } from 'sonner';
 import {
     Dialog,
@@ -67,8 +60,6 @@ export default function Planner() {
     });
 
     const childAges = childrenData?.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
-    const hasBabies = childrenData?.some((c: any) => c.age_in_months <= 18);
-    const hasOlder = childrenData?.some((c: any) => c.age_in_months >= 48);
 
     // Fetch Plan
     const { data: planData, isLoading, error, refetch } = useQuery({
@@ -99,13 +90,6 @@ export default function Planner() {
             balancePreference,
             weekStart: weekStartStr
         });
-    };
-
-
-    const getDaySlots = (date: Date) => {
-        if (!planData?.plan?.slots) return [];
-        const dayName = format(date, 'EEE'); // Mon, Tue... matching DayOfWeek type
-        return planData.plan.slots.filter(s => s.day === dayName);
     };
 
     const domainColors: Record<string, string> = {
@@ -211,16 +195,6 @@ export default function Planner() {
                 </DialogContent>
             </Dialog>
 
-            {/* Weekly Summary for Past Weeks */}
-            {isPastWeek(currentWeek) && (
-                <WeeklySummary weekStart={weekStartStr} isPastWeek={isPastWeek(currentWeek)} />
-            )}
-
-            {/* Strategic Insights (Future/Current Weeks) */}
-            {!isPastWeek(currentWeek) && planData?.plan && childrenData && (
-                <StrategicInsightBoard plan={planData.plan} children={childrenData} />
-            )}
-
             {/* Content */}
             {isLoading ? (
                 <div className="grid grid-cols-1 md:grid-cols-5 gap-4">
@@ -271,7 +245,6 @@ export default function Planner() {
                                                     </Badge>
                                                     <div className="flex items-center gap-1">
                                                         <span className="text-[10px] text-muted-foreground">{slot.duration}m</span>
-                                                        <ExplainButton activityId={slot.activityId} domain={slot.domain} triggerData={{ title: slot.activityTitle }} />
                                                     </div>
                                                 </div>
 
@@ -288,12 +261,6 @@ export default function Planner() {
                                                         </Badge>
                                                     )}
                                                 </div>
-
-                                                {slot.reasoning && (
-                                                    <p className="mt-2 text-[10px] text-muted-foreground italic line-clamp-2 leading-relaxed">
-                                                        "{slot.reasoning}"
-                                                    </p>
-                                                )}
                                             </div>
                                         ))
                                     )}
