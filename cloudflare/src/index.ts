@@ -70,7 +70,11 @@ const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 // Monitor Dashboard
 app.get('/', async (c) => {
   const key = c.req.query('key');
-  const secret = c.env.ADMIN_SECRET || 'schoolos-admin'; // Default if not set
+  const secret = c.env.ADMIN_SECRET;
+
+  if (!secret) {
+    return c.text('Admin secret not configured', 500);
+  }
 
   if (key !== secret) {
     return c.html(`
@@ -2214,7 +2218,7 @@ app.get('/api/reading/history', async (c) => {
 // Debug R2 endpoint
 app.get('/api/debug/r2', async (c) => {
   const secret = c.req.query('key');
-  if (secret !== 'DEBUG_SECRET') {
+  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -2241,7 +2245,7 @@ app.get('/api/debug/r2', async (c) => {
 app.get('/api/debug/books/audit', async (c) => {
   // Protect
   const secret = c.req.query('key');
-  if (secret !== 'DEBUG_SECRET') return c.json({ error: 'Unauthorized' }, 401);
+  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) return c.json({ error: 'Unauthorized' }, 401);
 
   const bucket = c.env.BOOKS_BUCKET;
   const violations: any[] = [];
