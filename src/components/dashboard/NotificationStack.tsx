@@ -78,8 +78,10 @@ export function NotificationStack() {
                             <p className="text-xs text-muted-foreground">{n.message}</p>
                         </div>
                         <button
+                            type="button"
                             onClick={() => dismiss(n.id)}
-                            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground p-1"
+                            className="absolute top-2 right-2 text-muted-foreground hover:text-foreground p-1 rounded-full hover:bg-black/5 dark:hover:bg-white/10 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary"
+                            aria-label="Dismiss notification"
                         >
                             <X size={14} />
                         </button>
