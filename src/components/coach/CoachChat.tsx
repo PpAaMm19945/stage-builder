@@ -16,7 +16,7 @@ interface Message {
 }
 
 interface ActionBlock {
-    type: 'accommodation' | 'liturgy' | 'rhythm' | 'regenerate';
+    type: 'accommodation' | 'liturgy' | 'rhythm' | 'regenerate' | 'chat_options';
     payload: any;
     status?: 'pending' | 'completed' | 'failed';
 }
@@ -38,17 +38,15 @@ export function SchoolOSChat() {
         }
     }, [messages]);
 
-    const handleSubmit = async (e: React.FormEvent) => {
-        e.preventDefault();
-        if (!input.trim() || isLoading) return;
+    const sendMessage = async (messageText: string) => {
+        if (!messageText.trim() || isLoading) return;
 
-        const userMessage = input;
         setInput('');
-        setMessages(prev => [...prev, { role: 'user', content: userMessage }]);
+        setMessages(prev => [...prev, { role: 'user', content: messageText }]);
         setIsLoading(true);
 
         try {
-            const stream = await ai.chat(userMessage, {
+            const stream = await ai.chat(messageText, {
                 children: children?.map((c: any) => ({ name: c.name, age: c.ageInMonths })),
                 user: user?.name,
                 currentPage: window.location.pathname
@@ -132,6 +130,11 @@ export function SchoolOSChat() {
         }
     };
 
+    const handleSubmit = async (e: React.FormEvent) => {
+        e.preventDefault();
+        await sendMessage(input);
+    };
+
     const handleAction = async (msgIndex: number, action: ActionBlock) => {
         try {
             if (action.type === 'accommodation') {
@@ -207,33 +210,7 @@ export function SchoolOSChat() {
                             variant="secondary"
                             size="sm"
                             className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full"
-                            onClick={() => {
-                                setInput(option);
-                                // Hack: We need to trigger the submit. Since setInput is async/state, we can't just call handleSubmit immediately.
-                                // Better UX: Just put it in the input area? Or auto-send?
-                                // Let's auto-send for "functional" feel.
-                                // We need to call handleSubmit manually with the option as input.
-                                // We can't easily call handleSubmit(e) without an event.
-                                // Let's refactor handleSubmit or just replicate logic.
-                                // Replicating logic for brevity:
-                                setMessages(prev => [...prev, { role: 'user', content: option }]);
-                                setIsLoading(true);
-
-                                // Call API (async wrapper to avoid blocking render)
-                                (async () => {
-                                    try {
-                                        // Recursively call the API logic... actually we should refactor handleSubmit to a function sendMessage(text)
-                                        // For now, let's just trigger a re-render or effect? No.
-                                        // Let's just create a helper function if we could, but we are inside render.
-                                        // Quick fix: user clicks, it populates input, and we can perhaps focus it?
-                                        // "Functional Concierge" -> Auto-send is best.
-
-                                        // We will just populate the input for now to be safe and simple.
-                                        setInput(option);
-                                        // document.querySelector('form')?.requestSubmit(); // This works if form ref exists
-                                    } catch (e) { }
-                                })();
-                            }}
+                            onClick={() => sendMessage(option)}
                         >
                             {option}
                         </Button>

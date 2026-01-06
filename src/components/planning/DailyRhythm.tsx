@@ -37,9 +37,10 @@ export interface RhythmItem {
 interface DailyRhythmProps {
     items?: RhythmItem[];
     onComplete?: (item: RhythmItem) => void;
+    onBookClick?: () => void;
 }
 
-export function DailyRhythm({ items = [], onComplete }: DailyRhythmProps) {
+export function DailyRhythm({ items = [], onComplete, onBookClick }: DailyRhythmProps) {
     const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
 
     const timelineItems = items.length > 0 ? items : [];
@@ -189,17 +190,25 @@ export function DailyRhythm({ items = [], onComplete }: DailyRhythmProps) {
                             )}
 
                             {activeItem?.type === 'book' && activeItem.data && (
-                                // Placeholder or BookReader logic
                                 <div className="space-y-4 text-center py-8">
                                     <div className="mx-auto w-32 h-44 bg-muted rounded shadow-sm flex items-center justify-center">
                                         <BookOpen className="h-12 w-12 text-muted-foreground" />
                                     </div>
                                     <h3 className="text-xl font-display">{activeItem.data.title}</h3>
                                     <p className="text-muted-foreground">Grab the book and read together!</p>
-                                    <Button onClick={handleComplete} size="lg" className="w-full">
-                                        Mark as Read
-                                    </Button>
-                                    <Button variant="ghost" onClick={() => setActiveItem(null)}>Close</Button>
+                                    <div className="flex flex-col gap-2">
+                                        {onBookClick && (
+                                            <Button onClick={() => {
+                                                setActiveItem(null);
+                                                onBookClick();
+                                            }} size="lg" className="w-full">
+                                                Read Now
+                                            </Button>
+                                        )}
+                                        <Button onClick={handleComplete} variant={onBookClick ? "outline" : "default"} size="lg" className="w-full">
+                                            Mark as Read (Manual)
+                                        </Button>
+                                    </div>
                                 </div>
                             )}
 

@@ -16,16 +16,19 @@ import { toast } from 'sonner';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { TomorrowPreview } from '@/components/planning/TomorrowPreview';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
-import { MaterialItem } from '@/types';
+import { MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Lightning, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
+import { getRecommendedBooks } from '@/lib/recommendations';
+import { BookReader } from '@/components/books/BookReader';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
   const { data: todayData, isLoading: todayLoading, error: todayError } = useQuery({
     queryKey: ['family-today'],
@@ -64,7 +67,14 @@ export default function Dashboard() {
     // Use unread books if available, otherwise fall back to all books
     const pool = unreadBooks.length > 0 ? unreadBooks : recommendedBooks;
 
-    // Use today's date as seed for deterministic daily rotation
+    // Prioritize recommendation score if we have children context
+    if (youngestChild) {
+        // Sort pool by recommendation score
+        const ranked = getRecommendedBooks(pool, youngestChild);
+        return ranked[0];
+    }
+
+    // Fallback: Use today's date as seed for deterministic daily rotation
     const today = new Date().toISOString().split('T')[0];
     const seed = today.split('-').reduce((acc, n) => acc + parseInt(n), 0);
     const index = seed % pool.length;
@@ -290,7 +300,23 @@ export default function Dashboard() {
       )}
 
       {/* Timeline */}
-      <DailyRhythm items={timelineItems} onComplete={(item) => completeActivityFitMutation.mutate(item)} />
+      <DailyRhythm
+        items={timelineItems}
+        onComplete={(item) => completeActivityFitMutation.mutate(item)}
+        onBookClick={() => setSelectedBook(todaysBook)}
+      />
+
+      {/* Book Reader */}
+      <BookReader
+        book={selectedBook}
+        open={!!selectedBook}
+        onOpenChange={(open) => !open && setSelectedBook(null)}
+        childrenIds={todayData?.children?.map((c: any) => c.id)}
+        onComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['todays-book'] });
+          queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+        }}
+      />
 
       {/* Family Progress */}
       <FamilyProgressMini />
