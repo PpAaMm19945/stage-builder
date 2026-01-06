@@ -35,7 +35,8 @@ import type { Student } from '@/types';
 const primaryLinks = [
   { title: 'Home', url: '/', icon: House },
   { title: 'Weekly Plan', url: '/early-years/planner', icon: Calendar },
-  { title: 'Library', url: '/early-years/activities', icon: Books },
+  { title: 'Books', url: '/early-years/reading', icon: Books },
+  { title: 'Activities', url: '/early-years/activities', icon: ListBullets },
   { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
   { title: 'Scope & Sequence', url: '/early-years/scope-sequence', icon: ListBullets },
 ];

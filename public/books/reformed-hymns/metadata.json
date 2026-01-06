@@ -1,0 +1,36 @@
+{
+  "title": "50 Reformed Hymns",
+  "author": "Public Domain",
+  "styleProfile": "print-hymns.css",
+  "pageFormat": {
+    "size": "A5",
+    "orientation": "portrait"
+  },
+  "chapters": [
+    {
+      "filepath": "01_hymns.md",
+      "chapterNumber": 1,
+      "title": "Hymns 1-10"
+    },
+    {
+        "filepath": "02_hymns.md",
+        "chapterNumber": 2,
+        "title": "Hymns 11-20"
+    },
+    {
+        "filepath": "03_hymns.md",
+        "chapterNumber": 3,
+        "title": "Hymns 21-30"
+    },
+    {
+        "filepath": "04_hymns.md",
+        "chapterNumber": 4,
+        "title": "Hymns 31-40"
+    },
+    {
+        "filepath": "05_hymns.md",
+        "chapterNumber": 5,
+        "title": "Hymns 41-50"
+    }
+  ]
+}

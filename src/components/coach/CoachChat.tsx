@@ -50,18 +50,18 @@ export function SchoolOSChat() {
         try {
             const stream = await ai.chat(userMessage, {
                 children: children?.map((c: any) => ({ name: c.name, age: c.ageInMonths })),
-                user: user?.name
+                user: user?.name,
+                currentPage: window.location.pathname
             });
 
             if (!stream) throw new Error("No stream returned");
 
             const reader = stream.getReader();
             const decoder = new TextDecoder();
-            let assistantMessage = '';
-            let actionBlockBuffer = '';
-            let isParsingAction = false;
 
-            // Add placeholder assistant message
+            // We'll accumulate the entire raw response here to robustly regex match across chunk boundaries
+            let fullResponseBuffer = '';
+
             setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
 
             while (true) {
@@ -79,51 +79,48 @@ export function SchoolOSChat() {
                             const parsed = JSON.parse(data);
                             const token = parsed.response;
                             if (token) {
-                                // Simple state machine for parsing action block
-                                if (token.includes('<ACTION_BLOCK>')) {
-                                    isParsingAction = true;
-                                    const parts = token.split('<ACTION_BLOCK>');
-                                    assistantMessage += parts[0];
-                                    actionBlockBuffer += parts[1] || '';
-                                } else if (token.includes('</ACTION_BLOCK>')) {
-                                    isParsingAction = false;
-                                    const parts = token.split('</ACTION_BLOCK>');
-                                    actionBlockBuffer += parts[0];
+                                fullResponseBuffer += token;
 
-                                    // Parse complete action
+                                // Regex to find <ACTION_BLOCK>...</ACTION_BLOCK>
+                                // We use [\s\S]*? to match across newlines non-greedily
+                                const actionBlockRegex = /<ACTION_BLOCK>([\s\S]*?)<\/ACTION_BLOCK>/;
+                                const match = fullResponseBuffer.match(actionBlockRegex);
+
+                                let displayText = fullResponseBuffer;
+                                let pendingAction: ActionBlock | undefined;
+
+                                if (match) {
+                                    // Found a complete block
+                                    // Text is everything BEFORE the block
+                                    displayText = fullResponseBuffer.substring(0, match.index).trim();
+
                                     try {
-                                        const action = JSON.parse(actionBlockBuffer);
-                                        setMessages(prev => {
-                                            const newMsgs = [...prev];
-                                            const lastMsg = newMsgs[newMsgs.length - 1];
-                                            lastMsg.content = assistantMessage; // content before action
-                                            lastMsg.action = { ...action, status: 'pending' };
-                                            return newMsgs;
-                                        });
+                                        const action = JSON.parse(match[1]);
+                                        pendingAction = { ...action, status: 'pending' };
                                     } catch (e) {
-                                        console.error('Failed to parse action JSON', e);
+                                        console.error("JSON Parse Error in Action Block", e);
                                     }
-
-                                    assistantMessage += parts[1] || '';
-                                    actionBlockBuffer = '';
-                                } else if (isParsingAction) {
-                                    actionBlockBuffer += token;
                                 } else {
-                                    assistantMessage += token;
+                                    // Check for partial open tag to hide it from UI
+                                    const openTagIndex = fullResponseBuffer.indexOf('<ACTION_BLOCK');
+                                    if (openTagIndex !== -1) {
+                                        displayText = fullResponseBuffer.substring(0, openTagIndex).trim();
+                                    }
                                 }
 
-                                // Update UI for text content (actions update at the end or on tag close)
-                                if (!isParsingAction) {
-                                    setMessages(prev => {
-                                        const newMsgs = [...prev];
-                                        newMsgs[newMsgs.length - 1].content = assistantMessage;
-                                        return newMsgs;
-                                    });
-                                }
+                                setMessages(prev => {
+                                    const newMsgs = [...prev];
+                                    const lastMsg = newMsgs[newMsgs.length - 1];
+                                    lastMsg.content = displayText;
+                                    if (pendingAction) {
+                                        lastMsg.action = pendingAction;
+                                        // Once we found an action, we stop updating content based on buffer 
+                                        // (assuming action is at the end as per prompt instructions)
+                                    }
+                                    return newMsgs;
+                                });
                             }
-                        } catch (e) {
-                            // Ignore parse errors
-                        }
+                        } catch (e) { }
                     }
                 }
             }
@@ -147,7 +144,7 @@ export function SchoolOSChat() {
                 toast.success('Accommodation applied!');
             }
             else if (action.type === 'liturgy') {
-                const settingKey = action.payload.setting; // e.g., 'catechism_source'
+                const settingKey = action.payload.setting;
                 await liturgy.updateSettings({
                     [settingKey]: action.payload.value
                 });
@@ -166,11 +163,17 @@ export function SchoolOSChat() {
                 queryClient.invalidateQueries({ queryKey: ['family-today'] });
                 toast.success('Plan regenerated!');
             }
+            else if (action.type === 'chat_options') {
+                // No backend call, just fill input
+                setInput(action.payload.selectedOption); // hypothetical usage if we clicked a specific option
+                // Actually for options, we probably render buttons that trigger a handleSubmit.
+                // See renderActionCard update below.
+            }
 
             // Mark completed
             setMessages(prev => {
                 const newMsgs = [...prev];
-                if (newMsgs[msgIndex].action) {
+                if (newMsgs[msgIndex].action && action.type !== 'chat_options') {
                     newMsgs[msgIndex].action!.status = 'completed';
                 }
                 return newMsgs;
@@ -194,6 +197,50 @@ export function SchoolOSChat() {
         const { type, payload, status } = msg.action;
         const isCompleted = status === 'completed';
         const isFailed = status === 'failed';
+
+        if (type === 'chat_options') {
+            return (
+                <div className="mt-3 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
+                    {payload.options.map((option: string, i: number) => (
+                        <Button
+                            key={i}
+                            variant="secondary"
+                            size="sm"
+                            className="bg-indigo-50 text-indigo-700 hover:bg-indigo-100 border border-indigo-200 rounded-full"
+                            onClick={() => {
+                                setInput(option);
+                                // Hack: We need to trigger the submit. Since setInput is async/state, we can't just call handleSubmit immediately.
+                                // Better UX: Just put it in the input area? Or auto-send?
+                                // Let's auto-send for "functional" feel.
+                                // We need to call handleSubmit manually with the option as input.
+                                // We can't easily call handleSubmit(e) without an event.
+                                // Let's refactor handleSubmit or just replicate logic.
+                                // Replicating logic for brevity:
+                                setMessages(prev => [...prev, { role: 'user', content: option }]);
+                                setIsLoading(true);
+
+                                // Call API (async wrapper to avoid blocking render)
+                                (async () => {
+                                    try {
+                                        // Recursively call the API logic... actually we should refactor handleSubmit to a function sendMessage(text)
+                                        // For now, let's just trigger a re-render or effect? No.
+                                        // Let's just create a helper function if we could, but we are inside render.
+                                        // Quick fix: user clicks, it populates input, and we can perhaps focus it?
+                                        // "Functional Concierge" -> Auto-send is best.
+
+                                        // We will just populate the input for now to be safe and simple.
+                                        setInput(option);
+                                        // document.querySelector('form')?.requestSubmit(); // This works if form ref exists
+                                    } catch (e) { }
+                                })();
+                            }}
+                        >
+                            {option}
+                        </Button>
+                    ))}
+                </div>
+            );
+        }
 
         return (
             <div className="mt-3 bg-background border rounded-lg p-3 shadow-sm animate-in fade-in slide-in-from-bottom-2">

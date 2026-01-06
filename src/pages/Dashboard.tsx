@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -40,7 +40,37 @@ export default function Dashboard() {
     enabled: !!youngestChild,
   });
 
-  const todaysBook = recommendedBooks && recommendedBooks.length > 0 ? recommendedBooks[0] : null;
+  // Fetch reading history to exclude recently read books
+  const { data: readingHistory } = useQuery({
+    queryKey: ['reading-history-recent'],
+    queryFn: () => reading.history(30), // Last 30 sessions
+    enabled: !!recommendedBooks && recommendedBooks.length > 0,
+  });
+
+  // Smart book selection: exclude recently read & use date-based rotation
+  const todaysBook = (() => {
+    if (!recommendedBooks || recommendedBooks.length === 0) return null;
+
+    // Get IDs of recently read books
+    const recentlyReadIds = new Set(
+      (readingHistory || []).map((s: any) => s.book_id)
+    );
+
+    // Filter out recently read books
+    const unreadBooks = recommendedBooks.filter(
+      book => !recentlyReadIds.has(book.id) && !recentlyReadIds.has(`${book.series}/${book.id}`)
+    );
+
+    // Use unread books if available, otherwise fall back to all books
+    const pool = unreadBooks.length > 0 ? unreadBooks : recommendedBooks;
+
+    // Use today's date as seed for deterministic daily rotation
+    const today = new Date().toISOString().split('T')[0];
+    const seed = today.split('-').reduce((acc, n) => acc + parseInt(n), 0);
+    const index = seed % pool.length;
+
+    return pool[index];
+  })();
 
   // Get weekly plan to check completion status
   const { data: weeklyPlanData } = useQuery({
@@ -53,12 +83,12 @@ export default function Dashboard() {
     mutationFn: async (item: RhythmItem) => {
       // Depending on type, call different API
       if (item.type === 'activity' && item.data?.id) {
-         // Use the simple completion endpoint
-         await activityCompletions.create({
-            activityId: item.data.id,
-            notes: 'Completed from Dashboard Rhythm'
-         });
-         return;
+        // Use the simple completion endpoint
+        await activityCompletions.create({
+          activityId: item.data.id,
+          notes: 'Completed from Dashboard Rhythm'
+        });
+        return;
       }
       return Promise.resolve();
     },

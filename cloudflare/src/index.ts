@@ -87,9 +87,15 @@ app.get('/', async (c) => {
   }
 
   try {
+    const start = Date.now();
     // 1. App Health
     const usersCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<any>();
+    const newUsers = await c.env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE created_at > datetime('now', '-24 hours')").first<any>();
     const plansCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM weekly_plans').first<any>();
+    const activeParents = await c.env.DB.prepare("SELECT COUNT(DISTINCT parent_id) as count FROM weekly_plans WHERE updated_at > datetime('now', '-7 days')").first<any>();
+
+    // DB Latency Check
+    const dbLatency = Date.now() - start;
 
     // 2. AI Stats
     const today = new Date().toISOString().split('T')[0];
@@ -103,9 +109,9 @@ app.get('/', async (c) => {
       "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE strftime('%Y-%m', created_at) = ?"
     ).bind(currentMonth).first<any>();
 
-    // 3. Recent Activity
+    // 3. Recent Activity (Expanded)
     const { results: recentLogs } = await c.env.DB.prepare(
-      'SELECT interaction_type, question, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 10'
+      'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 20'
     ).all();
 
     // 4. Render HTML
@@ -115,74 +121,204 @@ app.get('/', async (c) => {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Teacher's Aide Monitor</title>
+        <title>Teacher's Aide System Console</title>
         <style>
-          :root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --accent: #38bdf8; --border: #334155; }
-          body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.5; }
-          h1 { color: #fff; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 40px; }
-          .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 50px; }
-          .card { background: var(--card); padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
-          .stat-label { color: #94a3b8; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
-          .stat-value { font-size: 2.5rem; font-weight: 700; color: #fff; }
-          .stat-sub { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
-          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
-          th, td { text-align: left; padding: 16px; border-bottom: 1px solid var(--border); }
-          th { color: #94a3b8; font-weight: 600; font-size: 0.875rem; }
-          tr:last-child td { border-bottom: none; }
-          .badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #334155; color: #fff; display: inline-block; }
-          .timestamp { color: #94a3b8; font-size: 0.875rem; font-family: monospace; }
-          .refresh-note { text-align: center; color: #64748b; font-size: 0.875rem; margin-top: 40px; }
+          :root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --accent: #38bdf8; --success: #22c55e; --error: #ef4444; --border: #334155; --muted: #64748b; }
+          * { box-sizing: border-box; }
+          body { font-family: 'SF Mono', SFMono-Regular, ui-monospace, 'DejaVu Sans Mono', monospace; background: var(--bg); color: var(--text); max-width: 1200px; margin: 0 auto; padding: 20px; font-size: 14px; }
+          
+          header { display: flex; justify-content: space-between; align-items: center; border-bottom: 1px solid var(--border); padding-bottom: 20px; margin-bottom: 20px; }
+          h1 { margin: 0; font-size: 1.5rem; color: #fff; display: flex; align-items: center; gap: 10px; }
+          .status-dot { width: 10px; height: 10px; border-radius: 50%; background: var(--success); box-shadow: 0 0 10px var(--success); }
+          .meta { font-size: 0.8rem; color: var(--muted); text-align: right; }
+
+          .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 30px; }
+          .tile { background: var(--card); padding: 20px; border-radius: 8px; border: 1px solid var(--border); }
+          .tile h3 { margin: 0 0 10px 0; font-size: 0.75rem; text-transform: uppercase; color: var(--muted); letter-spacing: 0.05em; }
+          .tile .value { font-size: 2rem; font-weight: 700; color: #fff; }
+          .tile .sub { font-size: 0.85rem; color: var(--muted); margin-top: 5px; display: flex; justify-content: space-between; }
+          .tile .highlight { color: var(--accent); }
+
+          .panel { background: var(--card); border-radius: 8px; border: 1px solid var(--border); overflow: hidden; }
+          .panel-header { padding: 15px 20px; background: rgba(0,0,0,0.2); border-bottom: 1px solid var(--border); display: flex; justify-content: space-between; align-items: center; }
+          .panel-header h2 { margin: 0; font-size: 1rem; color: #fff; }
+
+          .log-table { width: 100%; border-collapse: collapse; }
+          .log-table th { text-align: left; padding: 12px 20px; color: var(--muted); font-weight: 600; font-size: 0.75rem; border-bottom: 1px solid var(--border); background: rgba(0,0,0,0.1); }
+          .log-row { border-bottom: 1px solid var(--border); cursor: pointer; transition: background 0.1s; }
+          .log-row:hover { background: rgba(255,255,255,0.02); }
+          .log-row td { padding: 12px 20px; vertical-align: top; }
+          .log-meta { white-space: nowrap; width: 180px; color: var(--muted); font-size: 0.8rem; }
+          .badge { display: inline-block; padding: 2px 8px; border-radius: 4px; font-size: 0.7rem; font-weight: 700; background: #334155; color: #fff; text-transform: uppercase; }
+          .badge.explain { background: rgba(56, 189, 248, 0.2); color: #38bdf8; }
+          .badge.feedback { background: rgba(34, 197, 94, 0.2); color: #22c55e; }
+          
+          .log-details { display: none; background: rgba(0,0,0,0.3); }
+          .log-details.open { display: table-row; }
+          .log-details td { padding: 0; }
+          .details-wrapper { padding: 20px; border-bottom: 1px solid var(--border); }
+          
+          .json-block { background: #0b1120; padding: 15px; border-radius: 6px; overflow-x: auto; font-family: monospace; font-size: 0.8rem; color: #a5b4fc; margin-top: 10px; border: 1px solid var(--border); white-space: pre-wrap; }
+          .key { color: #7dd3fc; }
+          .string { color: #a5f3fc; }
+          .number { color: #fca5a5; }
+
+          .action-btn { background: transparent; border: 1px solid var(--border); color: var(--muted); padding: 4px 10px; border-radius: 4px; cursor: pointer; font-size: 0.75rem; transition: all 0.2s; }
+          .action-btn:hover { background: var(--border); color: #fff; }
+          
+          .controls { display: flex; gap: 10px; align-items: center; }
+          .refresh-timer { font-size: 0.8rem; color: var(--muted); }
         </style>
       </head>
       <body>
-        <h1>Teacher's Aide System Monitor</h1>
-        
+        <header>
+          <h1><div class="status-dot"></div> Teacher's Aide Console</h1>
+          <div class="controls">
+             <span class="refresh-timer" id="timer">Refreshing in 60s</span>
+             <button class="action-btn" onclick="togglePause()" id="pauseBtn">Pause</button>
+             <button class="action-btn" onclick="window.location.reload()">Refresh Now</button>
+          </div>
+        </header>
+
         <div class="grid">
-          <div class="card">
-            <div class="stat-label">AI Requests (Today)</div>
-            <div class="stat-value">${aiToday?.count || 0}</div>
-            <div class="stat-sub">Monthly: ${aiMonth?.count || 0}</div>
+          <!-- Activity Metrics -->
+          <div class="tile">
+            <h3>AI Interactions</h3>
+            <div class="value">${aiToday?.count || 0}</div>
+            <div class="sub">
+              <span>Today</span>
+              <span class="highlight">Monthly: ${aiMonth?.count || 0}</span>
+            </div>
           </div>
-          <div class="card">
-            <div class="stat-label">Total Users</div>
-            <div class="stat-value">${usersCount?.count || 0}</div>
+
+          <!-- User Growth -->
+          <div class="tile">
+            <h3>User Base</h3>
+            <div class="value">${usersCount?.count || 0}</div>
+            <div class="sub">
+              <span>Total Users</span>
+              <span class="highlight">+${newUsers?.count || 0} (24h)</span>
+            </div>
           </div>
-          <div class="card">
-            <div class="stat-label">Active Plans</div>
-            <div class="stat-value">${plansCount?.count || 0}</div>
-            <div class="stat-sub">Weekly Schedules</div>
+
+           <!-- System Health -->
+          <div class="tile">
+            <h3>System Status</h3>
+            <div class="value" style="color:#22c55e">Healthy</div>
+            <div class="sub">
+              <span>${plansCount?.count || 0} Plans Active</span>
+              <span style="font-family:monospace">DB Latency: ${dbLatency}ms</span>
+            </div>
           </div>
         </div>
 
-        <div class="card">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)">
-            <h2 style="margin:0;font-size:1.25rem;color:#fff">Recent AI Interactions</h2>
-            <span style="font-size:0.875rem;color:#94a3b8">Last 10 entries</span>
+        <div class="panel">
+          <div class="panel-header">
+            <h2>Flight Recorder (Last 20 Logs)</h2>
+            <div class="meta">Click row to expand details</div>
           </div>
-          
-          <table>
+          <table class="log-table">
             <thead>
               <tr>
-                <th width="180">Time</th>
-                <th width="120">Type</th>
-                <th>Query Preview</th>
+                <th>Timestamp</th>
+                <th>Type</th>
+                <th>Interaction Preview</th>
+                <th style="text-align:right">Actions</th>
               </tr>
             </thead>
             <tbody>
-              ${recentLogs && recentLogs.length > 0 ? recentLogs.map((log: any) => `
-                <tr>
-                  <td class="timestamp">${new Date(log.created_at).toLocaleString()}</td>
-                  <td><span class="badge">${log.interaction_type}</span></td>
-                  <td>${log.question ? (log.question.length > 60 ? log.question.substring(0, 60) + '...' : log.question) : '<span style="color:#64748b;font-style:italic">No query text</span>'}</td>
+              ${recentLogs && recentLogs.length > 0 ? recentLogs.map((log: any) => {
+      const safeContext = log.context_json ? JSON.stringify(JSON.parse(log.context_json), null, 2).replace(/</g, '&lt;') : '{}';
+      const safeQuestion = (log.question || '').replace(/"/g, '&quot;');
+      const debugObj = JSON.stringify({
+        id: log.id,
+        type: log.interaction_type,
+        question: log.question,
+        context: log.context_json ? JSON.parse(log.context_json) : null,
+        answer: log.answer,
+        timestamp: log.created_at
+      }, null, 2).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+
+      return `
+                <tr class="log-row" onclick="toggleRow('${log.id}')">
+                  <td class="log-meta">
+                    <div>${new Date(log.created_at).toLocaleTimeString()}</div>
+                    <div style="font-size:0.75rem; opacity:0.6">${new Date(log.created_at).toLocaleDateString()}</div>
+                  </td>
+                  <td width="100"><span class="badge ${log.interaction_type}">${log.interaction_type}</span></td>
+                  <td>
+                    <div style="font-weight:600;margin-bottom:4px;color:#fff">${log.question ? (log.question.length > 80 ? log.question.substring(0, 80) + '...' : log.question) : '(No Query)'}</div>
+                    <div style="color:var(--muted);font-size:0.8rem;font-style:italic">ID: ${log.id}</div>
+                  </td>
+                  <td style="text-align:right" onclick="event.stopPropagation()">
+                     <button class="action-btn" onclick="copyDebug('${log.id}')">Copy Debug Object</button>
+                     <textarea id="debug-${log.id}" style="display:none">${debugObj}</textarea>
+                  </td>
                 </tr>
-              `).join('') : '<tr><td colspan="3" style="text-align:center;color:#64748b;padding:30px">No recent interactions found</td></tr>'}
+                <tr class="log-details" id="row-${log.id}">
+                  <td colspan="4">
+                    <div class="details-wrapper">
+                      <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+                        <div>
+                          <h4 style="margin:0 0 10px 0; color:var(--muted)">Context Payload</h4>
+                          <div class="json-block">${safeContext}</div>
+                        </div>
+                        <div>
+                           <h4 style="margin:0 0 10px 0; color:var(--muted)">AI Response</h4>
+                           <div class="json-block" style="color:#e2e8f0;white-space:pre-line">${log.answer ? log.answer.replace(/</g, '&lt;') : '(No Response)'}</div>
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
+                `;
+    }).join('') : '<tr><td colspan="4" style="text-align:center;padding:40px;color:var(--muted)">No interactions recorded yet.</td></tr>'}
             </tbody>
           </table>
         </div>
 
-        <div class="refresh-note">
-           Autorefreshes not enabled. Reload page to update.
-        </div>
+        <script>
+          let paused = false;
+          let timeLeft = 60;
+
+          function toggleRow(id) {
+            const row = document.getElementById('row-' + id);
+            row.classList.toggle('open');
+          }
+
+          function copyDebug(id) {
+            const content = document.getElementById('debug-' + id).value;
+            // Decode hidden textarea content back to normal string if needed or just parse
+            // The value in textarea is already encoded for HTML attribute safety, so we might need to decode
+            // But since we put it in textarea text content, functionality varies.
+            // Simpler approach: reconstruct strictly for clipboard
+            
+            const txt = document.createElement('textarea');
+            txt.innerHTML = content; // Decode HTML entities
+            navigator.clipboard.writeText(txt.value).then(() => {
+              alert('Debug JSON copied to clipboard!');
+            });
+          }
+
+          function togglePause() {
+            paused = !paused;
+            document.getElementById('pauseBtn').innerText = paused ? "Resume" : "Pause";
+            document.getElementById('pauseBtn').style.borderColor = paused ? "#fcd34d" : "var(--border)";
+            document.getElementById('pauseBtn').style.color = paused ? "#fcd34d" : "var(--muted)";
+          }
+
+          setInterval(() => {
+            if (!paused) {
+              timeLeft--;
+              document.getElementById('timer').innerText = 'Refreshing in ' + timeLeft + 's';
+              if (timeLeft <= 0) {
+                 window.location.reload();
+              }
+            } else {
+               document.getElementById('timer').innerText = 'Paused';
+            }
+          }, 1000);
+        </script>
       </body>
       </html>
     `);
