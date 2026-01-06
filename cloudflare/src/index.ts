@@ -89,10 +89,15 @@ app.get('/', async (c) => {
   try {
     const start = Date.now();
     // 1. App Health
-    const usersCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<any>();
-    const newUsers = await c.env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE created_at > datetime('now', '-24 hours')").first<any>();
-    const plansCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM weekly_plans').first<any>();
-    const activeParents = await c.env.DB.prepare("SELECT COUNT(DISTINCT parent_id) as count FROM weekly_plans WHERE updated_at > datetime('now', '-7 days')").first<any>();
+    let usersCount, newUsers, plansCount, activeParents;
+    try {
+      usersCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<any>();
+      newUsers = await c.env.DB.prepare("SELECT COUNT(*) as count FROM users WHERE created_at > datetime('now', '-24 hours')").first<any>();
+      plansCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM weekly_plans').first<any>();
+      activeParents = await c.env.DB.prepare("SELECT COUNT(DISTINCT parent_id) as count FROM weekly_plans WHERE updated_at > datetime('now', '-7 days')").first<any>();
+    } catch (e) {
+      console.error("DB Health Check Error", e);
+    }
 
     // DB Latency Check
     const dbLatency = Date.now() - start;
@@ -101,18 +106,24 @@ app.get('/', async (c) => {
     const today = new Date().toISOString().split('T')[0];
     const currentMonth = today.slice(0, 7); // YYYY-MM
 
-    const aiToday = await c.env.DB.prepare(
-      "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE date(created_at) = ?"
-    ).bind(today).first<any>();
+    let aiToday, aiMonth, recentLogs = [];
+    try {
+      aiToday = await c.env.DB.prepare(
+        "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE date(created_at) = ?"
+      ).bind(today).first<any>();
 
-    const aiMonth = await c.env.DB.prepare(
-      "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE strftime('%Y-%m', created_at) = ?"
-    ).bind(currentMonth).first<any>();
+      aiMonth = await c.env.DB.prepare(
+        "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE strftime('%Y-%m', created_at) = ?"
+      ).bind(currentMonth).first<any>();
 
-    // 3. Recent Activity (Expanded)
-    const { results: recentLogs } = await c.env.DB.prepare(
-      'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 20'
-    ).all();
+      // 3. Recent Activity (Expanded)
+      const logsResult = await c.env.DB.prepare(
+        'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 20'
+      ).all();
+      recentLogs = logsResult.results;
+    } catch (e) {
+      console.error("AI Stats Error", e);
+    }
 
     // 4. Render HTML
     return c.html(`
@@ -281,41 +292,41 @@ app.get('/', async (c) => {
           let paused = false;
           let timeLeft = 60;
 
-          function toggleRow(id) {
+          window.toggleRow = function(id) {
             const row = document.getElementById('row-' + id);
-            row.classList.toggle('open');
-          }
+            if (row) row.classList.toggle('open');
+          };
 
-          function copyDebug(id) {
+          window.copyDebug = function(id) {
             const content = document.getElementById('debug-' + id).value;
-            // Decode hidden textarea content back to normal string if needed or just parse
-            // The value in textarea is already encoded for HTML attribute safety, so we might need to decode
-            // But since we put it in textarea text content, functionality varies.
-            // Simpler approach: reconstruct strictly for clipboard
-            
             const txt = document.createElement('textarea');
-            txt.innerHTML = content; // Decode HTML entities
+            txt.innerHTML = content;
             navigator.clipboard.writeText(txt.value).then(() => {
               alert('Debug JSON copied to clipboard!');
             });
-          }
+          };
 
-          function togglePause() {
+          window.togglePause = function() {
             paused = !paused;
-            document.getElementById('pauseBtn').innerText = paused ? "Resume" : "Pause";
-            document.getElementById('pauseBtn').style.borderColor = paused ? "#fcd34d" : "var(--border)";
-            document.getElementById('pauseBtn').style.color = paused ? "#fcd34d" : "var(--muted)";
-          }
+            const btn = document.getElementById('pauseBtn');
+            if (btn) {
+              btn.innerText = paused ? "Resume" : "Pause";
+              btn.style.borderColor = paused ? "#fcd34d" : "var(--border)";
+              btn.style.color = paused ? "#fcd34d" : "var(--muted)";
+            }
+          };
 
           setInterval(() => {
             if (!paused) {
               timeLeft--;
-              document.getElementById('timer').innerText = 'Refreshing in ' + timeLeft + 's';
+              const timer = document.getElementById('timer');
+              if (timer) timer.innerText = 'Refreshing in ' + timeLeft + 's';
               if (timeLeft <= 0) {
                  window.location.reload();
               }
             } else {
-               document.getElementById('timer').innerText = 'Paused';
+               const timer = document.getElementById('timer');
+               if (timer) timer.innerText = 'Paused';
             }
           }, 1000);
         </script>

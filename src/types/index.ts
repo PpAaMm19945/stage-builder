@@ -245,6 +245,12 @@ export interface Book {
   coverUrl?: string;
   upvoteCount?: number;
   commentCount?: number;
+  renderFormat?: 'image' | 'markdown' | 'hybrid';
+  contentPath?: string;  // Path to content.md if markdown/hybrid
+  styleProfile?: string; // CSS class for styling (e.g., "hymn-book")
+  topics?: string[];
+  protagonistGender?: 'male' | 'female' | 'mixed' | 'animal';
+  energyLevel?: 'high' | 'moderate' | 'low';
 }
 
 export interface ReadingSession {

@@ -1,486 +1,242 @@
-import { useState, useCallback, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { Book } from '@/types';
-import { books, reading } from '@/lib/api';
+import {
+    Dialog,
+    DialogContent,
+    DialogHeader,
+    DialogTitle,
+    DialogDescription
+} from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight, X, CheckCircle, RotateCcw, MessageCircle } from 'lucide-react';
-import { BookOpen } from '@phosphor-icons/react';
-import { UpvoteButton } from '@/components/feedback/UpvoteButton';
-import { CommentSection } from '@/components/feedback/CommentSection';
-import { Dialog, DialogContent, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
-import { useToast } from '@/hooks/use-toast';
-import useEmblaCarousel from 'embla-carousel-react';
-import { Skeleton } from '@/components/ui/skeleton';
-
-// Slide types for the carousel
-type SlideType = 'cover' | 'copyright' | 'content';
-
-interface SlideInfo {
-    type: SlideType;
-    pageNum?: number; // Only for content pages
-}
-
-// Individual slide with lazy loading
-function BookSlide({
-    slideInfo,
-    series,
-    bookId,
-    isVisible,
-    bookTitle
-}: {
-    slideInfo: SlideInfo;
-    series: string;
-    bookId: string;
-    isVisible: boolean;
-    bookTitle: string;
-}) {
-    const [loaded, setLoaded] = useState(false);
-    const [error, setError] = useState(false);
-
-    const getImageUrl = () => {
-        if (slideInfo.type === 'cover') {
-            return books.getCoverUrl(series, bookId);
-        }
-        if (slideInfo.type === 'copyright') {
-            return books.getPageUrl(series, bookId, 0);
-        }
-        return books.getPageUrl(series, bookId, slideInfo.pageNum!);
-    };
-
-    const getAltText = () => {
-        if (slideInfo.type === 'cover') return `${bookTitle} - Cover`;
-        if (slideInfo.type === 'copyright') return `${bookTitle} - Copyright`;
-        return `${bookTitle} - Page ${slideInfo.pageNum}`;
-    };
-
-    const getErrorText = () => {
-        if (slideInfo.type === 'cover') return 'Cover Coming Soon';
-        if (slideInfo.type === 'copyright') return 'Copyright Info Coming Soon';
-        return 'Content Coming Soon';
-    };
-
-    return (
-        <div className="embla__slide flex-[0_0_100%] min-w-0 h-full flex items-center justify-center p-1 sm:p-2">
-            {isVisible ? (
-                <>
-                    {!loaded && !error && (
-                        <div className="absolute inset-2 flex items-center justify-center">
-                            <Skeleton className="w-full h-full max-w-2xl aspect-[4/3] rounded-lg" />
-                        </div>
-                    )}
-                    {error && (
-                        <div className="flex flex-col items-center justify-center text-center p-8 bg-muted/30 rounded-lg max-w-md mx-auto">
-                            <BookOpen className="h-16 w-16 text-muted-foreground/50 mb-4" weight="duotone" />
-                            <h3 className="text-lg font-semibold mb-2">{getErrorText()}</h3>
-                            <p className="text-sm text-muted-foreground">
-                                We're currently digitizing this book. If you have the physical copy, you can read along!
-                            </p>
-                        </div>
-                    )}
-                    <img
-                        src={getImageUrl()}
-                        alt={getAltText()}
-                        loading="lazy"
-                        className={`max-h-full max-w-full w-auto h-auto object-contain rounded-lg shadow-lg transition-opacity duration-300 ${loaded && !error ? 'opacity-100' : 'opacity-0'
-                            } ${error ? 'hidden' : ''}`}
-                        onLoad={() => setLoaded(true)}
-                        onError={() => {
-                            setError(true);
-                            setLoaded(true);
-                        }}
-                    />
-                </>
-            ) : (
-                <Skeleton className="w-full h-full max-w-2xl aspect-[4/3] rounded-lg" />
-            )}
-        </div>
-    );
-}
-
-// Progress dots component
-function ProgressDots({
-    total,
-    current,
-    onDotClick
-}: {
-    total: number;
-    current: number;
-    onDotClick: (index: number) => void;
-}) {
-    // For books with many pages, show condensed dots
-    const maxDots = 12;
-    const showCondensed = total > maxDots;
-
-    if (showCondensed) {
-        // Show progress bar instead
-        const progress = ((current + 1) / total) * 100;
-        return (
-            <div className="w-full max-w-xs mx-auto">
-                <div className="h-1 bg-muted rounded-full overflow-hidden">
-                    <div
-                        className="h-full bg-primary transition-all duration-300"
-                        style={{ width: `${progress}%` }}
-                    />
-                </div>
-            </div>
-        );
-    }
-
-    return (
-        <div className="flex items-center justify-center gap-1.5">
-            {Array.from({ length: total }, (_, i) => (
-                <button
-                    key={i}
-                    onClick={() => onDotClick(i)}
-                    className={`w-2 h-2 rounded-full transition-all duration-200 ${i === current
-                        ? 'bg-primary w-4'
-                        : 'bg-muted-foreground/30 hover:bg-muted-foreground/50'
-                        }`}
-                    aria-label={`Go to slide ${i + 1}`}
-                />
-            ))}
-        </div>
-    );
-}
-
-// Landscape orientation hint
-function LandscapeHint({ onDismiss }: { onDismiss: () => void }) {
-    return (
-        <div className="absolute inset-0 z-50 bg-background/95 backdrop-blur flex flex-col items-center justify-center p-6 text-center animate-fade-in">
-            <RotateCcw className="h-16 w-16 text-primary mb-4 animate-pulse" />
-            <h3 className="text-lg font-semibold mb-2">Rotate for Best Experience</h3>
-            <p className="text-muted-foreground mb-6 max-w-xs">
-                Turn your phone sideways to see the full page in landscape mode
-            </p>
-            <Button onClick={onDismiss} variant="outline">
-                Continue Anyway
-            </Button>
-        </div>
-    );
-}
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+    type CarouselApi,
+} from '@/components/ui/carousel';
+import { AspectRatio } from '@/components/ui/aspect-ratio';
+import { X, CaretLeft, CaretRight, BookOpenText } from '@phosphor-icons/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { books, reading } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { MarkdownBookSlide } from './MarkdownBookSlide';
+import { toast } from 'sonner';
 
 interface BookReaderProps {
     book: Book | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
     childrenIds?: string[];
+    onComplete?: () => void;
 }
 
-export function BookReader({ book, open, onOpenChange, childrenIds }: BookReaderProps) {
-    const [currentSlide, setCurrentSlide] = useState(0);
-    const [isCompleting, setIsCompleting] = useState(false);
-    const [showLandscapeHint, setShowLandscapeHint] = useState(false);
-    const [controlsVisible, setControlsVisible] = useState(true);
-    const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-    const { toast } = useToast();
+export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }: BookReaderProps) {
+    const [api, setApi] = useState<CarouselApi>();
+    const [current, setCurrent] = useState(0);
+    const [count, setCount] = useState(0);
+    const [showPrompts, setShowPrompts] = useState(false);
+    const [parsedPages, setParsedPages] = useState<string[]>([]);
+    const { user } = useAuth();
+    const queryClient = useQueryClient();
 
-    const [emblaRef, emblaApi] = useEmblaCarousel({
-        loop: false,
-        dragFree: false,
+    // Fetch markdown content if needed
+    const { data: markdownContent } = useQuery({
+        queryKey: ['book-content', book?.id],
+        queryFn: async () => {
+            if (!book?.contentPath) return null;
+            // Use existing helper if possible, or construct consistently
+            // Since getPageUrl generates {series}/{book_id}/images/page_1.webp or similar
+            // We need a reliable way to get the content.md URL.
+            // Ideally we'd add books.getContentUrl() to api.ts, but for now we can infer from coverUrl which is more standard.
+            // Cover URL: {series}/{book_id}/images/cover.png
+            // Content URL: {series}/{book_id}/content.md
+
+            // NOTE: The previous replace logic was brittle.
+            // Let's rely on constructing it cleanly if book.series and book.id are available.
+
+            const baseUrl = `https://r2.schoolos.io/books/${book.series}/${book.id}`;
+            const url = `${baseUrl}/content.md`;
+
+            // Fallback: If we must use the API helper to respect some changing base URL
+            // const cover = books.getCoverUrl(book.series, book.id);
+            // const url = cover.replace('/images/cover.png', '/content.md');
+
+            const res = await fetch(url);
+            if (!res.ok) {
+                // Try fallback location (root vs images folder?)
+                const urlFallback = `${baseUrl}/images/content.md`;
+                const res2 = await fetch(urlFallback);
+                if (!res2.ok) throw new Error('Failed to load book content');
+                return res2.text();
+            }
+            return res.text();
+        },
+        enabled: !!book && (book.renderFormat === 'markdown' || book.renderFormat === 'hybrid')
     });
 
-    // Build slide array: cover + copyright + content pages
-    const slides: SlideInfo[] = book ? [
-        { type: 'cover' },
-        { type: 'copyright' },
-        ...Array.from({ length: book.pageCount }, (_, i) => ({
-            type: 'content' as SlideType,
-            pageNum: i + 1
-        }))
-    ] : [];
-
-    const totalSlides = slides.length;
-    const isLastSlide = currentSlide >= totalSlides - 1;
-
-    // Check if mobile and portrait on open
-    useEffect(() => {
-        if (open && book) {
-            const isMobile = window.innerWidth < 768;
-            const isPortrait = window.innerHeight > window.innerWidth;
-
-            // Only show hint on mobile in portrait mode, and only once per session
-            const hintShown = sessionStorage.getItem('landscapeHintShown');
-            if (isMobile && isPortrait && !hintShown) {
-                setShowLandscapeHint(true);
-            }
-        }
-    }, [open, book]);
-
-    const dismissLandscapeHint = () => {
-        setShowLandscapeHint(false);
-        sessionStorage.setItem('landscapeHintShown', 'true');
-    };
-
-    // Reset to cover when book changes
-    useEffect(() => {
-        if (book) {
-            setCurrentSlide(0);
-            emblaApi?.scrollTo(0);
-            setControlsVisible(true);
-        }
-    }, [book, emblaApi]);
-
-    // Sync carousel with currentSlide
-    const onSelect = useCallback(() => {
-        if (!emblaApi) return;
-        setCurrentSlide(emblaApi.selectedScrollSnap());
-    }, [emblaApi]);
-
-    useEffect(() => {
-        if (!emblaApi) return;
-        emblaApi.on('select', onSelect);
-        return () => { emblaApi.off('select', onSelect); };
-    }, [emblaApi, onSelect]);
-
-    // Keyboard navigation
-    useEffect(() => {
-        if (!open) return;
-
-        const handleKeyDown = (e: KeyboardEvent) => {
-            if (e.key === 'ArrowLeft') {
-                emblaApi?.scrollPrev();
-            } else if (e.key === 'ArrowRight') {
-                emblaApi?.scrollNext();
-            } else if (e.key === 'Escape') {
-                onOpenChange(false);
-            }
-        };
-
-        window.addEventListener('keydown', handleKeyDown);
-        return () => window.removeEventListener('keydown', handleKeyDown);
-    }, [open, emblaApi, onOpenChange]);
-
-    // Auto-hide controls after inactivity
-    const resetControlsTimeout = useCallback(() => {
-        setControlsVisible(true);
-        if (controlsTimeoutRef.current) {
-            clearTimeout(controlsTimeoutRef.current);
-        }
-        controlsTimeoutRef.current = setTimeout(() => {
-            setControlsVisible(false);
-        }, 3000);
-    }, []);
-
-    useEffect(() => {
-        if (open) {
-            resetControlsTimeout();
-        }
-        return () => {
-            if (controlsTimeoutRef.current) {
-                clearTimeout(controlsTimeoutRef.current);
-            }
-        };
-    }, [open, resetControlsTimeout]);
-
-    const handleInteraction = () => {
-        resetControlsTimeout();
-    };
-
-    const scrollPrev = useCallback(() => {
-        if (emblaApi) emblaApi.scrollPrev();
-        handleInteraction();
-    }, [emblaApi]);
-
-    const scrollNext = useCallback(() => {
-        if (emblaApi) emblaApi.scrollNext();
-        handleInteraction();
-    }, [emblaApi]);
-
-    const scrollTo = useCallback((index: number) => {
-        if (emblaApi) emblaApi.scrollTo(index);
-        handleInteraction();
-    }, [emblaApi]);
-
-    // Get current page prompt (only for content pages)
-    const getCurrentPrompt = () => {
-        if (!book?.readingPrompts) return null;
-        const slide = slides[currentSlide];
-        if (slide?.type !== 'content') return null;
-        return book.readingPrompts.find(p => p.page === slide.pageNum)?.prompt;
-    };
-
-    // Get display text for current slide
-    const getSlideLabel = () => {
-        const slide = slides[currentSlide];
-        if (!slide) return '';
-        if (slide.type === 'cover') return 'Cover';
-        if (slide.type === 'copyright') return 'Copyright';
-        return `Page ${slide.pageNum} of ${book?.pageCount}`;
-    };
-
-    // Handle completion
-    const handleComplete = async () => {
-        if (!book) return;
-
-        setIsCompleting(true);
-        try {
+    // Completion mutation
+    const completeMutation = useMutation({
+        mutationFn: async () => {
+            if (!book) return;
             await reading.complete({
                 series: book.series,
                 bookId: book.id,
-                childrenPresent: childrenIds,
+                childrenPresent: childrenIds
             });
-
-            toast({
-                title: '📚 Great Job!',
-                description: `You finished reading "${book.title}"!`,
-            });
-
-            onOpenChange(false);
-        } catch (error) {
-            toast({
-                title: 'Error',
-                description: 'Failed to save reading session',
-                variant: 'destructive',
-            });
-        } finally {
-            setIsCompleting(false);
+        },
+        onSuccess: () => {
+            toast.success("Reading session logged!");
+            queryClient.invalidateQueries({ queryKey: ['reading-history'] });
+            if (onComplete) onComplete();
+            handleClose();
+        },
+        onError: (err: any) => {
+            toast.error("Failed to log session", { description: err.message });
         }
+    });
+
+    useEffect(() => {
+        if (markdownContent) {
+            // Split by "---" for pages
+            const pages = markdownContent.split(/\n---\n/);
+            setParsedPages(pages);
+        }
+    }, [markdownContent]);
+
+    useEffect(() => {
+        if (!api) return;
+
+        setCount(api.scrollSnapList().length);
+        setCurrent(api.selectedScrollSnap() + 1);
+
+        api.on("select", () => {
+            setCurrent(api.selectedScrollSnap() + 1);
+        });
+    }, [api]);
+
+    // Generate page URLs based on folder convention (for Image books)
+    const imagePages = (book && (!book.renderFormat || book.renderFormat === 'image')) ? Array.from({ length: book.pageCount }, (_, i) => {
+        return books.getPageUrl(book.series, book.id, i + 1);
+    }) : [];
+
+    const handleClose = () => {
+        onOpenChange(false);
+        // Reset state
+        setShowPrompts(false);
     };
 
     if (!book) return null;
 
-    const prompt = getCurrentPrompt();
+    const isMarkdown = book.renderFormat === 'markdown' || book.renderFormat === 'hybrid';
+    const totalPages = isMarkdown ? parsedPages.length : imagePages.length;
+
+    // If markdown loaded but no pages parsed yet, show nothing or loading
+    // But we might want to render the Carousel with 0 items initially?
+    // Carousel might break with 0 items.
 
     return (
-        <Dialog open={open} onOpenChange={onOpenChange}>
-            <DialogContent
-                className="max-w-[98vw] w-[98vw] h-[98vh] sm:h-[95vh] p-0 gap-0 overflow-hidden border-0 sm:border sm:rounded-lg"
-                onPointerMove={handleInteraction}
-                onTouchStart={handleInteraction}
-            >
-                <DialogTitle className="sr-only">{book.title}</DialogTitle>
-
-                {/* Landscape hint for mobile portrait */}
-                {showLandscapeHint && (
-                    <LandscapeHint onDismiss={dismissLandscapeHint} />
-                )}
-
-                {/* Header - auto-hide */}
-                <div
-                    className={`absolute top-0 left-0 right-0 z-20 flex items-center justify-between p-2 bg-background/90 backdrop-blur transition-all duration-300 ${controlsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-full pointer-events-none'
-                        }`}
-                >
-                    <div className="flex items-center gap-2 min-w-0">
-                        <BookOpen className="h-4 w-4 text-primary flex-shrink-0" />
-                        <span className="font-medium truncate text-sm">{book.title}</span>
+        <Dialog open={open} onOpenChange={handleClose}>
+            <DialogContent className="max-w-[95vw] h-[90vh] p-0 flex flex-col bg-black/95 border-none">
+                {/* Header */}
+                <div className="flex items-center justify-between p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
+                    <div>
+                        <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
+                        <DialogDescription className="text-gray-400 text-xs">
+                            Page {current} of {count || totalPages + 1}
+                        </DialogDescription>
                     </div>
-
                     <div className="flex items-center gap-2">
-                        <span className="text-xs text-muted-foreground whitespace-nowrap">
-                            {getSlideLabel()}
-                        </span>
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => onOpenChange(false)}
-                            className="h-8 w-8"
-                        >
-                            <X className="h-4 w-4" />
+                        {book.readingPrompts && book.readingPrompts.length > 0 && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => setShowPrompts(!showPrompts)}
+                                className={showPrompts ? "text-primary bg-white/10" : "text-gray-400"}
+                            >
+                                <BookOpenText className="w-6 h-6" />
+                            </Button>
+                        )}
+                        <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
+                            <X className="w-6 h-6" />
                         </Button>
                     </div>
                 </div>
 
-                {/* Page Carousel - Full height */}
-                <div className="h-full overflow-hidden relative bg-muted/30">
-                    <div className="embla h-full" ref={emblaRef}>
-                        <div className="embla__container flex h-full">
-                            {slides.map((slideInfo, i) => (
-                                <BookSlide
-                                    key={`${slideInfo.type}-${slideInfo.pageNum || 0}`}
-                                    slideInfo={slideInfo}
-                                    series={book.series}
-                                    bookId={book.id}
-                                    isVisible={Math.abs(currentSlide - i) <= 2}
-                                    bookTitle={book.title}
-                                />
+                {/* Reader Area */}
+                <div className="flex-1 flex items-center justify-center relative overflow-hidden">
+                    <Carousel setApi={setApi} className="w-full max-w-5xl h-full flex items-center">
+                        <CarouselContent>
+                            {/* Cover Slide (Always Show Image Cover) */}
+                            <CarouselItem className="flex items-center justify-center h-full">
+                                <div className="relative w-full h-[70vh] max-w-3xl">
+                                    <img
+                                        src={books.getCoverUrl(book.series, book.id)}
+                                        alt="Cover"
+                                        className="w-full h-full object-contain drop-shadow-2xl"
+                                        onError={(e) => {
+                                            // Fallback to placeholder service if R2 missing
+                                            e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
+                                        }}
+                                    />
+                                </div>
+                            </CarouselItem>
+
+                            {/* Pages - Markdown Mode */}
+                            {isMarkdown && parsedPages.map((content, index) => (
+                                <CarouselItem key={index} className="flex items-center justify-center h-full">
+                                    <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
+                                        <MarkdownBookSlide
+                                            content={content}
+                                            styleProfile={book.styleProfile}
+                                            pageIndex={index}
+                                            book={book}
+                                        />
+                                    </div>
+                                </CarouselItem>
                             ))}
-                        </div>
-                    </div>
 
-                    {/* Navigation Arrows - larger touch targets */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`absolute left-1 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-background/70 hover:bg-background shadow-lg transition-opacity duration-300 ${controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                            }`}
-                        onClick={scrollPrev}
-                        disabled={currentSlide <= 0}
-                    >
-                        <ChevronLeft className="h-7 w-7 sm:h-6 sm:w-6" />
-                    </Button>
+                            {/* Pages - Image Mode */}
+                            {!isMarkdown && imagePages.map((pageUrl, index) => (
+                                <CarouselItem key={index} className="flex items-center justify-center h-full">
+                                    <div className="relative w-full h-full flex items-center justify-center p-4">
+                                        <img
+                                            src={pageUrl}
+                                            alt={`Page ${index + 1}`}
+                                            className="max-w-full max-h-[75vh] object-contain shadow-lg rounded-sm"
+                                            loading={index < 3 ? "eager" : "lazy"}
+                                            onError={(e) => {
+                                                e.currentTarget.src = `https://placehold.co/800x600/1e1e1e/FFF?text=Page+${index + 1}`;
+                                            }}
+                                        />
 
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className={`absolute right-1 top-1/2 -translate-y-1/2 h-14 w-14 sm:h-12 sm:w-12 rounded-full bg-background/70 hover:bg-background shadow-lg transition-opacity duration-300 ${controlsVisible ? 'opacity-100' : 'opacity-0 pointer-events-none'
-                            }`}
-                        onClick={scrollNext}
-                        disabled={isLastSlide}
-                    >
-                        <ChevronRight className="h-7 w-7 sm:h-6 sm:w-6" />
-                    </Button>
+                                        {/* Overlay Prompt */}
+                                        {showPrompts && book.readingPrompts?.find(p => p.page === index + 1) && (
+                                            <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
+                                                <p className="text-sm font-medium leading-relaxed">
+                                                    💡 {book.readingPrompts.find(p => p.page === index + 1)?.prompt}
+                                                </p>
+                                            </div>
+                                        )}
+                                    </div>
+                                </CarouselItem>
+                            ))}
 
-                    {/* Tap zones for touch navigation */}
-                    <div
-                        className="absolute left-0 top-0 bottom-0 w-1/4 sm:hidden"
-                        onClick={scrollPrev}
-                        aria-hidden="true"
-                    />
-                    <div
-                        className="absolute right-0 top-0 bottom-0 w-1/4 sm:hidden"
-                        onClick={scrollNext}
-                        aria-hidden="true"
-                    />
-                </div>
-
-                {/* Footer - auto-hide, shows progress and completion */}
-                <div
-                    className={`absolute bottom-0 left-0 right-0 z-20 p-2 bg-background/90 backdrop-blur transition-all duration-300 space-y-2 ${controlsVisible || prompt || isLastSlide ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-full pointer-events-none'
-                        }`}
-                >
-                    {/* Progress indicator */}
-                    <ProgressDots
-                        total={totalSlides}
-                        current={currentSlide}
-                        onDotClick={scrollTo}
-                    />
-
-                    {prompt && (
-                        <div className="p-2 bg-primary/5 border border-primary/20 rounded-lg">
-                            <p className="text-sm font-medium text-primary">
-                                💬 {prompt}
-                            </p>
-                        </div>
-                    )}
-
-                    <div className="flex items-center justify-between pt-1">
-                        <div className="flex items-center gap-2">
-                            <UpvoteButton contentType="book" contentId={book.id} variant="minimal" />
-                            <Dialog>
-                                <DialogTrigger asChild>
-                                    <Button variant="ghost" size="sm" className="h-8 gap-1.5 text-xs text-muted-foreground">
-                                        <MessageCircle className="h-4 w-4" />
-                                        Comments
+                            {/* End Slide */}
+                            <CarouselItem className="flex items-center justify-center h-full">
+                                <div className="text-center text-white space-y-6">
+                                    <h3 className="text-3xl font-serif italic">The End</h3>
+                                    <p className="text-gray-400">Great reading!</p>
+                                    <Button size="lg" onClick={() => completeMutation.mutate()} disabled={completeMutation.isPending}>
+                                        {completeMutation.isPending ? "Saving..." : "Finish & Log Book"}
                                     </Button>
-                                </DialogTrigger>
-                                <DialogContent className="sm:max-w-lg max-h-[80vh] overflow-y-auto">
-                                    <DialogTitle>Reader Comments</DialogTitle>
-                                    <CommentSection contentType="book" contentId={book.id} />
-                                </DialogContent>
-                            </Dialog>
-                        </div>
-                    </div>
-
-                    {isLastSlide && (
-                        <Button
-                            onClick={handleComplete}
-                            disabled={isCompleting}
-                            className="w-full gap-2"
-                            size="lg"
-                        >
-                            <CheckCircle className="h-5 w-5" />
-                            {isCompleting ? 'Saving...' : 'We Finished Reading! 🎉'}
-                        </Button>
-                    )}
+                                </div>
+                            </CarouselItem>
+                        </CarouselContent>
+                        <CarouselPrevious className="left-4 bg-white/10 border-none hover:bg-white/20 text-white" />
+                        <CarouselNext className="right-4 bg-white/10 border-none hover:bg-white/20 text-white" />
+                    </Carousel>
                 </div>
             </DialogContent>
         </Dialog>

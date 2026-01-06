@@ -83,7 +83,6 @@ export default function Planner() {
         onSuccess: (data) => {
             queryClient.setQueryData(['weekly-plan', weekStartStr], data);
             toast.success('Plan regenerated!');
-            setNarrative(null); // Clear old narrative
             setIsBalanceDialogOpen(false);
         },
         onError: (err: any) => {
