@@ -29,6 +29,7 @@ export interface Env {
   JWT_SECRET: string;
   FRONTEND_URL: string;
   ENVIRONMENT: string;
+  ADMIN_SECRET?: string;
 }
 
 export interface BookMetadata {
@@ -65,6 +66,131 @@ interface JWTPayload {
 }
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+
+// Monitor Dashboard
+app.get('/', async (c) => {
+  const key = c.req.query('key');
+  const secret = c.env.ADMIN_SECRET || 'schoolos-admin'; // Default if not set
+
+  if (key !== secret) {
+    return c.html(`
+      <html>
+        <head><title>Unauthorized</title><style>body{background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}</style></head>
+        <body>
+          <div style="text-align:center">
+            <h1>401 Unauthorized</h1>
+            <p>Access requires a valid key parameter.</p>
+          </div>
+        </body>
+      </html>
+    `, 401);
+  }
+
+  try {
+    // 1. App Health
+    const usersCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM users').first<any>();
+    const plansCount = await c.env.DB.prepare('SELECT COUNT(*) as count FROM weekly_plans').first<any>();
+
+    // 2. AI Stats
+    const today = new Date().toISOString().split('T')[0];
+    const currentMonth = today.slice(0, 7); // YYYY-MM
+
+    const aiToday = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE date(created_at) = ?"
+    ).bind(today).first<any>();
+
+    const aiMonth = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE strftime('%Y-%m', created_at) = ?"
+    ).bind(currentMonth).first<any>();
+
+    // 3. Recent Activity
+    const { results: recentLogs } = await c.env.DB.prepare(
+      'SELECT interaction_type, question, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 10'
+    ).all();
+
+    // 4. Render HTML
+    return c.html(`
+      <!DOCTYPE html>
+      <html lang="en">
+      <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>Teacher's Aide Monitor</title>
+        <style>
+          :root { --bg: #0f172a; --card: #1e293b; --text: #e2e8f0; --accent: #38bdf8; --border: #334155; }
+          body { font-family: system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--text); max-width: 1000px; margin: 0 auto; padding: 40px 20px; line-height: 1.5; }
+          h1 { color: #fff; border-bottom: 2px solid var(--border); padding-bottom: 20px; margin-bottom: 40px; }
+          .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 24px; margin-bottom: 50px; }
+          .card { background: var(--card); padding: 24px; border-radius: 12px; border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1); }
+          .stat-label { color: #94a3b8; font-size: 0.875rem; font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; margin-bottom: 8px; }
+          .stat-value { font-size: 2.5rem; font-weight: 700; color: #fff; }
+          .stat-sub { font-size: 0.875rem; color: #64748b; margin-top: 4px; }
+          table { width: 100%; border-collapse: collapse; margin-top: 10px; font-size: 0.95rem; }
+          th, td { text-align: left; padding: 16px; border-bottom: 1px solid var(--border); }
+          th { color: #94a3b8; font-weight: 600; font-size: 0.875rem; }
+          tr:last-child td { border-bottom: none; }
+          .badge { padding: 4px 10px; border-radius: 9999px; font-size: 0.75rem; font-weight: 600; background: #334155; color: #fff; display: inline-block; }
+          .timestamp { color: #94a3b8; font-size: 0.875rem; font-family: monospace; }
+          .refresh-note { text-align: center; color: #64748b; font-size: 0.875rem; margin-top: 40px; }
+        </style>
+      </head>
+      <body>
+        <h1>Teacher's Aide System Monitor</h1>
+        
+        <div class="grid">
+          <div class="card">
+            <div class="stat-label">AI Requests (Today)</div>
+            <div class="stat-value">${aiToday?.count || 0}</div>
+            <div class="stat-sub">Monthly: ${aiMonth?.count || 0}</div>
+          </div>
+          <div class="card">
+            <div class="stat-label">Total Users</div>
+            <div class="stat-value">${usersCount?.count || 0}</div>
+          </div>
+          <div class="card">
+            <div class="stat-label">Active Plans</div>
+            <div class="stat-value">${plansCount?.count || 0}</div>
+            <div class="stat-sub">Weekly Schedules</div>
+          </div>
+        </div>
+
+        <div class="card">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:20px;padding-bottom:10px;border-bottom:1px solid var(--border)">
+            <h2 style="margin:0;font-size:1.25rem;color:#fff">Recent AI Interactions</h2>
+            <span style="font-size:0.875rem;color:#94a3b8">Last 10 entries</span>
+          </div>
+          
+          <table>
+            <thead>
+              <tr>
+                <th width="180">Time</th>
+                <th width="120">Type</th>
+                <th>Query Preview</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentLogs && recentLogs.length > 0 ? recentLogs.map((log: any) => `
+                <tr>
+                  <td class="timestamp">${new Date(log.created_at).toLocaleString()}</td>
+                  <td><span class="badge">${log.interaction_type}</span></td>
+                  <td>${log.question ? (log.question.length > 60 ? log.question.substring(0, 60) + '...' : log.question) : '<span style="color:#64748b;font-style:italic">No query text</span>'}</td>
+                </tr>
+              `).join('') : '<tr><td colspan="3" style="text-align:center;color:#64748b;padding:30px">No recent interactions found</td></tr>'}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="refresh-note">
+           Autorefreshes not enabled. Reload page to update.
+        </div>
+      </body>
+      </html>
+    `);
+
+  } catch (err: any) {
+    return c.html(\`<h1>System Error</h1><pre>\${err.message}</pre>\`, 500);
+  }
+});
 
 // CORS middleware - allows Cloudflare Pages and Lovable preview
 app.use('*', cors({
@@ -107,13 +233,13 @@ async function signJWT(payload: Omit<JWTPayload, 'iat'>, secret: string): Promis
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
+    new TextEncoder().encode(`${ encodedHeader }.${ encodedPayload }`)
   );
 
   const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
-  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
+  return `${ encodedHeader }.${ encodedPayload }.${ encodedSignature }`;
 }
 
 async function verifyJWT(token: string, secret: string): Promise<JWTPayload | null> {
@@ -138,7 +264,7 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
       'HMAC',
       key,
       signatureData,
-      new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
+      new TextEncoder().encode(`${ encodedHeader }.${ encodedPayload }`)
     );
 
     if (!valid) return null;
@@ -186,7 +312,7 @@ function requireAuth(c: any): User {
 
 // Generate unique ID
 function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  return `${ prefix } - ${ Date.now() } - ${ Math.random().toString(36).substr(2, 9) }`;
 }
 
 // ============ DEV BYPASS AUTH (Development Only) ============
@@ -242,14 +368,14 @@ app.get('/auth/dev-bypass', async (c) => {
 app.get('/auth/google', (c) => {
   const scope = encodeURIComponent('openid email profile');
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-    `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
-    `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
-    `&response_type=code` +
-    `&scope=${scope}` +
-    `&access_type=offline`;
+      `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
+      `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
+      `&response_type=code` +
+      `&scope=${scope}` +
+      `&access_type=offline`;
 
-  return c.redirect(authUrl);
-});
+    return c.redirect(authUrl);
+  });
 
 // Google OAuth callback
 app.get('/auth/google/callback', async (c) => {
