@@ -188,7 +188,7 @@ app.get('/', async (c) => {
     `);
 
   } catch (err: any) {
-    return c.html(\`<h1>System Error</h1><pre>\${err.message}</pre>\`, 500);
+    return c.html(`<h1>System Error</h1><pre>${err.message}</pre>`, 500);
   }
 });
 
@@ -233,13 +233,13 @@ async function signJWT(payload: Omit<JWTPayload, 'iat'>, secret: string): Promis
   const signature = await crypto.subtle.sign(
     'HMAC',
     key,
-    new TextEncoder().encode(`${ encodedHeader }.${ encodedPayload }`)
+    new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
   );
 
   const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
     .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
 
-  return `${ encodedHeader }.${ encodedPayload }.${ encodedSignature }`;
+  return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 }
 
 async function verifyJWT(token: string, secret: string): Promise<JWTPayload | null> {
@@ -264,7 +264,7 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
       'HMAC',
       key,
       signatureData,
-      new TextEncoder().encode(`${ encodedHeader }.${ encodedPayload }`)
+      new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
     );
 
     if (!valid) return null;
@@ -312,7 +312,7 @@ function requireAuth(c: any): User {
 
 // Generate unique ID
 function generateId(prefix: string): string {
-  return `${ prefix } - ${ Date.now() } - ${ Math.random().toString(36).substr(2, 9) }`;
+  return `${prefix} - ${Date.now()} - ${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // ============ DEV BYPASS AUTH (Development Only) ============
@@ -368,14 +368,14 @@ app.get('/auth/dev-bypass', async (c) => {
 app.get('/auth/google', (c) => {
   const scope = encodeURIComponent('openid email profile');
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
-      `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
-      `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
-      `&response_type=code` +
-      `&scope=${scope}` +
-      `&access_type=offline`;
+    `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
+    `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
+    `&response_type=code` +
+    `&scope=${scope}` +
+    `&access_type=offline`;
 
-    return c.redirect(authUrl);
-  });
+  return c.redirect(authUrl);
+});
 
 // Google OAuth callback
 app.get('/auth/google/callback', async (c) => {
