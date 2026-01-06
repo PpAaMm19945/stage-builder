@@ -4,6 +4,13 @@ import { family, books, weeklyPlan, activityCompletions, reading } from '@/lib/a
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { useNavigate } from 'react-router-dom';
 import {
   CircleNotch,
@@ -29,6 +36,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [showOnboarding, setShowOnboarding] = useState(true);
 
   const { data: todayData, isLoading: todayLoading, error: todayError } = useQuery({
     queryKey: ['family-today'],
@@ -154,43 +162,44 @@ export default function Dashboard() {
 
   // First Time User (No Materials)
   const isFirstTimeUser = todayData.materials?.every((m: MaterialItem) => m.status === 'unknown');
-  if (isFirstTimeUser && todayData.familySessions?.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4">
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="text-center space-y-2">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
-            </div>
-            <CardTitle className="text-2xl">Welcome to Your Family Learning Journey!</CardTitle>
-            <CardDescription className="text-base">We're excited to help your family learn and grow together.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                To give you the best activity recommendations, we need to know what materials you have at home.
-              </AlertDescription>
-            </Alert>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
-                <Gear className="h-4 w-4" weight="duotone" />
-                Set Up Materials
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/settings?quickstart=true')} className="flex-1">
-                Quick Start →
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
+  const showWelcome = isFirstTimeUser && todayData.familySessions?.length === 0 && showOnboarding;
+
+  const WelcomeDialog = (
+    <Dialog open={showWelcome} onOpenChange={setShowOnboarding}>
+      <DialogContent className="max-w-2xl border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
+        <DialogHeader className="text-center space-y-2">
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
+            <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
+          </div>
+          <DialogTitle className="text-2xl text-center">Welcome to Your Family Learning Journey!</DialogTitle>
+          <DialogDescription className="text-base text-center">We're excited to help your family learn and grow together.</DialogDescription>
+        </DialogHeader>
+        <div className="space-y-6">
+          <Alert className="border-blue-200 bg-blue-50">
+            <Info className="h-4 w-4 text-blue-600" />
+            <AlertDescription className="text-blue-900">
+              To give you the best activity recommendations, we need to know what materials you have at home.
+            </AlertDescription>
+          </Alert>
+          <div className="flex flex-col sm:flex-row gap-3 pt-4">
+            <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
+              <Gear className="h-4 w-4" weight="duotone" />
+              Set Up Materials
+            </Button>
+            <Button variant="outline" size="lg" onClick={() => navigate('/settings?quickstart=true')} className="flex-1">
+              Quick Start →
+            </Button>
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+  );
 
   // Needs Plan State
   if (todayData.needsPlan) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
+        {WelcomeDialog}
         <DailyLiturgy />
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mt-8">
           <CardHeader className="text-center">
@@ -279,6 +288,7 @@ export default function Dashboard() {
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
+      {WelcomeDialog}
       {/* Greeting */}
       <div className="py-6 space-y-2 text-center sm:text-left">
         <h1 className="text-3xl font-display font-semibold text-foreground">
