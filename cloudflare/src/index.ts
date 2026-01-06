@@ -407,7 +407,7 @@ app.get('/api/notifications', async (c) => {
     if (recentDomains.length > 0) {
       const missing = allDomains.find(d => !recentDomainSet.has(d));
       if (missing) {
-         notifications.push({
+        notifications.push({
           id: `alert-missing-${missing}`,
           type: 'alert',
           title: 'Coverage Alert',
@@ -420,13 +420,13 @@ app.get('/api/notifications', async (c) => {
     // 3. Encouragement (Weekly Balance)
     // If > 3 domains covered this week
     if (recentDomains.length >= 3) {
-       notifications.push({
-          id: `enc-balance-${today}`,
-          type: 'encouragement',
-          title: 'Great Balance!',
-          message: 'You are covering a wide range of developmental areas this week.',
-          date: today
-        });
+      notifications.push({
+        id: `enc-balance-${today}`,
+        type: 'encouragement',
+        title: 'Great Balance!',
+        message: 'You are covering a wide range of developmental areas this week.',
+        date: today
+      });
     }
 
     // Limit to 2 for the UI stack
@@ -4142,7 +4142,168 @@ app.post('/api/ai/explain-plan', async (c) => {
   }
 });
 
-// ============ SUPPORT ANALYTICS ============
+// ============ STRATEGIC INSIGHTS & PLANNING ============
+
+app.post('/api/family/weekly-plan/strategic-insight', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { plan, children } = await c.req.json();
+    const coach = new AiCoach(c.env);
+    const insights = await coach.generateStrategicInsights(plan, children);
+    return c.json(insights);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post('/api/family/weekly-plan/regenerate', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { balancePreference, weekStart } = await c.req.json();
+
+    // 1. Fetch dependencies
+    const { results: children } = await c.env.DB.prepare('SELECT * FROM students WHERE parent_id = ?').bind(user.id).all();
+    const timeModel = await c.env.DB.prepare('SELECT * FROM weekly_time_model WHERE parent_id = ?').bind(user.id).first();
+    const { results: overrides } = await c.env.DB.prepare('SELECT * FROM overrides WHERE parent_id = ? AND is_active = 1').bind(user.id).all();
+
+    // Activities (fetch relevant ones)
+    // We assume is_active=1. Also handle archived flags if present
+    const { results: activities } = await c.env.DB.prepare(
+      "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)"
+    ).bind().all();
+
+    // Parse timeModel
+    const parsedTimeModel = timeModel ? {
+      ...timeModel,
+      available_days: JSON.parse((timeModel as any).available_days),
+      preferred_times: JSON.parse((timeModel as any).preferred_times),
+      field_trip_days: JSON.parse((timeModel as any).field_trip_days || '[]')
+    } : { available_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], minutes_per_day: 120, preferred_times: ['morning'], max_sessions_per_day: 3, field_trip_days: [] };
+
+    // 2. Generate Plan
+    const activitiesMapped = activities.map((a: any) => ({
+      ...a,
+      materials: JSON.parse(a.materials || '[]'),
+      // Ensure other fields match Activity interface
+    }));
+
+    const planResult = await generateWeeklyPlan(
+      children as any,
+      activitiesMapped as any,
+      parsedTimeModel as any,
+      overrides as any,
+      c.env.DB,
+      user.id,
+      balancePreference
+    );
+
+    // 3. Save Plan
+    const actualWeekStart = weekStart || getSmartWeekStart();
+    const id = generateId('plan');
+
+    await c.env.DB.prepare(`
+            INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(parent_id, week_start) DO UPDATE SET
+            plan_json = excluded.plan_json,
+            created_at = datetime('now')
+        `).bind(id, user.id, actualWeekStart, JSON.stringify(planResult)).run();
+
+    return c.json({ success: true, plan: planResult });
+  } catch (error: any) {
+    console.error('Regenerate Error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+app.post('/api/rhythm/readjust', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { prompt, weekStart } = await c.req.json();
+
+    // 1. Get current model
+    const currentModel = await c.env.DB.prepare('SELECT * FROM weekly_time_model WHERE parent_id = ?').bind(user.id).first();
+    const parsedModel = currentModel ? {
+      ...currentModel,
+      available_days: JSON.parse((currentModel as any).available_days),
+      preferred_times: JSON.parse((currentModel as any).preferred_times),
+      field_trip_days: JSON.parse((currentModel as any).field_trip_days || '[]')
+    } : { available_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'], minutes_per_day: 120, preferred_times: ['morning'], max_sessions_per_day: 3, field_trip_days: [] };
+
+    // 2. AI Update
+    const coach = new AiCoach(c.env);
+    const updates = await coach.parseRhythmAdjustment(prompt, parsedModel);
+
+    // 3. Merge updates
+    const newModel = { ...parsedModel, ...updates };
+
+    // 4. Save
+    const id = (currentModel as any)?.id || generateId('tm');
+    await c.env.DB.prepare(`
+            INSERT INTO weekly_time_model (id, parent_id, available_days, minutes_per_day, preferred_times, max_sessions_per_day, field_trip_days, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(parent_id) DO UPDATE SET
+            available_days = excluded.available_days,
+            minutes_per_day = excluded.minutes_per_day,
+            preferred_times = excluded.preferred_times,
+            max_sessions_per_day = excluded.max_sessions_per_day,
+            field_trip_days = excluded.field_trip_days,
+            updated_at = datetime('now')
+        `).bind(
+      id,
+      user.id,
+      JSON.stringify(newModel.available_days),
+      newModel.minutes_per_day,
+      JSON.stringify(newModel.preferred_times),
+      newModel.max_sessions_per_day,
+      JSON.stringify(newModel.field_trip_days)
+    ).run();
+
+    // 5. Trigger Regeneration (Implicitly required for user to see change immediately)
+    // We reuse the regeneration logic briefly or just return success and let FE regenerate separate call?
+    // CoachChat calls rhythm.readjust THEN invalidateQueries(['weekly-plan']).
+    // The FE will fetch GET logic. 
+    // IF the GET logic doesn't auto-regenerate on stale, user sees old plan.
+    // BUT generateWeeklyPlan is deterministic based on model.
+    // So if model changes, we SHOULD regenerate the plan row in DB, because GET reads the DB row.
+    // YES, we must regenerate.
+
+    // ... Fetch data again for regeneration (can be optimized but safe way)
+    const { results: children } = await c.env.DB.prepare('SELECT * FROM students WHERE parent_id = ?').bind(user.id).all();
+    const { results: overrides } = await c.env.DB.prepare('SELECT * FROM overrides WHERE parent_id = ? AND is_active = 1').bind(user.id).all();
+    const { results: activities } = await c.env.DB.prepare("SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)").bind().all();
+    const activitiesMapped = activities.map((a: any) => ({
+      ...a,
+      materials: JSON.parse(a.materials || '[]'),
+    }));
+
+    const planResult = await generateWeeklyPlan(
+      children as any,
+      activitiesMapped as any,
+      newModel as any, // Use NEW model
+      overrides as any,
+      c.env.DB,
+      user.id,
+      'mixed' // Default balance on readjust
+    );
+
+    const actualWeekStart = weekStart || getSmartWeekStart();
+    const planId = generateId('plan');
+    await c.env.DB.prepare(`
+            INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, created_at)
+            VALUES (?, ?, ?, ?, datetime('now'))
+            ON CONFLICT(parent_id, week_start) DO UPDATE SET
+            plan_json = excluded.plan_json,
+            created_at = datetime('now')
+        `).bind(planId, user.id, actualWeekStart, JSON.stringify(planResult)).run();
+
+    return c.json({ success: true, plan: planResult });
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 
 app.post('/api/support/log-click', async (c) => {
   try {

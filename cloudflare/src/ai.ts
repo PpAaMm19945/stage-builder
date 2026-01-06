@@ -118,4 +118,35 @@ INSTRUCTIONS:
         }
         return result;
     }
+    async parseRhythmAdjustment(instruction: string, currentModel: any) {
+        const systemPrompt = `You are a scheduling assistant. Update the following schedule model based on the user's instruction.
+
+        Current Model: ${JSON.stringify(currentModel)}
+
+        User Instruction: "${instruction}"
+
+        Output ONLY JSON with the updated fields. 
+        Fields available:
+        - available_days: string[] (e.g. ["Mon", "Tue"])
+        - minutes_per_day: number
+        - preferred_times: string[] (e.g. ["morning", "afternoon"])
+        - max_sessions_per_day: number
+        `;
+
+        const response = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+            messages: [
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: "Update the model." }
+            ]
+        });
+
+        let result;
+        try {
+            result = JSON.parse(response.response || response);
+        } catch (e) {
+            const match = (response.response || response).match(/\{[\s\S]*\}/);
+            result = match ? JSON.parse(match[0]) : {};
+        }
+        return result;
+    }
 }
