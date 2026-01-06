@@ -58,6 +58,12 @@ interface PlanResult {
     domainCoverage: Record<string, number>;
 }
 
+interface ActivityHistorySummary {
+    lastCompleted: string | null;
+    masteryLevel: string | null;
+    completionCount: number;
+}
+
 // Domain weights for balanced coverage
 const DOMAIN_WEIGHTS: Record<string, number> = {
     'motor': 0.25,
@@ -104,35 +110,61 @@ function isSuitableForChildren(activity: Activity, children: Student[]): boolean
     );
 }
 
-// Unified History Query helper
-async function getActivityHistory(db: D1Database, parentId: string, activityId: string): Promise<{
-    lastCompleted: string | null;
-    masteryLevel: string | null;
-    completionCount: number;
-}> {
-    // Query both tables with UNION
-    const result = await db.prepare(`
-    SELECT completed_at, mastery_level, 'observation' as source
-    FROM observations o
-    JOIN students s ON o.student_id = s.id
-    WHERE s.parent_id = ? AND o.activity_id = ?
+// Optimized History Prefetcher (Replaces N+1 Query)
+async function prefetchActivityHistory(db: D1Database, parentId: string): Promise<Map<string, ActivityHistorySummary>> {
+    const historyMap = new Map<string, ActivityHistorySummary>();
 
-    UNION ALL
+    // 1. Fetch Observations
+    const { results: observations } = await db.prepare(`
+        SELECT o.activity_id, o.completed_at, o.mastery_level
+        FROM observations o
+        JOIN students s ON o.student_id = s.id
+        WHERE s.parent_id = ?
+        ORDER BY o.completed_at DESC
+    `).bind(parentId).all();
 
-    SELECT completed_at, NULL as mastery_level, 'completion' as source
-    FROM activity_completions
-    WHERE parent_id = ? AND activity_id = ?
+    // 2. Fetch Completions
+    const { results: completions } = await db.prepare(`
+        SELECT activity_id, completed_at
+        FROM activity_completions
+        WHERE parent_id = ?
+        ORDER BY completed_at DESC
+    `).bind(parentId).all();
 
-    ORDER BY completed_at DESC
-    LIMIT 10
-  `).bind(parentId, activityId, parentId, activityId).all();
+    // 3. Process and Merge
+    // We want a list of events per activity, sorted by date DESC
+    const eventsByActivity = new Map<string, Array<{ date: string, mastery?: string }>>();
 
-    const records = result.results || [];
-    return {
-        lastCompleted: (records[0] as any)?.completed_at || null,
-        masteryLevel: (records.find((r: any) => r.mastery_level) as any)?.mastery_level || null,
-        completionCount: records.length
+    const addEvent = (activityId: string, date: string, mastery?: string) => {
+        if (!eventsByActivity.has(activityId)) {
+            eventsByActivity.set(activityId, []);
+        }
+        eventsByActivity.get(activityId)!.push({ date, mastery });
     };
+
+    if (observations) {
+        observations.forEach((o: any) => addEvent(o.activity_id, o.completed_at, o.mastery_level));
+    }
+    if (completions) {
+        completions.forEach((c: any) => addEvent(c.activity_id, c.completed_at));
+    }
+
+    // 4. Compute Summary for each activity
+    for (const [activityId, events] of eventsByActivity.entries()) {
+        // Sort DESC
+        events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+
+        // Take top 10 like original logic
+        const recentEvents = events.slice(0, 10);
+
+        historyMap.set(activityId, {
+            lastCompleted: recentEvents[0]?.date || null,
+            masteryLevel: recentEvents.find(e => e.mastery)?.mastery || null,
+            completionCount: recentEvents.length
+        });
+    }
+
+    return historyMap;
 }
 
 function daysBetween(d1: string | Date, d2: string | Date): number {
@@ -205,14 +237,13 @@ function applyOverrides(
 }
 
 // Score an activity based on matrix weights and preferences
-async function scoreActivity(
+function scoreActivity(
     activity: Activity,
     domainCounts: Record<string, number>,
     overrides: Override[],
-    db: D1Database,
-    parentId: string,
+    history: ActivityHistorySummary,
     balancePreference: string = 'mixed'
-): Promise<number> {
+): number {
     let score = 50; // Base score
 
     // Domain balance: boost underrepresented domains
@@ -227,9 +258,7 @@ async function scoreActivity(
         score -= 15; // Penalize overrepresented domain
     }
 
-    // Get unified history
-    const history = await getActivityHistory(db, parentId, activity.id);
-
+    // Unified history check
     if (history.lastCompleted) {
         const daysSince = daysBetween(history.lastCompleted, new Date());
 
@@ -323,6 +352,9 @@ export async function generateWeeklyPlan(
         day => !timeModel.field_trip_days.includes(day)
     );
 
+    // Prefetch all history at once to avoid N+1 queries
+    const historyMap = await prefetchActivityHistory(db, parentId);
+
     // For each available day
     for (const day of planningDays) {
         let dayMinutesRemaining = timeModel.minutes_per_day;
@@ -332,7 +364,6 @@ export async function generateWeeklyPlan(
         while (dayMinutesRemaining > 0 && daySessions < timeModel.max_sessions_per_day) {
             // Score all remaining activities
             // We do this inside the loop because scores might change (e.g. domain balance)
-            // Note: History check is constant for the run, but scoreActivity is async now.
 
             const candidates = [];
 
@@ -340,7 +371,11 @@ export async function generateWeeklyPlan(
                  if (usedActivityIds.has(a.id)) continue;
                  if (a.duration_minutes > dayMinutesRemaining) continue;
 
-                 const score = await scoreActivity(a, domainCounts, overrides, db, parentId, balancePreference);
+                 // Get pre-calculated history
+                 const history = historyMap.get(a.id) || { lastCompleted: null, masteryLevel: null, completionCount: 0 };
+
+                 // Sync call now
+                 const score = scoreActivity(a, domainCounts, overrides, history, balancePreference);
                  candidates.push({ activity: a, score });
             }
 

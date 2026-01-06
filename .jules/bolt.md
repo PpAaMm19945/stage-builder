@@ -1,0 +1,3 @@
+## 2024-05-23 - N+1 Query Optimization in Planner
+**Learning:** The `scoreActivity` function in `cloudflare/src/planner.ts` was executing a database query for every activity candidate in every time slot. This resulted in O(N*M) database calls (Activities * Slots), which could easily exceed 500+ queries per plan generation.
+**Action:** Implemented a `prefetchActivityHistory` function to fetch all relevant history for the parent in 2 batch queries (one for observations, one for completions) at the start of the planning process. The `scoreActivity` function was refactored to be synchronous, using an in-memory lookup map. This reduces database calls from ~500 to 2, significantly improving performance and reducing D1 billable reads.
