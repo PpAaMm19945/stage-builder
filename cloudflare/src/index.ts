@@ -121,7 +121,7 @@ app.get('/', async (c) => {
     const today = new Date().toISOString().split('T')[0];
     const currentMonth = today.slice(0, 7); // YYYY-MM
 
-    let aiToday, aiMonth, recentLogs = [];
+    let aiToday, aiMonth, recentLogs: any[] = [], triageStats: any = { results: [] }, recentTriageLogs: any[] = [];
     try {
       aiToday = await c.env.DB.prepare(
         "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE date(created_at) = ?"
@@ -136,6 +136,17 @@ app.get('/', async (c) => {
         'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 20'
       ).all();
       recentLogs = logsResult.results;
+
+      // 4. Triage Stats
+      triageStats = await c.env.DB.prepare(
+        "SELECT status, COUNT(*) as count FROM ai_triage_logs WHERE date(created_at) = ? GROUP BY status"
+      ).bind(today).all();
+
+      const triageLogsResult = await c.env.DB.prepare(
+        'SELECT input_text, status, reasoning, confidence, created_at FROM ai_triage_logs ORDER BY created_at DESC LIMIT 20'
+      ).all();
+      recentTriageLogs = triageLogsResult.results;
+
     } catch (e) {
       console.error("AI Stats Error", e);
     }
@@ -207,9 +218,54 @@ app.get('/', async (c) => {
         </header>
 
         <div class="grid">
-          <!-- Activity Metrics -->
-          <div class="tile">
-            <h3>AI Interactions</h3>
+          <!-- Triage Logs -->
+        <div class="card full-width">
+          <h2>🛡️ AI Front Desk Triage</h2>
+          <div style="display:flex; gap: 20px; margin-bottom: 20px;">
+            <div class="stat-box">
+              <div class="stat-value">${(triageStats.results.find((r: any) => r.status === 'VALID')?.count) || 0}</div>
+              <div class="stat-label">Valid Intent</div>
+            </div>
+            <div class="stat-box" style="border-left: 4px solid #f59e0b;">
+              <div class="stat-value">${(triageStats.results.find((r: any) => r.status === 'AMBIGUOUS')?.count) || 0}</div>
+              <div class="stat-label">Ambiguous (Clarified)</div>
+            </div>
+            <div class="stat-box" style="border-left: 4px solid #ef4444;">
+              <div class="stat-value">${(triageStats.results.find((r: any) => r.status === 'INVALID')?.count) || 0}</div>
+              <div class="stat-label">Blocked/Invalid</div>
+            </div>
+          </div>
+
+          <table>
+            <thead>
+              <tr>
+                <th>Time</th>
+                <th>Status</th>
+                <th>Confidence</th>
+                <th>Input</th>
+                <th>Reasoning</th>
+              </tr>
+            </thead>
+            <tbody>
+              ${recentTriageLogs.map((log: any) => `
+                <tr>
+                  <td>${new Date(log.created_at).toLocaleTimeString()}</td>
+                  <td>
+                    <span class="badge badge-${log.status === 'VALID' ? 'success' : log.status === 'AMBIGUOUS' ? 'warning' : 'danger'}">
+                      ${escapeHtml(log.status)}
+                    </span>
+                  </td>
+                  <td>${Math.round(log.confidence * 100)}%</td>
+                  <td class="code-cell">${escapeHtml(log.input_text)}</td>
+                  <td>${escapeHtml(log.reasoning)}</td>
+                </tr>
+              `).join('')}
+            </tbody>
+          </table>
+        </div>
+
+        <div class="card full-width">
+          <h2>🧠 AI Resolution Logs (Main Coach)</h2>
             <div class="value">${aiToday?.count || 0}</div>
             <div class="sub">
               <span>Today</span>
@@ -4302,27 +4358,7 @@ app.post('/api/student-view/:studentId/complete', async (c) => {
 });
 // ============ AI COACH ROUTES ============
 
-app.post('/api/ai/chat', async (c) => {
-  try {
-    const user = requireAuth(c);
-    const { message, context } = await c.req.json();
 
-    // Add user name to context if not present
-    const enrichedContext = { ...context, user: user.name };
-
-    const coach = new AiCoach(c.env);
-
-    // Using streaming response
-    const response = await coach.chat(message, enrichedContext);
-
-    return new Response(response, {
-      headers: { 'Content-Type': 'text/event-stream' }
-    });
-  } catch (error: any) {
-    console.error('AI Chat Error:', error);
-    return c.json({ error: error.message }, 500);
-  }
-});
 
 app.post('/api/ai/explain-plan', async (c) => {
   try {
