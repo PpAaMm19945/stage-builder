@@ -166,9 +166,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     return (
         <>
             <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="max-w-[95vw] h-[90vh] p-0 flex flex-col bg-black/95 border-none" hideCloseButton>
+                <DialogContent className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none" hideCloseButton>
                     {/* Header */}
-                    <div className="flex items-center justify-between p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
+                    <div className="flex items-center justify-between p-2 sm:p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
                         <div>
                             <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
                             <DialogDescription className="text-gray-400 text-xs">
@@ -198,7 +198,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                             <CarouselContent>
                                 {/* Cover Slide (Always Show Image Cover) */}
                                 <CarouselItem className="flex items-center justify-center h-full">
-                                    <div className="relative w-full h-[70vh] max-w-3xl">
+                                    <div className="relative w-full h-full max-h-[80dvh] sm:max-h-[70vh] max-w-3xl flex items-center justify-center">
                                         <img
                                             src={books.getCoverUrl(book.series, book.id)}
                                             alt="Cover"
@@ -246,7 +246,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                                     src={pageUrl}
                                                     alt={`Page ${index + 1}`}
                                                     className={cn(
-                                                        "max-w-full max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
+                                                        "max-w-full max-h-[80dvh] sm:max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
                                                         !isLoaded && "opacity-0"
                                                     )}
                                                     loading={index < 3 ? "eager" : "lazy"}
@@ -269,7 +269,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
 
                                 {/* End Slide */}
                                 <CarouselItem className="flex items-center justify-center h-full">
-                                    <div className="text-center text-white space-y-6">
+                                    <div className="w-full h-full flex flex-col items-center justify-center text-center text-white space-y-6">
                                         <h3 className="text-3xl font-serif italic">The End</h3>
                                         <p className="text-gray-400">Great reading!</p>
                                         <Button
@@ -278,7 +278,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                                 if (needsChildSelection) {
                                                     setShowChildSelection(true);
                                                 } else {
-                                                    completeMutation.mutate();
+                                                    completeMutation.mutate(undefined);
                                                 }
                                             }}
                                             disabled={completeMutation.isPending}
@@ -288,8 +288,21 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     </div>
                                 </CarouselItem>
                             </CarouselContent>
-                            <CarouselPrevious className="left-4 bg-white/10 border-none hover:bg-white/20 text-white" />
-                            <CarouselNext className="right-4 bg-white/10 border-none hover:bg-white/20 text-white" />
+
+                            {/* Tap zones for navigation */}
+                            <div
+                                className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                onClick={() => api?.scrollPrev()}
+                                aria-label="Previous page"
+                            />
+                            <div
+                                className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                onClick={() => api?.scrollNext()}
+                                aria-label="Next page"
+                            />
+
+                            <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                            <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
                         </Carousel>
                     </div>
                 </DialogContent>
