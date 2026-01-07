@@ -1,7 +1,6 @@
 import fs from 'fs';
 import path from 'path';
 import { fileURLToPath } from 'url';
-// import { GoogleGenerativeAI } from '@google/generative-ai'; // Available if needed for text/multimodal
 
 // CONFIGURATION
 // ==========================================
@@ -11,10 +10,8 @@ const ADMIN_SECRET = 'schoolos-admin';
 
 // Model Configuration
 // User requested "gemini-2.5-flash-image" (Nano Banana).
-// NOTE: Google's image generation model via API is typically "imagen-3.0-generate-001".
-// We will use the user's string if they provided one, but implement the REST call logic.
+// NOTE: We use the :generateContent endpoint for this Gemini model.
 const MODEL_ID = 'gemini-2.5-flash-image';
-// const MODEL_ID = 'imagen-3.0-generate-001'; // Fallback standard
 
 const API_KEY = process.env.GEMINI_API_KEY;
 
@@ -36,27 +33,28 @@ async function generateImage(prompt, filename) {
     console.log(`Generating: ${filename} with prompt: "${prompt.substring(0, 50)}..."`);
 
     try {
-        // Construct endpoint for Imagen on Vertex AI or AI Studio
-        // Note: As of early 2025, Imagen 3 on AI Studio uses the beta endpoint.
-        // Endpoint structure: https://generativelanguage.googleapis.com/v1beta/models/{model}:predict
-        // If the user's model ID is "gemini-2.5-flash-image", we try that.
-        // If it fails, we might need 'imagen-3.0-generate-001'.
+        // Use Gemini generateContent endpoint
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
 
-        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:predict?key=${API_KEY}`;
-
-        // Payload for Imagen
+        // Payload for Gemini image generation
+        // Note: For image generation via Gemini 2.5 Flash Image, we send text and expect image data in response.
+        // It's a "text-to-image" via the unified generateContent API.
         const body = {
-            instances: [
+            contents: [
                 {
-                    prompt: prompt
+                    parts: [
+                        {
+                            text: prompt
+                        }
+                    ]
                 }
             ],
-            parameters: {
-                sampleCount: 1,
-                aspectRatio: "2:3", // Portrait for books
-                outputOptions: {
-                    mimeType: "image/png"
-                }
+            generationConfig: {
+                // If the model supports specific generation parameters like seed or aspect ratio in this payload,
+                // they would go here. For "Nano Banana" / Gemini 2.5 Flash Image, we stick to defaults or
+                // standard multimodal prompts.
+                // Note: Standard Gemini image generation often infers ratio from prompt or specific params if supported.
+                // For now we send just the prompt.
             }
         };
 
@@ -75,21 +73,18 @@ async function generateImage(prompt, filename) {
 
         const data = await response.json();
 
-        // Response format for Imagen on AI Studio usually:
-        // { predictions: [ { bytesBase64Encoded: "..." } ] }
-        // or slightly different depending on version.
+        // Parse Gemini response for inline image data
+        // Structure: candidates[0].content.parts[0].inlineData.data
 
-        if (!data.predictions || !data.predictions[0]) {
-             throw new Error('No image data in response');
+        const candidate = data.candidates?.[0];
+        const part = candidate?.content?.parts?.[0];
+        const inlineData = part?.inlineData;
+
+        if (!inlineData || !inlineData.data) {
+             throw new Error('No image data in Gemini response');
         }
 
-        const base64Image = data.predictions[0].bytesBase64Encoded || data.predictions[0].b64;
-
-        if (!base64Image) {
-             throw new Error('Image data missing from prediction');
-        }
-
-        return Buffer.from(base64Image, 'base64');
+        return Buffer.from(inlineData.data, 'base64');
 
     } catch (error) {
         console.error(`Error generating ${filename}:`, error);
