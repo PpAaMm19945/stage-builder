@@ -2287,6 +2287,25 @@ app.get('/api/reading/history', async (c) => {
   }
 });
 
+// Upload book image (Admin only)
+app.put('/api/books/upload', async (c) => {
+  const secret = c.req.query('key');
+  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
+
+  const path = c.req.query('path'); // e.g., "books/sanyus_growing_heart/left_out/images/cover.png"
+  if (!path) return c.json({ error: 'Path required' }, 400);
+
+  try {
+    const body = await c.req.arrayBuffer();
+    await c.env.BOOKS_BUCKET.put(path, body);
+    return c.json({ success: true, path });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Debug R2 endpoint
 app.get('/api/debug/r2', async (c) => {
   const secret = c.req.query('key');
