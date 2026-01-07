@@ -24,6 +24,7 @@ import { LiturgyItem, LiturgyType } from '@/types';
 import { toast } from 'sonner';
 import { useAuth } from '@/contexts/AuthContext';
 import { HymnPlayer } from './HymnPlayer';
+import { HymnContent } from './HymnContent';
 
 const ICONS: Record<LiturgyType, any> = {
   catechism: BookBookmark,
@@ -235,11 +236,16 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
                       />
                     )}
 
-                    <div className="text-sm whitespace-pre-wrap bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
-                      {item.content}
-                    </div>
+                    {item.type === 'hymn' ? (
+                      <HymnContent title={item.title} fallbackContent={item.content} />
+                    ) : (
+                      <div className="text-sm whitespace-pre-wrap bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
+                        {item.content}
+                      </div>
+                    )}
+
                     {item.reference && (
-                      <p className="text-xs text-muted-foreground italic">{item.reference}</p>
+                      <p className="text-xs text-muted-foreground italic mt-2">{item.reference}</p>
                     )}
                   </CollapsibleContent>
                 </div>

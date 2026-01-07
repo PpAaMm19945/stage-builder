@@ -65,6 +65,17 @@ interface JWTPayload {
   iat: number;
 }
 
+// Security helper: Escape HTML special characters
+function escapeHtml(str: string): string {
+  if (!str) return '';
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;');
+}
+
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // Monitor Dashboard
@@ -244,15 +255,21 @@ app.get('/', async (c) => {
             <tbody>
               ${recentLogs && recentLogs.length > 0 ? recentLogs.map((log: any) => {
       const safeContext = log.context_json ? JSON.stringify(JSON.parse(log.context_json), null, 2).replace(/</g, '&lt;') : '{}';
-      const safeQuestion = (log.question || '').replace(/"/g, '&quot;');
-      const debugObj = JSON.stringify({
+
+      const safeQuestion = escapeHtml(log.question || '');
+      const safeQuestionShort = safeQuestion.length > 80 ? safeQuestion.substring(0, 80) + '...' : safeQuestion;
+
+      const debugObjRaw = JSON.stringify({
         id: log.id,
         type: log.interaction_type,
         question: log.question,
         context: log.context_json ? JSON.parse(log.context_json) : null,
         answer: log.answer,
         timestamp: log.created_at
-      }, null, 2).replace(/'/g, "\\'").replace(/"/g, '&quot;');
+      }, null, 2);
+
+      // Escape for textarea content (specifically </textarea>)
+      const safeDebugObj = debugObjRaw.replace(/</g, '&lt;');
 
       return `
                 <tr class="log-row" onclick="toggleRow('${log.id}')">
@@ -262,12 +279,12 @@ app.get('/', async (c) => {
                   </td>
                   <td width="100"><span class="badge ${log.interaction_type}">${log.interaction_type}</span></td>
                   <td>
-                    <div style="font-weight:600;margin-bottom:4px;color:#fff">${log.question ? (log.question.length > 80 ? log.question.substring(0, 80) + '...' : log.question) : '(No Query)'}</div>
+                    <div style="font-weight:600;margin-bottom:4px;color:#fff">${safeQuestion ? safeQuestionShort : '(No Query)'}</div>
                     <div style="color:var(--muted);font-size:0.8rem;font-style:italic">ID: ${log.id}</div>
                   </td>
                   <td style="text-align:right" onclick="event.stopPropagation()">
                      <button class="action-btn" onclick="copyDebug('${log.id}')">Copy Debug Object</button>
-                     <textarea id="debug-${log.id}" style="display:none">${debugObj}</textarea>
+                     <textarea id="debug-${log.id}" style="display:none">${safeDebugObj}</textarea>
                   </td>
                 </tr>
                 <tr class="log-details" id="row-${log.id}">
@@ -280,7 +297,7 @@ app.get('/', async (c) => {
                         </div>
                         <div>
                            <h4 style="margin:0 0 10px 0; color:var(--muted)">AI Response</h4>
-                           <div class="json-block" style="color:#e2e8f0;white-space:pre-line">${log.answer ? log.answer.replace(/</g, '&lt;') : '(No Response)'}</div>
+                           <div class="json-block" style="color:#e2e8f0;white-space:pre-line">${log.answer ? escapeHtml(log.answer) : '(No Response)'}</div>
                         </div>
                       </div>
                     </div>
@@ -1228,7 +1245,6 @@ app.get('/api/family/today', async (c) => {
           childTiers,
           messLevel: activity.mess_level,
           prepMinutes: activity.prep_time_minutes,
-          materialsAvailable: true, // simplified for now
           materialsAvailable: true, // simplified for now
           reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
           timeSlot: slot.timeSlot,
