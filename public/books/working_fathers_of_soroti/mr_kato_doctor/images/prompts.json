@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Kato Goes to Work",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern, flourishing Soroti, Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Plastered painted walls, glass windows, iron sheet roofs, tiled floors inside",
+        "vehicles": "Motorcycles, Toyota sedans, boda-bodas, matatus in background",
+        "lighting": "Warm, natural Ugandan light with soft shadows"
+    },
+    "characters": {
+        "mr_kato": {
+            "age": "mid-30s",
+            "build": "medium, professional posture",
+            "clothing": "Clean white doctor's coat over collared shirt, stethoscope around neck",
+            "features": "Kind face, short hair, dark skin, warm smile"
+        },
+        "mrs_kato": {
+            "clothing": "Colorful kitenge dress or gomesi",
+            "features": "Beautiful, warm expression, traditional headwrap optional"
+        },
+        "tendo": {
+            "age": "4 years old",
+            "clothing": "Simple shorts and t-shirt or school uniform",
+            "features": "Cute, curious expression"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Dr. Kato in white coat with stethoscope, smiling warmly. Behind him: Soroti Regional Hospital - modern white building with glass windows, red iron roof, Uganda flag. Morning sunlight. Title 'Mr. Kato Goes to Work' at top in friendly font. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Early morning in Soroti, orange-pink sunrise sky. Inside a comfortable bedroom: Mr. Kato sits up in bed stretching, wearing simple nightclothes. Room has: plastered walls painted cream, proper bed with colorful blanket, mosquito net tied up, curtained window, small clock. Warm morning light filtering in. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Cozy kitchen in Ugandan home. Mrs. Kato in colorful kitenge dress serves breakfast at wooden table. Little Tendo (age 4) in pajamas watches his father eat eggs and drink tea. Kitchen has: tiled floor, gas cooker, refrigerator, curtained window, bright morning light. Warm family atmosphere. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Kato in bedroom putting on his clean white doctor's coat. Stethoscope on a hook nearby. Motorcycle helmet on shelf. Room has: modern wardrobe with mirror, framed family photo on wall. He looks confident and ready. Morning light. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Kato riding a red motorcycle through Soroti town streets. He wears white coat and helmet. Background: Mr. Mukasa waves from his painted shop with glass storefront. Paved road, other boda-bodas, a white matatu passing. Bustling morning town scene. Sunshine. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soroti Regional Hospital exterior. Modern 2-3 story building with white plastered walls, large glass windows, red iron roof. Uganda flag flies outside. Ambulance parked near entrance. Many people waiting outside - villagers and town residents. Mr. Kato walking toward entrance. Welcoming scene. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Modern hospital examination room. Mr. Kato in white coat, stethoscope in ears, kneeling to examine a little boy on examination table. Boy's mother stands nearby looking grateful. Room has: white walls, medical posters, blood pressure monitor on wall, medical cabinet with supplies. Gentle, caring atmosphere. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Hospital corridor. Mr. Kato walking, looking slightly tired but determined. Nurses in professional uniforms pass by. Walls painted light blue, fluorescent lights overhead. Through window: afternoon sun visible. Shows passage of time, busy day. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Outside hospital entrance. Elderly grandmother in traditional gomesi dress holds Mr. Kato's hands gratefully. Her family stands behind her - grateful expressions. Mr. Kato smiles humbly. Late afternoon golden light. Emotional, heartwarming moment. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Kato riding his red motorcycle at sunset. Orange and purple sky. He wears white coat and helmet. Soroti town silhouette in background: buildings, trees, church steeple. His posture shows tiredness but contentment. Beautiful sunset colors. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Kato family home compound at dusk. Mr. Kato has just arrived on motorcycle. Little Tendo runs across swept compound to hug him. Mrs. Kato stands at doorway of their painted brick house with red iron roof, smiling. Veranda, flower plants, evening light. Joyful family reunion. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside Kato home living room at night. Family sits together - Mr. Kato, Mrs. Kato, and Tendo. They bow heads in prayer, hands clasped. Room has: cushioned sofas, curtains, family photos on wall, warm lamp light. Peaceful, reverent atmosphere. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside a Ugandan church on Sunday. Kato family in Sunday best clothes sits in wooden pew. Other families visible around them. Pastor Omoding at front with Bible. Church interior: plastered walls, wooden pews, ceiling fans, PA speakers visible. Joyful worship atmosphere. NO TEXT."
+        }
+    }
+}

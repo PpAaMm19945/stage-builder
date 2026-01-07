@@ -1,0 +1,76 @@
+{
+    "book": "Left Out",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Village setting, Uganda. NO TEXT ON IMAGE.",
+        "settings": "Village play area, big tree gathering spot, home for emotional scenes",
+        "emotions": "Rejection, anger, hurt, then softening and trying again",
+        "lighting": "Outdoor play scenes, intimate crying scenes, hopeful next day"
+    },
+    "characters": {
+        "sanyu": {
+            "expressions": "Eager → rejected → ANGRY → crying → processing → trying soft words"
+        },
+        "mercy": {
+            "role": "Finds Sanyu, shares her own experience, teaches about soft words"
+        },
+        "village_girls": {
+            "number": "3-4 girls around Sanyu's age",
+            "behavior": "Exclusive circle, whispers, leaving Sanyu out"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu standing apart, looking hurt, while other girls play in a circle by a big tree. Theme of exclusion and learning grace. Title 'Left Out' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu running eagerly toward the big tree where village girls always play together. Excited expression - wants to join the fun. Girls already in a circle, laughing. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu arrives, asks to join. Girls look at each other, one whispers. 'We're in the middle of a game. Maybe later.' They turn away, giggle. Sanyu left standing alone. Rejection. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu's face: hurt turning to anger. Fists clench. Something hot rises in her chest. She's about to explode. Building rage. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu yelling at the girls! Arms out, face red. 'FINE! I didn't want to play anyway! You're all BORING!' Girls stare, one rolls eyes. Words making things worse. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu running away crying, behind coffee bushes or banana plants. Hiding. Tears streaming. Alone and hurt. Why don't they like her? Green leaves, private crying spot. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. A shadow falls. Mercy found her. She sits beside Sanyu without saying anything at first. Just present. Dappled light through leaves. Patient, gentle sister. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy speaking softly, sharing. When she was younger, a girl left her out too. She said something terrible back. Felt good for a moment, then worse. Reflection scene. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy's wisdom: 'Hard words make more enemies. Soft words leave the door open.' Sanyu wiping face, listening. Visual metaphor: closed door vs open door. Wisdom shared. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu: 'But I already yelled...' Mercy: 'You can't control them. But you can control you. Next time, try soft.' Sanyu considering this. Hard truth, gentle delivery. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Next day. Sanyu approaching the same girls, nervous. Heart beating. Takes a breath. 'Can I play today? I'm sorry I yelled.' Different approach. Courage to try soft. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Girls surprised. One shrugs. 'Okay. You can be on my team.' Not perfect, but a door opens. Small victory. Not everyone is welcoming, but one said yes. Progress. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu in bed. Heart still remembers the hurt. But also remembers the open door that soft words created. Learning. Growing. Moonlight. Still processing. NO TEXT."
+        }
+    }
+}

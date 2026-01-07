@@ -1,0 +1,80 @@
+{
+    "book": "Sanyu Wants to Be Like Mercy",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda. NO TEXT ON IMAGE.",
+        "settings": "Home scenes, daily life observations, quiet reflective moments",
+        "emotions": "Admiration → imitation attempt → frustration → understanding → authentic growth",
+        "lighting": "Observational scenes, intimate sister conversations, hopeful ending"
+    },
+    "characters": {
+        "sanyu": {
+            "expressions": "Watching/admiring Mercy → trying to copy → frustrated → tearful → finally understanding"
+        },
+        "mercy": {
+            "expressions": "Being herself naturally → noticing Sanyu's strange behavior → gentle truth-telling"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu looking up admiringly at Mercy who stands gracefully. Reflection theme - wanting to become. Title 'Sanyu Wants to Be Like Mercy' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu watching Mercy throughout the day. Mercy speaks gently to baby. Mercy helps without being asked. Mercy prays quietly. Sanyu observing intently. Multiple small vignettes. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu's thought bubble (visual, not text): 'I want to be JUST like Mercy.' Determined expression. She's going to copy her sister. Decision made. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Breakfast. Sanyu sits extra straight, tries to speak very softly like Mercy. 'Would you like more tea, Maama?' in her best Mercy-voice. Maama looks confused. 'Are you feeling alright?' NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. School scene. Boy takes Sanyu's pencil. She ALMOST yells - then remembers - forces strange fake smile. It feels wrong, tight, unnatural. Strain visible on face. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. At home trying to serve like Mercy. Spills water. Burns porridge (smoke rising). Forgets chickens (they squawk somewhere). Everything going wrong. 'TOO HARD!' frustration exploding. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu throws herself on bed dramatically. Crying into pillow. 'I'll NEVER be like Mercy.' Defeated. Comparing herself and failing. Deep frustration. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Knock. Mercy enters, sits on bed edge. 'Why have you been acting strange today?' Gentle curiosity. Sanyu sniffles. Honest conversation beginning. Safe space. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy laughing kindly - not mean, understanding. 'You don't have to BE me. God made one Mercy and one Sanyu.' Important truth. Sanyu listening, processing. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu: 'But you're so good at everything...' Mercy shakes head. 'I wasn't always. I had to learn. I'm still learning.' Revelation: Mercy wasn't born this way. Hope. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy explaining: 'I didn't copy someone. I asked God to change my heart. Little by little. Day by day.' Sanyu's eyes widening with understanding. Transformation vs imitation. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu looking at her own hands, her reflection in a small mirror. Messy hair, tear-stained face. But seeing herself differently now. She can learn. She can grow. Her own journey. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu closes eyes, prays in her own words (not trying to sound like anyone). 'God, help my heart grow.' Simple, honest, real. Beginning of true transformation. Moonlight. NO TEXT."
+        },
+        "page-13": {
+            "filename": "page-13.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning. Sanyu waking with peaceful expression. Something different in her eyes - not trying to be someone else. Just Sanyu. With a growing heart. New day. Hope. NO TEXT."
+        },
+        "page-14": {
+            "filename": "page-14.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Final image: Moon over Namasagali village at night. Peaceful village scene. Inside one small home, a little girl is becoming something new. Not a copy. Just Sanyu. Growing. Series finale feeling. NO TEXT."
+        }
+    }
+}

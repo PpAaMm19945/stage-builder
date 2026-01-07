@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Wasswa Teaches Children",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Soroti, Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Modern primary school - painted buildings, large windows, Uganda flag, organized compound",
+        "education": "Chalkboard or whiteboard, desks, educational posters, books, school uniforms",
+        "lighting": "Bright classroom light, sunny school compound"
+    },
+    "characters": {
+        "mr_wasswa": {
+            "age": "mid-30s",
+            "build": "medium, gentle posture",
+            "clothing": "Neat short-sleeve shirt, smart trousers - professional teacher attire",
+            "features": "Patient, encouraging expression, kind eyes"
+        },
+        "mrs_wasswa": {
+            "clothing": "Colorful kitenge or professional dress",
+            "features": "Supportive, warm"
+        },
+        "kato_nakato": {
+            "age": "5-year-old twins (boy and girl)",
+            "clothing": "School uniforms",
+            "features": "Curious, love learning"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Wasswa standing at a green chalkboard, chalk in hand, smiling warmly. Behind him: 'ABC' and '123' on board. Colorful educational posters on walls. Children's heads visible in foreground. Title 'Mr. Wasswa Teaches Children' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning at Wasswa home. Mr. Wasswa gathering books and papers, putting them in a bag. His twins Kato and Nakato in school uniforms eating breakfast. Modern kitchen visible. Preparing for school day. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Family moment: Mrs. Wasswa hands Mr. Wasswa his lunch packed in container. She kisses his cheek. Twins watching, smiling. Loving supportive family. Modern home interior. Morning light. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soroti Primary School exterior. Modern school building painted yellow, large windows, Uganda flag flying. Children in blue and white uniforms arriving. Mr. Wasswa walking through school gate. Sunny morning. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Classroom scene. Mr. Wasswa stands at front greeting seated students. 'Good morning, class!' Children at wooden desks in uniforms, responding eagerly. Modern classroom: plastered cream walls, large windows, educational posters. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Wasswa writing on green chalkboard: letters A, B, C, D visible. Children at desks copying into exercise books, concentrating. Clear teaching moment. Bright classroom light from windows. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Math lesson. Mr. Wasswa pointing at simple addition on board (1+2=). A child raises hand eagerly with answer. Other children watching. Interactive teaching. Warm classroom atmosphere. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Wasswa sitting beside a struggling student at their desk. He's patient, helping them understand. Other children work independently. Shows care for each student. Gentle teaching moment. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Break time! School compound. Children playing - running, jumping rope, kicking ball. Mr. Wasswa watches from shade of a tree, smiling. Happy, energetic children. Sunny day. Modern school building in background. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Afternoon in classroom. Mr. Wasswa sitting, reading a story from a picture book. Children gathered around, listening with wide eyes, fascinated. Story time. Warm afternoon light. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. End of school day. School bell ringing (visual indication). Children waving goodbye to Mr. Wasswa at classroom door. He waves back warmly. 'Goodbye, teacher!' atmosphere. Afternoon light. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening at Wasswa home. Mr. Wasswa at table marking exercise books with red pen. His twins Kato and Nakato sit nearby doing their own homework. Lamp light. Family values education. Peaceful study scene. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday at church. Mr. Wasswa teaching Sunday School to children in a church classroom. He holds a simple Bible, children listen. Different role - same caring teacher. Pastor Omoding visible through window in main hall. NO TEXT."
+        }
+    }
+}

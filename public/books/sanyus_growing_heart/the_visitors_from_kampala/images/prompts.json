@@ -1,0 +1,82 @@
+{
+    "book": "The Visitors from Kampala",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda home. NO TEXT ON IMAGE.",
+        "home": "Well-kept home prepared for important guests - cleaned, flowers, nice tableware",
+        "hospitality": "Serving, preparing, welcoming guests",
+        "lighting": "Busy morning preparation, warm welcome afternoon"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "expressions": "Reluctant to help → watching others → feeling included → understanding"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "role": "Explains importance of hospitality"
+        },
+        "pastor_mulongo": {
+            "clothing": "Smart suit, dignified visitor",
+            "features": "Kind city pastor, important guest"
+        },
+        "pastors_wife": {
+            "clothing": "Elegant dress, gentle demeanor",
+            "features": "Gracious, notices Sanyu"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu in nice dress watching as family welcomes important visitors at their home door. Hospitality theme. Modern home. Title 'The Visitors from Kampala' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Announcement! 'Visitors are coming!' Whole house in motion. Maama cooking multiple pots. Jjajja cleaning. Taata sweeping compound. Everyone busy preparing. Sanyu watches the frenzy. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu asking if she can go play at friend's house. Maama says 'Not today, we need help.' Sanyu sighs loudly, reluctant expression. She doesn't want to work. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Everyone giving Sanyu tasks. Sweep veranda! Fold napkins! Chase chickens! Multiple instruction bubbles (visual, no text). Sanyu overwhelmed, frustrated. She just wants to play. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu hiding behind banana trees in the compound. Arms crossed, avoiding work. She thinks no one will find her here. Childish avoidance. Green banana leaves around her. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy finds her hiding spot, sits beside her. Gentle expression, not scolding. Conversation starting. Dappled shade. Sister-to-sister moment. Sanyu defensive at first. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy reminds Sanyu of visiting Uncle in Kampala - Auntie Esther served them so well. Visual memory: Sanyu sipping special juice in nice room. Being welcomed. Understanding hospitality. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Car arrives! Pastor Mulongo and wife step out, well-dressed. Family greeting them warmly at compound gate. Jjajja bowing with respect. Handshakes. Important moment. Sanyu watches from doorway. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Dining scene. Maama serving pastor's wife first. Jjajja pouring water for guests. Mercy carrying plates. Everyone serving with smiles - genuine joy in hospitality. Sanyu notices their happiness. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Pastor's wife turns attention to Sanyu, speaking kindly. 'You must be Sanyu.' Recognition, being seen. Sanyu feels important and welcomed. Personal connection with guest. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. After dinner, Sanyu quietly helps clear plates without being asked. Small smile on face. Maama notices, gives proud smile. Transformation beginning. She's choosing to serve. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Visitors leaving, holding Maama's hands gratefully. 'We felt like family.' Words that matter. Sanyu hears this. Making people feel like family - that's the gift. Warm goodbye. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu in bed thinking. Making someone feel welcome... feel like family. It's a gift women give. New understanding in her eyes. Moonlight. Growing. NO TEXT."
+        }
+    }
+}

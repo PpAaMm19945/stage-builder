@@ -1,0 +1,75 @@
+{
+    "book": "Sanyu Stays Home",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Home setting during illness. NO TEXT ON IMAGE.",
+        "home": "Cozy bedroom, recovery scenes, family care",
+        "emotions": "Disappointment, feeling forgotten, then feeling loved and cared for",
+        "lighting": "Subdued bedroom light, warm lamp light, hopeful evening"
+    },
+    "characters": {
+        "sanyu": {
+            "expressions": "Sick, sad, left out → feeling forgotten → realizing she's loved"
+        },
+        "mercy": {
+            "role": "Stays home instead of going to party, reads to Sanyu"
+        },
+        "jjajja": {
+            "role": "Brings soup, prays over Sanyu"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu in bed looking sad, while through window we see other children going somewhere fun. Mercy sitting beside her bed. Title 'Sanyu Stays Home' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning of Grace's birthday party! Sanyu excited waking up - but immediately sneezes, rubs achy head. Fever flushed cheeks. Oh no. She's sick. Excitement to dread. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Maama touching Sanyu's forehead with concern. Thermometer visible. 'You have fever, you must rest.' Sanyu's expression: devastation. Missing the party. Tears welling. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu crying in bed. 'It's not FAIR!' Anger and disappointment. She pulls blanket over head. Tantrum of sickness and missing out. Dark under the blanket. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sound of others leaving for party. Under blanket, Sanyu hears Mercy and Joshua getting ready, laughing sounds. Door opening and closing. Silence. House quiet. She feels very alone. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Footsteps. Someone sits on edge of bed. Sanyu peeks out from blanket. It's Mercy! 'I'm not going.' Surprise on Sanyu's face. Mercy chose to stay. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu (still under blanket): 'Why? You love cake.' Mercy smiling gently: 'I love you more. I didn't want you to be alone.' Simply stated sacrifice. Emotional impact. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy with a storybook, begins reading. Sanyu emerges from blanket to listen. Afternoon light through window. Companionship in sickness. Tales told, time passing gently. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu falling asleep as Mercy reads. Safe, warm, cared for. Fever sweats on forehead but peaceful expression. Mercy reading on, patient. Lamp light as afternoon fades. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja enters room with steaming bowl of soup. Ginger-onion-love. She sets it beside bed, prays quietly over Sanyu, hand on forehead. Grandmother's medicine. Tenderness. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening. Maama and others return from party. They bring Sanyu a wrapped piece of cake! 'Grace saved this for you.' Sanyu's face: surprised, touched. She wasn't forgotten. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu eating cake slowly in bed. Thinking. The cake is sweet. But sweeter is: Mercy stayed. Jjajja prayed. Grace remembered. She was loved. Expression of realization. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu holding Mercy's hand in the dark, both in their beds. 'Thank you for staying.' Mercy squeezes back. Hard days show who really loves us. Peace. Connection. NO TEXT."
+        }
+    }
+}

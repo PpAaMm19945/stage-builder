@@ -1,0 +1,72 @@
+{
+    "book": "The Broken Pot",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Home setting, Uganda. NO TEXT ON IMAGE.",
+        "home": "Traditional elements within modern home - grandmother's cherished items",
+        "emotions": "Accident → fear → hiding → guilt → confession → forgiveness",
+        "lighting": "Bright accident moment, dark guilt scenes, warm forgiveness"
+    },
+    "characters": {
+        "sanyu": {
+            "expressions": "Playful → horrified → hiding guilt → sleepless → tearful confession → relief"
+        },
+        "jjajja": {
+            "expressions": "Confused when pot missing → forgiving and proud when Sanyu confesses"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. A beautiful round clay pot (cracked with gold repair - kintsugi style). Sanyu's face showing mix of regret and hope. Theme of honesty and forgiveness. Title 'The Broken Pot' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Establishing shot: Jjajja's special clay pot on a high shelf. Round, beautiful, old. Light catches it. 'This pot is very very old' atmosphere. Precious heirloom. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Rainy day outside (visible through window). Sanyu playing INSIDE (not supposed to). Bouncing a ball. Carefree. Bounce. Bounce. The pot on shelf in background. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. CRASH! The pot lies in pieces on the floor. Time frozen. Sanyu's face: absolute horror. Hands over mouth. Shattered pieces. What has she done? Rain still falling outside. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Footsteps coming! Quickly, Sanyu sweeps pieces under shelf with hands. Puts a cloth over empty spot. Panic. Hiding the evidence. Mercy enters, Sanyu pretends to read a book. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening. Jjajja notices empty spot. 'Where is my pot?' Confused, not angry. Sanyu's heart POUNDS. 'I don't know.' The lie sticks in throat. Family looking around. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Everyone asks Sanyu if she saw anything. 'No.' Another lie. Mercy looks at Sanyu with questioning eyes. Sanyu can't meet anyone's gaze. The weight begins. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu in bed, CANNOT sleep. Eyes wide open. Lie pressing on chest like heavy blanket. She sees the broken pieces in her mind. Guilt consuming. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Next day, long and heavy. Every time Jjajja speaks, Sanyu flinches. She can't play, can't eat. Guilt follows her everywhere. Haunted expression. No peace. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu walks slowly to Jjajja. Hands behind back. Eyes on floor. Finally speaks: 'Jjajja... I broke your pot. I was playing inside. I'm sorry. I lied.' Shaking. Confession. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja is quiet for a moment. Then reaches out, pulls Sanyu close into embrace. 'The pot can be replaced. Your honest heart cannot. I am proud of you for telling truth.' Forgiveness. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu crying into Jjajja's dress. But these are different tears - light tears, relief tears. The stone in her chest is gone. She feels FREE. Weight lifted. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Later: Sanyu helping Jjajja glue the pot back together. Visible cracks now - but beautiful. Jjajja smiles. 'Now it tells a story. The story of a girl who chose truth.' Redemption. NO TEXT."
+        }
+    }
+}

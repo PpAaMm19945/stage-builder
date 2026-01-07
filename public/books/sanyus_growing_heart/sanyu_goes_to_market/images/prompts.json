@@ -1,0 +1,82 @@
+{
+    "book": "Sanyu Goes to Market",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Modern homes with plastered walls, iron roofs; organized market stalls",
+        "clothing": "Colorful kitenge fabrics, modern children's clothes",
+        "lighting": "Warm natural light, expressive scenes focusing on character emotions"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "build": "energetic, expressive body language",
+            "clothing": "Colorful dress, beads in braided hair",
+            "features": "Big expressive eyes, lively personality, emotions clearly visible"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "build": "graceful, calm posture",
+            "clothing": "Simple but neat dress, hair ribbon",
+            "features": "Gentle face, patient expression, older sister energy"
+        },
+        "maama": {
+            "clothing": "Colorful gomesi or kitenge, headscarf",
+            "features": "Loving but firm, warm motherly presence"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu (5-year-old girl with braided hair, colorful dress) looking excitedly at something in a market. Mercy beside her. Jinja market in background - colorful stalls, fabrics. Title 'Sanyu Goes to Market' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Bright morning. Sanyu bouncing out of bed excitedly. Her bedroom is simple but modern - plastered walls, proper bed, mosquito net. Sunlight streaming in. Eager, energetic child expression. Market day excitement! NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside home. Maama in colorful dress tying headscarf. Mercy (11) putting on sandals calmly. Both preparing for market. Sanyu hopping with impatience nearby. Modern kitchen visible. Family getting ready. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Breakfast scene. Sanyu at table, barely eating porridge, wiggling, swinging feet impatiently. Maama gesturing for patience. Mercy eating calmly. Sanyu's impatience visible. Warm morning light. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Walking on path to market. Sanyu running ahead then back excitedly. Mercy walking calmly beside Maama, carrying basket. Dusty path, green trees. Market sounds growing. Sanyu's energy contrasted with Mercy's calm. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jinja market entrance! Overwhelming sensory experience. Tomatoes piled high, colorful fabrics, organized stalls with tarps. Sanyu's eyes HUGE with wonder. Mercy and Maama entering calmly. Bustling market atmosphere. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Close-up: beautiful silky hair ribbons displayed at a stall. Pink, yellow, blue with sparkles. Sanyu staring at them with intense longing. Her face shows WANT. Shallow depth - ribbons in focus. Desire visible. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu begging Maama for ribbons. Hands clasped pleading. Expression: desperate want. Maama shaking head gently. Mercy watching quietly in background. Market stalls around them. Conflict between want and no. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu pouting. Arms crossed. Lower lip out. She drags her feet as family walks. Sulking. Mercy glances at her with quiet understanding. Maama continues shopping. Sanyu's disappointment visible. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Market scene continues. Maama buying flour and beans from vendor. Sanyu stands apart, not helping, still sulking. Mercy has quietly slipped away - not visible in this frame. Sanyu isolated in her mood. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Walking home on path. Mercy walks beside Sanyu, secretly slips something into her hand - a small yellow ribbon! Sanyu's expression: shock, then wonder. Mercy smiling gently. Maama ahead. Unexpected gift. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu staring at the ribbon, then at Mercy's kind face. Mercy's expression: peaceful joy in giving. Sanyu's expression: something shifting in her heart. Warm afternoon light. Deep emotional moment. Understanding growing. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night time. Sanyu in bed holding the yellow ribbon close. But she's staring at the ceiling thinking. Remembering Mercy's joyful face when giving. Moonlight through window. Quiet reflection. Heart learning. NO TEXT."
+        }
+    }
+}

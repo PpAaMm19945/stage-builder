@@ -1,0 +1,89 @@
+{
+    "book": "Pastor Omoding Cares for All",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Soroti community, Uganda. NO TEXT ON IMAGE.",
+        "church": "Modern church building - plastered walls, red/green roof, cross on top, PA speakers, plastic/wooden chairs or pews",
+        "community": "All the Working Fathers families together, diverse scenes",
+        "lighting": "Sunday morning light, warm community scenes"
+    },
+    "characters": {
+        "pastor_omoding": {
+            "age": "mid-40s",
+            "build": "medium, dignified posture",
+            "clothing": "Neat suit or pastor's attire for church, casual but respectful for visits",
+            "features": "Wise, caring eyes, gentle smile, shepherd of the community"
+        },
+        "mrs_omoding": {
+            "clothing": "Elegant gomesi or kitenge, befitting pastor's wife",
+            "features": "Gracious, welcoming"
+        },
+        "esther_timothy": {
+            "age": "Esther 5, Timothy 8",
+            "clothing": "Nice Sunday clothes",
+            "features": "Well-behaved, helpful in church"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Pastor Omoding in neat suit, Bible in hand, warm welcoming smile. Behind him: the church building with white walls, red roof, cross on top. Community members visible in background. Morning sunlight. Title 'Pastor Omoding Cares for All' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Early morning at Omoding home. Pastor sitting in a quiet corner with open Bible, praying. Morning light through window. Peaceful, spiritual preparation. Modern home interior visible. Devotion before busy day. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Breakfast scene at Omoding home. Mrs. Omoding serving tea. Children Esther and Timothy in nice clothes eating. Pastor Omoding in casual shirt, happy family morning. Everyone excited for Sunday. Modern kitchen. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Pastor Omoding walking to church. The church building visible: white plastered walls, red iron roof, cross on top. People walking toward it from different directions. Sunday morning atmosphere. Sunny day. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Families arriving at church. The Katos entering! The Okellos arriving! The Opios on bicycles from village! All the Working Fathers families converging. Church entrance busy with greetings. Community gathering. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside church, pews filling up. Mr. Mukasa sitting with Mr. Wasswa. Mr. Odong next to Mr. Ejoku. All fathers with their families. Diverse congregation. Modern church interior: PA speakers, ceiling fans, nice wooden pews. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okwaro helping elderly grandmothers find their seats in church. Mr. Emukule in civilian clothes holds little Okello's hand, walking to their pew. Acts of service before worship begins. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Pastor Omoding at pulpit, Bible open before him, hands gesturing as he teaches. Congregation listening attentively. 'Today I will teach about working faithfully' atmosphere. Church interior. Sunday worship. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Pastor preaching: gesture toward congregation. 'Some are doctors, farmers, builders...' All fathers visible in their pews. Message about honoring God through honest work. Inspiring moment. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday School: Mrs. Wasswa teaching children in a side room. Tendo, Acen, Etyang, Sarah, Apio - all the children from the books - singing together. 'Jesus loves me' feeling. Joyful children's class. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. After service. Pastor Omoding at church doors shaking hands with congregation. Personal greetings to each person: 'How is your mother, Mr. Kato?' 'How is business, Mr. Mukasa?' Pastoral care. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Afternoon pastoral visit. Pastor Omoding at a sick neighbor's home, praying with them. He brought food from his own table. Simple village home interior. Caring for the vulnerable. Pastoral compassion. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening at home. Pastor Omoding as father: playing with daughter Esther, teaching son Timothy to read from Bible. Mrs. Omoding watching with pride. Pastor is also a loving father. Family warmth. NO TEXT."
+        },
+        "page-13": {
+            "filename": "page-13.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunset over Soroti town. Pastor Omoding standing on hill looking over the community. He sees: hospital, market, school, farms, church. All connected. He loves this community. Contemplative, grateful moment. Beautiful sunset. NO TEXT."
+        },
+        "page-14": {
+            "filename": "page-14.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Final summary scene: All ten fathers shown in a collage or group arrangement. Mr. Kato heals. Mr. Okello fixes. Mr. Opio grows. Mr. Mukasa sells. Mr. Odong protects. Mr. Wasswa teaches. Mr. Ejoku builds. Mr. Okwaro carries. Mr. Emukule defends. Pastor Omoding shepherds them all. Community complete. NO TEXT."
+        }
+    }
+}

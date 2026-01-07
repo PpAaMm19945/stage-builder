@@ -1,0 +1,85 @@
+{
+    "book": "Sanyu and the Wedding",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda wedding. NO TEXT ON IMAGE.",
+        "wedding": "White wedding dress, beautiful bride, church ceremony, outdoor reception with tent/marquee",
+        "clothing": "Formal gomesi, suits, colorful guest attire",
+        "lighting": "Celebratory, joyful atmosphere, bright day into evening"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "clothing": "Her best dress, beads from Mercy's ribbon in hair",
+            "features": "Wide-eyed wonder at beauty, then thoughtful"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "clothing": "Nice dress for wedding, composed",
+            "features": "Observant, gently guides Sanyu"
+        },
+        "jjajja": {
+            "age": "elderly grandmother",
+            "clothing": "Old but clean gomesi dress, dignified",
+            "features": "Wrinkled kind face, peaceful expression, quietly serving"
+        },
+        "auntie_rose": {
+            "clothing": "Beautiful white wedding dress, veil, flowers",
+            "features": "Radiant bride, everyone's attention"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu in her best dress watching a beautiful bride in white. Wedding scene in background - church, guests, flowers. Sanyu's expression: mesmerized by beauty. Title 'Sanyu and the Wedding' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Excitement at home! Sanyu jumping on bed. Wedding day! Her best dress laid out. Everyone preparing. Maama doing hair. Modern bedroom. Morning energy and anticipation. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Getting ready scene. Maama braiding Sanyu's hair with red beads. Mercy tying ribbon in her own hair. Jjajja in corner putting on her old but clean gomesi, dignified. Everyone preparing. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Church interior. Auntie Rose the bride walks in - white sparkly dress, glowing skin, everyone gasping. Sanyu's eyes HUGE, mouth open in awe. She's never seen anyone so beautiful. Guests watching. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. During ceremony. Sanyu staring at Auntie Rose throughout. Not paying attention to vows - just looking at the dress, the flowers, the makeup. Dreaming expression. Other guests focused on ceremony. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Reception. Sanyu checking herself in a spoon reflection! Adjusting her hair, her dress. Obsessing over her own appearance. Food untouched on plate. Missing the celebration around her. Self-focused. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Maama calls Sanyu to help serve guests. Sanyu protestings - worried about getting dress dirty. Reluctant posture. Selfish moment. Other women serving happily in background. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu still not helping. She watches others serve: Mercy carrying plates, Maama pouring drinks. And there's Jjajja - old, wrinkled - quietly handing rice to children. Nobody looking at Jjajja, but she's smiling. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Close-up moment: a little boy spills juice, crying. Jjajja bends down gently, wipes his face, sings softly to him. He stops crying. Jjajja's weathered face is... beautiful in its kindness. Sanyu watches this. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu sitting with Mercy on a bench at reception. Sanyu asks about Jjajja being beautiful. Mercy's expression knowing, gentle. Conversation happening. Background: reception winding down. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. End of wedding. Auntie Rose hugging guests goodbye. Her makeup smudged, hair messy now. But still laughing, happy tears. She still looks beautiful. Jjajja looks beautiful too. Maama too. Different beauties. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. That night at home. Sanyu looking in a mirror. Her own young face reflected. Thinking. Remembering Jjajja's kind eyes, Mercy's gentle smile. Expression: contemplating what beauty really means. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu in bed, eyes open, thinking. Moonlight. The wedding dress was beautiful... but so was Jjajja's serving. She doesn't have words yet. But something is shifting. Learning. NO TEXT."
+        }
+    }
+}

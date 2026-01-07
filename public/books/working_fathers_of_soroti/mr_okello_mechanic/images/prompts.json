@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Okello Fixes Cars",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern, flourishing Soroti, Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Plastered painted walls, glass windows, iron sheet roofs, concrete floors",
+        "vehicles": "Toyota sedans, boda-boda motorcycles, trucks, pickups - being repaired",
+        "lighting": "Warm, natural Ugandan light"
+    },
+    "characters": {
+        "mr_okello": {
+            "age": "mid-30s",
+            "build": "strong, muscular arms from work",
+            "clothing": "Blue work overalls or mechanic shirt, sometimes safety boots",
+            "features": "Friendly face, often has grease smudges, short hair"
+        },
+        "mrs_okello": {
+            "clothing": "Colorful kitenge dress",
+            "features": "Warm, supportive expression"
+        },
+        "acen": {
+            "age": "5 years old",
+            "clothing": "Simple dress",
+            "features": "Curious, watches father work"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okello in blue work overalls, holding a wrench, smiling proudly. Behind him: his modern garage with corrugated iron roof, cars visible inside. A white Toyota sedan on a hydraulic jack. Morning light. Title 'Mr. Okello Fixes Cars' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Early morning at the Okello family compound. Mr. Okello splashes water on his face at an outdoor tap. Modern brick house with iron roof visible. Sun rising orange. He looks energized, ready for work. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside Okello family home kitchen. Mrs. Okello in colorful dress serves breakfast. Little Acen in school uniform watches father. Mr. Okello eats quickly. Modern kitchen with gas cooker, fridge visible. Morning routine. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okello's garage on Main Street, Soroti. Modern auto workshop: corrugated iron roof, concrete floor, open front bay. Sign reads 'OKELLO AUTO GARAGE'. A white Toyota sedan inside. Tool cabinet visible. Mr. Okello arriving, other workers greeting him. Morning bustle. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside the garage. A white Toyota sedan on a hydraulic jack/lift, raised up. Mr. Okello underneath looking at the engine. Another mechanic hands him tools. Oil cans, toolboxes, air compressor visible. Professional workshop setting. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Close-up of Mr. Okello working on an engine. His hands are slightly greasy. He holds a wrench, concentrating. Engine parts visible. There's satisfaction in careful work. Warm light from garage opening. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okello talking with a customer - a woman in business attire. They stand by her repaired car (silver Toyota Premio). He explains something, pointing at the car. She looks pleased. Professional customer service moment. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. A boda-boda motorcycle being repaired. Mr. Okello squats beside it, tightening something. The rider (Mr. Okwaro) watches, chatting with him. Connection between the Working Fathers. Garage background. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Midday at the garage. Workers take a break, drinking water and eating chapati. Mr. Okello sits with them, laughing. Camaraderie among workers. Garage tools and cars in background. Warm afternoon light. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Customer counting money and paying Mr. Okello. Mr. Okello writes a receipt. Honest transaction. The repaired car (now clean and working) visible behind them. Late afternoon light in garage. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening, garage closing up. Mr. Okello washes his hands at a tap, scrubbing off grease. He looks tired but satisfied. Sun setting orange behind the buildings. End of work day. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Okello family home in evening. Mr. Okello arrives. Little Acen runs to hug him. He scoops her up despite being tired. Mrs. Okello smiles from doorway. Warm family reunion. House has modern features - painted walls, iron roof. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday at church. Okello family in Sunday best sits in pew. Mr. Okello's hands are now clean. Other families around them - see the Katos nearby. Pastor Omoding preaching. Modern church interior. Peaceful worship. NO TEXT."
+        }
+    }
+}

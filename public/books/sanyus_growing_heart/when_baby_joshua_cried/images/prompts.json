@@ -1,0 +1,81 @@
+{
+    "book": "When Baby Joshua Cried",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Home setting, Uganda. NO TEXT ON IMAGE.",
+        "home": "Modern home interior - bedrooms, living area, kitchen",
+        "mood": "Emotional journey - frustration to understanding to small acts of service",
+        "lighting": "Day to night scenes, lamp light, 3am darkness"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "expressions": "Jealousy, frustration, then watching, then softening"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "expressions": "Tired but peaceful, selfless service"
+        },
+        "baby_joshua": {
+            "age": "8 months",
+            "features": "Crying baby, sick, runny nose, finally smiling when better"
+        },
+        "maama": {
+            "expressions": "Exhausted, grateful for help"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu watching from doorway as Mercy rocks baby Joshua. Night lamp light. Emotional learning moment. Title 'When Baby Joshua Cried' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Baby Joshua crying in Maama's arms. Red face, runny nose - clearly sick. Maama exhausted, dark circles. Sanyu in background with hands over ears, annoyed expression. Household disruption. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu trying to get Maama's attention. 'Can you braid my hair?' 'Can we read a story?' But Maama is busy with medicine for Joshua, can't focus on Sanyu. Sanyu feels ignored. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu's tantrum moment. She stomps foot, face angry. 'Nobody cares about ME!' Running toward her room. Slamming door (motion blur on door). Emotional outburst. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu alone in her room, arms crossed on bed. Angry face. Thinking 'The baby ruined everything.' Jealousy and self-pity. Room is dark with her mood. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. 3am darkness. Baby crying continues. Sanyu can't sleep. Through cracked door, she sees Maama in living room, head dropping, exhausted, barely able to stay awake. Long night. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy quietly gets up from her sleeping mat. Moonlight. She walks to Maama, gently takes Joshua. 'Go sleep, Maama. I will hold him.' Selfless offer. Sanyu watches from doorway, unseen. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy sitting by lamp, rocking baby, humming softly. Her eyes are tired but face is peaceful. She doesn't complain. Joshua beginning to calm. Sanyu watching from shadows, processing. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu's face in shadow, expression shifting. Watching Mercy who is tired but at peace. How can she be peaceful? Question in Sanyu's eyes. Witnessing selfless love. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning light. Sanyu wakes early, finds Mercy asleep in chair still holding Joshua. Joshua now smiling, fever broken. Mercy exhausted, beautiful in sacrifice. Sanyu stares at her sister. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu in kitchen quietly, carefully pouring water into a cup. Small determined expression. She's going to do something kind. First steps of service. Sunlight in kitchen. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu tiptoeing to Mercy, offers the cup of water. Mercy wakes, surprised, touched. 'Thank you.' Small act, big meaning. Connection between sisters. Morning light. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu's face, lighter now. Just a cup of water. But her heart feels different. Learning that serving isn't so bad. Maybe even... good. Hopeful expression. Warm light. NO TEXT."
+        }
+    }
+}

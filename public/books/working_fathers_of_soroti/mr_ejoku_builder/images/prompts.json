@@ -1,0 +1,85 @@
+{
+    "book": "Mr. Ejoku Builds the Future",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern construction in Soroti, Uganda. NO TEXT ON IMAGE.",
+        "construction": "Metal scaffolding, concrete mixers, hard hats, reflective vests, plastered brick walls, iron roofing",
+        "equipment": "Gasoline-powered concrete mixer, wheelbarrows, trowels, blueprints, measuring tape",
+        "lighting": "Bright construction site, dust in air, sunny days"
+    },
+    "characters": {
+        "mr_ejoku": {
+            "age": "late 30s",
+            "build": "strong, capable",
+            "clothing": "Yellow/orange reflective safety vest, hard hat, work boots, sometimes holding clipboard or blueprint",
+            "features": "Authoritative but approachable, experienced, respected"
+        },
+        "mrs_ejoku": {
+            "clothing": "Colorful kitenge dress",
+            "features": "Proud of hardworking husband"
+        },
+        "imukon": {
+            "age": "5 years old",
+            "clothing": "Simple shorts and shirt",
+            "features": "Wants to be like papa, curious about building"
+        },
+        "engineer": {
+            "clothing": "Collared shirt, trousers, white hard hat, holds rolled blueprints",
+            "features": "Professional woman or man"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Ejoku the foreman standing confidently in yellow reflective vest and hard hat, holding clipboard. Behind him: modern construction site with metal scaffolding on multi-story building, orange concrete mixer, workers in hard hats. Title 'Mr. Ejoku Builds the Future' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning at Ejoku home. Mr. Ejoku putting on his yellow hard hat, checking his reflective vest. Work boots by door. His bedroom is modern - plastered walls, proper bed. Ready for a big day. Morning light. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Family breakfast. Mrs. Ejoku in colorful dress packing his lunch. Little Imukon reaches for papa's hard hat, wanting to try it on. Father gently laughs. Warm family moment. Modern kitchen. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Ejoku arriving at construction site on motorcycle (wearing helmet). Site shows: multi-story building under construction, metal scaffolding on sides, piles of materials. Sign says 'SOROTI COMMUNITY CENTER'. Workers gathering. Morning scene. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Ejoku studying blueprints/building plans spread on a makeshift table. He points at something, explaining to workers in hard hats gathered around. Leadership moment. Construction site background. Planning the day's work. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Orange gasoline-powered concrete mixer spinning on site. Workers in hard hats pour cement mixture into wheelbarrows. Mr. Ejoku supervises, pointing directions. Dust and activity. Modern construction equipment. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Masons on metal scaffolding laying concrete blocks in rows. Mr. Ejoku calls up from ground level, checking alignment. 'Straight line!' atmosphere. Multi-story construction. Workers in safety gear. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Ejoku teaching a younger worker. He shows him how to use a measuring tape correctly on a wall section. Mentorship on the job. Patient instruction. Construction site background. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Water break on site. Workers sitting in shade drinking water from bottles. Mr. Ejoku with them, wiping sweat from forehead. Hot sun visible. Taking care of the team. Rest before continuing. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. The engineer (woman in collared shirt, white hard hat) arrives in a small silver sedan. She inspects the building with Mr. Ejoku, checking measurements with a tape. She nods approvingly. Professional collaboration. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. End of work day. Mr. Ejoku paying workers from a bag of cash. Workers receive money, respectful exchange. Honest transaction. Late afternoon sun. Construction site in background. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunset. Mr. Ejoku riding motorcycle home. In background: the Community Center construction silhouetted against orange sky - taller than before, making progress. Satisfaction of a day well worked. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday at church. Ejoku family in Sunday best in pew. Pastor Omoding at front says something about 'those building our Community Center.' Mr. Ejoku looks humble. Community recognizes his work. NO TEXT."
+        }
+    }
+}

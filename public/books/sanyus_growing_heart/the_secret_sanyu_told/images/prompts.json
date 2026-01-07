@@ -1,0 +1,81 @@
+{
+    "book": "The Secret Sanyu Told",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda. NO TEXT ON IMAGE.",
+        "settings": "Home interior, church exterior/interior, village paths",
+        "emotions": "Focus on facial expressions - curiosity, guilt, regret, forgiveness",
+        "lighting": "Intimate emotional scenes, varying light for mood"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "expressions": "Key: excited curiosity → guilty weight → tearful confession → relief"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "role": "Comforter, speaks gently about words"
+        },
+        "maama": {
+            "role": "Initially disappointed, later guides Sanyu to apologize"
+        },
+        "mama_tendo": {
+            "age": "adult neighbor",
+            "expressions": "Hurt and embarrassed → forgiving and kind"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu looking regretful, hand over mouth as if she said something she shouldn't have. Soft background showing whispering figures. Theme of words and consequences. Title 'The Secret Sanyu Told' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu with ear pressed near a doorway, listening intently. Big curious eyes. She overhears adults talking in another room. Evening light. Eavesdropping posture - excited to hear something secret. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening scene. Maama and Auntie talking quietly in next room, visible through doorway. Sanyu in foreground, eager expression - she heard something interesting about Mama Tendo. Candle/lamp light. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Next day at church. Sanyu whispers into her friend Grace's ear during service. Excited expression - sharing the secret. Grace's eyes grow wide. Other congregants around them, not noticing. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Gossip spreading visually. Chain of people: Grace tells her mother, who tells another woman. Whispers traveling. Church courtyard after service. Secret spreading like ripples. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mama Tendo sitting alone on church bench, looking broken. Red eyes, embarrassed posture. People nearby staring/pointing. She knows everyone knows. Sanyu in background, stomach twisting with realization. Guilt beginning. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. In the car going home. Maama's face serious, not angry but disappointed. Sanyu looking at her feet, ashamed. Heavy silence in the car. Consequential moment. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night time. Sanyu in bed, can't sleep. Eyes open, staring at ceiling. Weight of guilt pressing on her. Moonlight. She sees Mama Tendo's sad face in her mind. Can't escape what she did. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu goes to Mercy's bed in the dark. Sits beside her, looking miserable. 'I made a mistake.' Mercy holds her hand, listens. Soft lamp light. Safe space to confess. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mercy speaking gently. Visual metaphor could show: words like seeds scattered, growing into plants. 'Once spoken, cannot be taken back.' Sanyu listening with wet eyes. Important lesson. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. A week later. Maama walks Sanyu to Mama Tendo's house. Sanyu's hands shake, nervous expression. Walking the difficult path of apology. Village path, simple home in distance. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. At Mama Tendo's door. Sanyu looking up, tearful, saying sorry. Mama Tendo's expression softening, reaching out to hug her. Forgiveness moment. 'I forgive you, little one.' Relief and grace. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Walking home with Maama, holding hands tightly. Sanyu's expression: lightened, burden lifted. Sunset light. She's learned about the power of words. Still processing, but free. NO TEXT."
+        }
+    }
+}

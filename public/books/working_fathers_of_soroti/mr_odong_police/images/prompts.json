@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Odong Keeps Us Safe",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Soroti town, Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Plastered painted buildings, glass windows, iron roofs, paved streets",
+        "police": "Accurate Uganda Police Force uniform - blue shirt, black trousers, peaked cap, white/blue police vehicles",
+        "lighting": "Clear daylight, community scenes"
+    },
+    "characters": {
+        "mr_odong": {
+            "age": "mid-30s",
+            "build": "fit, authoritative but kind posture",
+            "clothing": "Uganda Police Force uniform: blue short-sleeve shirt, black trousers, black boots, peaked cap with badge",
+            "features": "Friendly but professional face, reassuring presence"
+        },
+        "mrs_odong": {
+            "clothing": "Colorful kitenge dress",
+            "features": "Supportive, prayerful"
+        },
+        "okeny": {
+            "age": "4 years old",
+            "clothing": "Simple shorts and shirt",
+            "features": "Admires his father, wants to be like him"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Officer Odong in Uganda Police uniform (blue shirt, black trousers, peaked cap) standing confidently. Behind him: Soroti Police Station - modern building with Uganda flag, white police pickup visible. Morning light. Title 'Mr. Odong Keeps Us Safe' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning at Odong home. Mr. Odong putting on his police uniform - buttoning blue shirt, adjusting belt. Mirror visible showing his reflection. Bedroom is modern - plastered walls, proper furniture. Getting ready for duty. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Family moment at door. Mrs. Odong in colorful dress holds Mr. Odong's hands, praying. Little Okeny watches with big eyes, waving. Morning light. Family sending father off with blessing. Emotional, warm scene. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soroti Police Station exterior. Modern building: plastered white walls, Uganda flag flying, sign reads 'UGANDA POLICE'. White police pickup trucks parked outside. Officers greeting each other. Mr. Odong walking in. Professional atmosphere. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soroti market during day. Mr. Odong in uniform patrolling slowly through organized market stalls. Vendors wave, children respect him. He watches carefully, ensures safety. Busy but peaceful market scene. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Touching scene: Mr. Odong kneeling to speak to a crying lost little boy in the market. He's gentle, reassuring. Market crowd in background. Police officer helping a child - kindness in action. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Happy reunion! The lost boy reunited with his mother near Mr. Mukasa's shop. Mother hugging child, thanking Officer Odong gratefully. Mr. Odong smiles humbly. Community helping each other. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Two men arguing loudly in market - tense confrontation. Mr. Odong walks calmly toward them, hands raised peacefully. Others watching nervously. Officer bringing peace. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Resolution: the two men now shaking hands, calmed down. Mr. Odong stands between them, satisfied expression. Tension resolved peacefully. Market life continues normally around them. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. School crossing scene. Mr. Odong in uniform helping children cross a road safely. He holds up hand to stop a boda-boda and small car. Children in school uniforms cross in line. Modern Soroti street scene. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Late afternoon at police station. Mr. Odong looking tired but fulfilled, standing at station entrance. Sun setting orange behind buildings. Long day of service complete. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Odong family home in evening. Little Okeny running to hug father arriving home. Mr. Odong scoops him up, laughing. Mrs. Odong at doorway smiling. Warm family reunion. Painted brick house with iron roof visible. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday church service. Officer Odong in civilian Sunday clothes (not uniform) sitting with family. Pastor Omoding praying over congregation: 'for those who serve and protect.' Peaceful worship. Community gathered. NO TEXT."
+        }
+    }
+}

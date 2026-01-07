@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Emukule Serves the Nation",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Uganda. NO TEXT ON IMAGE.",
+        "military": "UPDF camouflage uniform, black boots, modern barracks, Uganda flag",
+        "buildings": "Modern military barracks, school buildings, painted government structures",
+        "lighting": "Various - early morning drills, midday activities, intimate family scenes"
+    },
+    "characters": {
+        "mr_emukule": {
+            "age": "early 30s",
+            "build": "fit, strong, military posture",
+            "clothing": "UPDF camouflage uniform (green/brown pattern), black boots, beret. Civilian clothes for home/church scenes",
+            "features": "Disciplined but gentle with family, proud posture"
+        },
+        "mrs_emukule": {
+            "clothing": "Colorful kitenge or gomesi",
+            "features": "Strong, patient, prays for husband"
+        },
+        "okello": {
+            "age": "4 years old",
+            "clothing": "Simple shorts and shirt",
+            "features": "Admires his soldier father, big eyes"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Emukule in UPDF camouflage uniform, standing at attention, proud expression. Behind him: Uganda flag flying, modern barracks buildings. Morning light. Title 'Mr. Emukule Serves the Nation' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Very early morning, still dark blue sky. Inside Emukule home bedroom. Mr. Emukule putting on his camouflage uniform carefully - buttoning shirt, adjusting belt. Strong black boots ready. Modern bedroom - plastered walls. Dawn light breaking. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Tender moment at door. Mrs. Emukule in colorful dress holds her husband's hand, eyes closed in prayer. Little Okello watches papa in uniform with big admiring eyes. Morning light. Family blessing before duty. Emotional scene. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Military barracks compound. Modern buildings, Uganda flag flying on tall pole. Other soldiers in uniform gathering. Mr. Emukule walking into barracks, saluting fellow soldiers. Morning assembly atmosphere. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning exercise drill. Soldiers in lines doing pushups or running in formation. Mr. Emukule among them, fit and disciplined. 'One! Two! Three!' feeling. Parade ground. Morning sun. Teamwork and discipline. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Commander addressing soldiers lined up. He speaks about duty and protecting the nation. Mr. Emukule stands at attention with others, listening respectfully. Uganda flag in background. Serious, noble atmosphere. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Community service: Soldiers helping villagers. Some digging, some carrying supplies during a flood assistance operation. Mr. Emukule carrying a sack on shoulder, helping. Military trucks visible. Service to community. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soldiers visiting a primary school. Children excited, cheering. Mr. Emukule in uniform shaking hands with children, encouraging them. 'Study hard!' atmosphere. Modern school building. Positive community interaction. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Emotional scene: Mr. Emukule at barracks, looking at a photo of his family (Mrs. Emukule and Okello). Sometimes soldiers are away many days. He misses them. Longing expression. Evening light. Sacrifice of service. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Homecoming! Mr. Emukule arriving home in uniform. Little Okello running across compound to hug him. 'Papa! Papa!' Mrs. Emukule waiting at door, joyful tears. Reunion after time away. Emotional, happy scene. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Family dinner inside home. Mr. Emukule now in comfortable civilian clothes, eating Mrs. Emukule's cooking. Okello sits close to papa. Family talking, laughing, reconnecting. Warm lamplight. Modern kitchen visible. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Bedtime scene. Mr. Emukule in casual clothes reading a story book to little Okello on his lap. Bedroom lamp light. Tender father-son moment. Even soldiers are gentle with their children. Peaceful, intimate. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday church service. Emukule family in Sunday best clothes (no uniform). Pastor Omoding at front, praying: 'Lord, protect those who protect us.' Mr. Emukule's head bowed humbly. Community honors soldiers. NO TEXT."
+        }
+    }
+}

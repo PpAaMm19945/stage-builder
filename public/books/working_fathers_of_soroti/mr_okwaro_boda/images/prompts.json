@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Okwaro Rides His Boda",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern Soroti town, Uganda. NO TEXT ON IMAGE.",
+        "vehicles": "Modern motorcycles (Boxer, TVS, Bajaj - 100-150cc), helmets, organized boda stage",
+        "roads": "Paved town roads, murram village roads, traffic",
+        "lighting": "Dynamic throughout day - morning to sunset"
+    },
+    "characters": {
+        "mr_okwaro": {
+            "age": "early 30s",
+            "build": "lean, agile",
+            "clothing": "Casual work clothes, ALWAYS wears helmet when riding, reflective vest optional",
+            "features": "Friendly, alert expression, knows all the roads"
+        },
+        "mrs_okwaro": {
+            "clothing": "Colorful kitenge dress",
+            "features": "Caring, prayerful"
+        },
+        "apio": {
+            "age": "4 years old",
+            "clothing": "Colorful dress",
+            "features": "Loves papa's motorcycle, waves enthusiastically"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okwaro sitting proudly on a red motorcycle (modern Boxer or TVS type), wearing helmet, smiling. Behind him: busy Soroti town street with shops and other boda-bodas. Morning light. Title 'Mr. Okwaro Rides His Boda' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning at Okwaro home compound. Mr. Okwaro checking his red motorcycle - tires, petrol gauge. He puts on his helmet. Motorcycle is modern (Boxer/TVS type). His home in background - painted brick, iron roof. Ready for work. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Family goodbye at compound gate. Mrs. Okwaro in colorful dress hands him thermos of tea. Little Apio waves enthusiastically. Mr. Okwaro on motorcycle, helmet on, smiling. Morning light. Loving send-off. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Boda-boda stage near Soroti market. Covered waiting shelter with several motorcycles parked. Riders chatting, greeting each other. Mr. Okwaro joins them. Urban scene: market stalls visible in background. Morning bustle. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Urgent scene: A man in office clothes runs to Mr. Okwaro at boda stage. 'I need to get to the hospital!' expression. Mr. Okwaro starts his engine, ready to help. Other riders watch. Sense of urgency. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Okwaro riding through Soroti streets, passenger behind him. Both wearing helmets. Paved road, shops on sides, a matatu in background. Riding carefully - not too fast. Safety first. Daytime town scene. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Hospital entrance. Passenger dismounting, paying Mr. Okwaro quickly, then running inside to see doctor. Hospital background: modern building with sign. Mr. Okwaro accepts payment. Helpful service completed. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. School run: A mother with child (in school uniform) rides on the boda-boda. Mr. Okwaro driving carefully. Second trip implied. Helping families get children to school. Daytime. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Midday break. Mr. Okwaro at boda stage, counting Ugandan shilling notes. Satisfied expression - earned enough for family food. Other riders resting. Sun high in sky. Working hard pays off. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Afternoon ride on village road. Mr. Okwaro on motorcycle with Mr. Opio as passenger (recognizable farmer). Bumpy red murram road, green fields on sides. Connecting town to village. Dusty but scenic. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunset ride home. Mr. Okwaro on motorcycle, orange sky behind him. He looks tired but content. Silhouette of Soroti buildings. End of long productive day. Beautiful evening colors. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Evening at home. Little Apio sitting on papa's parked motorcycle, pretending to drive. 'Vroom vroom!' Mr. Okwaro laughing, hugging her. Mrs. Okwaro watching from door. Joyful family moment. Compound with modern home. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday morning. Mr. Okwaro giving free boda ride to elderly grandmother going to church. She sits behind him, grateful expression. His service to community. Church building visible in distance. Generosity theme. NO TEXT."
+        }
+    }
+}

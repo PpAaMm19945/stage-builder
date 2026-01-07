@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Opio Grows Food",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern rural Uganda near Soroti. NO TEXT ON IMAGE.",
+        "architecture": "Plastered painted rural homes, iron sheet roofs, storage sheds",
+        "farming": "Productive smallholder farm, drip irrigation optional, ox-plow or hoe, organized crops",
+        "lighting": "Natural Ugandan light - early morning mists, golden afternoons"
+    },
+    "characters": {
+        "mr_opio": {
+            "age": "late 30s",
+            "build": "strong, farmer's build",
+            "clothing": "Work clothes, gumboots when farming, sun hat",
+            "features": "Weathered but kind face, patient expression"
+        },
+        "mrs_opio": {
+            "clothing": "Colorful kitenge, practical for village life",
+            "features": "Nurturing, hardworking expression"
+        },
+        "etyang": {
+            "age": "4 years old",
+            "clothing": "Simple shorts and shirt",
+            "features": "Curious, wants to help father"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio standing proudly in his green farm, holding a hoe over his shoulder. Behind him: rows of maize and beans, a small storage shed with iron roof. Sunrise sky. Title 'Mr. Opio Grows Food' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Very early morning, stars still visible in purple-blue sky. Inside a village home bedroom: Mr. Opio waking up in bed, sitting up. Room is simple but modern - plastered walls, proper bed, mosquito net. Rooster silhouette outside window. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Kitchen in village home. Mrs. Opio in kitenge serves hot porridge from a pot. Little Etyang sleeps on a mat in corner, still tired. Mr. Opio eats quickly. Simple but clean kitchen - charcoal stove AND gas burner visible. Early dawn light. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio walking through village path toward his farm. He carries a hoe on shoulder. Sunrise painting the sky orange. Green bushes, banana trees along path. In distance: his productive farm with rows of crops visible. Morning mist. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio in his garden, digging with hoe, planting seeds. Rows of soil visible. Beside him: packets of commercial seeds (showing modern farming). Yellow jerricans with water nearby. He works with determination. Morning sun. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Hot midday sun. Mr. Opio wipes sweat from forehead with arm, still working. His back bent, digging. Sun blazes overhead. Shows hard work and perseverance. Farm rows stretching behind him. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Time has passed - crops are now grown! Lush green maize plants taller than Mr. Opio. Golden maize cobs visible. Brown groundnut plants. Mr. Opio stands proudly surveying his harvest. Blessed abundance. Bright sunny day. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio loading harvested crops onto his sturdy bicycle - heavy bags of maize and groundnuts balanced on carrier. Bicycle is practical, well-maintained. His farm in background. He's ready for the journey to market. Morning light. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Soroti market scene. Mr. Opio at his stall selling crops - bags of maize, groundnuts displayed. Customers around him. Modern market: organized stalls with tarps, other vendors, mobile money signs visible on some stalls. Bustling atmosphere. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio counting Ugandan shilling notes, satisfied. Empty bags beside him - sold out! In background: he buys new children's shoes from another vendor. Market scene continues. Success after hard work. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Opio riding his bicycle home on a village road. Sunset sky - orange and pink. Dusty red murram road. Green fields on either side. He carries the new shoes in a bag on handlebars. Peaceful end of day. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Opio family compound at dusk. Little Etyang runs to meet Papa. Mr. Opio shows him the new shoes, big smile. Mrs. Opio watching from veranda of their painted brick home. Family joy. Warm evening light. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday at church in Soroti. Opio family (in Sunday best) in church pew. They traveled from village for worship. Mr. Kato and Mr. Okello families visible nearby. Pastor Omoding at front. Community gathered. Joyful worship scene. NO TEXT."
+        }
+    }
+}

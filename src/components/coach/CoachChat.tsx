@@ -17,7 +17,7 @@ interface Message {
 }
 
 interface ActionBlock {
-    type: 'accommodation' | 'liturgy' | 'rhythm' | 'regenerate' | 'chat_options' | 'plan_feedback';
+    type: 'accommodation' | 'liturgy' | 'rhythm' | 'regenerate' | 'chat_options' | 'plan_feedback' | 'clarify';
     payload: any;
     status?: 'pending' | 'completed' | 'failed';
 }
@@ -26,7 +26,7 @@ export function SchoolOSChat() {
     const { user, children } = useAuth();
     const queryClient = useQueryClient();
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: "Hello! I'm your SchoolOS Pedagogical Coach. I can help you with curriculum ideas, habit training, or adapting lessons for your children." }
+        { role: 'assistant', content: "Hi! I'm your SchoolOS Assistant. How can I help with your schedule, activities, or family rhythm today?" }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -151,7 +151,7 @@ export function SchoolOSChat() {
         const lastMsgIndex = messages.length - 1;
         const lastMsg = messages[lastMsgIndex];
         if (lastMsg?.role === 'assistant' && lastMsg.action?.type === 'plan_feedback' && lastMsg.action.status === 'pending') {
-             handleAction(lastMsgIndex, lastMsg.action);
+            handleAction(lastMsgIndex, lastMsg.action);
         }
     }, [messages.length, messages[messages.length - 1]?.action?.type]);
 
@@ -211,32 +211,32 @@ export function SchoolOSChat() {
                 // Fetch the current plan and children to generate insights
 
                 // Fetch current plan
-                 const weekStartStr = format(getSmartWeekStart(), 'yyyy-MM-dd');
-                 const planData = await weeklyPlan.get(weekStartStr);
+                const weekStartStr = format(getSmartWeekStart(), 'yyyy-MM-dd');
+                const planData = await weeklyPlan.get(weekStartStr);
 
-                 // Fetch children
-                 // Using a hack to get children if not available in context, but they should be.
-                 // Ideally we use the context `children` but it's not async.
-                 // We can use the students API directly if needed.
+                // Fetch children
+                // Using a hack to get children if not available in context, but they should be.
+                // Ideally we use the context `children` but it's not async.
+                // We can use the students API directly if needed.
 
-                 const studentsData = await import('@/lib/api').then(m => m.students.list());
+                const studentsData = await import('@/lib/api').then(m => m.students.list());
 
-                 if (planData?.plan && studentsData) {
-                     const insights = await weeklyPlan.getStrategicInsights(planData.plan, studentsData);
+                if (planData?.plan && studentsData) {
+                    const insights = await weeklyPlan.getStrategicInsights(planData.plan, studentsData);
 
-                     // Update the action payload with insights
-                     setMessages(prev => {
+                    // Update the action payload with insights
+                    setMessages(prev => {
                         const newMsgs = [...prev];
-                         if (newMsgs[msgIndex].action) {
-                             newMsgs[msgIndex].action!.payload = insights;
-                             newMsgs[msgIndex].action!.status = 'completed';
-                         }
-                         return newMsgs;
-                     });
-                     return; // Skip the generic completed set at bottom
-                 } else {
-                     throw new Error("Could not retrieve plan or children data.");
-                 }
+                        if (newMsgs[msgIndex].action) {
+                            newMsgs[msgIndex].action!.payload = insights;
+                            newMsgs[msgIndex].action!.status = 'completed';
+                        }
+                        return newMsgs;
+                    });
+                    return; // Skip the generic completed set at bottom
+                } else {
+                    throw new Error("Could not retrieve plan or children data.");
+                }
             }
             else if (action.type === 'chat_options') {
                 // Handled in renderActionCard mainly
@@ -275,7 +275,7 @@ export function SchoolOSChat() {
             // Mon-Fri: target THIS Monday
             d.setDate(d.getDate() - (day - 1));
         }
-        d.setHours(0,0,0,0);
+        d.setHours(0, 0, 0, 0);
         return d;
     }
 
@@ -289,7 +289,7 @@ export function SchoolOSChat() {
         if (type === 'chat_options') {
             return (
                 <div className="mt-3 flex flex-wrap gap-2 animate-in fade-in slide-in-from-bottom-2">
-                    {payload.options.map((option: string, i: number) => (
+                    {payload.options?.map((option: string, i: number) => (
                         <Button
                             key={i}
                             variant="secondary"
@@ -304,76 +304,107 @@ export function SchoolOSChat() {
             );
         }
 
+        // Clarifying questions (Lovable-style)
+        if (type === 'clarify') {
+            return (
+                <div className="mt-3 bg-gradient-to-br from-indigo-50 to-purple-50 dark:from-indigo-950/30 dark:to-purple-950/30 border border-indigo-200 dark:border-indigo-800 rounded-xl p-4 animate-in fade-in slide-in-from-bottom-2">
+                    <p className="text-sm font-medium text-indigo-900 dark:text-indigo-100 mb-3">
+                        {payload.question || 'I want to make sure I understand. What would you like to do?'}
+                    </p>
+                    <div className="space-y-2">
+                        {payload.options?.map((opt: { label: string; value: string } | string, i: number) => {
+                            const label = typeof opt === 'string' ? opt : opt.label;
+                            const value = typeof opt === 'string' ? opt : opt.value;
+                            return (
+                                <Button
+                                    key={i}
+                                    variant="outline"
+                                    size="sm"
+                                    className="w-full justify-start text-left bg-white dark:bg-background hover:bg-indigo-100 dark:hover:bg-indigo-900/30 border-indigo-200 dark:border-indigo-700"
+                                    onClick={() => sendMessage(value)}
+                                >
+                                    <span className="w-5 h-5 rounded-full bg-indigo-100 dark:bg-indigo-800 text-indigo-600 dark:text-indigo-300 text-xs flex items-center justify-center mr-2 shrink-0">
+                                        {String.fromCharCode(65 + i)}
+                                    </span>
+                                    {label}
+                                </Button>
+                            );
+                        })}
+                    </div>
+                </div>
+            );
+        }
+
         if (type === 'plan_feedback') {
-             if (status === 'pending') {
-                 return (
+            if (status === 'pending') {
+                return (
                     <div className="mt-3 bg-background border rounded-lg p-3 shadow-sm animate-pulse">
                         <div className="flex items-center gap-2 text-sm text-muted-foreground">
                             <Sparkle className="w-4 h-4 animate-spin" />
                             Analyzing your plan...
                         </div>
                     </div>
-                 );
-             }
+                );
+            }
 
-             if (isFailed) {
-                  return (
+            if (isFailed) {
+                return (
                     <div className="mt-3 bg-red-50 border border-red-200 rounded-lg p-3 text-red-600 text-sm flex items-center gap-2">
                         <WarningCircle className="w-4 h-4" />
                         Failed to load analysis.
-                         <Button variant="link" size="sm" onClick={() => handleAction(index, msg.action!)}>Retry</Button>
+                        <Button variant="link" size="sm" onClick={() => handleAction(index, msg.action!)}>Retry</Button>
                     </div>
-                 );
-             }
+                );
+            }
 
-             // Render the insights
-             return (
+            // Render the insights
+            return (
                 <div className="mt-3 space-y-3 animate-in fade-in slide-in-from-bottom-2 w-full">
-                     {payload.childInsights?.map((insight: any, i: number) => (
-                         <div key={`child-${i}`} className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3">
+                    {payload.childInsights?.map((insight: any, i: number) => (
+                        <div key={`child-${i}`} className="bg-indigo-50 dark:bg-indigo-900/20 border border-indigo-100 dark:border-indigo-800 rounded-lg p-3">
                             <h5 className="font-semibold text-xs text-indigo-800 dark:text-indigo-300 mb-1 flex items-center gap-1">
                                 <Lightbulb className="w-3 h-3" />
                                 {insight.childId || "Child Insight"}
                             </h5>
                             <p className="text-sm text-indigo-900 dark:text-indigo-100">{insight.insight}</p>
-                         </div>
-                     ))}
+                        </div>
+                    ))}
 
-                     {payload.familyBalanceTips?.length > 0 && (
-                         <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-lg p-3">
-                             <h5 className="font-semibold text-xs text-emerald-800 dark:text-emerald-300 mb-1 flex items-center gap-1">
-                                 <UsersThree className="w-3 h-3" />
-                                 Family Balance
-                             </h5>
-                             <ul className="space-y-1">
-                                 {payload.familyBalanceTips.map((tip: string, i: number) => (
-                                     <li key={`fam-${i}`} className="text-sm text-emerald-900 dark:text-emerald-100 flex items-start gap-2">
+                    {payload.familyBalanceTips?.length > 0 && (
+                        <div className="bg-emerald-50 dark:bg-emerald-900/20 border border-emerald-100 dark:border-emerald-800 rounded-lg p-3">
+                            <h5 className="font-semibold text-xs text-emerald-800 dark:text-emerald-300 mb-1 flex items-center gap-1">
+                                <UsersThree className="w-3 h-3" />
+                                Family Balance
+                            </h5>
+                            <ul className="space-y-1">
+                                {payload.familyBalanceTips.map((tip: string, i: number) => (
+                                    <li key={`fam-${i}`} className="text-sm text-emerald-900 dark:text-emerald-100 flex items-start gap-2">
                                         <span className="mt-1.5 w-1 h-1 rounded-full bg-emerald-400 shrink-0" />
                                         {tip}
-                                     </li>
-                                 ))}
-                             </ul>
-                         </div>
-                     )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
 
-                     {payload.prepNotes?.length > 0 && (
-                         <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg p-3">
-                             <h5 className="font-semibold text-xs text-amber-800 dark:text-amber-300 mb-1 flex items-center gap-1">
-                                 <ClipboardText className="w-3 h-3" />
-                                 Prep Notes
-                             </h5>
-                             <ul className="space-y-1">
-                                 {payload.prepNotes.map((note: string, i: number) => (
-                                     <li key={`prep-${i}`} className="text-sm text-amber-900 dark:text-amber-100 flex items-start gap-2">
+                    {payload.prepNotes?.length > 0 && (
+                        <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-100 dark:border-amber-800 rounded-lg p-3">
+                            <h5 className="font-semibold text-xs text-amber-800 dark:text-amber-300 mb-1 flex items-center gap-1">
+                                <ClipboardText className="w-3 h-3" />
+                                Prep Notes
+                            </h5>
+                            <ul className="space-y-1">
+                                {payload.prepNotes.map((note: string, i: number) => (
+                                    <li key={`prep-${i}`} className="text-sm text-amber-900 dark:text-amber-100 flex items-start gap-2">
                                         <span className="mt-1.5 w-1 h-1 rounded-full bg-amber-400 shrink-0" />
                                         {note}
-                                     </li>
-                                 ))}
-                             </ul>
-                         </div>
-                     )}
+                                    </li>
+                                ))}
+                            </ul>
+                        </div>
+                    )}
                 </div>
-             );
+            );
         }
 
         return (
@@ -398,10 +429,10 @@ export function SchoolOSChat() {
                             {type === 'regenerate' && "Regenerate Plan"}
                         </h4>
                         <p className="text-xs text-muted-foreground mb-3">
-                            {type === 'accommodation' && payload.description}
-                            {type === 'liturgy' && payload.label || `Set ${payload.setting} to ${payload.value}`}
-                            {type === 'rhythm' && payload.instruction}
-                            {type === 'regenerate' && `Switch to ${payload.balancePreference} balance`}
+                            {type === 'accommodation' && (payload.description || 'Apply accommodation')}
+                            {type === 'liturgy' && (payload.label || `Update ${payload.setting || 'setting'} to ${payload.value || 'new value'}`)}
+                            {type === 'rhythm' && (payload.instruction || payload.description || 'Adjust your schedule')}
+                            {type === 'regenerate' && `Switch to ${payload.balancePreference || 'updated'} balance`}
                         </p>
 
                         {isCompleted ? (
@@ -440,7 +471,7 @@ export function SchoolOSChat() {
                 <SheetHeader className="p-4 border-b bg-muted/20">
                     <SheetTitle className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
                         <Sparkle className="w-5 h-5" weight="fill" />
-                        Pedagogical Coach
+                        SchoolOS Assistant
                     </SheetTitle>
                 </SheetHeader>
 

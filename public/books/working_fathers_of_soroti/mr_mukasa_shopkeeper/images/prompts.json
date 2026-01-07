@@ -1,0 +1,81 @@
+{
+    "book": "Mr. Mukasa Opens His Shop",
+    "series": "Working Fathers of Soroti",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Modern, flourishing Soroti town, Uganda. NO TEXT ON IMAGE.",
+        "architecture": "Painted shop fronts, glass display cases, signage, tiled floors",
+        "commerce": "Organized shelving, packaged goods, refrigerated drinks, mobile money signs",
+        "lighting": "Bright shop lighting, warm natural light from large windows"
+    },
+    "characters": {
+        "mr_mukasa": {
+            "age": "early 40s",
+            "build": "medium, calm posture",
+            "clothing": "Neat collared shirt, sometimes apron when arranging goods",
+            "features": "Friendly face, welcoming smile, glasses optional"
+        },
+        "mrs_mukasa": {
+            "clothing": "Colorful gomesi or kitenge",
+            "features": "Warm, supportive partner"
+        },
+        "sarah": {
+            "age": "5 years old",
+            "clothing": "Colorful dress",
+            "features": "Helpful, likes to arrange things"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Mukasa standing proudly in doorway of his shop. Shop has painted storefront, glass display window showing goods, sign 'MUKASA GENERAL STORE'. He wears neat shirt, welcoming smile. Morning light. Title 'Mr. Mukasa Opens His Shop' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Dawn in Soroti town. Mr. Mukasa walking to his shop on Main Street. Town waking up - some boda-bodas passing, other shops still closed. Street has paved sections. He carries keys, walks purposefully. Pink-orange sunrise sky. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Mukasa unlocking metal shutters of his shop. He rolls up the security gate. Inside glimpse of organized shelving. Other shopkeepers nearby doing same. Early morning routine of commerce. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Inside the shop. Mr. Mukasa sweeping the tiled floor with a broom. Shelves visible: neatly arranged products - cooking oil, soap, sugar, rice in packages. Glass-front refrigerator with sodas and water. Clean, organized space. Morning light through window. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Mukasa arranging goods on shelves - stacking packages neatly. Price tags visible (no specific numbers needed). Mobile money sign 'MTN Mobile Money Available' poster on wall. Shows his attention to order and service. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. First customer of the day! A mother with children enters shop. Mr. Mukasa greets them warmly from behind glass-front counter. Shop is bright, welcoming. Products displayed nicely. Customer service moment. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Mukasa weighing sugar on a scale for a customer. He's precise and fair. Customer watches. Behind him: organized shelves of goods. Sunlight streams through shop window. Honest business transaction. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Busy shop scene. Several customers inside. Mr. Mukasa helping one while others browse. A child points at sweets in glass jar. Lively commercial activity. Community hub feeling. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mr. Mukasa doing mobile money transaction on phone. Customer receives cash, looks grateful. Mobile money poster visible. Modern financial service in action. Shows the shop is connected to modern economy. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Delivery truck arrives at shop. Men unload boxes of new stock. Mr. Mukasa checks items against a list on clipboard. Restocking the business. Busy commerce scene outside shop. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Late afternoon in shop. Fewer customers now. Mr. Mukasa counts money at counter, organizing the day's earnings. Satisfied expression. Orange sunset light coming through window. End of business day approaching. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Mukasa family at home. Mr. Mukasa gives something special to little Sarah - maybe a treat or small toy. Mrs. Mukasa smiles. Their home is comfortable - plastered walls, nice furniture, family photos. Evening family time. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sunday at church. Mukasa family in Sunday best in church pew. Mr. Mukasa sits with other church members including business connections. Pastor Omoding leads worship. Community together. Peaceful worship atmosphere. NO TEXT."
+        }
+    }
+}

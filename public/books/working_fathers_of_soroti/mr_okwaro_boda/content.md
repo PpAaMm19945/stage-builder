@@ -21,7 +21,7 @@ For all the boda-boda riders who help people get where they need to go.
 # Page 1
 ![Page 1](images/page-01.png)
 
-Mr. Okwaro checks his motorcycle. Is there enough petrol? Are the tires good? A boda-boda rider must be ready.
+Mr. Okwaro checks his motorcycle. Is there enough petrol? Are the tires good? He puts on his helmet. A boda-boda rider must be ready and safe.
 
 **Ask:** Have you ever ridden on a boda-boda?
 

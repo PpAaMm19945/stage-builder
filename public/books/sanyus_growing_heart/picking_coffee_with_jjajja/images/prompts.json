@@ -1,0 +1,81 @@
+{
+    "book": "Picking Coffee with Jjajja",
+    "series": "Sanyu's Growing Heart",
+    "style": {
+        "base": "A cartoon illustration in a friendly, warm art style with bold outlines and soft coloring. Rural Uganda coffee garden. NO TEXT ON IMAGE.",
+        "farming": "Coffee trees with red cherries, baskets for picking, drying mats",
+        "clothing": "Work clothes, sun hats, practical attire",
+        "lighting": "Morning mist, hot midday sun, golden afternoon"
+    },
+    "characters": {
+        "sanyu": {
+            "age": "5 years old",
+            "clothing": "Simple work clothes, sun hat",
+            "features": "Initially complaining expression, later growing respect"
+        },
+        "jjajja": {
+            "age": "elderly grandmother",
+            "clothing": "Simple work dress, headwrap for sun",
+            "features": "Weathered hands, peaceful despite hard work, speaks little but meaningfully"
+        },
+        "mercy": {
+            "age": "11 years old",
+            "clothing": "Work clothes, sun hat",
+            "features": "Works quietly without complaint"
+        }
+    },
+    "pages": {
+        "cover": {
+            "filename": "cover.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu and Jjajja in a coffee garden. Jjajja's weathered hands picking red coffee cherries. Sanyu watching/learning. Green coffee trees backdrop. Title 'Picking Coffee with Jjajja' at top. NO other text."
+        },
+        "page-01": {
+            "filename": "page-01.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Morning at home. Maama telling Sanyu she'll help Jjajja today. Sanyu's expression: GROAN. She doesn't want to. Mercy smiling, putting on sun hat. Hot day beginning. Coffee garden work ahead. NO TEXT."
+        },
+        "page-02": {
+            "filename": "page-02.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Walking to coffee garden behind the house. Rows and rows of coffee trees stretching toward hills. Jjajja already there, basket half full. Mercy and Sanyu arriving. Morning light, slight mist. Scale of work ahead. NO TEXT."
+        },
+        "page-03": {
+            "filename": "page-03.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja showing how to pick - only red cherries, not green. Her experienced hands demonstrating. Sanyu looking at ALL the trees, overwhelmed expression. One cherry in her hand. 'This will take forever' body language. NO TEXT."
+        },
+        "page-04": {
+            "filename": "page-04.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sun higher now, hot. Sanyu's face sweaty, sticky hands. She has only a small pile. Her expression: complaining, frustrated. Jjajja keeps picking silently. Mercy keeps picking. No one else is complaining. NO TEXT."
+        },
+        "page-05": {
+            "filename": "page-05.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu sits down in a huff under a tree. Arms crossed, pouting. A butterfly nearby. She draws circles in dirt. In background: Jjajja still picking, Mercy still picking. Sanyu has given up. Contrast in attitudes. NO TEXT."
+        },
+        "page-06": {
+            "filename": "page-06.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja walks over, sits beside Sanyu under tree. Close-up on Jjajja's hands - rough, fingers bent from years of work. Sanyu looks at them curiously. Moment of connection. Dappled shade. NO TEXT."
+        },
+        "page-07": {
+            "filename": "page-07.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja speaking, gesturing toward coffee garden, then toward distant village. Telling Sanyu: these hands paid for school, bought land. Expression wise, not lecturing. Sanyu listening, expression shifting to wonder. NO TEXT."
+        },
+        "page-08": {
+            "filename": "page-08.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Jjajja stands up slowly, returns to picking. She says nothing more. Sanyu watches her for a long moment. Seeing Jjajja differently now. The bent back, the working hands - strength not weakness. NO TEXT."
+        },
+        "page-09": {
+            "filename": "page-09.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Sanyu stands up quietly. Returns to picking. One cherry. Another. Another. No complaint. Different energy now. Working alongside Jjajja and Mercy. Afternoon sun. Something changed. NO TEXT."
+        },
+        "page-10": {
+            "filename": "page-10.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. By afternoon: Sanyu's basket is FULL! She stands back, surprised at herself. Tired but proud expression. Her hands are sticky, back aches - but accomplished. Personal victory. NO TEXT."
+        },
+        "page-11": {
+            "filename": "page-11.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. At home compound. Coffee cherries spread on drying mats in sun. Jjajja speaking quietly: these become school fees. Sanyu helped make that happen. Sanyu's expression: pride, connection to something bigger. NO TEXT."
+        },
+        "page-12": {
+            "filename": "page-12.png",
+            "prompt": "Cartoon illustration, warm bold-outline style. Night. Sanyu in bed looking at her own small hands before sleep. Still young, still soft. But today they did real work. Whispering to herself. New understanding of women's work. Moonlight. NO TEXT."
+        }
+    }
+}
