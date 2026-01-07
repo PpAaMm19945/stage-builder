@@ -80,30 +80,45 @@ export function SchoolOSChat() {
                             if (token) {
                                 fullResponseBuffer += token;
 
-                                // Regex to find <ACTION_BLOCK>...</ACTION_BLOCK>
-                                // We use [\s\S]*? to match across newlines non-greedily
-                                const actionBlockRegex = /<ACTION_BLOCK>([\s\S]*?)<\/ACTION_BLOCK>/;
-                                const match = fullResponseBuffer.match(actionBlockRegex);
+                                // Primary regex: <ACTION_BLOCK>...</ACTION_BLOCK>
+                                // Fallback regex: ACTION_BLOCK{...} (LLM sometimes forgets angle brackets)
+                                const primaryRegex = /<ACTION_BLOCK>([\s\S]*?)<\/ACTION_BLOCK>/;
+                                const fallbackRegex = /ACTION_BLOCK\s*(\{[\s\S]*?\})/;
+
+                                let match = fullResponseBuffer.match(primaryRegex);
+                                let matchIndex = match?.index ?? -1;
+                                let jsonContent = match?.[1];
+
+                                // Try fallback if primary didn't match
+                                if (!match) {
+                                    const fallbackMatch = fullResponseBuffer.match(fallbackRegex);
+                                    if (fallbackMatch) {
+                                        match = fallbackMatch as RegExpMatchArray;
+                                        matchIndex = fallbackMatch.index ?? -1;
+                                        jsonContent = fallbackMatch[1];
+                                    }
+                                }
 
                                 let displayText = fullResponseBuffer;
                                 let pendingAction: ActionBlock | undefined;
 
-                                if (match) {
-                                    // Found a complete block
-                                    // Text is everything BEFORE the block
-                                    displayText = fullResponseBuffer.substring(0, match.index).trim();
+                                if (match && jsonContent) {
+                                    // Found a complete block. Text is everything BEFORE the block.
+                                    displayText = fullResponseBuffer.substring(0, matchIndex).trim();
 
                                     try {
-                                        const action = JSON.parse(match[1]);
+                                        const action = JSON.parse(jsonContent);
                                         pendingAction = { ...action, status: 'pending' };
                                     } catch (e) {
-                                        console.error("JSON Parse Error in Action Block", e);
+                                        console.error("JSON Parse Error in Action Block", e, jsonContent);
                                     }
                                 } else {
                                     // Check for partial open tag to hide it from UI
                                     const openTagIndex = fullResponseBuffer.indexOf('<ACTION_BLOCK');
-                                    if (openTagIndex !== -1) {
-                                        displayText = fullResponseBuffer.substring(0, openTagIndex).trim();
+                                    const fallbackTagIndex = fullResponseBuffer.indexOf('ACTION_BLOCK');
+                                    const hideIndex = openTagIndex !== -1 ? openTagIndex : fallbackTagIndex;
+                                    if (hideIndex !== -1) {
+                                        displayText = fullResponseBuffer.substring(0, hideIndex).trim();
                                     }
                                 }
 
