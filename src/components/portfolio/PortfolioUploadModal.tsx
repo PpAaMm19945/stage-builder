@@ -160,10 +160,23 @@ export function PortfolioUploadModal({
                 <div className="space-y-4 py-4">
                     {/* File Drop Zone */}
                     <div
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-                            }`}
+                        role={!file ? "button" : undefined}
+                        tabIndex={!file ? 0 : undefined}
+                        aria-label={!file ? "Upload file: Drag and drop or press enter to select" : undefined}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
+                            !file ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2' : ''
+                        } ${
+                            file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+                        }`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
+                        onClick={() => !file && fileInputRef.current?.click()}
+                        onKeyDown={(e) => {
+                            if (!file && (e.key === 'Enter' || e.key === ' ')) {
+                                e.preventDefault();
+                                fileInputRef.current?.click();
+                            }
+                        }}
                     >
                         {file ? (
                             <div className="flex flex-col items-center gap-2">
@@ -179,12 +192,18 @@ export function PortfolioUploadModal({
                                     </div>
                                 )}
                                 <div className="text-sm font-medium">{file.name}</div>
-                                <Button variant="ghost" size="sm" onClick={() => setFile(null)} className="text-destructive hover:text-destructive">
+                                <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    onClick={(e) => { e.stopPropagation(); setFile(null); }}
+                                    className="text-destructive hover:text-destructive"
+                                    aria-label="Remove selected file"
+                                >
                                     <X className="h-4 w-4 mr-1" /> Remove
                                 </Button>
                             </div>
                         ) : (
-                            <div className="flex flex-col items-center gap-2 cursor-pointer" onClick={() => fileInputRef.current?.click()}>
+                            <div className="flex flex-col items-center gap-2 cursor-pointer">
                                 <div className="h-12 w-12 bg-muted rounded-full flex items-center justify-center mb-2">
                                     <UploadSimple className="h-6 w-6 text-muted-foreground" />
                                 </div>
