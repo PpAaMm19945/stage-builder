@@ -5,16 +5,15 @@ import { fileURLToPath } from 'url';
 // CONFIGURATION
 // ==========================================
 // Replace these with your actual details
-const WORKER_URL = 'http://localhost:8787'; // or your production URL
-const ADMIN_SECRET = 'your-admin-secret'; // Must match the worker's ADMIN_SECRET
+const WORKER_URL = 'https://stage-builder.antmwes104-1.workers.dev';
+const ADMIN_SECRET = 'schoolos-admin';
 
 // Model Configuration
-// User requested "nanobanana pro".
-// If this is a public Replicate model like 'ostris/nanobanana-pro', use that ID.
-// If it's a version hash, set it here without slashes.
-// Defaulting to a high-quality model for books:
-const MODEL_ID = 'black-forest-labs/flux-1.1-pro';
-const API_TOKEN = process.env.REPLICATE_API_TOKEN; // Set this env var
+// User requested "gemini-2.5-flash-image" (Nano Banana).
+// NOTE: We use the :generateContent endpoint for this Gemini model.
+const MODEL_ID = 'gemini-2.5-flash-image';
+
+const API_KEY = process.env.GEMINI_API_KEY;
 
 // ==========================================
 
@@ -26,71 +25,66 @@ const BOOKS_DIR = path.join(__dirname, '../public/books');
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function generateImage(prompt, filename) {
-    if (!API_TOKEN) {
-        console.error('Error: REPLICATE_API_TOKEN environment variable is not set.');
+    if (!API_KEY) {
+        console.error('Error: GEMINI_API_KEY environment variable is not set.');
         process.exit(1);
     }
 
     console.log(`Generating: ${filename} with prompt: "${prompt.substring(0, 50)}..."`);
 
     try {
-        let endpoint = 'https://api.replicate.com/v1/predictions';
-        let body = {
-            input: {
-                prompt: prompt,
-                aspect_ratio: "2:3", // Portrait for books usually
-                output_format: "png"
+        // Use Gemini generateContent endpoint
+        const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${MODEL_ID}:generateContent?key=${API_KEY}`;
+
+        // Payload for Gemini image generation
+        // Note: For image generation via Gemini 2.5 Flash Image, we send text and expect image data in response.
+        // It's a "text-to-image" via the unified generateContent API.
+        const body = {
+            contents: [
+                {
+                    parts: [
+                        {
+                            text: prompt
+                        }
+                    ]
+                }
+            ],
+            generationConfig: {
+                // If the model supports specific generation parameters like seed or aspect ratio in this payload,
+                // they would go here. For "Nano Banana" / Gemini 2.5 Flash Image, we stick to defaults or
+                // standard multimodal prompts.
+                // Note: Standard Gemini image generation often infers ratio from prompt or specific params if supported.
+                // For now we send just the prompt.
             }
         };
 
-        // Determine if using a named model (owner/name) or a version hash
-        if (MODEL_ID.includes('/')) {
-            // Named model endpoint: https://api.replicate.com/v1/models/{owner}/{name}/predictions
-            endpoint = `https://api.replicate.com/v1/models/${MODEL_ID}/predictions`;
-        } else {
-            // Version hash endpoint: https://api.replicate.com/v1/predictions
-            // Requires 'version' in body
-            body.version = MODEL_ID;
-        }
-
-        // 1. Start Prediction
-        const startResponse = await fetch(endpoint, {
+        const response = await fetch(endpoint, {
             method: 'POST',
             headers: {
-                'Authorization': `Bearer ${API_TOKEN}`,
-                'Content-Type': 'application/json',
-                'Prefer': 'wait'
+                'Content-Type': 'application/json'
             },
             body: JSON.stringify(body)
         });
 
-        if (!startResponse.ok) {
-            const err = await startResponse.text();
-            throw new Error(`Failed to start generation: ${startResponse.status} ${err}`);
+        if (!response.ok) {
+            const err = await response.text();
+            throw new Error(`Failed to generate image: ${response.status} ${err}`);
         }
 
-        let prediction = await startResponse.json();
+        const data = await response.json();
 
-        // 2. Poll if needed (if 'Prefer: wait' didn't finish it)
-        while (prediction.status !== 'succeeded' && prediction.status !== 'failed') {
-            await delay(1000);
-            const pollResponse = await fetch(prediction.urls.get, {
-                headers: {
-                    'Authorization': `Bearer ${API_TOKEN}`
-                }
-            });
-            prediction = await pollResponse.json();
-            if (prediction.status === 'failed') throw new Error('Generation failed');
+        // Parse Gemini response for inline image data
+        // Structure: candidates[0].content.parts[0].inlineData.data
+
+        const candidate = data.candidates?.[0];
+        const part = candidate?.content?.parts?.[0];
+        const inlineData = part?.inlineData;
+
+        if (!inlineData || !inlineData.data) {
+             throw new Error('No image data in Gemini response');
         }
 
-        const imageUrl = prediction.output; // Array or string depending on model
-        const finalUrl = Array.isArray(imageUrl) ? imageUrl[0] : imageUrl;
-
-        // 3. Download Image
-        const imgResponse = await fetch(finalUrl);
-        const arrayBuffer = await imgResponse.arrayBuffer();
-
-        return Buffer.from(arrayBuffer);
+        return Buffer.from(inlineData.data, 'base64');
 
     } catch (error) {
         console.error(`Error generating ${filename}:`, error);
@@ -151,9 +145,6 @@ async function processBooks() {
                     const prompt = `${baseStyle} ${pageData.prompt}`.trim();
                     const relativePath = `books/${series}/${book}/images/${filename}`;
 
-                    // Check if exists? (Optional: HEAD request to worker, skipping for now to force regeneration or just overwrite)
-                    // You could add a check here.
-
                     const imageBuffer = await generateImage(prompt, filename);
                     if (imageBuffer) {
                         await uploadToWorker(imageBuffer, relativePath);
@@ -165,10 +156,9 @@ async function processBooks() {
 }
 
 // Check arguments
-// User can override WORKER_URL via args if needed
 if (process.argv[2]) {
     console.log("Usage: node scripts/generate_book_images.mjs");
-    console.log("Ensure REPLICATE_API_TOKEN is set.");
+    console.log("Ensure GEMINI_API_KEY is set.");
 } else {
     processBooks().catch(console.error);
 }
