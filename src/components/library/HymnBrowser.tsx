@@ -8,15 +8,11 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { MusicNotes, BookOpenText } from '@phosphor-icons/react';
-import {
-    Sheet,
-    SheetContent,
-    SheetHeader,
-    SheetTitle,
-    SheetDescription,
-} from '@/components/ui/sheet';
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
 import { HymnAudioPlayer } from './HymnAudioPlayer';
+import { HymnContent } from '@/components/liturgy/HymnContent';
+import { PlayCircle } from '@phosphor-icons/react';
 
 interface Hymn {
     id: string;
@@ -62,8 +58,13 @@ export function HymnBrowser() {
                         onClick={() => setSelectedHymn(hymn)}
                     >
                         <CardContent className="p-4 flex items-center gap-3">
-                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors">
+                            <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors relative">
                                 <MusicNotes className="h-5 w-5 text-primary" weight="duotone" />
+                                {hymn.audio_url && (
+                                    <div className="absolute -bottom-1 -right-1 bg-background rounded-full p-0.5 shadow-sm border border-border">
+                                        <PlayCircle className="h-4 w-4 text-emerald-600 fill-emerald-600" weight="fill" />
+                                    </div>
+                                )}
                             </div>
                             <div className="flex-1 min-w-0">
                                 <h4 className="font-medium text-sm truncate group-hover:text-primary transition-colors">
@@ -114,9 +115,7 @@ export function HymnBrowser() {
                                     <BookOpenText className="h-4 w-4" />
                                     Lyrics
                                 </h3>
-                                <div className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-foreground/90 pl-4 border-l-2 border-primary/20">
-                                    {selectedHymn.content.replace(/\\n/g, '\n')}
-                                </div>
+                                <HymnContent title={selectedHymn.title} fallbackContent={selectedHymn.content} />
                             </div>
                         </div>
                     )}
