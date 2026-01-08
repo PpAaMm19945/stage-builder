@@ -2,10 +2,14 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { BookOpen, Lightning } from '@phosphor-icons/react';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
+import { FormationSettings } from '@/components/settings/FormationSettings';
 
 export function SettingsCurriculum() {
     return (
         <div className="space-y-6">
+            {/* Formation Preferences */}
+            <FormationSettings />
+
             {/* Daily Liturgy Settings */}
             <Card>
                 <CardHeader>
@@ -40,3 +44,4 @@ export function SettingsCurriculum() {
         </div>
     );
 }
+

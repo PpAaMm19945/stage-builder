@@ -450,5 +450,25 @@ export const notifications = {
   list: () => apiRequest<any[]>('/api/notifications'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications };
+// Formation System (Unified Rhythm & Progress)
+export const formation = {
+  getPreferences: () =>
+    apiRequest<{ activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean }>('/api/family/preferences'),
+
+  updatePreferences: (prefs: { activitiesEnabled?: boolean; readingEnabled?: boolean; liturgyEnabled?: boolean }) =>
+    apiRequest<{ success: boolean }>('/api/family/preferences', {
+      method: 'POST',
+      body: JSON.stringify(prefs),
+    }),
+
+  getDailyRhythm: () =>
+    apiRequest<{
+      date: string;
+      items: any[];
+      completions: Record<string, boolean>;
+      preferences: { activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean };
+    }>('/api/family/daily-rhythm'),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation };
 export default api;

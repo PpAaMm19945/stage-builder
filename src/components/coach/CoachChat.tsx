@@ -4,7 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ai, overrides, liturgy, rhythm, weeklyPlan, family } from '@/lib/api';
+import { ai, overrides, liturgy, rhythm, weeklyPlan, family, formation } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -26,7 +26,7 @@ export function SchoolOSChat() {
     const { user, children } = useAuth();
     const queryClient = useQueryClient();
     const [messages, setMessages] = useState<Message[]>([
-        { role: 'assistant', content: "Hi! I'm your SchoolOS Assistant. How can I help with your schedule, activities, or family rhythm today?" }
+        { role: 'assistant', content: "Hi! I'm your SchoolOS Assistant. How can I help with your family's formation rhythm today?" }
     ]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
@@ -39,6 +39,13 @@ export function SchoolOSChat() {
         staleTime: 1000 * 60 * 5 // 5 minutes
     });
 
+    // Fetch formation preferences for conditional triggers
+    const { data: formationPrefs } = useQuery({
+        queryKey: ['formation-preferences'],
+        queryFn: formation.getPreferences,
+        staleTime: 1000 * 60 * 5
+    });
+
     // Auto-scroll
     useEffect(() => {
         if (scrollRef.current) {
@@ -46,44 +53,69 @@ export function SchoolOSChat() {
         }
     }, [messages]);
 
-    // Context Triggers: Proactively message the user based on time/state
+    // Context Triggers: Proactively message the user based on time/state and formation preferences
     useEffect(() => {
-        if (!todayData) return;
+        if (!todayData || !formationPrefs) return;
 
         const now = new Date();
         const hour = now.getHours();
         const hasMessagedKey = `coach-trigger-${now.toDateString()}`;
         if (sessionStorage.getItem(hasMessagedKey)) return;
 
-        // Morning Trigger (6am - 10am): Liturgy Prompt
+        // Morning Trigger (6am - 10am): Based on enabled streams
         if (hour >= 6 && hour < 10) {
-            // Assume we want to prompt for liturgy if not known completed
-            // (We don't strictly know completion here without more complex logic, so we keep it inviting)
+            let morningMessage = "Good morning! ☀️ ";
+            let morningOptions: string[] = [];
+
+            if (formationPrefs.liturgyEnabled) {
+                morningMessage += "Ready to start the day with Morning Liturgy?";
+                morningOptions = ['Start Liturgy', 'Not yet'];
+            } else if (formationPrefs.activitiesEnabled) {
+                morningMessage += "Ready to see today's activities?";
+                morningOptions = ['Show Today', 'Maybe later'];
+            } else if (formationPrefs.readingEnabled) {
+                morningMessage += "A great day for reading together!";
+                morningOptions = ['Find a Book', 'Maybe later'];
+            } else {
+                // No streams enabled, skip trigger
+                return;
+            }
+
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: "Good morning! ☀️ Ready to start the day with Morning Liturgy?",
+                content: morningMessage,
                 action: {
                     type: 'chat_options',
-                    payload: { options: ['Start Liturgy', 'Not yet'] },
+                    payload: { options: morningOptions },
                     status: 'pending'
                 }
             }]);
             sessionStorage.setItem(hasMessagedKey, 'morning');
         }
-        // Evening Trigger (6pm - 9pm): Review
+        // Evening Trigger (6pm - 9pm): Review based on enabled streams
         else if (hour >= 18 && hour < 21) {
+            const eveningOptions: string[] = ['Went great!'];
+
+            if (formationPrefs.readingEnabled) {
+                eveningOptions.push('Read something nice');
+            }
+            if (formationPrefs.activitiesEnabled) {
+                eveningOptions.push('Missed some activities');
+            }
+            eveningOptions.push('Review Plan');
+
             setMessages(prev => [...prev, {
                 role: 'assistant',
-                content: "Winding down for the day? 🌙 How did your activities go?",
+                content: "Winding down for the day? 🌙 How did your formation rhythm go?",
                 action: {
                     type: 'chat_options',
-                    payload: { options: ['Went great!', 'Missed some things', 'Review Plan'] },
+                    payload: { options: eveningOptions },
                     status: 'pending'
                 }
             }]);
             sessionStorage.setItem(hasMessagedKey, 'evening');
         }
-    }, [todayData]);
+    }, [todayData, formationPrefs]);
 
     const sendMessage = async (messageText: string) => {
         if (!messageText.trim() || isLoading) return;

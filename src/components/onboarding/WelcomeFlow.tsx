@@ -362,9 +362,9 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                                 <Calendar className="h-5 w-5 text-primary" />
                             </div>
                             <div>
-                                <h4 className="font-medium text-foreground">Today</h4>
+                                <h4 className="font-medium text-foreground">Daily Rhythm</h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Your daily recommended activity, personalized for your child
+                                    Morning liturgy, activities, and read-alouds in one unified view
                                 </p>
                             </div>
                         </div>
@@ -374,9 +374,9 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                                 <BarChart3 className="h-5 w-5 text-secondary" />
                             </div>
                             <div>
-                                <h4 className="font-medium text-foreground">Progress</h4>
+                                <h4 className="font-medium text-foreground">Formation Progress</h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Track development across motor, language, cognitive, and more
+                                    Track growth across activities, reading, and family devotions
                                 </p>
                             </div>
                         </div>
@@ -386,9 +386,9 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                                 <Eye className="h-5 w-5 text-accent" />
                             </div>
                             <div>
-                                <h4 className="font-medium text-foreground">Observations</h4>
+                                <h4 className="font-medium text-foreground">Capture Learning</h4>
                                 <p className="text-sm text-muted-foreground">
-                                    Record how activities go to improve future recommendations
+                                    Record observations and portfolio moments as you go
                                 </p>
                             </div>
                         </div>

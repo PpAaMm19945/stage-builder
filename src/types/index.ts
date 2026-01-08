@@ -487,3 +487,50 @@ export interface StudentViewData {
     canViewPortfolio: boolean;
   };
 }
+
+// ============================================
+// Formation System (Unified Rhythm & Progress)
+// ============================================
+
+export type FormationStream = 'activity' | 'reading' | 'liturgy';
+
+export interface FormationPreferences {
+  activitiesEnabled: boolean;
+  readingEnabled: boolean;
+  liturgyEnabled: boolean;
+}
+
+export interface DailyRhythmItem {
+  id: string;
+  timeSlot: string;
+  title: string;
+  description?: string;
+  type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning';
+  status: 'upcoming' | 'current' | 'completed';
+  data?: any;
+}
+
+export interface DailyRhythmResponse {
+  date: string;
+  items: DailyRhythmItem[];
+  completions: Record<string, boolean>;
+  preferences: FormationPreferences;
+}
+
+export interface FormationProgress {
+  enabledStreams: FormationStream[];
+  activityProgress: {
+    totalCompleted: number;
+    byDomain: { domain: string; mastery_level: string; count: number }[];
+    recentActivity: { date: string; count: number }[];
+  };
+  readingProgress: {
+    sessionsCount: number;
+    distinctBooks: number;
+  };
+  liturgyProgress: {
+    daysPracticed: number;
+    currentStreak: number;
+  };
+}
+

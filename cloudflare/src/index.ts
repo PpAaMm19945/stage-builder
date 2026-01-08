@@ -1353,6 +1353,276 @@ app.get('/api/family/today', async (c) => {
   }
 });
 
+// ============ FORMATION PREFERENCES ROUTES ============
+
+// Get formation preferences (defaults to all enabled if not set)
+app.get('/api/family/preferences', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    let prefs = await c.env.DB.prepare(
+      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    if (!prefs) {
+      // Return defaults if no preferences set
+      return c.json({
+        activitiesEnabled: true,
+        readingEnabled: true,
+        liturgyEnabled: true
+      });
+    }
+
+    return c.json({
+      activitiesEnabled: !!(prefs as any).activities_enabled,
+      readingEnabled: !!(prefs as any).reading_enabled,
+      liturgyEnabled: !!(prefs as any).liturgy_enabled
+    });
+  } catch (error: any) {
+    console.error('Formation preferences get error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// Update formation preferences
+app.post('/api/family/preferences', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+
+    const { activitiesEnabled, readingEnabled, liturgyEnabled } = body;
+
+    // Upsert preferences
+    await c.env.DB.prepare(`
+      INSERT INTO formation_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, updated_at)
+      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(parent_id) DO UPDATE SET 
+        activities_enabled = COALESCE(excluded.activities_enabled, activities_enabled),
+        reading_enabled = COALESCE(excluded.reading_enabled, reading_enabled),
+        liturgy_enabled = COALESCE(excluded.liturgy_enabled, liturgy_enabled),
+        updated_at = datetime('now')
+    `).bind(
+      generateId('fpref'),
+      user.id,
+      activitiesEnabled !== undefined ? (activitiesEnabled ? 1 : 0) : 1,
+      readingEnabled !== undefined ? (readingEnabled ? 1 : 0) : 1,
+      liturgyEnabled !== undefined ? (liturgyEnabled ? 1 : 0) : 1
+    ).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Formation preferences update error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// Get unified daily rhythm - composes activities, books, and liturgy
+app.get('/api/family/daily-rhythm', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const today = new Date().toISOString().split('T')[0];
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][new Date().getDay()];
+
+    // Get formation preferences
+    let prefs = await c.env.DB.prepare(
+      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+    ).bind(user.id).first() as any;
+
+    const activitiesEnabled = prefs ? !!prefs.activities_enabled : true;
+    const readingEnabled = prefs ? !!prefs.reading_enabled : true;
+    const liturgyEnabled = prefs ? !!prefs.liturgy_enabled : true;
+
+    // Get children
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    const items: any[] = [];
+    const completions: Record<string, boolean> = {};
+
+    // 1. LITURGY (if enabled)
+    if (liturgyEnabled) {
+      // Get liturgy settings
+      let settings = await c.env.DB.prepare(
+        'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
+      ).bind(user.id).first() as any;
+
+      if (settings) {
+        // Check liturgy completions for today
+        const { results: liturgyCompletions } = await c.env.DB.prepare(
+          'SELECT liturgy_item_id FROM liturgy_completions WHERE parent_id = ? AND completed_date = ?'
+        ).bind(user.id, today).all();
+
+        const completedLiturgyIds = new Set(liturgyCompletions.map((lc: any) => lc.liturgy_item_id));
+
+        // Get today's liturgy items based on current weeks
+        const { results: liturgyItems } = await c.env.DB.prepare(`
+          SELECT * FROM liturgy_items 
+          WHERE (
+            (type = 'catechism' AND source = ? AND sequence_number = ?) OR
+            (type = 'hymn' AND source = ? AND sequence_number = ?) OR
+            (type = 'scripture' AND sequence_number = ?)
+          ) AND is_active = 1
+        `).bind(
+          settings.catechism_source || 'westminster_shorter',
+          settings.current_catechism_week || 1,
+          settings.hymnal_source || 'classic_hymns',
+          settings.current_hymn_week || 1,
+          settings.current_scripture_week || 1
+        ).all();
+
+        const liturgyCompleted = liturgyItems.length > 0 &&
+          liturgyItems.every((item: any) => completedLiturgyIds.has(item.id));
+
+        items.push({
+          id: 'liturgy-morning',
+          timeSlot: '08:00',
+          title: 'Morning Liturgy',
+          description: 'Scripture, hymnal, and catechism.',
+          type: 'liturgy',
+          status: liturgyCompleted ? 'completed' : 'upcoming',
+          data: { items: liturgyItems }
+        });
+
+        completions['liturgy-morning'] = liturgyCompleted;
+      } else {
+        // No settings yet, still show liturgy as an option
+        items.push({
+          id: 'liturgy-morning',
+          timeSlot: '08:00',
+          title: 'Morning Liturgy',
+          description: 'Scripture, hymnal, and catechism.',
+          type: 'liturgy',
+          status: 'upcoming',
+          data: {}
+        });
+      }
+    }
+
+    // 2. ACTIVITIES (if enabled)
+    if (activitiesEnabled && children.length > 0) {
+      // Check time model for rest days
+      const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+        .bind(user.id).first();
+      const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+
+      if (availableDays.includes(dayOfWeek)) {
+        // Get weekly plan
+        const weekStart = getSmartWeekStart();
+        const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+          .bind(user.id, weekStart).first();
+
+        if (plan) {
+          const planData = JSON.parse((plan as any).plan_json);
+          const todaysSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
+
+          // Get activity completions for today
+          const { results: activityCompletions } = await c.env.DB.prepare(`
+            SELECT activity_id FROM activity_completions 
+            WHERE parent_id = ? AND date(completed_at) = ?
+          `).bind(user.id, today).all();
+
+          const completedActivityIds = new Set(activityCompletions.map((ac: any) => ac.activity_id));
+
+          // Hydrate activities
+          const activityIds = todaysSlots.map((s: any) => s.activityId);
+          if (activityIds.length > 0) {
+            const placeholders = activityIds.map(() => '?').join(',');
+            const { results: activities } = await c.env.DB.prepare(`
+              SELECT * FROM activities WHERE id IN (${placeholders})
+            `).bind(...activityIds).all();
+
+            const activityMap = new Map(activities.map((a: any) => [a.id, a]));
+
+            todaysSlots.forEach((slot: any, index: number) => {
+              const activity = activityMap.get(slot.activityId) as any;
+              if (!activity) return;
+
+              const isCompleted = completedActivityIds.has(activity.id);
+              const itemId = `activity-${index}`;
+
+              // Map timeSlot to realistic time
+              let time = '09:00';
+              if (slot.timeSlot === 'afternoon') time = '14:00';
+              if (index > 0 && time === '09:00') time = `${9 + index}:00`.padStart(5, '0');
+
+              items.push({
+                id: itemId,
+                timeSlot: time,
+                title: activity.title,
+                description: activity.description,
+                type: 'activity',
+                status: isCompleted ? 'completed' : 'upcoming',
+                data: {
+                  ...activity,
+                  materials: JSON.parse(activity.materials || '[]'),
+                  instructions: JSON.parse(activity.instructions || '[]'),
+                  learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+                }
+              });
+
+              completions[itemId] = isCompleted;
+            });
+          }
+        }
+      }
+    }
+
+    // 3. READING (if enabled)
+    if (readingEnabled && children.length > 0) {
+      // Get youngest child for age-appropriate book selection
+      const youngestChild = children.reduce((youngest: any, child: any) =>
+        child.age_in_months < youngest.age_in_months ? child : youngest
+        , children[0]);
+
+      // Check if a book was read today
+      const todaysReading = await c.env.DB.prepare(`
+        SELECT * FROM reading_sessions 
+        WHERE parent_id = ? AND date(completed_at) = ?
+        LIMIT 1
+      `).bind(user.id, today).first();
+
+      const readingCompleted = !!todaysReading;
+
+      items.push({
+        id: 'book-reading',
+        timeSlot: '11:00',
+        title: 'Read Aloud Time',
+        description: 'Daily family reading.',
+        type: 'book',
+        status: readingCompleted ? 'completed' : 'upcoming',
+        data: {
+          childAgeMonths: (youngestChild as any).age_in_months,
+          // Note: Actual book recommendation is fetched separately by frontend
+          // This endpoint just indicates the rhythm slot
+        }
+      });
+
+      completions['book-reading'] = readingCompleted;
+    }
+
+    // Sort by time
+    items.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+
+    return c.json({
+      date: today,
+      items,
+      completions,
+      preferences: {
+        activitiesEnabled,
+        readingEnabled,
+        liturgyEnabled
+      }
+    });
+  } catch (error: any) {
+    console.error('Daily rhythm error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
 // ============ FAMILY MATERIALS ROUTES ============
 
 // Get family materials
@@ -1779,7 +2049,17 @@ app.get('/api/students/:studentId/progress', async (c) => {
       return c.json({ error: 'Student not found' }, 404);
     }
 
-    // Get counts by domain and mastery level
+    // Get formation preferences to know which streams are enabled
+    const prefs = await c.env.DB.prepare(
+      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+    ).bind(user.id).first() as any;
+
+    const enabledStreams: string[] = [];
+    if (!prefs || prefs.activities_enabled) enabledStreams.push('activity');
+    if (!prefs || prefs.reading_enabled) enabledStreams.push('reading');
+    if (!prefs || prefs.liturgy_enabled) enabledStreams.push('liturgy');
+
+    // ACTIVITY PROGRESS: Get counts by domain and mastery level
     const { results: byDomain } = await c.env.DB.prepare(`
       SELECT a.domain, o.mastery_level, COUNT(*) as count
       FROM observations o
@@ -1802,11 +2082,76 @@ app.get('/api/students/:studentId/progress', async (c) => {
       SELECT COUNT(DISTINCT activity_id) as total FROM observations WHERE student_id = ?
     `).bind(studentId).first();
 
-    return c.json({
-      student,
+    const activityProgress = {
       totalCompleted: (totalResult as any)?.total || 0,
       byDomain,
-      recentActivity,
+      recentActivity
+    };
+
+    // READING PROGRESS: Count reading sessions where this child was present
+    const readingStats = await c.env.DB.prepare(`
+      SELECT 
+        COUNT(*) as sessions_count,
+        COUNT(DISTINCT book_id) as distinct_books
+      FROM reading_sessions 
+      WHERE parent_id = ? 
+        AND (children_present IS NULL OR children_present LIKE ?)
+    `).bind(user.id, `%${studentId}%`).first() as any;
+
+    const readingProgress = {
+      sessionsCount: readingStats?.sessions_count || 0,
+      distinctBooks: readingStats?.distinct_books || 0
+    };
+
+    // LITURGY PROGRESS: Count days practiced and calculate streak
+    const liturgyDaysResult = await c.env.DB.prepare(`
+      SELECT COUNT(DISTINCT completed_date) as days_practiced
+      FROM liturgy_completions
+      WHERE parent_id = ?
+    `).bind(user.id).first() as any;
+
+    // Calculate current streak (consecutive days ending today or yesterday)
+    const { results: recentDays } = await c.env.DB.prepare(`
+      SELECT DISTINCT completed_date
+      FROM liturgy_completions
+      WHERE parent_id = ?
+      ORDER BY completed_date DESC
+      LIMIT 30
+    `).bind(user.id).all();
+
+    let currentStreak = 0;
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+
+    for (let i = 0; i < 30; i++) {
+      const checkDate = new Date(today);
+      checkDate.setDate(checkDate.getDate() - i);
+      const dateStr = checkDate.toISOString().split('T')[0];
+
+      if (recentDays.some((d: any) => d.completed_date === dateStr)) {
+        currentStreak++;
+      } else if (i > 0) {
+        // Allow missing today (streak still counts if yesterday was completed)
+        break;
+      }
+    }
+
+    const liturgyProgress = {
+      daysPracticed: liturgyDaysResult?.days_practiced || 0,
+      currentStreak
+    };
+
+    return c.json({
+      student,
+      enabledStreams,
+      // Legacy fields for backward compatibility
+      totalCompleted: activityProgress.totalCompleted,
+      byDomain: activityProgress.byDomain,
+      recentActivity: activityProgress.recentActivity,
+      // New unified progress
+      activityProgress,
+      readingProgress,
+      liturgyProgress
     });
   } catch (error: any) {
     return c.json({ error: error.message || 'Unauthorized' }, 401);
