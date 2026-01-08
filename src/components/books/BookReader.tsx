@@ -19,6 +19,7 @@ import {
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { X, CaretLeft, CaretRight, BookOpenText } from '@phosphor-icons/react';
+import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { books, reading } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -186,6 +187,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     <BookOpenText className="w-6 h-6" />
                                 </Button>
                             )}
+                            <PDFDownloadButton book={book} pages={parsedPages} />
                             <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
                                 <X className="w-6 h-6" />
                             </Button>
