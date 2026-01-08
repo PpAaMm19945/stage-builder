@@ -326,24 +326,25 @@ app.get('/', async (c) => {
 
       // Escape for textarea content (specifically </textarea>)
       const safeDebugObj = debugObjRaw.replace(/</g, '&lt;');
+      const safeId = escapeHtml(log.id);
 
       return `
-                <tr class="log-row" onclick="toggleRow('${log.id}')">
+                <tr class="log-row" data-id="${safeId}" onclick="toggleRow(this.dataset.id)">
                   <td class="log-meta">
                     <div>${new Date(log.created_at).toLocaleTimeString()}</div>
                     <div style="font-size:0.75rem; opacity:0.6">${new Date(log.created_at).toLocaleDateString()}</div>
                   </td>
-                  <td width="100"><span class="badge ${log.interaction_type}">${log.interaction_type}</span></td>
+                  <td width="100"><span class="badge ${escapeHtml(log.interaction_type)}">${escapeHtml(log.interaction_type)}</span></td>
                   <td>
                     <div style="font-weight:600;margin-bottom:4px;color:#fff">${safeQuestion ? safeQuestionShort : '(No Query)'}</div>
-                    <div style="color:var(--muted);font-size:0.8rem;font-style:italic">ID: ${log.id}</div>
+                    <div style="color:var(--muted);font-size:0.8rem;font-style:italic">ID: ${safeId}</div>
                   </td>
                   <td style="text-align:right" onclick="event.stopPropagation()">
-                     <button class="action-btn" onclick="copyDebug('${log.id}')">Copy Debug Object</button>
-                     <textarea id="debug-${log.id}" style="display:none">${safeDebugObj}</textarea>
+                     <button class="action-btn" data-id="${safeId}" onclick="copyDebug(this.dataset.id)">Copy Debug Object</button>
+                     <textarea id="debug-${safeId}" style="display:none">${safeDebugObj}</textarea>
                   </td>
                 </tr>
-                <tr class="log-details" id="row-${log.id}">
+                <tr class="log-details" id="row-${safeId}">
                   <td colspan="4">
                     <div class="details-wrapper">
                       <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 20px;">
