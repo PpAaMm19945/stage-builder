@@ -13,7 +13,7 @@ import {
     CircleNotch
 } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { materials } from '@/lib/api';
+import { family } from '@/lib/api';
 import { toast } from 'sonner';
 import { MaterialItem } from '@/types';
 import { cn } from '@/lib/utils';
@@ -29,7 +29,7 @@ export function SettingsMaterials() {
     const { data: serverMaterials, isLoading } = useQuery({
         queryKey: ['materials'],
         queryFn: async () => {
-            const data = await materials.list();
+            const data = await family.getMaterials();
             setLocalMaterials(data);
             setHasChanges(false);
             return data;
@@ -37,7 +37,7 @@ export function SettingsMaterials() {
     });
 
     const updateMaterialsMutation = useMutation({
-        mutationFn: materials.updateBatch,
+        mutationFn: family.updateMaterials,
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['materials'] });
             toast.success('Material settings updated');
