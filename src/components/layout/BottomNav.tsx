@@ -1,12 +1,12 @@
 import { useLocation, useNavigate } from 'react-router-dom';
-import { House, Books, TrendUp, Heart } from '@phosphor-icons/react';
+import { House, Books, TrendUp, SlidersHorizontal } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
 const navItems = [
-    { icon: House, label: 'Today', path: '/' },
+    { icon: House, label: 'Home', path: '/' },
     { icon: Books, label: 'Library', path: '/early-years/activities' },
     { icon: TrendUp, label: 'Progress', path: '/early-years/progress' },
-    { icon: Heart, label: 'Support', path: '/settings#support' },
+    { icon: SlidersHorizontal, label: 'Settings', path: '/settings' },
 ];
 
 export function BottomNav() {

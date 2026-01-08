@@ -11,7 +11,11 @@ import {
   Baby,
   Sparkle,
   Calendar,
+  CaretDown,
+  CaretUp
 } from '@phosphor-icons/react';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { UpNextCard } from '@/components/dashboard/UpNextCard';
 import { toast } from 'sonner';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { TomorrowPreview } from '@/components/planning/TomorrowPreview';
@@ -29,6 +33,7 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+  const [showFullDay, setShowFullDay] = useState(false);
 
   const { data: todayData, isLoading: todayLoading, error: todayError } = useQuery({
     queryKey: ['family-today'],
@@ -69,9 +74,9 @@ export default function Dashboard() {
 
     // Prioritize recommendation score if we have children context
     if (youngestChild) {
-        // Sort pool by recommendation score
-        const ranked = getRecommendedBooks(pool, youngestChild);
-        return ranked[0];
+      // Sort pool by recommendation score
+      const ranked = getRecommendedBooks(pool, youngestChild);
+      return ranked[0];
     }
 
     // Fallback: Use today's date as seed for deterministic daily rotation
@@ -276,6 +281,8 @@ export default function Dashboard() {
   // Sort by time
   timelineItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
 
+  const nextItem = timelineItems.find(i => i.status !== 'completed') || null;
+  const pendingCount = timelineItems.filter(i => i.status !== 'completed').length;
 
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
@@ -299,12 +306,44 @@ export default function Dashboard() {
         </div>
       )}
 
-      {/* Timeline */}
-      <DailyRhythm
-        items={timelineItems}
-        onComplete={(item) => completeActivityFitMutation.mutate(item)}
-        onBookClick={() => setSelectedBook(todaysBook)}
+      {/* Up Next Card */}
+      <UpNextCard
+        item={nextItem}
+        onAction={(item) => {
+          // For books, we handle directly
+          if (item.type === 'book' && todaysBook) setSelectedBook(todaysBook);
+          // For others, trigger the sheet by expanding
+          setShowFullDay(true);
+        }}
+        onExpand={() => setShowFullDay(!showFullDay)}
+        pendingCount={pendingCount}
       />
+
+      {/* Timeline (Collapsible) */}
+      <Collapsible open={showFullDay} onOpenChange={setShowFullDay} className="space-y-4">
+        <div className="flex items-center justify-between px-2">
+          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+            Full Schedule ({timelineItems.length})
+          </h3>
+          <CollapsibleTrigger asChild>
+            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+              {showFullDay ? (
+                <CaretUp className="h-4 w-4" />
+              ) : (
+                <CaretDown className="h-4 w-4" />
+              )}
+            </Button>
+          </CollapsibleTrigger>
+        </div>
+
+        <CollapsibleContent>
+          <DailyRhythm
+            items={timelineItems}
+            onComplete={(item) => completeActivityFitMutation.mutate(item)}
+            onBookClick={() => setSelectedBook(todaysBook)}
+          />
+        </CollapsibleContent>
+      </Collapsible>
 
       {/* Book Reader */}
       <BookReader

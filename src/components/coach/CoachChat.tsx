@@ -1,9 +1,10 @@
 import { useState, useRef, useEffect } from 'react';
 import { PaperPlaneRight, Sparkle, ChatCircleDots, Lightning, Sliders, CheckCircle, WarningCircle, Funnel, Clock, ArrowsClockwise, Lightbulb, UsersThree, ClipboardText } from '@phosphor-icons/react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
-import { ai, overrides, liturgy, rhythm, weeklyPlan } from '@/lib/api';
+import { ai, overrides, liturgy, rhythm, weeklyPlan, family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -32,12 +33,58 @@ export function SchoolOSChat() {
     const [isLoading, setIsLoading] = useState(false);
     const scrollRef = useRef<HTMLDivElement>(null);
 
+    // Fetch context for triggers
+    const { data: todayData } = useQuery({
+        queryKey: ['family-today'],
+        queryFn: family.getToday,
+        staleTime: 1000 * 60 * 5 // 5 minutes
+    });
+
     // Auto-scroll
     useEffect(() => {
         if (scrollRef.current) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages]);
+
+    // Context Triggers: Proactively message the user based on time/state
+    useEffect(() => {
+        if (!todayData) return;
+
+        const now = new Date();
+        const hour = now.getHours();
+        const hasMessagedKey = `coach-trigger-${now.toDateString()}`;
+        if (sessionStorage.getItem(hasMessagedKey)) return;
+
+        // Morning Trigger (6am - 10am): Liturgy Prompt
+        if (hour >= 6 && hour < 10) {
+            // Assume we want to prompt for liturgy if not known completed
+            // (We don't strictly know completion here without more complex logic, so we keep it inviting)
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: "Good morning! ☀️ Ready to start the day with Morning Liturgy?",
+                action: {
+                    type: 'chat_options',
+                    payload: { options: ['Start Liturgy', 'Not yet'] },
+                    status: 'pending'
+                }
+            }]);
+            sessionStorage.setItem(hasMessagedKey, 'morning');
+        }
+        // Evening Trigger (6pm - 9pm): Review
+        else if (hour >= 18 && hour < 21) {
+            setMessages(prev => [...prev, {
+                role: 'assistant',
+                content: "Winding down for the day? 🌙 How did your activities go?",
+                action: {
+                    type: 'chat_options',
+                    payload: { options: ['Went great!', 'Missed some things', 'Review Plan'] },
+                    status: 'pending'
+                }
+            }]);
+            sessionStorage.setItem(hasMessagedKey, 'evening');
+        }
+    }, [todayData]);
 
     const sendMessage = async (messageText: string) => {
         if (!messageText.trim() || isLoading) return;

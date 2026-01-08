@@ -32,13 +32,11 @@ import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Student } from '@/types';
 
 // Simplified primary navigation (stage-agnostic)
+// Simplified primary navigation (stage-agnostic)
 const primaryLinks = [
   { title: 'Home', url: '/', icon: House },
-  { title: 'Weekly Plan', url: '/early-years/planner', icon: Calendar },
-  { title: 'Books', url: '/early-years/reading', icon: Books },
-  { title: 'Activities', url: '/early-years/activities', icon: ListBullets },
+  { title: 'Library', url: '/early-years/activities', icon: Books }, // Combined Books + Activities
   { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
-  { title: 'Scope & Sequence', url: '/early-years/scope-sequence', icon: ListBullets },
 ];
 
 export function AppSidebar() {

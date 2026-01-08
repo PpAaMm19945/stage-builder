@@ -1,831 +1,101 @@
-import { useState, useEffect } from 'react';
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { useAuth } from '@/contexts/AuthContext';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { useEffect, useState } from 'react';
+import { useLocation, useNavigate, useSearchParams } from 'react-router-dom';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { SettingsFamily } from '@/components/settings/SettingsFamily';
+import { SettingsSchedule } from '@/components/settings/SettingsSchedule';
+import { SettingsCurriculum } from '@/components/settings/SettingsCurriculum';
+import { SettingsMaterials } from '@/components/settings/SettingsMaterials';
+import { SettingsAccount } from '@/components/settings/SettingsAccount';
 import {
-  User,
-  Bell,
-  ShieldCheck,
-  SignOut,
   UsersThree,
-  PencilSimple,
-  Trash,
-  CircleNotch,
-  Baby,
-  Plus,
-  Package,
-  Check,
-  CheckCircle,
-  Circle,
-  WarningCircle,
-  SunDim,
-  Heart,
-  BookBookmark,
-  MusicNotes,
-  Scroll,
-  Cross,
-  GraduationCap,
-  Robot
+  Bell,
+  BookOpen,
+  PaintBrush,
+  User
 } from '@phosphor-icons/react';
-import { EditChildForm } from '@/components/children/EditChildForm';
-import { AddChildForm } from '@/components/children/AddChildForm';
-import { students, family, liturgy } from '@/lib/api';
-import { OverrideManager } from '@/components/overrides/OverrideManager';
-import { TimeModelEditor } from '@/components/planning/TimeModelEditor';
-import { IndependenceManager } from '@/components/independence/IndependenceManager';
-import { AIInteractionLog as AIInteractionLogComponent } from '@/components/ai/AIInteractionLog';
-
-import { toast } from 'sonner';
-import { Switch } from '@/components/ui/switch';
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from '@/components/ui/alert-dialog';
-import type { Student, MaterialItem } from '@/types';
-
-// Common core kit items to suggest
-const COMMON_MATERIALS = [
-  'Blocks', 'Balls', 'Books', 'Crayons', 'Paper',
-  'Playdough', 'Bubbles', 'Cardboard Boxes', 'Containers',
-  'Scarves/Fabric', 'Tape', 'Glue', 'Safety Scissors',
-  'Puzzles', 'Toy Cars', 'Dolls/Puppets', 'Musical Instruments'
-];
 
 export default function Settings() {
-  const { user, children, logout, refreshAuth, selectedChild, setSelectedChild } = useAuth();
-  const [editingChild, setEditingChild] = useState<Student | null>(null);
-  const [deletingChild, setDeletingChild] = useState<Student | null>(null);
-  const [isDeleting, setIsDeleting] = useState(false);
-  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const location = useLocation();
+  const navigate = useNavigate();
+  const [activeTab, setActiveTab] = useState('family');
 
-  // Materials Query - includes user preferences
-  const { data: serverMaterials, isLoading: isMaterialsLoading, error: materialsError, refetch: refetchMaterials } = useQuery({
-    queryKey: ['family-materials'],
-    queryFn: family.getMaterials,
-  });
-
-  // Also fetch today's data to get materials needed for current activities
-  const { data: todayData } = useQuery({
-    queryKey: ['family-today'],
-    queryFn: family.getToday,
-  });
-
-  // Liturgy Settings Query
-  const { data: liturgySettings, refetch: refetchLiturgy } = useQuery({
-    queryKey: ['liturgy-settings'],
-    queryFn: liturgy.getSettings,
-  });
-
-  const updateLiturgyMutation = useMutation({
-    mutationFn: liturgy.updateSettings,
-    onSuccess: () => {
-      refetchLiturgy();
-      toast.success('Liturgy settings updated');
-    },
-  });
-
-  // Local state for materials editing
-  const [materialsState, setMaterialsState] = useState<MaterialItem[]>([]);
-  const [hasChanges, setHasChanges] = useState(false);
-  const [searchQuery, setSearchQuery] = useState('');
-
-  // Sync server data to local state - include materials from today's activities
   useEffect(() => {
-    if (serverMaterials) {
-      // Start with common materials
-      const allMaterialNames = new Set(COMMON_MATERIALS);
+    // Handle query params or hash
+    const tabParam = searchParams.get('tab');
+    const quickstart = searchParams.get('quickstart');
+    const hash = location.hash.replace('#', '');
 
-      // Add any materials from today's activities
-      if (todayData?.materials) {
-        todayData.materials.forEach((m: MaterialItem) => {
-          if (m?.name) allMaterialNames.add(m.name);
-        });
-      }
-
-      // Add any existing server materials
-      serverMaterials.forEach((m: MaterialItem) => {
-        if (m?.name) allMaterialNames.add(m.name);
-      });
-
-      // Build merged list with status
-      const merged = Array.from(allMaterialNames).map(name => {
-        // First check server materials for existing status
-        const existing = serverMaterials.find((m: MaterialItem) => m?.name === name);
-        // Also check today's data for status (backend returns status from family_materials)
-        const fromToday = todayData?.materials?.find((m: MaterialItem) => m?.name === name);
-        return {
-          name,
-          status: existing?.status || fromToday?.status || 'unknown'
-        } as MaterialItem;
-      });
-
-      // Sort alphabetically
-      setMaterialsState(merged.sort((a, b) => {
-        const nameA = a?.name || '';
-        const nameB = b?.name || '';
-        return nameA.localeCompare(nameB);
-      }));
+    if (quickstart) {
+      setActiveTab('materials');
+    } else if (tabParam) {
+      setActiveTab(tabParam);
+    } else if (hash === 'support') {
+      setActiveTab('account');
+      // Optional: scroll to support section after render
+      setTimeout(() => {
+        document.getElementById('support')?.scrollIntoView({ behavior: 'smooth' });
+      }, 500);
     }
-  }, [serverMaterials, todayData]);
+  }, [searchParams, location.hash]);
 
-  // Update Material Mutation
-  const updateMaterialsMutation = useMutation({
-    mutationFn: family.updateMaterials,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['family-materials'] });
-      queryClient.invalidateQueries({ queryKey: ['family-today'] }); // Refresh dashboard too
-      toast.success('Materials updated successfully');
-      setHasChanges(false);
-    },
-    onError: (error: any) => {
-      console.error('Materials update failed:', error);
-      toast.error('Couldn\'t save materials. Please try again. If it keeps happening, contact support.', {
-        description: error?.message || 'Unknown error occurred'
-      });
-    }
-  });
-
-  const handleMaterialToggle = (name: string) => {
-    setMaterialsState(prev => prev.map(m => {
-      if (m.name !== name) return m;
-
-      // Cycle: unknown -> have -> willing_to_buy -> not_interested -> have...
-      // Simplified Cycle: unknown/not_interested -> have -> willing_to_buy -> not_interested
-      let nextStatus: MaterialItem['status'] = 'unknown';
-      if (m.status === 'unknown' || m.status === 'not_interested') nextStatus = 'have';
-      else if (m.status === 'have') nextStatus = 'willing_to_buy';
-      else if (m.status === 'willing_to_buy') nextStatus = 'not_interested';
-
-      return { ...m, status: nextStatus };
-    }));
-    setHasChanges(true);
-  };
-
-  const handleSaveMaterials = () => {
-    // Validate before sending: filter out any invalid entries
-    const validStatuses = ['have', 'willing_to_buy', 'not_interested', 'unknown'];
-    const validMaterials = materialsState.filter(m =>
-      m?.name && typeof m.name === 'string' && validStatuses.includes(m.status)
-    );
-
-    if (validMaterials.length === 0) {
-      toast.error('No valid materials to save');
-      return;
-    }
-
-    updateMaterialsMutation.mutate(validMaterials);
-  };
-
-  const getInitials = (name: string) => {
-    return name
-      .split(' ')
-      .map((n) => n[0])
-      .join('')
-      .toUpperCase()
-      .slice(0, 2);
-  };
-
-  const calculateAge = (dateOfBirth: string) => {
-    const birthDate = new Date(dateOfBirth);
-    const now = new Date();
-    const ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
-      (now.getMonth() - birthDate.getMonth());
-    const years = Math.floor(ageMonths / 12);
-    const months = ageMonths % 12;
-    if (years === 0) {
-      return `${months} month${months !== 1 ? 's' : ''}`;
-    }
-    return `${years} year${years !== 1 ? 's' : ''}, ${months} month${months !== 1 ? 's' : ''}`;
-  };
-
-  const handleDeleteChild = async () => {
-    if (!deletingChild) return;
-
-    setIsDeleting(true);
-    try {
-      await students.delete(deletingChild.id);
-
-      // If we deleted the currently selected child, clear selection
-      if (selectedChild?.id === deletingChild.id) {
-        const remainingChildren = children.filter(c => c.id !== deletingChild.id);
-        if (remainingChildren.length > 0) {
-          setSelectedChild(remainingChildren[0]);
-        } else {
-          setSelectedChild(null);
-        }
-      }
-
-      await refreshAuth();
-      toast.success(`${deletingChild.name} has been removed`);
-      setDeletingChild(null);
-    } catch (error: any) {
-      toast.error(error.message || 'Failed to delete child');
-    } finally {
-      setIsDeleting(false);
-    }
+  const handleTabChange = (value: string) => {
+    setActiveTab(value);
   };
 
   return (
-    <div className="space-y-8 max-w-2xl mx-auto pb-12">
-      <div className="space-y-2">
+    <div className="space-y-6 max-w-4xl mx-auto pb-24 px-4 sm:px-0">
+      <div className="py-6 space-y-2">
         <h1 className="text-3xl font-display font-bold text-foreground">Command Center</h1>
         <p className="text-muted-foreground">Your Family's Learning Headquarters</p>
       </div>
 
-      {/* Children Management */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+      <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
+        <TabsList className="grid grid-cols-5 w-full h-auto p-1 bg-muted/50 rounded-xl">
+          <TabsTrigger value="family" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <UsersThree className="h-5 w-5" />
-            Children
-          </CardTitle>
-          <CardDescription>
-            Manage your registered children
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {children.length === 0 ? (
-            <div className="flex flex-col items-center justify-center py-8 text-center space-y-4">
-              <div className="h-12 w-12 rounded-full bg-muted flex items-center justify-center">
-                <Baby className="h-6 w-6 text-muted-foreground" />
-              </div>
-              <div>
-                <p className="text-muted-foreground font-medium">No children registered yet.</p>
-                <p className="text-sm text-muted-foreground">Add a child to get started.</p>
-              </div>
-              <AddChildForm />
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {children.map((child) => (
-                <div
-                  key={child.id}
-                  className="flex items-center justify-between p-3 rounded-lg border bg-card hover:bg-muted/50 transition-colors"
-                >
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                        {getInitials(child.name)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <p className="font-medium text-foreground">{child.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {calculateAge(child.dateOfBirth)}
-                      </p>
-                    </div>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setEditingChild(child)}
-                      className="h-8 w-8"
-                    >
-                      <PencilSimple className="h-4 w-4" />
-                      <span className="sr-only">Edit {child.name}</span>
-                    </Button>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setDeletingChild(child)}
-                      className="h-8 w-8 text-destructive hover:text-destructive hover:bg-destructive/10"
-                    >
-                      <Trash className="h-4 w-4" />
-                      <span className="sr-only">Delete {child.name}</span>
-                    </Button>
-                  </div>
-                </div>
-              ))}
-              {children.length < 5 && (
-                <div className="pt-2 flex justify-center">
-                  <AddChildForm />
-                </div>
-              )}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Phase 3: Child Independence Levels */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <GraduationCap className="h-5 w-5" weight="duotone" />
-            Child Independence Levels
-          </CardTitle>
-          <CardDescription>
-            Control what each child can do independently. This lets older children take more ownership of their learning.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <IndependenceManager />
-        </CardContent>
-      </Card>
-
-      {/* Phase 3: AI Interaction History */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Robot className="h-5 w-5" weight="duotone" />
-            AI Interaction History
-          </CardTitle>
-          <CardDescription>
-            Review all AI conversations your children have had. Full visibility ensures you remain in authority.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AIInteractionLogComponent />
-        </CardContent>
-      </Card>
-
-      {/* Daily Liturgy Settings */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <Cross className="h-5 w-5" weight="duotone" />
-            Daily Liturgy Settings
-          </CardTitle>
-          <CardDescription>
-            Configure your family's catechism, hymn, and scripture memorization
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          {liturgySettings && (
-            <>
-              {/* Catechism */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
-                    <BookBookmark className="h-5 w-5" weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Catechism</p>
-                    <p className="text-sm text-muted-foreground">Westminster Shorter Catechism</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={liturgySettings.catechism_enabled}
-                  onCheckedChange={(checked) =>
-                    updateLiturgyMutation.mutate({ catechism_enabled: checked })
-                  }
-                />
-              </div>
-
-              {/* Hymns */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
-                    <MusicNotes className="h-5 w-5" weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Hymn of the Week</p>
-                    <p className="text-sm text-muted-foreground">Classic Reformed Hymns</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={liturgySettings.hymnal_enabled}
-                  onCheckedChange={(checked) =>
-                    updateLiturgyMutation.mutate({ hymnal_enabled: checked })
-                  }
-                />
-              </div>
-
-              {/* Scripture */}
-              <div className="flex items-center justify-between">
-                <div className="flex items-start gap-3">
-                  <div className="p-2 bg-amber-100 dark:bg-amber-900/30 rounded-lg text-amber-700 dark:text-amber-300">
-                    <Scroll className="h-5 w-5" weight="duotone" />
-                  </div>
-                  <div>
-                    <p className="font-medium">Memory Verse</p>
-                    <p className="text-sm text-muted-foreground">ESV Translation</p>
-                  </div>
-                </div>
-                <Switch
-                  checked={liturgySettings.scripture_enabled}
-                  onCheckedChange={(checked) =>
-                    updateLiturgyMutation.mutate({ scripture_enabled: checked })
-                  }
-                />
-              </div>
-
-              <Separator />
-
-              {/* Progress Reset */}
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="font-medium text-destructive">Reset Progress</p>
-                  <p className="text-sm text-muted-foreground">Start over from Week 1</p>
-                </div>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  className="text-destructive hover:bg-destructive/10 border-destructive/20"
-                  onClick={() =>
-                    updateLiturgyMutation.mutate({
-                      current_catechism_week: 1,
-                      current_hymn_week: 1,
-                      current_scripture_week: 1
-                    })
-                  }
-                >
-                  Reset All
-                </Button>
-              </div>
-            </>
-          )}
-        </CardContent>
-      </Card>
-
-
-
-
-      {/* Learning Accommodations */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <ShieldCheck className="h-5 w-5" />
-            Learning Accommodations
-          </CardTitle>
-          <CardDescription>
-            Customize the AI planner for your child's specific needs
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <OverrideManager />
-        </CardContent>
-      </Card>
-
-      {/* Weekly Schedule */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+            <span className="hidden sm:inline">Family</span>
+          </TabsTrigger>
+          <TabsTrigger value="schedule" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <Bell className="h-5 w-5" />
-            Weekly Schedule
-          </CardTitle>
-          <CardDescription>
-            Set your family's availability and pacing preferences
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TimeModelEditor />
-        </CardContent>
-      </Card>
-
-      {/* Materials Section */}
-      <Card>
-        <CardHeader>
-          <div className="flex items-center justify-between">
-            <CardTitle className="flex items-center gap-2 text-lg">
-              <Package className="h-5 w-5" />
-              My Family's Materials
-            </CardTitle>
-            {hasChanges && (
-              <Button size="sm" onClick={handleSaveMaterials} disabled={updateMaterialsMutation.isPending}>
-                {updateMaterialsMutation.isPending && <CircleNotch className="w-3 h-3 mr-2 animate-spin" />}
-                Save Changes
-              </Button>
-            )}
-          </div>
-          <CardDescription>
-            Tell us what you have at home so we can suggest activities you're ready for!
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          {isMaterialsLoading ? (
-            <div className="flex justify-center py-8">
-              <CircleNotch className="h-6 w-6 animate-spin text-muted-foreground" />
-            </div>
-          ) : materialsError ? (
-            <div className="flex flex-col items-center justify-center py-8 space-y-4">
-              <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center">
-                <WarningCircle className="h-6 w-6 text-destructive" />
-              </div>
-              <div className="text-center space-y-1">
-                <p className="font-semibold text-foreground">Failed to load materials</p>
-                <p className="text-sm text-muted-foreground">We couldn't fetch your materials. Please try again.</p>
-              </div>
-              <Button onClick={() => refetchMaterials()} size="sm">
-                Retry
-              </Button>
-            </div>
-          ) : (
-            <div className="space-y-4">
-              {/* How This Works Explainer */}
-              <div className="bg-muted/30 rounded-lg p-4 space-y-2">
-                <p className="text-sm font-semibold text-foreground">How this works:</p>
-                <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 text-xs">
-                  <div className="flex items-center gap-2">
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                    <span className="text-muted-foreground">Have at home</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <Circle className="w-4 h-4 text-blue-600" />
-                    <span className="text-muted-foreground">Willing to buy</span>
-                  </div>
-                  <div className="flex items-center gap-2">
-                    <span className="text-muted-foreground opacity-60">➖</span>
-                    <span className="text-muted-foreground">Not interested</span>
-                  </div>
-                </div>
-              </div>
-
-              {/* Quick Actions */}
-              <div className="flex flex-wrap gap-2">
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    const basics = ['Blocks', 'Balls', 'Books', 'Crayons', 'Paper'];
-                    setMaterialsState(prev => prev.map(m =>
-                      basics.includes(m.name) ? { ...m, status: 'have' } : m
-                    ));
-                    setHasChanges(true);
-                  }}
-                >
-                  ✅ Mark Common Basics as Have
-                </Button>
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={() => {
-                    setMaterialsState(prev => prev.map(m => ({ ...m, status: 'unknown' })));
-                    setHasChanges(true);
-                  }}
-                >
-                  Reset All to Unknown
-                </Button>
-              </div>
-
-              {/* Search/Filter */}
-              <div className="relative">
-                <input
-                  type="text"
-                  placeholder="Search materials... (blocks, cars, paper)"
-                  className="w-full px-4 py-2 border rounded-lg text-sm focus:outline-none focus:ring-2 focus:ring-primary"
-                  value={searchQuery}
-                  onChange={(e) => setSearchQuery(e.target.value)}
-                />
-              </div>
-
-              {/* Filter materials based on search query */}
-              {(() => {
-                const filteredMaterials = searchQuery
-                  ? materialsState.filter(m => m.name.toLowerCase().includes(searchQuery.toLowerCase()))
-                  : materialsState;
-
-                return (
-                  <>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                      {filteredMaterials.length === 0 && searchQuery ? (
-                        <div className="col-span-full text-center py-8 text-muted-foreground text-sm">
-                          No materials found matching "{searchQuery}"
-                        </div>
-                      ) : (
-                        filteredMaterials.map((material) => (
-                          <div
-                            key={material.name}
-                            className={`
-                                flex items-center justify-between p-3 rounded-lg border cursor-pointer transition-all
-                                ${material.status === 'have' ? 'bg-green-50 dark:bg-green-900/20 border-green-200 dark:border-green-800' : ''}
-                                ${material.status === 'willing_to_buy' ? 'bg-blue-50 dark:bg-blue-900/20 border-blue-200 dark:border-blue-800' : ''}
-                                ${material.status === 'not_interested' ? 'bg-muted/50 opacity-60' : ''}
-                            `}
-                            onClick={() => handleMaterialToggle(material.name)}
-                          >
-                            <span className="font-medium text-sm">{material.name}</span>
-
-                            <div className="flex items-center">
-                              {material.status === 'have' && (
-                                <div className="flex items-center gap-1.5 text-green-700 dark:text-green-300 text-xs font-medium bg-white/50 dark:bg-green-900/30 px-2 py-1 rounded-full">
-                                  <CheckCircle className="w-3.5 h-3.5" /> Have
-                                </div>
-                              )}
-                              {material.status === 'willing_to_buy' && (
-                                <div className="flex items-center gap-1.5 text-blue-700 dark:text-blue-300 text-xs font-medium bg-white/50 dark:bg-blue-900/30 px-2 py-1 rounded-full">
-                                  <Circle className="w-3.5 h-3.5" /> Will Buy
-                                </div>
-                              )}
-                              {material.status === 'not_interested' && (
-                                <div className="flex items-center gap-1.5 text-muted-foreground text-xs font-medium bg-black/5 px-2 py-1 rounded-full">
-                                  <SignOut className="w-3.5 h-3.5" /> No
-                                </div>
-                              )}
-                              {material.status === 'unknown' && (
-                                <span className="text-xs text-muted-foreground px-2">Click to set</span>
-                              )}
-                            </div>
-                          </div>
-                        ))
-                      )}
-                    </div>
-                    <p className="text-xs text-muted-foreground text-center pt-2">
-                      Tap an item to cycle: Have → Will Buy → Not Interested
-                    </p>
-                  </>
-                );
-              })()}
-            </div>
-          )}
-        </CardContent>
-      </Card>
-
-      {/* Appearance Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <SunDim className="h-5 w-5" weight="duotone" />
-            Appearance
-          </CardTitle>
-          <CardDescription>
-            Customize how SchoolOS looks
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium">Theme</p>
-              <p className="text-sm text-muted-foreground">
-                Choose light, dark, or match your device
-              </p>
-            </div>
-            <ThemeToggle />
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Support SchoolOS */}
-      <Card id="support" className="border-green-200 bg-gradient-to-br from-green-50 to-transparent dark:from-green-900/10 dark:border-green-800">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg text-green-800 dark:text-green-200">
-            <Heart className="h-5 w-5" weight="fill" />
-            Support SchoolOS
-          </CardTitle>
-          <CardDescription>
-            Help keep learning free for African families
-          </CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="space-y-2">
-            <div className="flex items-center justify-between text-sm">
-              <span>Monthly Goal</span>
-              <span className="font-medium">$412 / $500</span>
-            </div>
-            <div className="h-2 bg-green-100 dark:bg-green-900/30 rounded-full overflow-hidden">
-              <div className="h-full bg-green-500 w-[82%] rounded-full" />
-            </div>
-            <p className="text-xs text-muted-foreground">
-              $500/month covers storage for 10,000 families and 1,000+ books
-            </p>
-          </div>
-
-          <div className="grid grid-cols-4 gap-2">
-            <Button variant="outline" className="border-green-300 dark:border-green-700">$1</Button>
-            <Button variant="outline" className="border-green-300 dark:border-green-700">$5</Button>
-            <Button variant="outline" className="border-green-300 dark:border-green-700">$10</Button>
-            <Button variant="outline" className="border-green-300 dark:border-green-700">Other</Button>
-          </div>
-
-          <p className="text-xs text-center text-muted-foreground">
-            Contributions are not tax-deductible. Payment processed securely.
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* Profile Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
+            <span className="hidden sm:inline">Schedule</span>
+          </TabsTrigger>
+          <TabsTrigger value="curriculum" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+            <BookOpen className="h-5 w-5" />
+            <span className="hidden sm:inline">Curriculum</span>
+          </TabsTrigger>
+          <TabsTrigger value="materials" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+            <PaintBrush className="h-5 w-5" />
+            <span className="hidden sm:inline">Materials</span>
+          </TabsTrigger>
+          <TabsTrigger value="account" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <User className="h-5 w-5" />
-            Profile
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          <div className="flex items-center gap-4">
-            <Avatar className="h-16 w-16">
-              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-              <AvatarFallback className="bg-primary/10 text-primary text-lg">
-                {user ? getInitials(user.name) : '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div>
-              <p className="font-medium text-foreground">{user?.name}</p>
-              <p className="text-sm text-muted-foreground">{user?.email}</p>
-            </div>
-          </div>
-          <Separator />
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => {
-              toast.info('Your profile is synced from your Google account');
-            }}
-          >
-            Edit Profile
-          </Button>
-        </CardContent>
-      </Card>
+            <span className="hidden sm:inline">Account</span>
+          </TabsTrigger>
+        </TabsList>
 
-      {/* Privacy */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2 text-lg">
-            <ShieldCheck className="h-5 w-5" />
-            Privacy & Security
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-2">
-            <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/privacy'}>
-              Privacy Policy
-            </Button>
-            <br />
-            <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/terms'}>
-              Terms of Service
-            </Button>
-          </div>
-          <Separator className="my-4" />
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Request deletion of your account and all associated data.
-            </p>
-            <Button
-              variant="outline"
-              className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-              onClick={() => {
-                window.open('mailto:antmwes104.1@gmail.com?subject=SchoolOS%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.', '_blank');
-                toast.info('Account deletion request', {
-                  description: 'Your email client should open. Send the email to complete your request.'
-                });
-              }}
-            >
-              Request Account Deletion
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
+        <div className="mt-6">
+          <TabsContent value="family" className="animate-in fade-in slide-in-from-left-4 duration-300">
+            <SettingsFamily />
+          </TabsContent>
 
-      {/* Sign Out */}
-      <Card className="border-destructive/20">
-        <CardContent className="pt-6">
-          <Button variant="destructive" onClick={logout} className="gap-2">
-            <SignOut className="h-4 w-4" />
-            Sign Out
-          </Button>
-        </CardContent>
-      </Card>
+          <TabsContent value="schedule" className="animate-in fade-in slide-in-from-left-4 duration-300">
+            <SettingsSchedule />
+          </TabsContent>
 
-      {/* Edit Child Dialog */}
-      {
-        editingChild && (
-          <EditChildForm
-            child={editingChild}
-            open={!!editingChild}
-            onOpenChange={(open) => !open && setEditingChild(null)}
-            onSuccess={() => setEditingChild(null)}
-          />
-        )
-      }
+          <TabsContent value="curriculum" className="animate-in fade-in slide-in-from-left-4 duration-300">
+            <SettingsCurriculum />
+          </TabsContent>
 
-      {/* Delete Confirmation Dialog */}
-      <AlertDialog open={!!deletingChild} onOpenChange={(open) => !open && setDeletingChild(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Delete {deletingChild?.name}?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove {deletingChild?.name} and all their activity observations and progress data. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={isDeleting}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDeleteChild}
-              disabled={isDeleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {isDeleting ? (
-                <>
-                  <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
-                  Deleting...
-                </>
-              ) : (
-                'Delete'
-              )}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </div >
+          <TabsContent value="materials" className="animate-in fade-in slide-in-from-left-4 duration-300">
+            <SettingsMaterials />
+          </TabsContent>
+
+          <TabsContent value="account" className="animate-in fade-in slide-in-from-left-4 duration-300">
+            <SettingsAccount />
+          </TabsContent>
+        </div>
+      </Tabs>
+    </div>
   );
 }
