@@ -1,46 +1,42 @@
 import { useQuery } from '@tanstack/react-query';
+import { fetchAllHymns } from '@/lib/book-content';
 
-interface HymnMetadata {
-    chapters: {
-        filepath: string;
-        chapterNumber: number;
-        title: string;
-    }[];
-}
+// Reusing the logic from book-content.ts but optimizing for single search if possible,
+// or just fetching all and finding.
+// Since we want to reuse code, we can use fetchAllHymns and find the one we need.
+// Ideally, we'd have a specific "findHymn" function in book-content.ts if performance matters (to stop early).
+// But for client-side caching, fetching all once might be okay if the book isn't huge.
+// However, the original implementation fetched chapter by chapter.
+// Let's refactor fetchHymnContent to use the generic helpers but keep the "stop early" logic if we want.
+// But to strictly follow "Refactor useHymnContent Logic" plan step:
 
 async function fetchHymnContent(title: string): Promise<string | null> {
     try {
-        // 1. Fetch metadata to get file list
-        const metaResponse = await fetch('/books/reformed-hymns/metadata.json');
-        if (!metaResponse.ok) throw new Error('Failed to load metadata');
-        const metadata: HymnMetadata = await metaResponse.json();
+        // We'll use the 'reformed-hymns' series as hardcoded in the original hook
+        // but now utilizing the new helper structure conceptually.
+        // Actually, let's just use fetchAllHymns and find it for simplicity and code reuse,
+        // unless performance is critical. The hymnal is not massive.
+        // But wait, the original implementation streamed chapters.
+        // Let's stick to the original "search" approach but make it use the helpers if possible?
+        // Or just implement the search using the same helpers.
 
-        // 2. Normalize title for search (remove punctuation, lower case)
+        // Let's import the specific helpers we need.
+        const { fetchBookMetadata, fetchChapterContent } = await import('@/lib/book-content');
+
+        const metadata = await fetchBookMetadata('reformed-hymns', 'ignored');
+        if (!metadata) return null;
+
         const normalizedTargetTitle = title.toLowerCase().replace(/[^\w\s]/g, '');
 
-        // 3. Search through chapters
         for (const chapter of metadata.chapters) {
-            const fileResponse = await fetch(`/books/reformed-hymns/${chapter.filepath}`);
-            if (!fileResponse.ok) continue;
+            const text = await fetchChapterContent('reformed-hymns', chapter.filepath);
+            if (!text) continue;
 
-            const text = await fileResponse.text();
-
-            // Regex to find the hymn header: ## N. Title
-            // We look for "## [digits]. [Title]"
-            // We need to be careful with regex escaping the title
-
-            // Simple parse: Split by "## "
             const sections = text.split(/^##\s+/m);
-
             for (const section of sections) {
                 if (!section.trim()) continue;
-
-                // Extract title line
                 const firstLineEnd = section.indexOf('\n');
                 const headerLine = section.substring(0, firstLineEnd).trim();
-
-                // Header line format: "3. Amazing Grace"
-                // We want to match "Amazing Grace"
                 const dotIndex = headerLine.indexOf('.');
                 if (dotIndex === -1) continue;
 
@@ -48,12 +44,10 @@ async function fetchHymnContent(title: string): Promise<string | null> {
                 const normalizedSectionTitle = sectionTitle.toLowerCase().replace(/[^\w\s]/g, '');
 
                 if (normalizedSectionTitle === normalizedTargetTitle) {
-                    // Found it! Return the content (everything after the header line)
                     return section.substring(firstLineEnd).trim();
                 }
             }
         }
-
         return null;
     } catch (err) {
         console.error('Error fetching hymn content:', err);
