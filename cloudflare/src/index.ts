@@ -2310,54 +2310,61 @@ app.get('/api/books', async (c) => {
     });
     console.log(`Found ${seriesPrefixes.length} series prefixes`);
 
-    // Step 3: Iterate Series
-    for (const seriesPrefix of seriesPrefixes) {
+    // Step 3: List Books in ALL Series concurrently
+    const seriesBookLists = await Promise.all(seriesPrefixes.map(async (seriesPrefix) => {
       const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
-
-      // Step 4: List Books in Series (handling pagination)
       const bookPrefixes = await listAllPrefixes(bucket, {
         prefix: seriesPrefix,
         delimiter: '/'
       });
+      return { seriesName, seriesPrefix, bookPrefixes };
+    }));
 
-      // Step 5: Process Books
-      for (const bookPrefix of bookPrefixes) {
-        // bookPath is the relative path from the series, e.g., "Book Title/"
-        const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
+    // Flatten to get all book tasks
+    const allBookTasks = seriesBookLists.flatMap(({ seriesName, seriesPrefix, bookPrefixes }) =>
+      bookPrefixes.map(bookPrefix => ({ seriesName, seriesPrefix, bookPrefix }))
+    );
 
-        try {
-          // Find and load metadata
-          const object = await findMetadataFile(bucket, bookPrefix);
+    // Step 4: Process Books Concurrently
+    const bookResults = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
+      // bookPath is the relative path from the series, e.g., "Book Title/"
+      const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
 
-          if (object) {
-            const data = await object.json() as any;
-            const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+      try {
+        // Find and load metadata
+        const object = await findMetadataFile(bucket, bookPrefix);
 
-            // CRITICAL: Use folder names (seriesName, bookId) for URL construction
-            // The frontend uses book.series and book.id to build cover/page URLs
-            // These MUST match the actual R2 folder structure, not human-readable names
-            books.push({
-              id: bookId,  // Always use folder name, not metadata id
-              series: seriesName,  // Always use folder name, not metadata series
-              seriesTitle: data.series || seriesName,  // Human-readable for display
-              title: data.title || bookId,
-              author: data.author,
-              illustrator: data.illustrator,
-              description: data.description || '',
-              minAgeMonths: data.minAgeMonths || ageRange.min,
-              maxAgeMonths: data.maxAgeMonths || ageRange.max,
-              pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
-              domain: data.domain || 'language',
-              learningStage: data.learningStage || 'early-years',
-              readingPrompts: data.readingPrompts,
-              coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
-            });
-          }
-        } catch (e) {
-          console.warn(`Failed to load book ${bookId}:`, e);
+        if (object) {
+          const data = await object.json() as any;
+          const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+          // CRITICAL: Use folder names (seriesName, bookId) for URL construction
+          // The frontend uses book.series and book.id to build cover/page URLs
+          // These MUST match the actual R2 folder structure, not human-readable names
+          return {
+            id: bookId,  // Always use folder name, not metadata id
+            series: seriesName,  // Always use folder name, not metadata series
+            seriesTitle: data.series || seriesName,  // Human-readable for display
+            title: data.title || bookId,
+            author: data.author,
+            illustrator: data.illustrator,
+            description: data.description || '',
+            minAgeMonths: data.minAgeMonths || ageRange.min,
+            maxAgeMonths: data.maxAgeMonths || ageRange.max,
+            pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+            domain: data.domain || 'language',
+            learningStage: data.learningStage || 'early-years',
+            readingPrompts: data.readingPrompts,
+            coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
+          } as BookMetadata;
         }
+      } catch (e) {
+        console.warn(`Failed to load book ${bookId}:`, e);
       }
-    }
+      return null;
+    }));
+
+    books.push(...bookResults.filter((b): b is BookMetadata => b !== null));
 
     console.log(`Total books loaded: ${books.length}`);
 
