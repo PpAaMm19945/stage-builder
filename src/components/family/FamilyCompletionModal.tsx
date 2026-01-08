@@ -26,6 +26,7 @@ const MASTERY_OPTIONS: { value: MasteryLevel; label: string; color: string }[] =
 
 export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: FamilyCompletionModalProps) {
     const { toast } = useToast();
+    const { token } = useAuth();
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notes, setNotes] = useState('');
 

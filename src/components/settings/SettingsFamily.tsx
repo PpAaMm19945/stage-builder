@@ -16,6 +16,7 @@ import { toast } from 'sonner';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { IndependenceManager } from '@/components/independence/IndependenceManager';
+import { PaceSettings } from '@/components/settings/PaceSettings';
 import {
     AlertDialog,
     AlertDialogAction,
@@ -159,6 +160,9 @@ export function SettingsFamily() {
                     )}
                 </CardContent>
             </Card>
+
+            {/* Phase 4: Pace & Advancement */}
+            <PaceSettings />
 
             {/* Phase 3: Child Independence Levels */}
             <Card>
