@@ -191,13 +191,33 @@ export function IndependenceManager() {
     const queryClient = useQueryClient();
     const [updatingChild, setUpdatingChild] = useState<string | null>(null);
 
-    // Fetch settings for all children
-    const settingsQueries = children.map((child) => {
-        return useQuery({
-            queryKey: ['independence-settings', child.id],
-            queryFn: () => independence.get(child.id),
-            enabled: !!child.id,
-        });
+    // Use a single query to fetch all children's settings to avoid hooks rules violation
+    const { data: allSettings, isLoading: isLoadingSettings } = useQuery({
+        queryKey: ['independence-settings-all', children?.map(c => c.id).join(',')],
+        queryFn: async () => {
+            if (!children || children.length === 0) return {};
+
+            // Fetch settings for all children in parallel
+            const results = await Promise.all(
+                children.map(async (child) => {
+                    try {
+                        const settings = await independence.get(child.id);
+                        return { childId: child.id, settings };
+                    } catch (error) {
+                        console.error(`Failed to fetch settings for child ${child.id}:`, error);
+                        return { childId: child.id, settings: [] };
+                    }
+                })
+            );
+
+            // Convert to a map for easier lookup
+            const settingsMap: Record<string, IndependenceSettings[]> = {};
+            results.forEach(({ childId, settings }) => {
+                settingsMap[childId] = settings;
+            });
+            return settingsMap;
+        },
+        enabled: !!children && children.length > 0,
     });
 
     const updateMutation = useMutation({
@@ -210,10 +230,9 @@ export function IndependenceManager() {
             subject: IndependenceSubject;
             updates: Partial<IndependenceSettings>;
         }) => {
-            // Merge with existing settings
-            const existing = settingsQueries
-                .find((q) => q.data?.some((s: IndependenceSettings) => s.studentId === studentId))
-                ?.data?.find((s: IndependenceSettings) => s.subject === subject);
+            // Get existing settings from the allSettings map
+            const childSettings = allSettings?.[studentId] || [];
+            const existing = childSettings.find((s: IndependenceSettings) => s.subject === subject);
 
             return independence.update(studentId, {
                 subject,
@@ -224,7 +243,7 @@ export function IndependenceManager() {
             });
         },
         onSuccess: (_, { studentId }) => {
-            queryClient.invalidateQueries({ queryKey: ['independence-settings', studentId] });
+            queryClient.invalidateQueries({ queryKey: ['independence-settings-all'] });
             toast.success('Settings updated');
         },
         onError: (error: any) => {
@@ -252,7 +271,8 @@ export function IndependenceManager() {
             .toUpperCase()
             .slice(0, 2);
 
-    if (children.length === 0) {
+    // Handle loading and empty states
+    if (!children || children.length === 0) {
         return (
             <div className="text-center py-6 text-muted-foreground">
                 <User className="w-8 h-8 mx-auto mb-2 opacity-50" />
@@ -264,10 +284,8 @@ export function IndependenceManager() {
 
     return (
         <Accordion type="single" collapsible className="w-full">
-            {children.map((child, index) => {
-                const query = settingsQueries[index];
-                const settings = query.data || [];
-                const isLoading = query.isLoading;
+            {children.map((child) => {
+                const settings = allSettings?.[child.id] || [];
                 const isUpdating = updatingChild === child.id;
 
                 return (
@@ -292,7 +310,7 @@ export function IndependenceManager() {
                             </div>
                         </AccordionTrigger>
                         <AccordionContent>
-                            {isLoading ? (
+                            {isLoadingSettings ? (
                                 <div className="flex justify-center py-4">
                                     <CircleNotch className="w-5 h-5 animate-spin text-muted-foreground" />
                                 </div>
