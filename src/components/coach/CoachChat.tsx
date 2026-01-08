@@ -8,7 +8,6 @@ import { ai, overrides, liturgy, rhythm, weeklyPlan, family } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
-import { useQueryClient } from '@tanstack/react-query';
 import { format } from 'date-fns';
 
 interface Message {
