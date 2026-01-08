@@ -113,6 +113,7 @@ export function HymnPlayer({ url, title, className }: HymnPlayerProps) {
             variant="ghost"
             className="h-8 w-8 text-amber-700 dark:text-amber-300 hover:text-amber-900 dark:hover:text-amber-100 shrink-0"
             onClick={toggleMute}
+            aria-label={isMuted ? "Unmute" : "Mute"}
           >
             {isMuted ? (
               <SpeakerX weight="regular" className="h-5 w-5" />

@@ -4,6 +4,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { ai, overrides, liturgy, rhythm, weeklyPlan, family, formation } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
@@ -540,11 +541,26 @@ export function SchoolOSChat() {
 
     return (
         <Sheet>
-            <SheetTrigger asChild>
-                <Button variant="outline" size="icon" className="rounded-full shadow-sm bg-indigo-50 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950 dark:border-indigo-800" data-testid="coach-chat-trigger">
-                    <Sparkle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" weight="fill" />
-                </Button>
-            </SheetTrigger>
+            <TooltipProvider>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <SheetTrigger asChild>
+                            <Button
+                                variant="outline"
+                                size="icon"
+                                className="rounded-full shadow-sm bg-indigo-50 border-indigo-200 hover:bg-indigo-100 dark:bg-indigo-950 dark:border-indigo-800"
+                                data-testid="coach-chat-trigger"
+                                aria-label="Open SchoolOS Assistant"
+                            >
+                                <Sparkle className="w-5 h-5 text-indigo-600 dark:text-indigo-400" weight="fill" />
+                            </Button>
+                        </SheetTrigger>
+                    </TooltipTrigger>
+                    <TooltipContent side="left">
+                        <p>Open Assistant</p>
+                    </TooltipContent>
+                </Tooltip>
+            </TooltipProvider>
             <SheetContent className="w-[100vw] sm:w-[540px] flex flex-col p-0 h-[100dvh]">
                 <SheetHeader className="p-4 border-b bg-muted/20">
                     <SheetTitle className="flex items-center gap-2 text-indigo-700 dark:text-indigo-300">
