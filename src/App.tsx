@@ -26,7 +26,7 @@ import Dashboard from "./pages/Dashboard";
 import Planner from "./pages/early-years/Planner";
 import DailyPractices from "./pages/early-years/DailyPractices";
 import Today from "./pages/early-years/Today";
-import Activities from "./pages/early-years/Activities";
+import Library from "./pages/early-years/Library";
 import ActivityViewer from "./pages/early-years/ActivityViewer";
 import ProgressPage from "./pages/early-years/Progress";
 import Reading from "./pages/early-years/Reading";
@@ -70,7 +70,7 @@ const App = () => (
                   <Route path="/early-years/planner" element={<Planner />} />
                   <Route path="/early-years/daily-practices" element={<DailyPractices />} />
                   <Route path="/early-years/today" element={<Navigate to="/" replace />} />
-                  <Route path="/early-years/activities" element={<Activities />} />
+                  <Route path="/early-years/activities" element={<Library />} />
                   <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
                   <Route path="/early-years/reading" element={<Reading />} />
                   <Route path="/early-years/progress" element={<ProgressPage />} />

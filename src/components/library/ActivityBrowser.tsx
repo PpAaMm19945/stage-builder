@@ -1,0 +1,189 @@
+import { useState } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useNavigate } from 'react-router-dom';
+import { activities as activitiesApi } from '@/lib/api';
+import { EarlyYearsDomain, DOMAIN_LABELS } from '@/types';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
+import { Card, CardContent } from '@/components/ui/card';
+import { Skeleton } from '@/components/ui/skeleton';
+import { Badge } from '@/components/ui/badge';
+import { Clock, CaretRight, Brain, HandPalm, ChatCircleDots, Heart, Shapes } from '@phosphor-icons/react';
+import { cn } from '@/lib/utils'; // Keep this relative
+
+const domainConfigs: Record<EarlyYearsDomain, { label: string; icon: any; color: string; bgColor: string; borderColor: string }> = {
+    'motor': {
+        label: 'Stewardship & Dominion',
+        icon: HandPalm,
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bgColor: 'bg-emerald-50 dark:bg-emerald-900/10',
+        borderColor: 'border-emerald-200 dark:border-emerald-800'
+    },
+    'language': {
+        label: 'Word & Truth',
+        icon: ChatCircleDots,
+        color: 'text-blue-600 dark:text-blue-400',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/10',
+        borderColor: 'border-blue-200 dark:border-blue-800'
+    },
+    'cognitive': {
+        label: 'Wisdom & Order',
+        icon: Brain,
+        color: 'text-purple-600 dark:text-purple-400',
+        bgColor: 'bg-purple-50 dark:bg-purple-900/10',
+        borderColor: 'border-purple-200 dark:border-purple-800'
+    },
+    'social-emotional': {
+        label: 'Virtue & Sanctification',
+        icon: Heart,
+        color: 'text-rose-600 dark:text-rose-400',
+        bgColor: 'bg-rose-50 dark:bg-rose-900/10',
+        borderColor: 'border-rose-200 dark:border-rose-800'
+    },
+    'pre-academic': {
+        label: 'Foundations & Patterns',
+        icon: Shapes,
+        color: 'text-amber-600 dark:text-amber-400',
+        bgColor: 'bg-amber-50 dark:bg-amber-900/10',
+        borderColor: 'border-amber-200 dark:border-amber-800'
+    }
+};
+
+const DOMAIN_ORDER: EarlyYearsDomain[] = [
+    'motor',
+    'language',
+    'cognitive',
+    'social-emotional',
+    'pre-academic'
+];
+
+interface ApiActivity {
+    id: string;
+    title: string;
+    description: string;
+    domain: EarlyYearsDomain;
+    duration_minutes: number;
+    difficulty: number;
+    materials: string[];
+    instructions: string[];
+    min_age_months: number;
+    max_age_months: number;
+}
+
+export function ActivityBrowser() {
+    const navigate = useNavigate();
+    const { data: activities = [], isLoading } = useQuery({
+        queryKey: ['activities', 'all'],
+        queryFn: () => activitiesApi.list(),
+    });
+
+    if (isLoading) {
+        return <div className="space-y-4">
+            {[1, 2, 3, 4, 5].map(i => (
+                <Skeleton key={i} className="h-16 w-full rounded-lg" />
+            ))}
+        </div>;
+    }
+
+    // Group activities by domain
+    const groupedActivities = activities.reduce((acc, activity: ApiActivity) => {
+        const domain = activity.domain;
+        if (!acc[domain]) acc[domain] = [];
+        acc[domain].push(activity);
+        return acc;
+    }, {} as Record<EarlyYearsDomain, ApiActivity[]>);
+
+    // Sort activities by age within domains
+    Object.keys(groupedActivities).forEach((key) => {
+        const domain = key as EarlyYearsDomain;
+        groupedActivities[domain].sort((a, b) => a.min_age_months - b.min_age_months);
+    });
+
+    return (
+        <div className="space-y-6">
+            <div className="prose prose-sm dark:prose-invert max-w-none">
+                <p className="text-muted-foreground">
+                    Browse our complete collection of developmentally appropriate activities, categorized by domain and ordered by age progression.
+                </p>
+            </div>
+
+            <Accordion type="multiple" defaultValue={['motor']} className="space-y-4">
+                {DOMAIN_ORDER.map((domain) => {
+                    const config = domainConfigs[domain];
+                    const domainActivities = groupedActivities[domain] || [];
+
+                    return (
+                        <AccordionItem
+                            key={domain}
+                            value={domain}
+                            className={cn(
+                                "border rounded-xl overflow-hidden transition-all duration-200",
+                                config.borderColor,
+                                config.bgColor
+                            )}
+                        >
+                            <AccordionTrigger className="px-6 py-4 hover:no-underline hover:bg-black/5 dark:hover:bg-white/5 transition-colors">
+                                <div className="flex items-center gap-4 text-left">
+                                    <div className={cn("p-2 rounded-lg bg-background shadow-sm ring-1 ring-black/5", config.color)}>
+                                        <config.icon className="h-5 w-5" weight="duotone" />
+                                    </div>
+                                    <div className="space-y-1">
+                                        <h3 className="font-semibold text-lg leading-none">{config.label}</h3>
+                                        <p className="text-sm text-muted-foreground font-normal">
+                                            {domainActivities.length} activities
+                                        </p>
+                                    </div>
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent className="px-6 pb-6 pt-2">
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                    {domainActivities.map((activity) => (
+                                        <Card
+                                            key={activity.id}
+                                            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all group bg-background/80 hover:bg-background backdrop-blur-sm"
+                                            onClick={() => navigate(`/early-years/activities/${activity.id}`)}
+                                        >
+                                            <CardContent className="p-4 space-y-3">
+                                                <div className="flex justify-between items-start">
+                                                    <Badge variant="secondary" className="text-[10px] sm:text-xs">
+                                                        {activity.min_age_months}-{activity.max_age_months} mo
+                                                    </Badge>
+                                                    <CaretRight className="h-4 w-4 text-muted-foreground group-hover:text-primary transition-colors" />
+                                                </div>
+
+                                                <div>
+                                                    <h4 className="font-medium text-foreground line-clamp-1 group-hover:text-primary transition-colors">
+                                                        {activity.title}
+                                                    </h4>
+                                                    <p className="text-xs text-muted-foreground line-clamp-2 mt-1">
+                                                        {activity.description}
+                                                    </p>
+                                                </div>
+
+                                                <div className="flex items-center gap-2 text-xs text-muted-foreground pt-2 border-t border-border/50">
+                                                    <Clock className="h-3 w-3" />
+                                                    <span>{activity.duration_minutes} min</span>
+                                                    <span className="text-border">|</span>
+                                                    <span className="capitalize">{activity.difficulty === 1 ? 'New' : activity.difficulty === 2 ? 'Practicing' : 'Mastering'}</span>
+                                                </div>
+                                            </CardContent>
+                                        </Card>
+                                    ))}
+                                    {domainActivities.length === 0 && (
+                                        <div className="col-span-full py-8 text-center text-muted-foreground">
+                                            No activities found in this domain.
+                                        </div>
+                                    )}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    );
+                })}
+            </Accordion>
+        </div>
+    );
+}
