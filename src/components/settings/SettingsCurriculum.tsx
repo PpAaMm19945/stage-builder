@@ -1,8 +1,8 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { BookOpen, Lightning } from '@phosphor-icons/react';
-import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
+import { Lightning } from '@phosphor-icons/react';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
 import { FormationSettings } from '@/components/settings/FormationSettings';
+import { LiturgySettings } from '@/components/liturgy/LiturgySettings';
 
 export function SettingsCurriculum() {
     return (
@@ -11,20 +11,7 @@ export function SettingsCurriculum() {
             <FormationSettings />
 
             {/* Daily Liturgy Settings */}
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <BookOpen className="h-5 w-5" />
-                        Daily Liturgy
-                    </CardTitle>
-                    <CardDescription>
-                        Customize your family's morning time rituals
-                    </CardDescription>
-                </CardHeader>
-                <CardContent>
-                    <DailyLiturgy embedded />
-                </CardContent>
-            </Card>
+            <LiturgySettings />
 
             {/* Learning Accommodations */}
             <Card>
@@ -44,4 +31,3 @@ export function SettingsCurriculum() {
         </div>
     );
 }
-
