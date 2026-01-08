@@ -3,7 +3,7 @@ import { Star, Check } from '@phosphor-icons/react';
 import { feedback } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription } from '@/components/ui/dialog';
 import { toast } from 'sonner';
 
 interface SuccessStoryPromptProps {
@@ -53,6 +53,7 @@ export function SuccessStoryPrompt({
                         <Star weight="fill" className="h-6 w-6 text-yellow-500" />
                         Great job!
                     </DialogTitle>
+                    <DialogDescription className="sr-only">Share your success story about completing this activity or book</DialogDescription>
                 </DialogHeader>
 
                 {!submitted ? (

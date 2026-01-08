@@ -30,6 +30,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Student } from '@/types';
+import { FundingWidget } from '@/components/funding/FundingWidget';
 
 // Simplified primary navigation (stage-agnostic)
 // Simplified primary navigation (stage-agnostic)
@@ -171,6 +172,11 @@ export function AppSidebar() {
             >
               <SignOut className="h-4 w-4" weight="duotone" />
             </button>
+          </div>
+
+          {/* Funding Progress */}
+          <div className="mt-4">
+            <FundingWidget raised={412} goal={500} />
           </div>
         </SidebarFooter>
       </Sidebar>
