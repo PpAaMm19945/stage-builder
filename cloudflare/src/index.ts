@@ -967,7 +967,7 @@ app.get('/api/activities', async (c) => {
   }
 
   query += ' ORDER BY domain, min_age_months LIMIT ?';
-  params.push(parseInt(limit));
+  params.push(parseInt(limit === '50' ? '1000' : limit)); // Default to 1000 if not specified (or default param was 50)
 
   const stmt = c.env.DB.prepare(query);
   const { results } = await stmt.bind(...params).all();

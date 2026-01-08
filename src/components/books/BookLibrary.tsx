@@ -4,6 +4,7 @@ import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
+import { HymnalReader } from '../library/HymnalReader';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     Select,
@@ -19,9 +20,27 @@ interface BookLibraryProps {
     initialStage?: string;
 }
 
+const HYMNAL_BOOK: Book = {
+    id: 'schoolos-hymnal',
+    title: 'Hymns of Grace & Glory',
+    author: 'Various Authors',
+    series: 'Reformed Hymns',
+    minAgeMonths: 0,
+    maxAgeMonths: 120,
+    stage: 'early-years',
+    pageCount: 50,
+    renderFormat: 'image', // Not actually used by HymnalReader
+    coverUrl: 'https://placehold.co/600x800/5e2129/eecfa1?text=HYMNS', // Fallback
+    description: 'A collection of classic hymns for family worship.',
+    tags: ['hymn', 'music', 'worship'],
+    audioUrl: '',
+    readingPrompts: []
+};
+
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
+    const [showHymnal, setShowHymnal] = useState(false);
     const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
 
     // Fetch ALL books without age filtering (user chose "Show all by default")
@@ -33,8 +52,11 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }),
     });
 
+    // Inject Hymnal
+    const displayBooks = [...allBooks, HYMNAL_BOOK];
+
     // Group books by series
-    const booksBySeries = allBooks.reduce((acc, book) => {
+    const booksBySeries = displayBooks.reduce((acc, book) => {
         const series = book.series || 'Other';
         if (!acc[series]) acc[series] = [];
         acc[series].push(book);
@@ -42,6 +64,14 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }, {} as Record<string, Book[]>);
 
     const seriesNames = Object.keys(booksBySeries).sort();
+
+    const handleBookClick = (book: Book) => {
+        if (book.id === 'schoolos-hymnal') {
+            setShowHymnal(true);
+        } else {
+            setSelectedBook(book);
+        }
+    };
 
     if (error) {
         return (
@@ -113,7 +143,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             <BookCard
                                 key={`${book.series}-${book.id}`}
                                 book={book}
-                                onClick={() => setSelectedBook(book)}
+                                onClick={() => handleBookClick(book)}
                             />
                         ))}
                     </div>
@@ -126,6 +156,12 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                 open={!!selectedBook}
                 onOpenChange={(open) => !open && setSelectedBook(null)}
                 childrenIds={children.map(c => c.id)}
+            />
+
+            {/* Hymnal Reader Modal */}
+            <HymnalReader
+                open={showHymnal}
+                onOpenChange={setShowHymnal}
             />
         </div>
     );

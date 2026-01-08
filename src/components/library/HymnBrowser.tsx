@@ -25,7 +25,7 @@ interface Hymn {
     reference: string; // Author/Year
     sequence_number: number;
     metadata?: string;
-    media_url?: string;
+    audio_url?: string;
 }
 
 export function HymnBrowser() {
@@ -94,9 +94,9 @@ export function HymnBrowser() {
                                 </div>
 
                                 {/* Audio Player */}
-                                {selectedHymn.media_url ? (
+                                {selectedHymn.audio_url ? (
                                     <HymnAudioPlayer
-                                        src={selectedHymn.media_url}
+                                        src={selectedHymn.audio_url}
                                         title={selectedHymn.title}
                                         autoPlay={false} // Don't autoplay to avoid sudden noise
                                     />
@@ -115,7 +115,7 @@ export function HymnBrowser() {
                                     Lyrics
                                 </h3>
                                 <div className="whitespace-pre-wrap font-serif text-lg leading-relaxed text-foreground/90 pl-4 border-l-2 border-primary/20">
-                                    {selectedHymn.content}
+                                    {selectedHymn.content.replace(/\\n/g, '\n')}
                                 </div>
                             </div>
                         </div>
