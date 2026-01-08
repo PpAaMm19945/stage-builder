@@ -1431,6 +1431,18 @@ app.get('/api/hymns', async (c) => {
   }
 });
 
+// Get all catechism items
+app.get('/api/catechism', async (c) => {
+  try {
+    const { results } = await c.env.DB.prepare(
+      "SELECT * FROM liturgy_items WHERE type = 'catechism' AND is_active = 1 ORDER BY sequence_number"
+    ).all();
+    return c.json(results);
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to fetch catechism' }, 500);
+  }
+});
+
 // Get unified daily rhythm - composes activities, books, and liturgy
 app.get('/api/family/daily-rhythm', async (c) => {
   try {

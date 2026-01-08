@@ -257,6 +257,11 @@ export const hymns = {
   list: () => apiRequest<any[]>('/api/hymns'),
 };
 
+// Catechism
+export const catechism = {
+  list: () => apiRequest<any[]>('/api/catechism'),
+};
+
 // Overrides
 export const overrides = {
   list: () => apiRequest<any[]>('/api/overrides'),
@@ -475,5 +480,5 @@ export const formation = {
     }>('/api/family/daily-rhythm'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation };
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation };
 export default api;

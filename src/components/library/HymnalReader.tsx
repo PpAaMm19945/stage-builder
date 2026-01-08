@@ -17,16 +17,82 @@ import {
 import { X, BookOpenText } from '@phosphor-icons/react';
 import { useQuery } from '@tanstack/react-query';
 import { hymns as hymnsApi } from '@/lib/api';
+import { useHymnContent } from '@/hooks/useHymnContent';
 
 interface HymnalReaderProps {
     open: boolean;
     onOpenChange: (open: boolean) => void;
 }
 
+function HymnPage({ hymn }: { hymn: any }) {
+    const { data: richContent, isLoading } = useHymnContent(hymn.title);
+
+    // Fallback if rich content fails or is loading
+    const content = richContent || hymn.content.replace(/\\n/g, '\n');
+
+    return (
+        <div className="w-full max-w-md h-full max-h-[80dvh] aspect-[148/210] bg-[#fbfaf8] text-slate-900 p-8 sm:p-12 shadow-xl rounded-sm flex flex-col relative overflow-hidden">
+            {/* Paper texture/corner */}
+            <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-gray-200/50 to-transparent pointer-events-none" />
+
+            {/* Header */}
+            <div className="flex justify-between items-start mb-6 border-b border-double border-slate-300 pb-4">
+                <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Hymn {hymn.sequence_number}</div>
+                <div className="text-xs text-slate-400 font-serif italic max-w-[50%] text-right">{hymn.reference}</div>
+            </div>
+
+            {/* Title */}
+            <h2 className="text-2xl sm:text-3xl font-display font-bold text-center text-slate-900 mb-8 leading-tight">
+                {hymn.title}
+            </h2>
+
+            {/* Lyrics - Static (overflow hidden with scrollbar hidden but scrollable if absolutely necessary, but prefer fitting) */}
+            <div className="flex-1 overflow-y-auto pr-2 scrollbar-none">
+                {richContent ? (
+                    <div
+                        className="hymn-static prose prose-slate max-w-none text-center"
+                        dangerouslySetInnerHTML={{ __html: richContent }}
+                    />
+                ) : (
+                    <div className="whitespace-pre-wrap font-serif text-lg leading-loose text-slate-800 text-center">
+                        {content}
+                    </div>
+                )}
+            </div>
+
+            {/* Styles for the injected HTML to match the book aesthetic */}
+            <style>{`
+                .hymn-static p {
+                     margin-bottom: 1.5em;
+                     font-family: ui-serif, Georgia, Cambria, "Times New Roman", Times, serif;
+                     font-size: 1.125rem; /* text-lg */
+                     line-height: 2; /* leading-loose */
+                     color: #1e293b; /* slate-800 */
+                }
+                .hymn-static .hymn-chorus {
+                    margin-left: 1.5em;
+                    padding-left: 1em;
+                    border-left: 2px solid #cbd5e1; /* slate-300 */
+                    font-style: italic;
+                    color: #475569; /* slate-600 */
+                }
+                .hymn-static .hymn-author {
+                    display: none; /* We show it in header already */
+                }
+             `}</style>
+
+            {/* Footer */}
+            <div className="mt-6 pt-4 border-t border-slate-200 text-center">
+                <p className="text-[10px] text-slate-400 uppercase tracking-widest">Soli Deo Gloria</p>
+            </div>
+        </div>
+    );
+}
+
 export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
-    const [count, setCount] = useState(0);
+    const [count, setCurrentCount] = useState(0);
 
     const { data: hymns = [] } = useQuery({
         queryKey: ['hymns', 'all'],
@@ -36,7 +102,7 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
     useEffect(() => {
         if (!api) return;
 
-        setCount(api.scrollSnapList().length);
+        setCurrentCount(api.scrollSnapList().length);
         setCurrent(api.selectedScrollSnap() + 1);
 
         api.on("select", () => {
@@ -83,35 +149,9 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
                             </CarouselItem>
 
                             {/* Hymn Pages */}
-                            {hymns.map((hymn: any, index: number) => (
+                            {hymns.map((hymn: any) => (
                                 <CarouselItem key={hymn.id} className="flex items-center justify-center h-full">
-                                    <div className="w-full max-w-md h-full max-h-[80dvh] aspect-[148/210] bg-[#fbfaf8] text-slate-900 p-8 sm:p-12 shadow-xl rounded-sm flex flex-col relative overflow-hidden">
-                                        {/* Paper texture/corner */}
-                                        <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-gray-200/50 to-transparent pointer-events-none" />
-
-                                        {/* Header */}
-                                        <div className="flex justify-between items-start mb-6 border-b border-double border-slate-300 pb-4">
-                                            <div className="text-sm font-bold text-slate-500 uppercase tracking-wider">Hymn {hymn.sequence_number}</div>
-                                            <div className="text-xs text-slate-400 font-serif italic max-w-[50%] text-right">{hymn.reference}</div>
-                                        </div>
-
-                                        {/* Title */}
-                                        <h2 className="text-2xl sm:text-3xl font-display font-bold text-center text-slate-900 mb-8 leading-tight">
-                                            {hymn.title}
-                                        </h2>
-
-                                        {/* Lyrics */}
-                                        <div className="flex-1 overflow-y-auto pr-2 scrollbar-hide">
-                                            <div className="whitespace-pre-wrap font-serif text-lg leading-loose text-slate-800 text-center">
-                                                {hymn.content.replace(/\\n/g, '\n')}
-                                            </div>
-                                        </div>
-
-                                        {/* Footer */}
-                                        <div className="mt-6 pt-4 border-t border-slate-200 text-center">
-                                            <p className="text-[10px] text-slate-400 scroll-m-20 uppercase tracking-widest">Soli Deo Gloria</p>
-                                        </div>
-                                    </div>
+                                    <HymnPage hymn={hymn} />
                                 </CarouselItem>
                             ))}
                         </CarouselContent>
