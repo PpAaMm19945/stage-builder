@@ -5,6 +5,7 @@ import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
 import { HymnalReader } from '../library/HymnalReader';
+import { CatechismReader } from '../library/CatechismReader';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     Select,
@@ -37,10 +38,28 @@ const HYMNAL_BOOK: Book = {
     readingPrompts: []
 };
 
+const CATECHISM_BOOK: Book = {
+    id: 'schoolos-catechism',
+    title: 'Westminster Shorter Catechism',
+    author: 'Westminster Assembly',
+    series: 'Theology',
+    minAgeMonths: 48,
+    maxAgeMonths: 120,
+    stage: 'early-years',
+    pageCount: 107,
+    renderFormat: 'image',
+    coverUrl: 'https://placehold.co/600x800/1e293b/e2e8f0?text=CATECHISM',
+    description: 'The standard catechism for family instruction in the reformed faith.',
+    tags: ['theology', 'catechism'],
+    audioUrl: '',
+    readingPrompts: []
+};
+
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [showHymnal, setShowHymnal] = useState(false);
+    const [showCatechism, setShowCatechism] = useState(false);
     const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
 
     // Fetch ALL books without age filtering (user chose "Show all by default")
@@ -52,8 +71,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }),
     });
 
-    // Inject Hymnal
-    const displayBooks = [...allBooks, HYMNAL_BOOK];
+    // Inject Hymnal and Catechism
+    const displayBooks = [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK];
 
     // Group books by series
     const booksBySeries = displayBooks.reduce((acc, book) => {
@@ -68,6 +87,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     const handleBookClick = (book: Book) => {
         if (book.id === 'schoolos-hymnal') {
             setShowHymnal(true);
+        } else if (book.id === 'schoolos-catechism') {
+            setShowCatechism(true);
         } else {
             setSelectedBook(book);
         }
@@ -162,6 +183,12 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             <HymnalReader
                 open={showHymnal}
                 onOpenChange={setShowHymnal}
+            />
+
+            {/* Catechism Reader Modal */}
+            <CatechismReader
+                open={showCatechism}
+                onOpenChange={setShowCatechism}
             />
         </div>
     );
