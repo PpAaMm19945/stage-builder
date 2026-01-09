@@ -160,15 +160,27 @@ export function SchoolOSChat() {
                                 fullResponseBuffer += token;
 
                                 // Primary regex: <ACTION_BLOCK>...</ACTION_BLOCK>
-                                // Fallback regex: ACTION_BLOCK{...} (LLM sometimes forgets angle brackets)
+                                // Fallback 1: ACTION_BLOCK{...} (LLM sometimes forgets angle brackets)
+                                // Fallback 2: <CLARIFY_BLOCK>...</CLARIFY_BLOCK> (LLM sometimes uses wrong tag)
                                 const primaryRegex = /<ACTION_BLOCK>([\s\S]*?)<\/ACTION_BLOCK>/;
                                 const fallbackRegex = /ACTION_BLOCK\s*(\{[\s\S]*?\})/;
+                                const clarifyBlockRegex = /<CLARIFY_BLOCK>([\s\S]*?)<\/CLARIFY_BLOCK>/;
 
                                 let match = fullResponseBuffer.match(primaryRegex);
                                 let matchIndex = match?.index ?? -1;
                                 let jsonContent = match?.[1];
 
-                                // Try fallback if primary didn't match
+                                // Try CLARIFY_BLOCK fallback
+                                if (!match) {
+                                    const clarifyMatch = fullResponseBuffer.match(clarifyBlockRegex);
+                                    if (clarifyMatch) {
+                                        match = clarifyMatch as RegExpMatchArray;
+                                        matchIndex = clarifyMatch.index ?? -1;
+                                        jsonContent = clarifyMatch[1];
+                                    }
+                                }
+
+                                // Try no-brackets fallback
                                 if (!match) {
                                     const fallbackMatch = fullResponseBuffer.match(fallbackRegex);
                                     if (fallbackMatch) {
@@ -194,9 +206,12 @@ export function SchoolOSChat() {
                                 } else {
                                     // Check for partial open tag to hide it from UI
                                     const openTagIndex = fullResponseBuffer.indexOf('<ACTION_BLOCK');
+                                    const clarifyTagIndex = fullResponseBuffer.indexOf('<CLARIFY_BLOCK');
                                     const fallbackTagIndex = fullResponseBuffer.indexOf('ACTION_BLOCK');
-                                    const hideIndex = openTagIndex !== -1 ? openTagIndex : fallbackTagIndex;
-                                    if (hideIndex !== -1) {
+                                    const hideIndex = Math.min(
+                                        ...[openTagIndex, clarifyTagIndex, fallbackTagIndex].filter(i => i !== -1)
+                                    );
+                                    if (hideIndex !== -1 && hideIndex !== Infinity) {
                                         displayText = fullResponseBuffer.substring(0, hideIndex).trim();
                                     }
                                 }

@@ -88,40 +88,29 @@ CRITICAL INSTRUCTIONS FOR DATA:
 ` : ''}
 
 ACTIONS:
-To trigger an action, output a JSON block wrapped EXACTLY like this (including the < and > characters):
-<ACTION_BLOCK>{"type":"rhythm","payload":{"instruction":"Start at 9am"}}</ACTION_BLOCK>
+To trigger ANY action, output a JSON block wrapped EXACTLY like this:
+<ACTION_BLOCK>{"type":"clarify","payload":{...}}</ACTION_BLOCK>
 
-CRITICAL: You MUST include the angle brackets < and > around ACTION_BLOCK. Do NOT write ACTION_BLOCK{ without < >.
+CRITICAL FORMAT RULES:
+- The tag is ALWAYS <ACTION_BLOCK> and </ACTION_BLOCK>
+- NEVER use CLARIFY_BLOCK, RHYTHM_BLOCK, or any other variant
+- ALL action types (clarify, rhythm, accommodation, etc.) use ACTION_BLOCK
 
 SUPPORTED ACTIONS:
-1. type: "accommodation" -> payload: { overrideType: "sensory"|"physical"|"cognitive", description: string, constraints: { require_quiet?: boolean, require_low_mess?: boolean } }
-2. type: "liturgy" -> payload: { setting: string, value: string, label: string }
-3. type: "rhythm" -> payload: { instruction: string, description: string } (e.g. "Start at 9am")
+1. type: "clarify" -> payload: { question: string, options: [{ label: string, value: string }, ...] }
+2. type: "rhythm" -> payload: { instruction: string, description: string }
+3. type: "accommodation" -> payload: { overrideType: "sensory"|"physical"|"cognitive", description: string }
 4. type: "regenerate" -> payload: { balancePreference: "baby_focused"|"mixed"|"older_focused" }
-5. type: "chat_options" -> payload: { options: string[] } (Use this to suggest quick replies like "Regenerate Plan", "Adjust Schedule")
-6. type: "plan_feedback" -> payload: {} (Analyze the current week's plan)
-7. type: "clarify" -> payload: { question: string, options: [{ label: string, value: string }, ...] } (Use when user intent is unclear. Present 2-4 options.)
+5. type: "chat_options" -> payload: { options: string[] }
 
 CLARIFYING BEHAVIOR:
-- When user intent is ambiguous or vague, use the "clarify" action
-- Present 2-4 options that represent different interpretations of what they want
-- Always include a final "Something else" option
-- Example: User says "I need to make changes"
-  -> Output: <ACTION_BLOCK>{"type":"clarify","payload":{"question":"What would you like to change?","options":[{"label":"Change what time school starts","value":"I want to change the start time for school"},{"label":"Change which days we do school","value":"I want to change which days we homeschool"},{"label":"Swap or replace some activities","value":"I want to swap some activities in the plan"},{"label":"Something else (I'll describe)","value":"Let me describe what I need"}]}}</ACTION_BLOCK>
-
-PROACTIVE BEHAVIORS:
-- After a plan is generated/regenerated, ask if parent wants plan analysis
-- When parent asks "Why this activity?", respond conversationally (no separate UI needed)
-- When parent asks about schedule, offer rhythm adjustment
+When the user's request needs more information (like what type of book), use clarify action:
+<ACTION_BLOCK>{"type":"clarify","payload":{"question":"What type of book are you looking for?","options":[{"label":"Picture book","value":"picture_book"},{"label":"Board book","value":"board_book"},{"label":"Something else","value":"other"}]}}</ACTION_BLOCK>
 
 RULES:
-1. If user asks to change schedule, start time, or rhythm with SPECIFIC details: output a rhythm action.
-2. If user request is vague or could mean multiple things: output a clarify action.
-3. If providing search results, summarize them briefly and ask if the user wants to schedule one.
-4. Your text BEFORE the action block must be under 15 words.
-5. Example response for "Start school at 9am":
-   "Adjusting your schedule. <ACTION_BLOCK>{"type":"rhythm","payload":{"instruction":"Start at 9am","description":"Change school start time to 9:00 AM"}}</ACTION_BLOCK>"
-6. If user says "Hi": respond "How can I help with your schedule today?"
+1. For greetings like "Hi": just respond warmly, no action block needed.
+2. For vague requests: use clarify action with <ACTION_BLOCK> tags.
+3. Keep your text BEFORE any action block brief (under 15 words).
 `;
 
         try {
