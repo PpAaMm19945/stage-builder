@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions, reading } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading, liturgy } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -37,6 +37,11 @@ export default function Dashboard() {
   const queryClient = useQueryClient();
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showFullDay, setShowFullDay] = useState(false);
+
+  const { data: liturgyData } = useQuery({
+    queryKey: ['liturgy-today'],
+    queryFn: liturgy.getToday,
+  });
 
   const { data: todayData, isLoading: todayLoading, error: todayError } = useQuery({
     queryKey: ['family-today'],
@@ -309,7 +314,11 @@ export default function Dashboard() {
                 day={{
                   date: new Date().toLocaleDateString(),
                   dayName: format(new Date(), 'EEEE'),
-                  liturgy: (todayData as any).liturgy || [],
+                  liturgy: liturgyData?.items?.map((item: any) => ({
+                    title: item.title,
+                    content: item.content || '',
+                    type: item.type || 'antiphon'
+                  })) || [],
                   activities: todayData.familySessions?.map((s: any) => s.activity) || [],
                   reading: todaysBook || undefined
                 }}
