@@ -217,19 +217,21 @@ This phase models:
 ### What Gets Added
 
 #### Pace Controls
-- [ ] Parent-gated access to higher stages
-- [ ] Subject-specific advancement
-- [ ] Clear record of why access was granted
+- [x] Parent-gated access to higher stages (PaceSettings component)
+- [x] Subject-specific advancement (per-domain stage overrides)
+- [x] Clear record of why access was granted (reason field in pace_settings)
 
 #### Passion Signals
-- [ ] Time spent tracking
-- [ ] Voluntary engagement patterns
-- [ ] Quality of work indicators
-- [ ] Parent observations integrated
+- [x] "Loved it!" tracking in completion modal
+- [x] Passion signals stored in database
+- [x] Planner boosts passion-aligned activities
+- [ ] Time spent tracking (future)
+- [ ] Quality of work indicators (future)
 
 **AI may summarize signals, but never decide.**
 
 #### Curriculum Compression
+- [x] Learning Focus setting (Balanced vs Follow Interests)
 - [ ] Core remains intact
 - [ ] Non-core adapts to passion
 - [ ] History, writing, and math reframed through interests
@@ -335,7 +337,7 @@ If it weakens it, the feature waits.
 | Phase 1: Faithful Minimum | ✅ Complete | Core features, content gaps |
 | Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav, daily rhythm ✅ |
 | Phase 3: Graduated Independence | 🔄 In Progress | Coach Chat, AI Explanations |
-| Phase 4: Pace Flexibility | ⬜ Not Started | Advancement controls |
+| Phase 4: Pace Flexibility | 🔄 In Progress | Pace settings, passion signals, learning focus |
 | Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |
 | Phase 6: Maturity | ⬜ Not Started | Full independence |
 

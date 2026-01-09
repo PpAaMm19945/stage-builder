@@ -47,11 +47,18 @@ export class AiRouter {
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: message }
-                ],
-                response_format: { type: 'json_object' }
+                ]
+                // Don't use response_format as it's not reliably supported
             });
 
-            const result = JSON.parse(response.response || response);
+            // Extract JSON from response (may have markdown code blocks or extra text)
+            let jsonStr = response.response || '';
+            const jsonMatch = jsonStr.match(/```json\s*([\s\S]*?)\s*```/) ||
+                jsonStr.match(/```\s*([\s\S]*?)\s*```/) ||
+                jsonStr.match(/(\{[\s\S]*\})/);
+            jsonStr = jsonMatch?.[1] || jsonStr;
+
+            const result = JSON.parse(jsonStr.trim());
             return {
                 intent: result.intent || 'GENERAL_CHAT',
                 searchQuery: result.searchQuery,

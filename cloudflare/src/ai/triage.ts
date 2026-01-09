@@ -49,11 +49,18 @@ RULES:
                 messages: [
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: `Message: "${message}"` }
-                ],
-                response_format: { type: 'json_object' }
+                ]
+                // Don't use response_format as it's not reliably supported
             });
 
-            const result = JSON.parse(response.response || response);
+            // Extract JSON from response (may have markdown code blocks or extra text)
+            let jsonStr = response.response || '';
+            const jsonMatch = jsonStr.match(/```json\s*([\s\S]*?)\s*```/) ||
+                jsonStr.match(/```\s*([\s\S]*?)\s*```/) ||
+                jsonStr.match(/(\{[\s\S]*\})/);
+            jsonStr = jsonMatch?.[1] || jsonStr;
+
+            const result = JSON.parse(jsonStr.trim());
 
             // Safety fallback for malformed JSON or missing fields
             return {
@@ -66,12 +73,13 @@ RULES:
 
         } catch (error) {
             console.error('Triage Error:', error);
-            // Fail safe: Treat as ambiguous to force clarification rather than crashing
+            // Fail safe: Treat as VALID to not block the user if Triage fails
+            // Better UX: let it through to the main AI rather than forcing clarification
             return {
-                status: 'AMBIGUOUS',
-                reasoning: 'System error during triage',
-                confidence: 0,
-                clarificationQuestion: 'I had a momentary glitch. Could you try asking that again?'
+                status: 'VALID',
+                reasoning: 'Triage bypassed due to error',
+                confidence: 0.5,
+                clarificationQuestion: undefined
             };
         }
     }

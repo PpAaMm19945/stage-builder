@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { Badge } from '@/components/ui/badge';
 import { observations, activityCompletions } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
 import { FamilySession, MasteryLevel, getChildRole } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
@@ -36,6 +37,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     const [showStoryPrompt, setShowStoryPrompt] = useState(false);
     const [showPortfolioModal, setShowPortfolioModal] = useState(false);
     const [selectedStudentForPortfolio, setSelectedStudentForPortfolio] = useState<string | null>(null);
+    const [passionSignals, setPassionSignals] = useState<Record<string, boolean>>({});
 
     // Initial effect to handle simple completion (Daily Practice) immediately or showing modal
     // Actually, react component shouldn't have side effects in render.
@@ -100,12 +102,12 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
                 // If no rating selected:
                 if (!rating) {
-                     if (role === 'Observer') {
-                         rating = 'emerging'; // Default for observer? Or maybe we don't record mastery for observer?
-                         // For now, let's record emerging so it counts as done.
-                     } else {
-                         rating = 'developing';
-                     }
+                    if (role === 'Observer') {
+                        rating = 'emerging'; // Default for observer? Or maybe we don't record mastery for observer?
+                        // For now, let's record emerging so it counts as done.
+                    } else {
+                        rating = 'developing';
+                    }
                 }
 
                 return observations.create({
@@ -119,6 +121,28 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
             await Promise.all(promises);
 
+            // Send passion signals for children who "loved it"
+            const passionPromises = session.childTiers
+                .filter(child => passionSignals[child.childId])
+                .map(child =>
+                    fetch('/api/passion-signals', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            Authorization: `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            studentId: child.childId,
+                            domain: session.activity.domain,
+                            activityId: session.activity.id
+                        })
+                    }).catch(err => console.error('Passion signal failed:', err))
+                );
+
+            if (passionPromises.length > 0) {
+                await Promise.all(passionPromises);
+            }
+
             toast({
                 title: "Great job!",
                 description: "Activity marked as complete for the whole family.",
@@ -128,6 +152,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
             setShowStoryPrompt(true);
             setRatings({});
             setNotes('');
+            setPassionSignals({});
         } catch (error) {
             toast({
                 title: "Error",
@@ -183,24 +208,24 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
     // Special view for Daily Practice (Simple completion)
     if (isDailyPractice) {
-         return (
+        return (
             <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
                 <DialogContent className="max-w-sm">
                     <DialogHeader>
                         <DialogTitle>Lovely!</DialogTitle>
                         <DialogDescription>
-                           Glad you enjoyed this moment. Add a note if you like?
+                            Glad you enjoyed this moment. Add a note if you like?
                         </DialogDescription>
                     </DialogHeader>
                     <div className="py-2">
                         <Label htmlFor="notes" className="sr-only">Notes</Label>
-                         <Textarea
-                                id="notes"
-                                placeholder="Any sweet moments to remember..."
-                                value={notes}
-                                onChange={(e) => setNotes(e.target.value)}
-                                className="resize-none"
-                            />
+                        <Textarea
+                            id="notes"
+                            placeholder="Any sweet moments to remember..."
+                            value={notes}
+                            onChange={(e) => setNotes(e.target.value)}
+                            className="resize-none"
+                        />
                     </div>
                     <DialogFooter>
                         <Button variant="ghost" onClick={onClose}>Cancel</Button>
@@ -210,7 +235,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                     </DialogFooter>
                 </DialogContent>
             </Dialog>
-         )
+        )
     }
 
     const onAllDone = () => {
@@ -259,6 +284,17 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                                             <p className="text-xs text-muted-foreground mt-0.5">
                                                 Goal: {child.expectation}
                                             </p>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <label className="text-xs flex items-center gap-1 cursor-pointer select-none text-muted-foreground hover:text-primary transition-colors">
+                                                <input
+                                                    type="checkbox"
+                                                    className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
+                                                    checked={!!passionSignals[child.childId]}
+                                                    onChange={(e) => setPassionSignals(prev => ({ ...prev, [child.childId]: e.target.checked }))}
+                                                />
+                                                Loved it!
+                                            </label>
                                         </div>
                                     </div>
 

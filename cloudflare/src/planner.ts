@@ -242,7 +242,9 @@ function scoreActivity(
     domainCounts: Record<string, number>,
     overrides: Override[],
     history: ActivityHistorySummary,
-    balancePreference: string = 'mixed'
+    balancePreference: string = 'mixed',
+    passionDomains: Set<string> = new Set(),
+    learningFocus: string = 'balanced'
 ): number {
     let score = 50; // Base score
 
@@ -256,6 +258,14 @@ function scoreActivity(
         score += 20; // Boost underrepresented domain
     } else if (currentRatio > targetWeight * 1.5) {
         score -= 15; // Penalize overrepresented domain
+    }
+
+    // PHASE 4: Passion signal boost
+    // If child has shown interest in this domain, boost the score
+    if (passionDomains.has(activity.domain)) {
+        // Boost based on learning focus setting
+        const passionBoost = learningFocus === 'interests' ? 30 : 15;
+        score += passionBoost;
     }
 
     // Unified history check
@@ -355,6 +365,26 @@ export async function generateWeeklyPlan(
     // Prefetch all history at once to avoid N+1 queries
     const historyMap = await prefetchActivityHistory(db, parentId);
 
+    // PHASE 4: Fetch passion signals for all children
+    const childIds = children.map(c => c.id);
+    const passionDomains = new Set<string>();
+    if (childIds.length > 0) {
+        const placeholders = childIds.map(() => '?').join(',');
+        const { results: passionSignals } = await db.prepare(`
+            SELECT DISTINCT domain FROM passion_signals 
+            WHERE student_id IN (${placeholders}) 
+            AND created_at > datetime('now', '-30 days')
+        `).bind(...childIds).all();
+
+        passionSignals.forEach((ps: any) => passionDomains.add(ps.domain));
+    }
+
+    // PHASE 4: Get learning focus preference
+    const prefs = await db.prepare(
+        'SELECT learning_focus FROM formation_preferences WHERE parent_id = ?'
+    ).bind(parentId).first() as any;
+    const learningFocus = prefs?.learning_focus || 'balanced';
+
     // For each available day
     for (const day of planningDays) {
         let dayMinutesRemaining = timeModel.minutes_per_day;
@@ -368,15 +398,15 @@ export async function generateWeeklyPlan(
             const candidates = [];
 
             for (const a of suitableActivities) {
-                 if (usedActivityIds.has(a.id)) continue;
-                 if (a.duration_minutes > dayMinutesRemaining) continue;
+                if (usedActivityIds.has(a.id)) continue;
+                if (a.duration_minutes > dayMinutesRemaining) continue;
 
-                 // Get pre-calculated history
-                 const history = historyMap.get(a.id) || { lastCompleted: null, masteryLevel: null, completionCount: 0 };
+                // Get pre-calculated history
+                const history = historyMap.get(a.id) || { lastCompleted: null, masteryLevel: null, completionCount: 0 };
 
-                 // Sync call now
-                 const score = scoreActivity(a, domainCounts, overrides, history, balancePreference);
-                 candidates.push({ activity: a, score });
+                // Sync call now - include passion domains and learning focus
+                const score = scoreActivity(a, domainCounts, overrides, history, balancePreference, passionDomains, learningFocus);
+                candidates.push({ activity: a, score });
             }
 
             candidates.sort((a, b) => b.score - a.score);
@@ -423,19 +453,19 @@ export async function generateWeeklyPlan(
 
 // Get the Monday of the current week (Smart Week Start)
 export function getSmartWeekStart(targetDate?: string): string {
-  const date = targetDate ? new Date(targetDate) : new Date();
-  const day = date.getDay();
+    const date = targetDate ? new Date(targetDate) : new Date();
+    const day = date.getDay();
 
-  // If Saturday (6) or Sunday (0), target NEXT Monday
-  if (day === 0 || day === 6) {
-    const daysUntilMonday = day === 0 ? 1 : 2;
-    date.setDate(date.getDate() + daysUntilMonday);
-  } else {
-    // Mon-Fri: target THIS Monday
-    date.setDate(date.getDate() - (day - 1));
-  }
+    // If Saturday (6) or Sunday (0), target NEXT Monday
+    if (day === 0 || day === 6) {
+        const daysUntilMonday = day === 0 ? 1 : 2;
+        date.setDate(date.getDate() + daysUntilMonday);
+    } else {
+        // Mon-Fri: target THIS Monday
+        date.setDate(date.getDate() - (day - 1));
+    }
 
-  return date.toISOString().split('T')[0];
+    return date.toISOString().split('T')[0];
 }
 
 // Backward compatibility wrapper for imports that might expect getCurrentWeekStart

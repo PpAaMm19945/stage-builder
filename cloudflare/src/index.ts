@@ -1399,6 +1399,19 @@ app.post('/api/family/preferences', async (c) => {
     const { activitiesEnabled, readingEnabled, liturgyEnabled, learningFocus, focusDomains } = body;
 
     // Upsert preferences
+    // For upsert to work correctly with COALESCE on partial updates, we must pass NULL for undefined fields
+    // Defaulting to 1 in the bind params overwrites existing preferences during partial updates.
+
+    // Check if record exists first to determine defaults for NEW records
+    const existing = await c.env.DB.prepare('SELECT 1 FROM formation_preferences WHERE parent_id = ?').bind(user.id).first();
+    const isNew = !existing;
+
+    // Defaults only apply if it's a NEW record and the field is missing
+    const getVal = (val: any) => {
+      if (val !== undefined) return val ? 1 : 0;
+      return isNew ? 1 : null; // Default to 1 for new, null (preserve) for existing
+    };
+
     await c.env.DB.prepare(`
       INSERT INTO formation_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, learning_focus, focus_domains, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
@@ -1412,16 +1425,131 @@ app.post('/api/family/preferences', async (c) => {
     `).bind(
       generateId('fpref'),
       user.id,
-      activitiesEnabled !== undefined ? (activitiesEnabled ? 1 : 0) : 1,
-      readingEnabled !== undefined ? (readingEnabled ? 1 : 0) : 1,
-      liturgyEnabled !== undefined ? (liturgyEnabled ? 1 : 0) : 1,
-      learningFocus || null,
+      getVal(activitiesEnabled),
+      getVal(readingEnabled),
+      getVal(liturgyEnabled),
+      learningFocus || (isNew ? 'balanced' : null),
       focusDomains ? JSON.stringify(focusDomains) : null
     ).run();
 
     return c.json({ success: true });
   } catch (error: any) {
     console.error('Formation preferences update error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// ============ PACE SETTINGS ROUTES (Phase 4) ============
+
+// Get pace settings for a specific child
+app.get('/api/family/pace/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+
+    // Verify ownership
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM pace_settings WHERE student_id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).all();
+
+    return c.json(results);
+  } catch (error: any) {
+    console.error('Pace settings get error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// Create or update a pace setting
+app.post('/api/family/pace', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, domain, stageOverride, tierOverride, reason } = await c.req.json();
+
+    if (!studentId || !domain) {
+      return c.json({ error: 'studentId and domain are required' }, 400);
+    }
+
+    // Verify ownership
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    // Upsert pace setting
+    await c.env.DB.prepare(`
+      INSERT INTO pace_settings (id, parent_id, student_id, domain, stage_override, tier_override, reason, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(student_id, domain) DO UPDATE SET
+        stage_override = excluded.stage_override,
+        tier_override = excluded.tier_override,
+        reason = excluded.reason,
+        updated_at = datetime('now')
+    `).bind(
+      generateId('pace'),
+      user.id,
+      studentId,
+      domain,
+      stageOverride || null,
+      tierOverride || null,
+      reason || null
+    ).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Pace settings update error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// ============ PASSION SIGNALS ROUTES (Phase 4) ============
+
+// Record a passion signal (when child "loved" an activity)
+app.post('/api/passion-signals', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, domain, activityId, notes } = await c.req.json();
+
+    if (!studentId || !domain) {
+      return c.json({ error: 'studentId and domain are required' }, 400);
+    }
+
+    // Verify ownership
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    await c.env.DB.prepare(`
+      INSERT INTO passion_signals (id, student_id, parent_id, domain, signal_type, intensity, notes, created_at)
+      VALUES (?, ?, ?, ?, 'loved_activity', 5, ?, datetime('now'))
+    `).bind(
+      generateId('passion'),
+      studentId,
+      user.id,
+      domain,
+      notes || `Loved activity ${activityId || ''}`
+    ).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    console.error('Passion signal error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message || 'Internal Server Error' }, status);
   }

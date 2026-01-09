@@ -6,6 +6,19 @@ import { searchBooks, searchActivities } from './ai/tools';
 export class AiCoach {
     constructor(private env: Env) { }
 
+    // Helper to create stream-compatible response from plain text
+    private createTextStream(text: string): ReadableStream {
+        const encoder = new TextEncoder();
+        return new ReadableStream({
+            start(controller) {
+                // SSE format: data: {text}\n\n
+                controller.enqueue(encoder.encode(`data: ${JSON.stringify({ response: text })}\n\n`));
+                controller.enqueue(encoder.encode('data: [DONE]\n\n'));
+                controller.close();
+            }
+        });
+    }
+
     async chat(message: string, context: any) {
         // Step 0: Triage & Guardrails
         const triage = new AiTriage(this.env);
@@ -16,8 +29,7 @@ export class AiCoach {
         // Handle INVALID (Block immediately)
         if (triageResult.status === 'INVALID') {
             const blockedResponse = `I couldn't process that request. ${triageResult.reasoning || "It seems unclear."} Could you rephrase?`;
-            // Return as a stream-like format effectively
-            return triageResult.reasoning || "Request rejected by triage.";
+            return this.createTextStream(blockedResponse);
         }
 
         // Handle AMBIGUOUS (Ask for clarification)
@@ -37,7 +49,7 @@ export class AiCoach {
                 }
             })}</ACTION_BLOCK>`;
 
-            return `${question} ${actionBlock}`;
+            return this.createTextStream(`${question} ${actionBlock}`);
         }
 
         // Step 1: Routing (Intent Classification)
