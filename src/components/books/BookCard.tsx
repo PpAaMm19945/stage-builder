@@ -14,7 +14,11 @@ interface BookCardProps {
 export function BookCard({ book, onClick }: BookCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
-    const coverUrl = books.getCoverUrl(book.series, book.id);
+
+    // Prefer external cover URL if present, otherwise construct from series/id
+    const coverUrl = (book.coverUrl && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')))
+        ? book.coverUrl
+        : books.getCoverUrl(book.series, book.id);
 
     // Format age range for display
     const formatAgeRange = (minMonths: number, maxMonths: number) => {

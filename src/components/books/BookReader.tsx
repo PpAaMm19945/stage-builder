@@ -158,11 +158,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     if (!book) return null;
 
     const isMarkdown = book.renderFormat === 'markdown' || book.renderFormat === 'hybrid';
+    const isPdf = book.renderFormat === 'pdf';
     const totalPages = isMarkdown ? parsedPages.length : imagePages.length;
 
-    // If markdown loaded but no pages parsed yet, show nothing or loading
-    // But we might want to render the Carousel with 0 items initially?
-    // Carousel might break with 0 items.
+    // Use external cover if available
+    const coverUrl = (book.coverUrl && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')))
+        ? book.coverUrl
+        : books.getCoverUrl(book.series, book.id);
 
     return (
         <>
@@ -172,12 +174,15 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                     <div className="flex items-center justify-between p-2 sm:p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
                         <div>
                             <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
-                            <DialogDescription className="text-gray-400 text-xs">
-                                Page {current} of {count || (validImagePages.length > 0 ? validImagePages.length + 2 : totalPages + 2)}
-                            </DialogDescription>
+                            {/* Hide page count for PDF since we don't know it */}
+                            {!isPdf && (
+                                <DialogDescription className="text-gray-400 text-xs">
+                                    Page {current} of {count || (validImagePages.length > 0 ? validImagePages.length + 2 : totalPages + 2)}
+                                </DialogDescription>
+                            )}
                         </div>
                         <div className="flex items-center gap-2">
-                            {book.readingPrompts && book.readingPrompts.length > 0 && (
+                            {book.readingPrompts && book.readingPrompts.length > 0 && !isPdf && (
                                 <Button
                                     variant="ghost"
                                     size="icon"
@@ -187,7 +192,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     <BookOpenText className="w-6 h-6" />
                                 </Button>
                             )}
-                            <PDFDownloadButton book={book} pages={parsedPages} />
+                            {!isPdf && <PDFDownloadButton book={book} pages={parsedPages} />}
                             <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
                                 <X className="w-6 h-6" />
                             </Button>
@@ -195,117 +200,145 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                     </div>
 
                     {/* Reader Area */}
-                    <div className="flex-1 flex items-center justify-center relative overflow-hidden">
-                        <Carousel setApi={setApi} className="w-full max-w-5xl h-full flex items-center">
-                            <CarouselContent>
-                                {/* Cover Slide (Always Show Image Cover) */}
-                                <CarouselItem className="flex items-center justify-center h-full">
-                                    <div className="relative w-full h-full max-h-[80dvh] sm:max-h-[70vh] max-w-3xl flex items-center justify-center">
-                                        <img
-                                            src={books.getCoverUrl(book.series, book.id)}
-                                            alt="Cover"
-                                            className="w-full h-full object-contain drop-shadow-2xl"
-                                            onError={(e) => {
-                                                // Fallback to placeholder service if R2 missing
-                                                e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
-                                            }}
-                                        />
-                                    </div>
-                                </CarouselItem>
-
-                                {/* Pages - Markdown Mode */}
-                                {isMarkdown && parsedPages.map((content, index) => (
-                                    <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                        <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
-                                            <MarkdownBookSlide
-                                                content={content}
-                                                styleProfile={book.styleProfile}
-                                                pageIndex={index}
-                                                book={book}
+                    <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
+                        {isPdf ? (
+                            <div className="w-full h-full flex flex-col items-center">
+                                {/* Use iframe for PDF display - most modern browsers support this */}
+                                <iframe
+                                    src={book.pdfUrl}
+                                    className="w-full h-full bg-white"
+                                    title={book.title}
+                                />
+                                {/* Quick finish button for PDFs since we don't track page turns */}
+                                <div className="absolute bottom-6 right-6">
+                                    <Button
+                                        size="lg"
+                                        className="shadow-xl"
+                                        onClick={() => {
+                                            if (needsChildSelection) {
+                                                setShowChildSelection(true);
+                                            } else {
+                                                completeMutation.mutate(undefined);
+                                            }
+                                        }}
+                                        disabled={completeMutation.isPending}
+                                    >
+                                        {completeMutation.isPending ? "Saving..." : "Finish Book"}
+                                    </Button>
+                                </div>
+                            </div>
+                        ) : (
+                            <Carousel setApi={setApi} className="w-full max-w-5xl h-full flex items-center">
+                                <CarouselContent>
+                                    {/* Cover Slide (Always Show Image Cover) */}
+                                    <CarouselItem className="flex items-center justify-center h-full">
+                                        <div className="relative w-full h-full max-h-[80dvh] sm:max-h-[70vh] max-w-3xl flex items-center justify-center">
+                                            <img
+                                                src={coverUrl}
+                                                alt="Cover"
+                                                className="w-full h-full object-contain drop-shadow-2xl"
+                                                onError={(e) => {
+                                                    // Fallback to placeholder service if R2 missing
+                                                    e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
+                                                }}
                                             />
                                         </div>
                                     </CarouselItem>
-                                ))}
 
-                                {/* Pages - Image Mode */}
-                                {!isMarkdown && imagePages.map((pageUrl, index) => {
-                                    // Skip failed images entirely
-                                    if (failedImages.has(index)) return null;
-
-                                    const isLoaded = loadedImages.has(index);
-
-                                    return (
+                                    {/* Pages - Markdown Mode */}
+                                    {isMarkdown && parsedPages.map((content, index) => (
                                         <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                            <div className="relative w-full h-full flex items-center justify-center p-4">
-                                                {/* Loading skeleton */}
-                                                {!isLoaded && (
-                                                    <div className="absolute inset-4 flex items-center justify-center">
-                                                        <Skeleton className="w-full max-w-2xl aspect-[4/3] rounded-lg bg-white/10" />
-                                                    </div>
-                                                )}
-
-                                                <img
-                                                    src={pageUrl}
-                                                    alt={`Page ${index + 1}`}
-                                                    className={cn(
-                                                        "max-w-full max-h-[80dvh] sm:max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
-                                                        !isLoaded && "opacity-0"
-                                                    )}
-                                                    loading={index < 3 ? "eager" : "lazy"}
-                                                    onLoad={() => handleImageLoad(index)}
-                                                    onError={() => handleImageError(index)}
+                                            <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
+                                                <MarkdownBookSlide
+                                                    content={content}
+                                                    styleProfile={book.styleProfile}
+                                                    pageIndex={index}
+                                                    book={book}
                                                 />
-
-                                                {/* Overlay Prompt */}
-                                                {showPrompts && book.readingPrompts?.find(p => p.page === index + 1) && (
-                                                    <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
-                                                        <p className="text-sm font-medium leading-relaxed">
-                                                            💡 {book.readingPrompts.find(p => p.page === index + 1)?.prompt}
-                                                        </p>
-                                                    </div>
-                                                )}
                                             </div>
                                         </CarouselItem>
-                                    );
-                                })}
+                                    ))}
 
-                                {/* End Slide */}
-                                <CarouselItem className="flex items-center justify-center h-full">
-                                    <div className="w-full h-full flex flex-col items-center justify-center text-center text-white space-y-6">
-                                        <h3 className="text-3xl font-serif italic">The End</h3>
-                                        <p className="text-gray-400">Great reading!</p>
-                                        <Button
-                                            size="lg"
-                                            onClick={() => {
-                                                if (needsChildSelection) {
-                                                    setShowChildSelection(true);
-                                                } else {
-                                                    completeMutation.mutate(undefined);
-                                                }
-                                            }}
-                                            disabled={completeMutation.isPending}
-                                        >
-                                            {completeMutation.isPending ? "Saving..." : "Finish & Log Book"}
-                                        </Button>
-                                    </div>
-                                </CarouselItem>
-                            </CarouselContent>
+                                    {/* Pages - Image Mode */}
+                                    {!isMarkdown && imagePages.map((pageUrl, index) => {
+                                        // Skip failed images entirely
+                                        if (failedImages.has(index)) return null;
 
-                            {/* Tap zones for navigation */}
-                            <div
-                                className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
-                                onClick={() => api?.scrollPrev()}
-                                aria-label="Previous page"
-                            />
-                            <div
-                                className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
-                                onClick={() => api?.scrollNext()}
-                                aria-label="Next page"
-                            />
+                                        const isLoaded = loadedImages.has(index);
 
-                            <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
-                            <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
-                        </Carousel>
+                                        return (
+                                            <CarouselItem key={index} className="flex items-center justify-center h-full">
+                                                <div className="relative w-full h-full flex items-center justify-center p-4">
+                                                    {/* Loading skeleton */}
+                                                    {!isLoaded && (
+                                                        <div className="absolute inset-4 flex items-center justify-center">
+                                                            <Skeleton className="w-full max-w-2xl aspect-[4/3] rounded-lg bg-white/10" />
+                                                        </div>
+                                                    )}
+
+                                                    <img
+                                                        src={pageUrl}
+                                                        alt={`Page ${index + 1}`}
+                                                        className={cn(
+                                                            "max-w-full max-h-[80dvh] sm:max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
+                                                            !isLoaded && "opacity-0"
+                                                        )}
+                                                        loading={index < 3 ? "eager" : "lazy"}
+                                                        onLoad={() => handleImageLoad(index)}
+                                                        onError={() => handleImageError(index)}
+                                                    />
+
+                                                    {/* Overlay Prompt */}
+                                                    {showPrompts && book.readingPrompts?.find(p => p.page === index + 1) && (
+                                                        <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
+                                                            <p className="text-sm font-medium leading-relaxed">
+                                                                💡 {book.readingPrompts.find(p => p.page === index + 1)?.prompt}
+                                                            </p>
+                                                        </div>
+                                                    )}
+                                                </div>
+                                            </CarouselItem>
+                                        );
+                                    })}
+
+                                    {/* End Slide */}
+                                    <CarouselItem className="flex items-center justify-center h-full">
+                                        <div className="w-full h-full flex flex-col items-center justify-center text-center text-white space-y-6">
+                                            <h3 className="text-3xl font-serif italic">The End</h3>
+                                            <p className="text-gray-400">Great reading!</p>
+                                            <Button
+                                                size="lg"
+                                                onClick={() => {
+                                                    if (needsChildSelection) {
+                                                        setShowChildSelection(true);
+                                                    } else {
+                                                        completeMutation.mutate(undefined);
+                                                    }
+                                                }}
+                                                disabled={completeMutation.isPending}
+                                            >
+                                                {completeMutation.isPending ? "Saving..." : "Finish & Log Book"}
+                                            </Button>
+                                        </div>
+                                    </CarouselItem>
+                                </CarouselContent>
+
+                                {/* Tap zones for navigation */}
+                                <div
+                                    className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                    onClick={() => api?.scrollPrev()}
+                                    aria-label="Previous page"
+                                />
+                                <div
+                                    className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                    onClick={() => api?.scrollNext()}
+                                    aria-label="Next page"
+                                />
+
+                                <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                            </Carousel>
+                        )}
                     </div>
                 </DialogContent>
             </Dialog>
