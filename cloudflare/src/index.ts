@@ -76,6 +76,18 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// Security helper: Constant-time comparison to prevent timing attacks
+function safeCompare(a: string | undefined | null, b: string | undefined | null): boolean {
+  if (!a || !b || a.length !== b.length) {
+    return false;
+  }
+  let result = 0;
+  for (let i = 0; i < a.length; i++) {
+    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
+  }
+  return result === 0;
+}
+
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // Monitor Dashboard
@@ -87,7 +99,8 @@ app.get('/', async (c) => {
     return c.text('Admin secret not configured', 500);
   }
 
-  if (key !== secret) {
+  // Use constant-time comparison
+  if (!safeCompare(key, secret)) {
     return c.html(`
       <html>
         <head><title>Unauthorized</title><style>body{background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}</style></head>
@@ -544,8 +557,9 @@ function generateId(prefix: string): string {
 // Access: GET /auth/dev-bypass?email=test@example.com&name=Test%20User
 // This creates or finds a user and returns a JWT token
 app.get('/auth/dev-bypass', async (c) => {
-  // Only allow in development
-  if (c.env.ENVIRONMENT === 'production') {
+  // Only allow if explicitly in development environment (FAIL SECURE)
+  // If ENVIRONMENT is missing or 'production', this will block.
+  if (c.env.ENVIRONMENT !== 'development') {
     return c.json({ error: 'Dev bypass not available in production' }, 403);
   }
 
