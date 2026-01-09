@@ -33,7 +33,8 @@ if (!AUTH_TOKEN) {
 const mockContext = {
     children: [
         { name: 'Grace', age_in_months: 30 },
-        { name: 'Samuel', age_in_months: 60 }
+        { name: 'Samuel', age_in_months: 60 },
+        { name: 'David', age_in_months: 84 } // 7 years old (matches Cyprian book)
     ],
     user: { id: 'test-user-123', name: 'Test Parent' }
 };

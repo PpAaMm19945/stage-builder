@@ -15,6 +15,7 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { X, BookOpenText } from '@phosphor-icons/react';
+import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useQuery } from '@tanstack/react-query';
 import { hymns as hymnsApi } from '@/lib/api';
 import { useHymnContent } from '@/hooks/useHymnContent';
@@ -123,9 +124,22 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
                             Hymn {current - 1 > 0 ? current - 1 : 'Cover'} of {hymns.length}
                         </DialogDescription>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
-                        <X className="w-6 h-6" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <PDFDownloadButton
+                            book={{
+                                id: 'hymnal',
+                                title: 'The SchoolOS Hymnal',
+                                series: 'reformed-hymns',
+                                styleProfile: 'hymn-book',
+                                pageCount: hymns.length + 1,
+                                coverUrl: '',
+                                renderFormat: 'hymn-book'
+                            }}
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
+                            <X className="w-6 h-6" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Reader Area */}

@@ -20,6 +20,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
     const [coverImage, setCoverImage] = useState<string>('');
     const [loadingData, setLoadingData] = useState(false);
     const [ready, setReady] = useState(false);
+    const [parsedPages, setParsedPages] = useState<string[]>(pages || []);
 
     // Helper to convert URL to base64
     const imageUrlToBase64 = async (url: string): Promise<string> => {
@@ -50,9 +51,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
             }
             // Check for Catechism
             else if (book.series === 'catechism' || book.title.toLowerCase().includes('catechism')) {
-                const series = book.series || 'catechism'; // Assuming series is 'catechism' if not defined
-                // Or we might need to look up based on ID.
-                // For now, let's use book.series if available, else 'catechism'
+                const series = book.series || 'catechism';
                 const data = await fetchCatechism(series);
                 setCatechismData(data);
             }
@@ -70,8 +69,34 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
 
                 // Convert to base64
                 const base64Images = await Promise.all(urls.map(imageUrlToBase64));
-                // Filter out any failed conversions if necessary, or keep empty strings (checking in Document)
                 setImageUrls(base64Images.filter(img => !!img));
+            }
+            // Check for JSON-embedded content (like African Men of Faith series)
+            else if (!book.renderFormat || book.renderFormat === 'json-embedded') {
+                try {
+                    // Fetch the book's metadata which contains embedded pages
+                    const metadataUrl = books.getPageUrl(book.series, book.id, 0).replace('/pages/0.', '/metadata.json').replace(/\.[^.]+$/, '');
+                    // Actually, let's use a cleaner URL pattern
+                    const cleanMetadataUrl = `https://r2.schoolos.io/books/${book.series}/${book.id}/metadata.json`;
+                    const res = await fetch(cleanMetadataUrl);
+                    if (res.ok) {
+                        const metadata = await res.json();
+                        if (metadata.pages && Array.isArray(metadata.pages)) {
+                            // Extract text content from each page
+                            const extractedPages = metadata.pages
+                                .filter((p: any) => p.text || p.type === 'content')
+                                .map((p: any) => {
+                                    if (Array.isArray(p.text)) return p.text.join('\n\n');
+                                    return p.text || '';
+                                })
+                                .filter((text: string) => text.trim().length > 0);
+
+                            setParsedPages(extractedPages);
+                        }
+                    }
+                } catch (e) {
+                    console.error('Failed to load embedded book content', e);
+                }
             }
             // Markdown pages are passed via props if available.
 
@@ -109,7 +134,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                     catechism={catechismData}
                     imageUrls={imageUrls}
                     coverImage={coverImage}
-                    pages={pages}
+                    pages={parsedPages}
                 />
             }
             fileName={`${book.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}

@@ -314,11 +314,7 @@ export default function Dashboard() {
                 day={{
                   date: new Date().toLocaleDateString(),
                   dayName: format(new Date(), 'EEEE'),
-                  liturgy: liturgyData?.items?.map((item: any) => ({
-                    title: item.title,
-                    content: item.content || '',
-                    type: item.type || 'antiphon'
-                  })) || [],
+                  liturgy: liturgyData?.items || [],
                   activities: todayData.familySessions?.map((s: any) => s.activity) || [],
                   reading: todaysBook || undefined
                 }}

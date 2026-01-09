@@ -15,6 +15,7 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { X, BookBookmark } from '@phosphor-icons/react';
+import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useQuery } from '@tanstack/react-query';
 import { catechism as catechismApi } from '@/lib/api';
 
@@ -54,9 +55,21 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
                             Question {current - 1 > 0 ? current - 1 : 'Cover'} of {items.length}
                         </DialogDescription>
                     </div>
-                    <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
-                        <X className="w-6 h-6" />
-                    </Button>
+                    <div className="flex items-center gap-2">
+                        <PDFDownloadButton
+                            book={{
+                                id: 'catechism',
+                                title: 'Westminster Shorter Catechism',
+                                series: 'catechism',
+                                pageCount: items.length + 1,
+                                coverUrl: '',
+                                renderFormat: 'catechism'
+                            }}
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
+                            <X className="w-6 h-6" />
+                        </Button>
+                    </div>
                 </div>
 
                 {/* Reader Area */}
