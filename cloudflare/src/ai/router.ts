@@ -30,16 +30,18 @@ export class AiRouter {
         OUTPUT JSON:
         {
           "intent": "SEARCH_BOOKS" | "SEARCH_ACTIVITIES" | "ADJUST_SCHEDULE" | "GENERAL_CHAT",
-          "searchQuery": "keywords for search (if search intent)",
+          "searchQuery": "space-separated keywords (stemmed/synonyms)",
           "filters": {
-            "age": number | null (infer from context or request if applicable),
+            "age": number | null,
             "domain": string | null
           }
         }
         
         examples:
-        - "I need a story about lions" -> { "intent": "SEARCH_BOOKS", "searchQuery": "lion" }
+        - "I need a story about lions" -> { "intent": "SEARCH_BOOKS", "searchQuery": "lion lions big cat" }
         - "Activity for fine motor skills" -> { "intent": "SEARCH_ACTIVITIES", "searchQuery": "fine motor" }
+        - "Book about bravery" -> { "intent": "SEARCH_BOOKS", "searchQuery": "brave bravery courage" }
+        - "Help me with feelings" -> { "intent": "SEARCH_BOOKS", "searchQuery": "feeling emotion sad happy" }
         `;
 
         try {

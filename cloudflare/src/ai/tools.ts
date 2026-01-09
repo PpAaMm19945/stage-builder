@@ -12,24 +12,35 @@ export interface SearchResult {
 export async function searchBooks(db: D1Database, query: string, ageMonths?: number): Promise<SearchResult[]> {
     console.log(`Searching books for: "${query}" (Age: ${ageMonths})`);
 
-    // MVP: Simple SQL LIKE search
-    // In future: Use Vectorize for semantic search
-    const sanitizedQuery = `%${query.replace(/[^a-zA-Z0-9 ]/g, '')}%`;
+    // 1. Tokenize query (split by space)
+    const keywords = query.split(/\s+/).map(k => k.replace(/[^a-zA-Z0-9]/g, '')).filter(k => k.length > 2);
+
+    if (keywords.length === 0) return []; // No valid keywords
+
+    // 2. Build dynamic SQL for multiple keywords (OR logic)
+    // We want to find books that match ANY of the keywords
+    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR domain LIKE ?)`).join(' OR ');
 
     let sql = `
         SELECT id, title, description, min_age_months, max_age_months, domain 
         FROM books 
         WHERE is_active = 1 
-        AND (title LIKE ? OR description LIKE ? OR domain LIKE ?)
+        AND (${conditions})
     `;
-    const params: any[] = [sanitizedQuery, sanitizedQuery, sanitizedQuery];
+
+    // 3. Prepare params: key1, key1, key1, key2, key2, key2...
+    const params: any[] = [];
+    keywords.forEach(k => {
+        const like = `%${k}%`;
+        params.push(like, like, like);
+    });
 
     if (ageMonths) {
         sql += ` AND ? >= min_age_months AND ? <= max_age_months`;
         params.push(ageMonths, ageMonths);
     }
 
-    sql += ` LIMIT 5`;
+    sql += ` LIMIT 7`; // Increased limit slightly since we're fuzzy matching
 
     const { results } = await db.prepare(sql).bind(...params).all();
 
@@ -38,7 +49,7 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
         id: b.id,
         title: b.title,
         description: b.description,
-        relevance: 1, // Placeholder for SQL
+        relevance: 1,
         metadata: {
             ageRange: `${b.min_age_months}-${b.max_age_months}m`,
             domain: b.domain
@@ -49,17 +60,26 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
 export async function searchActivities(db: D1Database, query: string): Promise<SearchResult[]> {
     console.log(`Searching activities for: "${query}"`);
 
-    const sanitizedQuery = `%${query.replace(/[^a-zA-Z0-9 ]/g, '')}%`;
+    const keywords = query.split(/\s+/).map(k => k.replace(/[^a-zA-Z0-9]/g, '')).filter(k => k.length > 2);
+    if (keywords.length === 0) return [];
+
+    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR domain LIKE ?)`).join(' OR ');
 
     const sql = `
         SELECT id, title, description, domain, materials 
         FROM activities 
         WHERE is_active = 1 
-        AND (title LIKE ? OR description LIKE ? OR domain LIKE ?)
-        LIMIT 5
+        AND (${conditions})
+        LIMIT 7
     `;
 
-    const { results } = await db.prepare(sql).bind(sanitizedQuery, sanitizedQuery, sanitizedQuery).all();
+    const params: any[] = [];
+    keywords.forEach(k => {
+        const like = `%${k}%`;
+        params.push(like, like, like);
+    });
+
+    const { results } = await db.prepare(sql).bind(...params).all();
 
     return results.map((a: any) => ({
         type: 'activity',
@@ -69,7 +89,9 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
         relevance: 1,
         metadata: {
             domain: a.domain,
-            materials: a.materials // Provide materials context
+            materials: a.materials
         }
     }));
 }
+
+
