@@ -112,8 +112,8 @@ export function LiturgySettings() {
             </div>
           </div>
           <Switch
-            checked={settings.catechismEnabled}
-            onCheckedChange={(checked) => updateSetting('catechismEnabled', checked)}
+            checked={settings.catechism_enabled}
+            onCheckedChange={(checked) => updateSetting('catechism_enabled', checked)}
           />
         </div>
 
@@ -130,8 +130,8 @@ export function LiturgySettings() {
             </div>
           </div>
           <Switch
-            checked={settings.hymnEnabled}
-            onCheckedChange={(checked) => updateSetting('hymnEnabled', checked)}
+            checked={settings.hymnal_enabled}
+            onCheckedChange={(checked) => updateSetting('hymnal_enabled', checked)}
           />
         </div>
 
@@ -148,8 +148,8 @@ export function LiturgySettings() {
             </div>
           </div>
           <Switch
-            checked={settings.scriptureEnabled}
-            onCheckedChange={(checked) => updateSetting('scriptureEnabled', checked)}
+            checked={settings.scripture_enabled}
+            onCheckedChange={(checked) => updateSetting('scripture_enabled', checked)}
           />
         </div>
       </CardContent>

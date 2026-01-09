@@ -1370,14 +1370,18 @@ app.get('/api/family/preferences', async (c) => {
       return c.json({
         activitiesEnabled: true,
         readingEnabled: true,
-        liturgyEnabled: true
+        liturgyEnabled: true,
+        learningFocus: 'balanced',
+        focusDomains: []
       });
     }
 
     return c.json({
       activitiesEnabled: !!(prefs as any).activities_enabled,
       readingEnabled: !!(prefs as any).reading_enabled,
-      liturgyEnabled: !!(prefs as any).liturgy_enabled
+      liturgyEnabled: !!(prefs as any).liturgy_enabled,
+      learningFocus: (prefs as any).learning_focus || 'balanced',
+      focusDomains: JSON.parse((prefs as any).focus_domains || '[]')
     });
   } catch (error: any) {
     console.error('Formation preferences get error:', error);
@@ -1392,23 +1396,27 @@ app.post('/api/family/preferences', async (c) => {
     const user = requireAuth(c);
     const body = await c.req.json();
 
-    const { activitiesEnabled, readingEnabled, liturgyEnabled } = body;
+    const { activitiesEnabled, readingEnabled, liturgyEnabled, learningFocus, focusDomains } = body;
 
     // Upsert preferences
     await c.env.DB.prepare(`
-      INSERT INTO formation_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, updated_at)
-      VALUES (?, ?, ?, ?, ?, datetime('now'))
+      INSERT INTO formation_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, learning_focus, focus_domains, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(parent_id) DO UPDATE SET 
         activities_enabled = COALESCE(excluded.activities_enabled, activities_enabled),
         reading_enabled = COALESCE(excluded.reading_enabled, reading_enabled),
         liturgy_enabled = COALESCE(excluded.liturgy_enabled, liturgy_enabled),
+        learning_focus = COALESCE(excluded.learning_focus, learning_focus),
+        focus_domains = COALESCE(excluded.focus_domains, focus_domains),
         updated_at = datetime('now')
     `).bind(
       generateId('fpref'),
       user.id,
       activitiesEnabled !== undefined ? (activitiesEnabled ? 1 : 0) : 1,
       readingEnabled !== undefined ? (readingEnabled ? 1 : 0) : 1,
-      liturgyEnabled !== undefined ? (liturgyEnabled ? 1 : 0) : 1
+      liturgyEnabled !== undefined ? (liturgyEnabled ? 1 : 0) : 1,
+      learningFocus || null,
+      focusDomains ? JSON.stringify(focusDomains) : null
     ).run();
 
     return c.json({ success: true });
@@ -4387,6 +4395,102 @@ RULES:
 - Stick to helping understand the content, not evaluating the child
 
 You are a servant tool helping the child learn, not a teacher or authority figure.`;
+
+// ============ PHASE 4: PACE FLEXIBILITY ============
+
+// Get pace settings for a student
+app.get('/api/family/pace/:studentId', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const studentId = c.req.param('studentId');
+
+    const { results } = await c.env.DB.prepare(
+      'SELECT * FROM pace_settings WHERE student_id = ?'
+    ).bind(studentId).all();
+
+    return c.json(results.map((r: any) => ({
+      id: r.id,
+      parentId: r.parent_id,
+      studentId: r.student_id,
+      domain: r.domain,
+      stageOverride: r.stage_override,
+      tierOverride: r.tier_override,
+      reason: r.reason,
+      updatedAt: r.updated_at
+    })));
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Update pace setting
+app.post('/api/family/pace', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, domain, stageOverride, tierOverride, reason } = await c.req.json();
+
+    if (!studentId || !domain) {
+      return c.json({ error: 'studentId and domain are required' }, 400);
+    }
+
+    // Verify student ownership
+    const student = await c.env.DB.prepare(
+      'SELECT id FROM students WHERE id = ? AND parent_id = ?'
+    ).bind(studentId, user.id).first();
+
+    if (!student) {
+      return c.json({ error: 'Student not found' }, 404);
+    }
+
+    const id = generateId('pace');
+
+    // Upsert
+    await c.env.DB.prepare(`
+      INSERT INTO pace_settings (id, parent_id, student_id, domain, stage_override, tier_override, reason, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
+      ON CONFLICT(student_id, domain) DO UPDATE SET
+        stage_override = excluded.stage_override,
+        tier_override = excluded.tier_override,
+        reason = excluded.reason,
+        updated_at = datetime('now')
+    `).bind(
+      id, user.id, studentId, domain,
+      stageOverride || null,
+      tierOverride || null,
+      reason || null
+    ).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Log passion signal
+app.post('/api/family/passion', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, domain, signalType, intensity, notes } = await c.req.json();
+
+    if (!studentId || !domain || !signalType) {
+      return c.json({ error: 'Required fields missing' }, 400);
+    }
+
+    const id = generateId('pass');
+
+    await c.env.DB.prepare(`
+      INSERT INTO passion_signals (id, student_id, parent_id, domain, signal_type, intensity, notes)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).bind(id, studentId, user.id, domain, signalType, intensity || 3, notes || null).run();
+
+    return c.json({ success: true, id });
+  } catch (error: any) {
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
 
 // Get independence settings for a student
 app.get('/api/independence-settings/:studentId', async (c) => {

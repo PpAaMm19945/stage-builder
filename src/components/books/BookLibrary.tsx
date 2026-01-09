@@ -28,13 +28,13 @@ const HYMNAL_BOOK: Book = {
     series: 'Reformed Hymns',
     minAgeMonths: 0,
     maxAgeMonths: 120,
-    stage: 'early-years',
+    learningStage: 'early-years',
+    domain: 'language',
     pageCount: 50,
     renderFormat: 'image', // Not actually used by HymnalReader
     coverUrl: 'https://placehold.co/600x800/5e2129/eecfa1?text=HYMNS', // Fallback
     description: 'A collection of classic hymns for family worship.',
-    tags: ['hymn', 'music', 'worship'],
-    audioUrl: '',
+    topics: ['hymn', 'music', 'worship'],
     readingPrompts: []
 };
 
@@ -45,13 +45,13 @@ const CATECHISM_BOOK: Book = {
     series: 'Theology',
     minAgeMonths: 48,
     maxAgeMonths: 120,
-    stage: 'early-years',
+    learningStage: 'early-years',
+    domain: 'language',
     pageCount: 107,
     renderFormat: 'image',
     coverUrl: 'https://placehold.co/600x800/1e293b/e2e8f0?text=CATECHISM',
     description: 'The standard catechism for family instruction in the reformed faith.',
-    tags: ['theology', 'catechism'],
-    audioUrl: '',
+    topics: ['theology', 'catechism'],
     readingPrompts: []
 };
 
