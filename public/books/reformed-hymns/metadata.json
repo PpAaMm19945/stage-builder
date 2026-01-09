@@ -13,24 +13,49 @@
       "title": "Hymns 1-10"
     },
     {
-        "filepath": "02_hymns.md",
-        "chapterNumber": 2,
-        "title": "Hymns 11-20"
+      "filepath": "02_hymns.md",
+      "chapterNumber": 2,
+      "title": "Hymns 11-20"
     },
     {
-        "filepath": "03_hymns.md",
-        "chapterNumber": 3,
-        "title": "Hymns 21-30"
+      "filepath": "03_hymns.md",
+      "chapterNumber": 3,
+      "title": "Hymns 21-30"
     },
     {
-        "filepath": "04_hymns.md",
-        "chapterNumber": 4,
-        "title": "Hymns 31-40"
+      "filepath": "04_hymns.md",
+      "chapterNumber": 4,
+      "title": "Hymns 31-40"
     },
     {
-        "filepath": "05_hymns.md",
-        "chapterNumber": 5,
-        "title": "Hymns 41-50"
+      "filepath": "05_hymns.md",
+      "chapterNumber": 5,
+      "title": "Hymns 41-50"
+    },
+    {
+      "filepath": "06_hymns.md",
+      "chapterNumber": 6,
+      "title": "Hymns 51-60"
+    },
+    {
+      "filepath": "07_hymns.md",
+      "chapterNumber": 7,
+      "title": "Hymns 61-70"
+    },
+    {
+      "filepath": "08_hymns.md",
+      "chapterNumber": 8,
+      "title": "Hymns 71-80"
+    },
+    {
+      "filepath": "09_hymns.md",
+      "chapterNumber": 9,
+      "title": "Hymns 81-90"
+    },
+    {
+      "filepath": "10_hymns.md",
+      "chapterNumber": 10,
+      "title": "Hymns 91-100"
     }
   ]
 }
