@@ -111,12 +111,11 @@ export function WeekStrip({
                     <button
                         key={day.dateStr}
                         onClick={() => onDaySelect(day.date)}
-                        disabled={day.isPastDay}
                         className={cn(
-                            'flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all',
+                            'flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all cursor-pointer',
                             'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30',
                             day.isSelected && 'bg-primary/10 ring-1 ring-primary/20',
-                            day.isPastDay && 'opacity-75 cursor-default'
+                            day.isPastDay && 'opacity-80'
                         )}
                     >
                         {/* Day name */}
