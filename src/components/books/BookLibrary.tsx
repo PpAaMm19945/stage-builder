@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
@@ -72,17 +72,25 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     });
 
     // Inject Hymnal and Catechism
-    const displayBooks = [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK];
+    const displayBooks = useMemo(
+        () => [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK],
+        [allBooks]
+    );
 
     // Group books by series
-    const booksBySeries = displayBooks.reduce((acc, book) => {
-        const series = book.series || 'Other';
-        if (!acc[series]) acc[series] = [];
-        acc[series].push(book);
-        return acc;
-    }, {} as Record<string, Book[]>);
+    const booksBySeries = useMemo(() => {
+        return displayBooks.reduce((acc, book) => {
+            const series = book.series || 'Other';
+            if (!acc[series]) acc[series] = [];
+            acc[series].push(book);
+            return acc;
+        }, {} as Record<string, Book[]>);
+    }, [displayBooks]);
 
-    const seriesNames = Object.keys(booksBySeries).sort();
+    const seriesNames = useMemo(
+        () => Object.keys(booksBySeries).sort(),
+        [booksBySeries]
+    );
 
     const handleBookClick = (book: Book) => {
         if (book.id === 'schoolos-hymnal') {
