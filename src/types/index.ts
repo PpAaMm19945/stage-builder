@@ -245,7 +245,8 @@ export interface Book {
   coverUrl?: string;
   upvoteCount?: number;
   commentCount?: number;
-  renderFormat?: 'image' | 'markdown' | 'hybrid';
+  renderFormat?: 'image' | 'markdown' | 'hybrid' | 'pdf';
+  pdfUrl?: string; // External URL for PDF content
   contentPath?: string;  // Path to content.md if markdown/hybrid
   styleProfile?: string; // CSS class for styling (e.g., "hymn-book")
   topics?: string[];
