@@ -129,11 +129,23 @@ export const family = {
       body: JSON.stringify({ materials }),
     }),
 
-  swapActivity: (activityId: string) =>
+  swapActivity: (data: { activityId: string }) =>
     apiRequest<{ session: any }>('/api/family/swap', {
       method: 'POST',
-      body: JSON.stringify({ activityId }),
+      body: JSON.stringify(data),
     }),
+
+  swapAndPersist: (data: { oldActivityId: string | null; newActivityId: string; day: string; weekStart: string }) =>
+    apiRequest<{ success: boolean; newActivity: any }>('/api/family/swap-persist', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getDay: (date: string) =>
+    apiRequest<FamilyTodayResponse>(`/api/family/day/${date}`),
+
+  getWeekSummary: (weekStart: string) =>
+    apiRequest<{ days: Record<string, { completed: number; total: number; domains: string[] }> }>(`/api/family/week-summary?weekStart=${weekStart}`),
 
   getTomorrowPreview: () => apiRequest<any>('/api/family/tomorrow-preview'),
 

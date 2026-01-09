@@ -19,7 +19,8 @@ import {
     CheckCircle,
     Circle,
     CaretRight,
-    HandsPraying
+    HandsPraying,
+    ArrowsClockwise
 } from '@phosphor-icons/react';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
@@ -38,9 +39,10 @@ interface DailyRhythmProps {
     items?: RhythmItem[];
     onComplete?: (item: RhythmItem) => void;
     onBookClick?: () => void;
+    onSwap?: (item: RhythmItem) => void;
 }
 
-export function DailyRhythm({ items = [], onComplete, onBookClick }: DailyRhythmProps) {
+export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: DailyRhythmProps) {
     const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
 
     const timelineItems = items.length > 0 ? items : [];
@@ -89,6 +91,13 @@ export function DailyRhythm({ items = [], onComplete, onBookClick }: DailyRhythm
         }
     }
 
+    const handleSwap = (e: React.MouseEvent, item: RhythmItem) => {
+        e.stopPropagation();
+        if (onSwap && item.type === 'activity' && item.status !== 'completed') {
+            onSwap(item);
+        }
+    }
+
     return (
         <div className="space-y-4 relative">
             <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border/50 -z-10" />
@@ -129,7 +138,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick }: DailyRhythm
                         "flex-1 p-4 hover:shadow-md transition-all border-l-4",
                         item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
                     )}>
-                         {item.status === 'completed' && (
+                        {item.status === 'completed' && (
                             <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
                                 <CheckCircle weight="fill" className="h-5 w-5" />
                             </div>
@@ -146,7 +155,21 @@ export function DailyRhythm({ items = [], onComplete, onBookClick }: DailyRhythm
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
                             </div>
-                            <CaretRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                            <div className="flex items-center gap-1">
+                                {/* Swap button for activities */}
+                                {onSwap && item.type === 'activity' && item.status !== 'completed' && (
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                        onClick={(e) => handleSwap(e, item)}
+                                        title="Swap activity"
+                                    >
+                                        <ArrowsClockwise className="h-4 w-4" />
+                                    </Button>
+                                )}
+                                <CaretRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                            </div>
                         </div>
                     </Card>
                 </div>

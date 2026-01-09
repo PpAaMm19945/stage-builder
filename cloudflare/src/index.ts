@@ -1354,6 +1354,298 @@ app.get('/api/family/today', async (c) => {
   }
 });
 
+// Get activities for a specific date (for day navigation on dashboard)
+app.get('/api/family/day/:date', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const dateParam = c.req.param('date'); // yyyy-MM-dd format
+
+    // Validate date format
+    const targetDate = new Date(dateParam);
+    if (isNaN(targetDate.getTime())) {
+      return c.json({ error: 'Invalid date format. Use yyyy-MM-dd' }, 400);
+    }
+
+    // Get all children
+    const { results: children } = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+    ).bind(user.id).all();
+
+    if (children.length === 0) {
+      return c.json({
+        date: dateParam,
+        children: [],
+        familySessions: [],
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
+      });
+    }
+
+    // Get day of week for the target date
+    const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][targetDate.getDay()];
+
+    // Check if this is an available day
+    const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+      .bind(user.id).first();
+    const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+
+    if (!availableDays.includes(dayOfWeek)) {
+      return c.json({
+        date: dateParam,
+        children,
+        restDay: true,
+        message: "This is a rest day!",
+        familySessions: [],
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
+      });
+    }
+
+    // Get the week start for the target date
+    const weekStart = getSmartWeekStart(dateParam);
+    const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStart).first();
+
+    if (!plan) {
+      return c.json({
+        date: dateParam,
+        children,
+        needsPlan: true,
+        message: "No plan exists for this week.",
+        familySessions: [],
+        materials: [],
+        totalDuration: 0,
+        coreKitCoverage: 0
+      });
+    }
+
+    // Get activities for the target day
+    const planData = JSON.parse((plan as any).plan_json);
+    const daySlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
+
+    const activityIds = daySlots.map((s: any) => s.activityId);
+    let familySessions: any[] = [];
+
+    if (activityIds.length > 0) {
+      const placeholders = activityIds.map(() => '?').join(',');
+      const { results: activities } = await c.env.DB.prepare(`
+        SELECT * FROM activities WHERE id IN (${placeholders})
+      `).bind(...activityIds).all();
+
+      const activityMap = new Map(activities.map((a: any) => [a.id, a]));
+
+      familySessions = daySlots.map((slot: any) => {
+        const activity: any = activityMap.get(slot.activityId);
+        if (!activity) return null;
+
+        const tiers = JSON.parse(activity.tiered_expectations || '[]');
+        const childTiers = children.map((child: any) => {
+          const age = child.age_in_months;
+          let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+          if (!tier) {
+            if (age < tiers[0]?.age_min) tier = tiers[0];
+            else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+          }
+          return {
+            childId: child.id,
+            childName: child.name,
+            tier: tier?.tier || 'Standard',
+            expectation: tier?.expectation || 'Participate with support',
+            childAge: age
+          };
+        });
+
+        return {
+          activity: {
+            ...activity,
+            materials: JSON.parse(activity.materials || '[]'),
+            instructions: JSON.parse(activity.instructions || '[]'),
+            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          },
+          childTiers,
+          reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
+          timeSlot: slot.timeSlot,
+          day: slot.day
+        };
+      }).filter(Boolean);
+    }
+
+    // Get completions for this day
+    const { results: completions } = await c.env.DB.prepare(`
+      SELECT activity_id FROM activity_completions 
+      WHERE parent_id = ? AND date(completed_at) = ?
+    `).bind(user.id, dateParam).all();
+
+    const completedIds = new Set(completions.map((c: any) => c.activity_id));
+
+    // Mark completed sessions
+    familySessions = familySessions.map((session: any) => ({
+      ...session,
+      isCompleted: completedIds.has(session.activity.id)
+    }));
+
+    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
+
+    return c.json({
+      date: dateParam,
+      children,
+      familySessions,
+      materials: [],
+      totalDuration,
+      coreKitCoverage: 0
+    });
+  } catch (error: any) {
+    console.error('Family day error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// Get week summary - completion stats for each day (for WeekStrip component)
+app.get('/api/family/week-summary', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const weekStartParam = c.req.query('weekStart') || getSmartWeekStart();
+
+    // Get the weekly plan
+    const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStartParam).first();
+
+    if (!plan) {
+      return c.json({ days: {} });
+    }
+
+    const planData = JSON.parse((plan as any).plan_json);
+    const slots = planData.slots;
+
+    // Group slots by day
+    const daySlots: Record<string, any[]> = {};
+    for (const slot of slots) {
+      if (!daySlots[slot.day]) daySlots[slot.day] = [];
+      daySlots[slot.day].push(slot);
+    }
+
+    // Get all completions for this week
+    const weekEnd = new Date(weekStartParam);
+    weekEnd.setDate(weekEnd.getDate() + 6);
+    const weekEndStr = weekEnd.toISOString().split('T')[0];
+
+    const { results: completions } = await c.env.DB.prepare(`
+      SELECT activity_id, date(completed_at) as completed_date 
+      FROM activity_completions 
+      WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
+    `).bind(user.id, weekStartParam, weekEndStr).all();
+
+    const completedByDay: Record<string, Set<string>> = {};
+    for (const comp of completions) {
+      const compDate = new Date((comp as any).completed_date);
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][compDate.getDay()];
+      if (!completedByDay[dayName]) completedByDay[dayName] = new Set();
+      completedByDay[dayName].add((comp as any).activity_id);
+    }
+
+    // Build response
+    const days: Record<string, { completed: number; total: number; domains: string[] }> = {};
+    const weekStartDate = new Date(weekStartParam);
+
+    for (let i = 0; i < 5; i++) {
+      const dayDate = new Date(weekStartDate);
+      dayDate.setDate(weekStartDate.getDate() + i);
+      const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][dayDate.getDay()];
+      const dateStr = dayDate.toISOString().split('T')[0];
+
+      const slotsForDay = daySlots[dayName] || [];
+      const completedSet = completedByDay[dayName] || new Set();
+
+      const completedCount = slotsForDay.filter((s: any) => completedSet.has(s.activityId)).length;
+      const domains = [...new Set(slotsForDay.map((s: any) => s.domain))];
+
+      days[dateStr] = {
+        completed: completedCount,
+        total: slotsForDay.length,
+        domains
+      };
+    }
+
+    return c.json({ days });
+  } catch (error: any) {
+    console.error('Week summary error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
+// Persist an activity swap to the weekly plan
+app.post('/api/family/swap-persist', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { oldActivityId, newActivityId, day, weekStart } = await c.req.json();
+
+    if (!newActivityId || !day || !weekStart) {
+      return c.json({ error: 'newActivityId, day, and weekStart are required' }, 400);
+    }
+
+    // Get the current plan
+    const plan = await c.env.DB.prepare('SELECT id, plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+      .bind(user.id, weekStart).first();
+
+    if (!plan) {
+      return c.json({ error: 'No plan found for this week' }, 404);
+    }
+
+    const planData = JSON.parse((plan as any).plan_json);
+
+    // Find and update the slot
+    let updated = false;
+    for (const slot of planData.slots) {
+      if (slot.day === day && slot.activityId === oldActivityId) {
+        // Fetch new activity details
+        const newActivity = await c.env.DB.prepare('SELECT * FROM activities WHERE id = ?')
+          .bind(newActivityId).first();
+
+        if (!newActivity) {
+          return c.json({ error: 'New activity not found' }, 404);
+        }
+
+        slot.activityId = newActivityId;
+        slot.activityTitle = (newActivity as any).title;
+        slot.domain = (newActivity as any).domain;
+        slot.duration = (newActivity as any).duration_minutes;
+        slot.reasoning = `Manually swapped by parent.`;
+        updated = true;
+        break;
+      }
+    }
+
+    if (!updated) {
+      return c.json({ error: 'Could not find the activity to swap' }, 404);
+    }
+
+    // Save the updated plan
+    await c.env.DB.prepare('UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?')
+      .bind(JSON.stringify(planData), (plan as any).id).run();
+
+    // Get the new activity for response
+    const newActivity = await c.env.DB.prepare('SELECT * FROM activities WHERE id = ?')
+      .bind(newActivityId).first();
+
+    return c.json({
+      success: true,
+      newActivity: {
+        ...newActivity,
+        materials: JSON.parse((newActivity as any)?.materials || '[]'),
+        instructions: JSON.parse((newActivity as any)?.instructions || '[]'),
+      }
+    });
+  } catch (error: any) {
+    console.error('Swap persist error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message || 'Internal Server Error' }, status);
+  }
+});
+
 // ============ FORMATION PREFERENCES ROUTES ============
 
 // Get formation preferences (defaults to all enabled if not set)

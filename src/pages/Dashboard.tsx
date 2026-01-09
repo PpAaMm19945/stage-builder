@@ -1,11 +1,11 @@
-import { useState } from 'react';
+import { useState, useMemo } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { family, books, weeklyPlan, activityCompletions, reading, liturgy } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
-import { format } from 'date-fns';
+import { format, startOfDay, isSameDay } from 'date-fns';
 import {
   CircleNotch,
   WarningCircle,
@@ -17,38 +17,82 @@ import {
 } from '@phosphor-icons/react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { UpNextCard } from '@/components/dashboard/UpNextCard';
+import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
 import { toast } from 'sonner';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
-import { TomorrowPreview } from '@/components/planning/TomorrowPreview';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
+import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
 import { MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Info, Lightning, Gear } from '@phosphor-icons/react';
+import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { BookReader } from '@/components/books/BookReader';
 import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { DailyPlanDocument } from '@/components/pdf/documents';
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from '@/components/ui/dialog';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { Label } from '@/components/ui/label';
+import { UsersThree, Crown } from '@phosphor-icons/react';
 
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
+
+  // State for day navigation
+  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
   const [showFullDay, setShowFullDay] = useState(false);
+
+  // State for regenerate dialog
+  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
+  const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
+
+  // State for swap sheet
+  const [swapActivity, setSwapActivity] = useState<{ id: string; title: string } | null>(null);
+
+  const today = startOfDay(new Date());
+  const weekStart = getWeekStart(today);
+  const weekStartStr = format(weekStart, 'yyyy-MM-dd');
+  const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const isToday = isSameDay(selectedDate, today);
 
   const { data: liturgyData } = useQuery({
     queryKey: ['liturgy-today'],
     queryFn: liturgy.getToday,
   });
 
-  const { data: todayData, isLoading: todayLoading, error: todayError } = useQuery({
-    queryKey: ['family-today'],
-    queryFn: family.getToday,
+  // Fetch day data - use getToday for today, getDay for other days
+  const { data: dayData, isLoading: dayLoading, error: dayError } = useQuery({
+    queryKey: ['family-day', selectedDateStr],
+    queryFn: () => isToday ? family.getToday() : family.getDay(selectedDateStr),
   });
 
-  const youngestChild = todayData?.children ? [...todayData.children].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0] : null;
+  // Fetch week summary for the week strip
+  const { data: weekSummary } = useQuery({
+    queryKey: ['family-week-summary', weekStartStr],
+    queryFn: () => family.getWeekSummary(weekStartStr),
+  });
+
+  // Fetch children for regenerate dialog
+  const { data: childrenData } = useQuery({
+    queryKey: ['students'],
+    queryFn: () => family.getToday().then(d => d.children),
+    enabled: isBalanceDialogOpen,
+  });
+
+  const childAges = childrenData?.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
+
+  const youngestChild = dayData?.children ? [...dayData.children].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0] : null;
 
   const { data: recommendedBooks } = useQuery({
     queryKey: ['todays-book', youngestChild?.ageInMonths],
@@ -56,74 +100,79 @@ export default function Dashboard() {
     enabled: !!youngestChild,
   });
 
-  // Fetch reading history to exclude recently read books
   const { data: readingHistory } = useQuery({
     queryKey: ['reading-history-recent'],
-    queryFn: () => reading.history(30), // Last 30 sessions
+    queryFn: () => reading.history(30),
     enabled: !!recommendedBooks && recommendedBooks.length > 0,
   });
 
-  // Smart book selection: exclude recently read & use date-based rotation
-  const todaysBook = (() => {
+  // Smart book selection
+  const todaysBook = useMemo(() => {
     if (!recommendedBooks || recommendedBooks.length === 0) return null;
-
-    // Get IDs of recently read books
-    const recentlyReadIds = new Set(
-      (readingHistory || []).map((s: any) => s.book_id)
-    );
-
-    // Filter out recently read books
+    const recentlyReadIds = new Set((readingHistory || []).map((s: any) => s.book_id));
     const unreadBooks = recommendedBooks.filter(
       book => !recentlyReadIds.has(book.id) && !recentlyReadIds.has(`${book.series}/${book.id}`)
     );
-
-    // Use unread books if available, otherwise fall back to all books
     const pool = unreadBooks.length > 0 ? unreadBooks : recommendedBooks;
-
-    // Prioritize recommendation score if we have children context
     if (youngestChild) {
-      // Sort pool by recommendation score
       const ranked = getRecommendedBooks(pool, youngestChild);
       return ranked[0];
     }
+    const todayStr = new Date().toISOString().split('T')[0];
+    const seed = todayStr.split('-').reduce((acc, n) => acc + parseInt(n), 0);
+    return pool[seed % pool.length];
+  }, [recommendedBooks, readingHistory, youngestChild]);
 
-    // Fallback: Use today's date as seed for deterministic daily rotation
-    const today = new Date().toISOString().split('T')[0];
-    const seed = today.split('-').reduce((acc, n) => acc + parseInt(n), 0);
-    const index = seed % pool.length;
-    return pool[index];
-  })();
-
-  // Get weekly plan to check completion status
+  // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
     queryKey: ['family-weekly-plan'],
     queryFn: () => weeklyPlan.get(),
   });
 
-  // Mutation for completing activities
-  const completeActivityFitMutation = useMutation({
+  // Regenerate mutation
+  const regenerateMutation = useMutation({
+    mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused'; weekStart: string }) =>
+      weeklyPlan.regenerate(prefs),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['family-day'] });
+      queryClient.invalidateQueries({ queryKey: ['family-today'] });
+      queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
+      queryClient.invalidateQueries({ queryKey: ['family-weekly-plan'] });
+      toast.success('Plan regenerated!');
+      setIsBalanceDialogOpen(false);
+    },
+    onError: (err: any) => {
+      toast.error('Failed to regenerate', { description: err.message });
+    }
+  });
+
+  // Complete activity mutation
+  const completeActivityMutation = useMutation({
     mutationFn: async (item: RhythmItem) => {
-      // Depending on type, call different API
       if (item.type === 'activity' && item.data?.id) {
-        // Use the simple completion endpoint
         await activityCompletions.create({
           activityId: item.data.id,
-          notes: 'Completed from Dashboard Rhythm'
+          notes: 'Completed from Dashboard'
         });
-        return;
       }
-      return Promise.resolve();
     },
     onSuccess: () => {
       toast.success("Activity completed!");
+      queryClient.invalidateQueries({ queryKey: ['family-day'] });
       queryClient.invalidateQueries({ queryKey: ['family-today'] });
+      queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
       queryClient.invalidateQueries({ queryKey: ['family-weekly-plan'] });
     }
   });
 
+  const handleRegenerate = () => setIsBalanceDialogOpen(true);
+
+  const confirmRegenerate = () => {
+    regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
+  };
 
   // Loading State
-  if (todayLoading) {
+  if (dayLoading) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <CircleNotch className="h-8 w-8 animate-spin text-primary" />
@@ -133,7 +182,7 @@ export default function Dashboard() {
   }
 
   // Error State
-  if (todayError || !todayData) {
+  if (dayError || !dayData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
         <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
@@ -147,7 +196,7 @@ export default function Dashboard() {
   }
 
   // No Children State
-  if (todayData.children.length === 0) {
+  if (dayData.children.length === 0) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -165,8 +214,8 @@ export default function Dashboard() {
   }
 
   // First Time User (No Materials)
-  const isFirstTimeUser = todayData.materials?.every((m: MaterialItem) => m.status === 'unknown');
-  if (isFirstTimeUser && todayData.familySessions?.length === 0) {
+  const isFirstTimeUser = dayData.materials?.every((m: MaterialItem) => m.status === 'unknown');
+  if (isFirstTimeUser && dayData.familySessions?.length === 0) {
     return (
       <div className="max-w-2xl mx-auto py-12 px-4">
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
@@ -200,14 +249,14 @@ export default function Dashboard() {
   }
 
   // Needs Plan State
-  if (todayData.needsPlan) {
+  if (dayData.needsPlan) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
         <DailyLiturgy />
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mt-8">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Let's Plan Your Week!</CardTitle>
-            <CardDescription>{todayData.message || "Generate a schedule to get personalized activities."}</CardDescription>
+            <CardDescription>{dayData.message || "Generate a schedule to get personalized activities."}</CardDescription>
           </CardHeader>
           <CardContent className="flex justify-center pb-8">
             <Button onClick={() => navigate('/early-years/planner')} size="lg" className="gap-2">
@@ -223,27 +272,28 @@ export default function Dashboard() {
   // BUILD TIMELINE ITEMS
   const timelineItems: RhythmItem[] = [];
 
-  // 1. Liturgy (Morning)
-  timelineItems.push({
-    id: 'liturgy-morning',
-    timeSlot: '08:00',
-    title: 'Morning Liturgy',
-    description: 'Scripture, hymnal, and catechism.',
-    type: 'liturgy',
-    status: 'upcoming', // TODO: Check actual completion status from API? Liturgy component handles internal state but dashboard might need to know.
-    data: {}
-  });
+  // 1. Liturgy (Morning) - only for today
+  if (isToday) {
+    timelineItems.push({
+      id: 'liturgy-morning',
+      timeSlot: '08:00',
+      title: 'Morning Liturgy',
+      description: 'Scripture, hymnal, and catechism.',
+      type: 'liturgy',
+      status: 'upcoming',
+      data: {}
+    });
+  }
 
   // 2. Family Sessions
-  if (todayData.familySessions) {
-    todayData.familySessions.forEach((session: any, index: number) => {
-      // Map generic timeSlot "morning" -> realistic time
+  if (dayData.familySessions) {
+    dayData.familySessions.forEach((session: any, index: number) => {
       let time = '09:00';
       if (session.timeSlot === 'afternoon') time = '14:00';
-      // If multiple, stagger them?
       if (index > 0 && time === '09:00') time = '10:00';
 
-      const isCompleted = weeklyPlanData?.completions && weeklyPlanData.completions[session.activity.id];
+      const isCompleted = session.isCompleted ||
+        (weeklyPlanData?.completions && weeklyPlanData.completions[session.activity.id]);
 
       timelineItems.push({
         id: `session-${index}`,
@@ -257,8 +307,8 @@ export default function Dashboard() {
     });
   }
 
-  // 3. Book (Read Aloud)
-  if (todaysBook) {
+  // 3. Book (Read Aloud) - only for today
+  if (isToday && todaysBook) {
     timelineItems.push({
       id: 'book-reading',
       timeSlot: '11:00',
@@ -270,15 +320,15 @@ export default function Dashboard() {
     });
   }
 
-  // 4. Daily Practices (Evening/Extras)
-  if (todayData.dailyPractices) {
-    todayData.dailyPractices.forEach((practice: any, index: number) => {
+  // 4. Daily Practices - only for today
+  if (isToday && dayData.dailyPractices) {
+    dayData.dailyPractices.forEach((practice: any, index: number) => {
       timelineItems.push({
         id: `practice-${index}`,
         timeSlot: '18:00',
         title: practice.title,
         description: practice.description,
-        type: 'activity', // or specialized 'practice' type
+        type: 'activity',
         status: 'upcoming',
         data: practice
       });
@@ -291,6 +341,12 @@ export default function Dashboard() {
   const nextItem = timelineItems.find(i => i.status !== 'completed') || null;
   const pendingCount = timelineItems.filter(i => i.status !== 'completed').length;
 
+  // Build day data for week strip
+  const weekDayData = weekSummary?.days || {};
+
+  // Get day name for swap
+  const selectedDayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDate.getDay()];
+
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
       {/* Greeting */}
@@ -299,14 +355,24 @@ export default function Dashboard() {
           Hello, {user?.name?.split(' ')[0] || 'Family'}! 👋
         </h1>
         <p className="text-muted-foreground">
-          Ready for today's rhythms?
+          {isToday ? "Ready for today's rhythms?" : `Viewing ${format(selectedDate, 'EEEE, MMM d')}`}
         </p>
       </div>
 
       <NotificationStack />
 
-      {/* Print Today Button */}
-      {todayData && (
+      {/* Week Strip */}
+      <WeekStrip
+        weekStart={weekStart}
+        selectedDay={selectedDate}
+        onDaySelect={setSelectedDate}
+        onRegenerate={handleRegenerate}
+        isRegenerating={regenerateMutation.isPending}
+        dayData={weekDayData}
+      />
+
+      {/* Print Button */}
+      {isToday && dayData && (
         <div className="flex justify-end px-2">
           <DownloadPrintButton
             document={
@@ -315,13 +381,13 @@ export default function Dashboard() {
                   date: new Date().toLocaleDateString(),
                   dayName: format(new Date(), 'EEEE'),
                   liturgy: liturgyData?.items || [],
-                  activities: todayData.familySessions?.map((s: any) => s.activity) || [],
+                  activities: dayData.familySessions?.map((s: any) => s.activity) || [],
                   reading: todaysBook || undefined
                 }}
-                children={todayData.children}
+                children={dayData.children}
               />
             }
-            fileName={`daily_plan_${new Date().toISOString().split('T')[0]}.pdf`}
+            fileName={`daily_plan_${selectedDateStr}.pdf`}
             label="Print Plan"
             size="sm"
             variant="ghost"
@@ -331,48 +397,55 @@ export default function Dashboard() {
       )}
 
       {/* REST DAY Override */}
-      {todayData.restDay && (
+      {dayData.restDay && (
         <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-xl border border-blue-100 dark:border-blue-900 text-center mb-6">
           <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">Rest Day</h2>
-          <p className="text-blue-700 dark:text-blue-200">{todayData.message}</p>
+          <p className="text-blue-700 dark:text-blue-200">{dayData.message}</p>
         </div>
       )}
 
-      {/* Up Next Card */}
-      <UpNextCard
-        item={nextItem}
-        onAction={(item) => {
-          // For books, we handle directly
-          if (item.type === 'book' && todaysBook) setSelectedBook(todaysBook);
-          // For others, trigger the sheet by expanding
-          setShowFullDay(true);
-        }}
-        onExpand={() => setShowFullDay(!showFullDay)}
-        pendingCount={pendingCount}
-      />
+      {/* Up Next Card - only for today */}
+      {isToday && (
+        <UpNextCard
+          item={nextItem}
+          onAction={(item) => {
+            if (item.type === 'book' && todaysBook) setSelectedBook(todaysBook);
+            setShowFullDay(true);
+          }}
+          onExpand={() => setShowFullDay(!showFullDay)}
+          pendingCount={pendingCount}
+        />
+      )}
 
-      {/* Timeline (Collapsible) */}
-      <Collapsible open={showFullDay} onOpenChange={setShowFullDay} className="space-y-4">
+      {/* Timeline */}
+      <Collapsible open={showFullDay || !isToday} onOpenChange={setShowFullDay} className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            Full Schedule ({timelineItems.length})
+            {isToday ? `Full Schedule (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Activities (${timelineItems.length})`}
           </h3>
-          <CollapsibleTrigger asChild>
-            <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-              {showFullDay ? (
-                <CaretUp className="h-4 w-4" />
-              ) : (
-                <CaretDown className="h-4 w-4" />
-              )}
-            </Button>
-          </CollapsibleTrigger>
+          {isToday && (
+            <CollapsibleTrigger asChild>
+              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
+                {showFullDay ? (
+                  <CaretUp className="h-4 w-4" />
+                ) : (
+                  <CaretDown className="h-4 w-4" />
+                )}
+              </Button>
+            </CollapsibleTrigger>
+          )}
         </div>
 
-        <CollapsibleContent>
+        <CollapsibleContent forceMount={!isToday ? true : undefined}>
           <DailyRhythm
             items={timelineItems}
-            onComplete={(item) => completeActivityFitMutation.mutate(item)}
+            onComplete={(item) => completeActivityMutation.mutate(item)}
             onBookClick={() => setSelectedBook(todaysBook)}
+            onSwap={isToday ? (item) => {
+              if (item.type === 'activity' && item.data?.id) {
+                setSwapActivity({ id: item.data.id, title: item.title });
+              }
+            } : undefined}
           />
         </CollapsibleContent>
       </Collapsible>
@@ -382,15 +455,82 @@ export default function Dashboard() {
         book={selectedBook}
         open={!!selectedBook}
         onOpenChange={(open) => !open && setSelectedBook(null)}
-        childrenIds={todayData?.children?.map((c: any) => c.id)}
+        childrenIds={dayData?.children?.map((c: any) => c.id)}
         onComplete={() => {
           queryClient.invalidateQueries({ queryKey: ['todays-book'] });
           queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
         }}
       />
 
+      {/* Swap Activity Sheet */}
+      <SwapActivitySheet
+        open={!!swapActivity}
+        onOpenChange={(open) => !open && setSwapActivity(null)}
+        activityId={swapActivity?.id || null}
+        activityTitle={swapActivity?.title}
+        day={selectedDayName}
+        weekStart={weekStartStr}
+        onSwapComplete={() => {
+          queryClient.invalidateQueries({ queryKey: ['family-day'] });
+          queryClient.invalidateQueries({ queryKey: ['family-today'] });
+          queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
+        }}
+      />
+
       {/* Family Progress */}
       <FamilyProgressMini />
+
+      {/* Regenerate Dialog */}
+      <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Customize this Week</DialogTitle>
+            <DialogDescription>
+              How should we balance activities for your children{childAges.length > 0 ? ` (${childAges.join(', ')})` : ''}?
+            </DialogDescription>
+          </DialogHeader>
+
+          <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
+            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+              <RadioGroupItem value="baby_focused" id="r1" />
+              <Label htmlFor="r1" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Baby className="w-4 h-4 text-indigo-500" />
+                  Baby Focused
+                </div>
+                <span className="text-xs text-muted-foreground">Prioritize sensory & bonding. Older kids help lead.</span>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+              <RadioGroupItem value="mixed" id="r2" />
+              <Label htmlFor="r2" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2 font-semibold">
+                  <UsersThree className="w-4 h-4 text-green-500" />
+                  Balanced Mix
+                </div>
+                <span className="text-xs text-muted-foreground">Equal focus across all age groups.</span>
+              </Label>
+            </div>
+            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+              <RadioGroupItem value="older_focused" id="r3" />
+              <Label htmlFor="r3" className="flex-1 cursor-pointer">
+                <div className="flex items-center gap-2 font-semibold">
+                  <Crown className="w-4 h-4 text-amber-500" />
+                  Older Focused
+                </div>
+                <span className="text-xs text-muted-foreground">More complex activities. Babies observe/tag along.</span>
+              </Label>
+            </div>
+          </RadioGroup>
+
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>Cancel</Button>
+            <Button onClick={confirmRegenerate} disabled={regenerateMutation.isPending}>
+              {regenerateMutation.isPending ? 'Generating...' : 'Generate Week'}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }
