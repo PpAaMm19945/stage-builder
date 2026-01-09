@@ -6,9 +6,9 @@ import { FormationSettings } from '@/components/settings/FormationSettings';
 import { LiturgySettings } from '@/components/liturgy/LiturgySettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { formation } from '@/lib/api';
 
 export function SettingsCurriculum() {
-    const { token } = useAuth();
     const [focus, setFocus] = useState<'balanced' | 'interests'>('balanced');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -18,12 +18,9 @@ export function SettingsCurriculum() {
 
     const loadPreferences = async () => {
         try {
-            const res = await fetch('/api/family/preferences', {
-                headers: { Authorization: `Bearer ${token}` }
-            });
-            if (res.ok) {
-                const data = await res.json();
-                if (data.learningFocus) setFocus(data.learningFocus);
+            const data = await formation.getPreferences();
+            if (data && data.learningFocus) {
+                setFocus(data.learningFocus as 'balanced' | 'interests');
             }
         } catch (e) {
             console.error('Failed to load focus settings', e);
@@ -34,18 +31,11 @@ export function SettingsCurriculum() {
         setFocus(newFocus);
         setIsLoading(true);
         try {
-            const res = await fetch('/api/family/preferences', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    Authorization: `Bearer ${token}`
-                },
-                body: JSON.stringify({
-                    learningFocus: newFocus
-                })
+            const res = await formation.updatePreferences({
+                learningFocus: newFocus
             });
 
-            if (res.ok) {
+            if (res.success) {
                 toast.success('Planning strategy updated');
             } else {
                 toast.error('Failed to update strategy');
@@ -73,7 +63,7 @@ export function SettingsCurriculum() {
                         Learning Focus
                     </CardTitle>
                     <CardDescription>
-                         Prioritize specific subjects or interests for the weekly plan.
+                        Prioritize specific subjects or interests for the weekly plan.
                     </CardDescription>
                 </CardHeader>
                 <CardContent>

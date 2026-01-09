@@ -136,6 +136,21 @@ export const family = {
     }),
 
   getTomorrowPreview: () => apiRequest<any>('/api/family/tomorrow-preview'),
+
+  sendPassionSignal: (data: { studentId: string; activityId: string; domain: string; loved?: boolean; notes?: string }) =>
+    apiRequest<{ success: boolean; id?: string }>('/api/passion-signals', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  getPaceSettings: (studentId: string) =>
+    apiRequest<{ studentId: string; pace: string; lastUpdated: string }>(`/api/family/pace/${studentId}`),
+
+  updatePaceSetting: (data: { studentId: string; pace: 'gentle' | 'standard' | 'accelerated' }) =>
+    apiRequest<{ success: boolean }>('/api/family/pace', {
+      method: 'POST', // or PUT, usually POST for updates/creates
+      body: JSON.stringify(data),
+    }),
 };
 
 // Observations
@@ -463,9 +478,9 @@ export const notifications = {
 // Formation System (Unified Rhythm & Progress)
 export const formation = {
   getPreferences: () =>
-    apiRequest<{ activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean }>('/api/family/preferences'),
+    apiRequest<{ activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean; learningFocus?: string }>('/api/family/preferences'),
 
-  updatePreferences: (prefs: { activitiesEnabled?: boolean; readingEnabled?: boolean; liturgyEnabled?: boolean }) =>
+  updatePreferences: (prefs: { activitiesEnabled?: boolean; readingEnabled?: boolean; liturgyEnabled?: boolean; learningFocus?: string }) =>
     apiRequest<{ success: boolean }>('/api/family/preferences', {
       method: 'POST',
       body: JSON.stringify(prefs),

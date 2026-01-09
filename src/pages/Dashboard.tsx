@@ -28,9 +28,8 @@ import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { BookReader } from '@/components/books/BookReader';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { DailyPlanDocument } from '@/components/pdf/documents';
-import { FilePdf, Spinner } from '@phosphor-icons/react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -304,13 +303,13 @@ export default function Dashboard() {
       {/* Print Today Button */}
       {todayData && (
         <div className="flex justify-end px-2">
-          <PDFDownloadLink
+          <DownloadPrintButton
             document={
               <DailyPlanDocument
                 day={{
                   date: new Date().toLocaleDateString(),
                   dayName: format(new Date(), 'EEEE'),
-                  liturgy: todayData.liturgy || [], // Assuming available or empty
+                  liturgy: (todayData as any).liturgy || [],
                   activities: todayData.familySessions?.map((s: any) => s.activity) || [],
                   reading: todaysBook || undefined
                 }}
@@ -318,14 +317,11 @@ export default function Dashboard() {
               />
             }
             fileName={`daily_plan_${new Date().toISOString().split('T')[0]}.pdf`}
-          >
-            {({ loading }) => (
-              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
-                {loading ? <Spinner className="w-4 h-4 animate-spin" /> : <FilePdf className="w-4 h-4" />}
-                Print Today's Plan
-              </Button>
-            )}
-          </PDFDownloadLink>
+            label="Print Plan"
+            size="sm"
+            variant="ghost"
+            className="gap-2 text-muted-foreground hover:text-foreground"
+          />
         </div>
       )}
 

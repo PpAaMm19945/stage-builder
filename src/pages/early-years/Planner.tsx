@@ -27,11 +27,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+
 import { Label } from '@/components/ui/label';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { WeeklyPlanDocument, DayPlan } from '@/components/pdf/documents';
-import { FilePdf, Spinner } from '@phosphor-icons/react';
 import { LiturgyItem, ApiActivity, Book } from '@/types';
 
 // Helper to get smart week start (matches backend)
@@ -137,7 +136,7 @@ export default function Planner() {
             {/* Control Bar */}
             <div className="flex justify-end items-center gap-3">
                 {planData?.plan?.slots && (
-                    <PDFDownloadLink
+                    <DownloadPrintButton
                         document={
                             <WeeklyPlanDocument
                                 weekStart={weekStartStr}
@@ -175,14 +174,9 @@ export default function Planner() {
                             />
                         }
                         fileName={`weekly_plan_${weekStartStr}.pdf`}
-                    >
-                        {({ loading }) => (
-                            <Button variant="outline" size="sm" className="gap-2" disabled={loading}>
-                                {loading ? <Spinner className="w-4 h-4 animate-spin" /> : <FilePdf className="w-4 h-4" />}
-                                Print Week
-                            </Button>
-                        )}
-                    </PDFDownloadLink>
+                        label="Print Week"
+                        size="sm"
+                    />
                 )}
                 <Button
                     variant="outline"

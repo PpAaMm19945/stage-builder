@@ -25,9 +25,8 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { PDFDownloadLink } from '@react-pdf/renderer';
+import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { ActivityDocument } from '@/components/pdf/documents';
-import { FilePdf, Spinner } from '@phosphor-icons/react';
 import { ApiActivity } from '@/types';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
@@ -145,21 +144,18 @@ export function ActivityDetails({
                         </Badge>
                     )}
                     <div className="flex items-center gap-2">
-                        <PDFDownloadLink
+                        <DownloadPrintButton
                             document={
                                 <ActivityDocument
-                                    activity={activity as unknown as ApiActivity} // Cast for now as shapes are compatible enough for the doc
+                                    activity={activity as unknown as ApiActivity}
                                     date={new Date().toLocaleDateString()}
                                 />
                             }
                             fileName={`${activity.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}
-                        >
-                            {({ loading }) => (
-                                <Button variant="outline" size="icon" disabled={loading} title="Print Activity">
-                                    {loading ? <Spinner className="h-4 w-4 animate-spin" /> : <FilePdf className="h-4 w-4" />}
-                                </Button>
-                            )}
-                        </PDFDownloadLink>
+                            label="PDF"
+                            size="icon"
+                            variant="outline"
+                        />
                         <UpvoteButton contentType="activity" contentId={activity.id} />
                     </div>
                 </div>

@@ -1,8 +1,8 @@
 import React, { useState } from 'react';
-import { PDFDownloadLink } from '@react-pdf/renderer';
 import { Button } from '@/components/ui/button';
 import { FilePdf, Spinner } from '@phosphor-icons/react';
 import { toast } from 'sonner';
+import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { BookDocument } from './BookDocument';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
@@ -101,7 +101,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
     }
 
     return (
-        <PDFDownloadLink
+        <DownloadPrintButton
             document={
                 <BookDocument
                     book={book}
@@ -113,12 +113,10 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                 />
             }
             fileName={`${book.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}
-        >
-            {({ loading }) => (
-                <Button variant="ghost" size="icon" className="text-white hover:bg-white/20 rounded-full" title="Download PDF">
-                    {loading ? <Spinner className="w-6 h-6 animate-spin" /> : <FilePdf className="w-6 h-6" />}
-                </Button>
-            )}
-        </PDFDownloadLink>
+            label="Download"
+            size="icon"
+            variant="ghost"
+            className="text-white hover:bg-white/20 rounded-full"
+        />
     );
 }
