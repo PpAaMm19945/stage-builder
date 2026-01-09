@@ -11,8 +11,12 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider } from "@/contexts/AuthContext";
+import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
+
+// Components
+import { GlobalAudioPlayer } from "@/components/audio/GlobalAudioPlayer";
 
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -47,12 +51,14 @@ const App = () => (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="schoolos-theme">
       <QueryClientProvider client={queryClient}>
         <AuthProvider>
-          <TooltipProvider>
-            <Toaster />
-            <Sonner />
-            <BrowserRouter>
-              <Routes>
-                {/* Auth Callback - Must be outside PublicLayout */}
+          <AudioPlayerProvider>
+            <TooltipProvider>
+              <Toaster />
+              <Sonner />
+              <GlobalAudioPlayer />
+              <BrowserRouter>
+                <Routes>
+                  {/* Auth Callback - Must be outside PublicLayout */}
                 <Route path="/auth/callback" element={<AuthCallback />} />
 
                 {/* Public Routes */}
@@ -92,11 +98,12 @@ const App = () => (
                   <Route path="/student/:studentId" element={<StudentView />} />
                 </Route>
 
-                {/* Catch-all */}
-                <Route path="*" element={<NotFound />} />
-              </Routes>
-            </BrowserRouter>
-          </TooltipProvider>
+                  {/* Catch-all */}
+                  <Route path="*" element={<NotFound />} />
+                </Routes>
+              </BrowserRouter>
+            </TooltipProvider>
+          </AudioPlayerProvider>
         </AuthProvider>
       </QueryClientProvider>
     </ThemeProvider>
