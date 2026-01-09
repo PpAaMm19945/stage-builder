@@ -1,25 +1,40 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React from 'react';
 import { Play, Pause, SpeakerHigh, SpeakerX } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
+import { useAudioPlayer, Track } from '@/contexts/AudioPlayerContext';
 
 interface HymnPlayerProps {
   url: string;
   title: string;
   className?: string;
+  queue?: Track[];
 }
 
-export function HymnPlayer({ url, title, className }: HymnPlayerProps) {
-  const [isPlaying, setIsPlaying] = useState(false);
-  const [currentTime, setCurrentTime] = useState(0);
-  const [duration, setDuration] = useState(0);
-  const [isMuted, setIsMuted] = useState(false);
-  const audioRef = useRef<HTMLAudioElement>(null);
+export function HymnPlayer({ url, title, className, queue }: HymnPlayerProps) {
+  const {
+    currentTrack,
+    isPlaying: globalIsPlaying,
+    currentTime: globalCurrentTime,
+    duration: globalDuration,
+    isMuted,
+    playTrack,
+    togglePlay: globalTogglePlay,
+    seek,
+    toggleMute
+  } = useAudioPlayer();
 
   // Determine if this is a direct audio file or an embed
-  // This is a simple heuristic; in production, we might want stronger validation
   const isDirectAudio = /\.(mp3|m4a|wav|aac)($|\?)/i.test(url);
+
+  // Check if this specific hymn is currently playing
+  const isCurrentTrack = currentTrack?.url === url;
+  const isPlaying = isCurrentTrack && globalIsPlaying;
+  const currentTime = isCurrentTrack ? globalCurrentTime : 0;
+  // Use global duration if current track, otherwise we don't know it until load (or could prefetch)
+  // For simplicity, we just show 0 or last known if not active.
+  const duration = isCurrentTrack ? globalDuration : 0;
 
   // Handle time formatting
   const formatTime = (time: number) => {
@@ -29,62 +44,32 @@ export function HymnPlayer({ url, title, className }: HymnPlayerProps) {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  useEffect(() => {
-    const audio = audioRef.current;
-    if (!audio) return;
-
-    const onTimeUpdate = () => setCurrentTime(audio.currentTime);
-    const onLoadedMetadata = () => setDuration(audio.duration);
-    const onEnded = () => setIsPlaying(false);
-
-    audio.addEventListener('timeupdate', onTimeUpdate);
-    audio.addEventListener('loadedmetadata', onLoadedMetadata);
-    audio.addEventListener('ended', onEnded);
-
-    return () => {
-      audio.removeEventListener('timeupdate', onTimeUpdate);
-      audio.removeEventListener('loadedmetadata', onLoadedMetadata);
-      audio.removeEventListener('ended', onEnded);
-    };
-  }, []);
-
-  const togglePlay = () => {
-    if (audioRef.current) {
-      if (isPlaying) {
-        audioRef.current.pause();
-      } else {
-        audioRef.current.play();
-      }
-      setIsPlaying(!isPlaying);
+  const handlePlay = () => {
+    if (isCurrentTrack) {
+      globalTogglePlay();
+    } else {
+      playTrack({ url, title }, queue);
     }
   };
 
   const handleSeek = (value: number[]) => {
-    if (audioRef.current) {
-      audioRef.current.currentTime = value[0];
-      setCurrentTime(value[0]);
-    }
-  };
-
-  const toggleMute = () => {
-    if (audioRef.current) {
-      audioRef.current.muted = !isMuted;
-      setIsMuted(!isMuted);
+    if (isCurrentTrack) {
+      seek(value[0]);
     }
   };
 
   // 1. Direct Audio Player (Native UX)
+  // Now delegates to global player
   if (isDirectAudio) {
     return (
       <div className={cn("w-full bg-amber-100/80 dark:bg-amber-900/40 rounded-lg p-3 border border-amber-200 dark:border-amber-800/50", className)}>
-        <audio ref={audioRef} src={url} preload="metadata" />
 
         <div className="flex items-center gap-3">
           <Button
             size="icon"
             variant="ghost"
             className="h-10 w-10 rounded-full bg-amber-200/50 hover:bg-amber-300/50 dark:bg-amber-800/50 dark:hover:bg-amber-700/50 text-amber-900 dark:text-amber-100 shrink-0"
-            onClick={togglePlay}
+            onClick={handlePlay}
           >
             {isPlaying ? (
               <Pause weight="fill" className="h-5 w-5" />
@@ -97,14 +82,15 @@ export function HymnPlayer({ url, title, className }: HymnPlayerProps) {
           <div className="flex-1 space-y-1">
             <div className="flex justify-between text-xs font-medium text-amber-800 dark:text-amber-200">
               <span>{title}</span>
-              <span>{formatTime(currentTime)} / {formatTime(duration)}</span>
+              <span>{isCurrentTrack ? `${formatTime(currentTime)} / ${formatTime(duration)}` : title}</span>
             </div>
             <Slider
               value={[currentTime]}
               max={duration || 100}
               step={1}
               onValueChange={handleSeek}
-              className="cursor-pointer"
+              disabled={!isCurrentTrack}
+              className={cn("cursor-pointer", !isCurrentTrack && "opacity-50")}
             />
           </div>
 

@@ -149,6 +149,11 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
   if (isLoading || !data) return null;
   if (!data.items || data.items.length === 0) return null;
 
+  // Prepare audio queue for continuity
+  const audioQueue = data.items
+    .filter((i: any) => i.audio_url && /\.(mp3|m4a|wav|aac)($|\?)/i.test(i.audio_url))
+    .map((i: any) => ({ url: i.audio_url!, title: i.title }));
+
   const allCompleted = data.items.every((item) => item.completedToday);
 
   const handleToggle = (item: LiturgyItem) => {
@@ -233,6 +238,7 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
                       <HymnPlayer
                         url={item.audio_url}
                         title={item.title}
+                        queue={audioQueue}
                       />
                     )}
 
