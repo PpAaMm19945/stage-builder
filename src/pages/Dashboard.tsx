@@ -5,6 +5,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useNavigate } from 'react-router-dom';
+import { format } from 'date-fns';
 import {
   CircleNotch,
   WarningCircle,
@@ -27,6 +28,9 @@ import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { BookReader } from '@/components/books/BookReader';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { DailyPlanDocument } from '@/components/pdf/documents';
+import { FilePdf, Spinner } from '@phosphor-icons/react';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -83,7 +87,6 @@ export default function Dashboard() {
     const today = new Date().toISOString().split('T')[0];
     const seed = today.split('-').reduce((acc, n) => acc + parseInt(n), 0);
     const index = seed % pool.length;
-
     return pool[index];
   })();
 
@@ -297,6 +300,34 @@ export default function Dashboard() {
       </div>
 
       <NotificationStack />
+
+      {/* Print Today Button */}
+      {todayData && (
+        <div className="flex justify-end px-2">
+          <PDFDownloadLink
+            document={
+              <DailyPlanDocument
+                day={{
+                  date: new Date().toLocaleDateString(),
+                  dayName: format(new Date(), 'EEEE'),
+                  liturgy: todayData.liturgy || [], // Assuming available or empty
+                  activities: todayData.familySessions?.map((s: any) => s.activity) || [],
+                  reading: todaysBook || undefined
+                }}
+                children={todayData.children}
+              />
+            }
+            fileName={`daily_plan_${new Date().toISOString().split('T')[0]}.pdf`}
+          >
+            {({ loading }) => (
+              <Button variant="ghost" size="sm" className="gap-2 text-muted-foreground hover:text-foreground">
+                {loading ? <Spinner className="w-4 h-4 animate-spin" /> : <FilePdf className="w-4 h-4" />}
+                Print Today's Plan
+              </Button>
+            )}
+          </PDFDownloadLink>
+        </div>
+      )}
 
       {/* REST DAY Override */}
       {todayData.restDay && (

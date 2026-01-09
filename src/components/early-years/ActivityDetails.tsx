@@ -25,6 +25,10 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { ActivityDocument } from '@/components/pdf/documents';
+import { FilePdf, Spinner } from '@phosphor-icons/react';
+import { ApiActivity } from '@/types';
 
 const domainColors: Record<EarlyYearsDomain, string> = {
     'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
@@ -140,7 +144,24 @@ export function ActivityDetails({
                             Completed
                         </Badge>
                     )}
-                    <UpvoteButton contentType="activity" contentId={activity.id} />
+                    <div className="flex items-center gap-2">
+                        <PDFDownloadLink
+                            document={
+                                <ActivityDocument
+                                    activity={activity as unknown as ApiActivity} // Cast for now as shapes are compatible enough for the doc
+                                    date={new Date().toLocaleDateString()}
+                                />
+                            }
+                            fileName={`${activity.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}
+                        >
+                            {({ loading }) => (
+                                <Button variant="outline" size="icon" disabled={loading} title="Print Activity">
+                                    {loading ? <Spinner className="h-4 w-4 animate-spin" /> : <FilePdf className="h-4 w-4" />}
+                                </Button>
+                            )}
+                        </PDFDownloadLink>
+                        <UpvoteButton contentType="activity" contentId={activity.id} />
+                    </div>
                 </div>
 
                 {/* Meta info */}

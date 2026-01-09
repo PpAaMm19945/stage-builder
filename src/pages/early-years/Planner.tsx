@@ -27,7 +27,12 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { PDFDownloadLink } from '@react-pdf/renderer';
+import { WeeklyPlanDocument, DayPlan } from '@/components/pdf/documents';
+import { FilePdf, Spinner } from '@phosphor-icons/react';
+import { LiturgyItem, ApiActivity, Book } from '@/types';
 
 // Helper to get smart week start (matches backend)
 function getSmartWeekStart(date = new Date()) {
@@ -131,6 +136,54 @@ export default function Planner() {
 
             {/* Control Bar */}
             <div className="flex justify-end items-center gap-3">
+                {planData?.plan?.slots && (
+                    <PDFDownloadLink
+                        document={
+                            <WeeklyPlanDocument
+                                weekStart={weekStartStr}
+                                children={childrenData || []}
+                                days={['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((dayStr, i) => {
+                                    const dayDate = new Date(currentWeek);
+                                    dayDate.setDate(currentWeek.getDate() + i);
+                                    const dateStr = format(dayDate, 'yyyy-MM-dd');
+
+                                    // Filter slots for this day
+                                    const daySlots = planData.plan.slots.filter((s: any) => s.day === dayStr);
+
+                                    // Extract activities
+                                    const activities = daySlots
+                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading') // Assuming slots have types, or infer from somewhere. Plan data usually just has activities.
+                                        .map((s: any) => ({
+                                            id: s.activityId,
+                                            title: s.activityTitle,
+                                            domain: s.domain,
+                                            duration_minutes: s.duration,
+                                            // Mock other required fields for PDF if missing in slot
+                                            description: s.description || '',
+                                            materials: [],
+                                            instructions: []
+                                        } as ApiActivity));
+
+                                    return {
+                                        date: dateStr,
+                                        dayName: format(dayDate, 'EEEE'),
+                                        liturgy: [], // TODO: If planData includes liturgy, add here. Otherwise empty for now.
+                                        activities: activities,
+                                        reading: undefined // TODO: If planData includes reading.
+                                    } as DayPlan;
+                                })}
+                            />
+                        }
+                        fileName={`weekly_plan_${weekStartStr}.pdf`}
+                    >
+                        {({ loading }) => (
+                            <Button variant="outline" size="sm" className="gap-2" disabled={loading}>
+                                {loading ? <Spinner className="w-4 h-4 animate-spin" /> : <FilePdf className="w-4 h-4" />}
+                                Print Week
+                            </Button>
+                        )}
+                    </PDFDownloadLink>
+                )}
                 <Button
                     variant="outline"
                     size="sm"

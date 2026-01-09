@@ -96,6 +96,7 @@ interface BookDocumentProps {
     book: Book;
     pages?: string[]; // For markdown books
     imageUrls?: string[]; // For image books
+    coverImage?: string; // Base64 cover image
     hymns?: HymnData[];
     catechism?: CatechismData[];
 }
@@ -134,7 +135,7 @@ const HymnalDocument = ({ book, hymns }: { book: Book; hymns: NonNullable<BookDo
                 </View>
 
                 <View style={{ flexGrow: 1 }}>
-                     <HtmlTextRenderer content={hymn.content} />
+                    <HtmlTextRenderer content={hymn.content} />
                 </View>
 
                 {hymn.author && (
@@ -170,12 +171,18 @@ const CatechismDocument = ({ book, data }: { book: Book; data: NonNullable<BookD
     </Document>
 );
 
-const PictureBookDocument = ({ book, imageUrls }: { book: Book; imageUrls: NonNullable<BookDocumentProps['imageUrls']> }) => (
+const PictureBookDocument = ({ book, imageUrls, coverImage }: { book: Book; imageUrls: NonNullable<BookDocumentProps['imageUrls']>; coverImage?: string }) => (
     <Document title={book.title}>
-        <Page orientation="landscape" size="A4" style={{ padding: 0 }}>
-             {/* Cover */}
-             <Image src={book.coverUrl || ''} style={styles.fullImage} />
-        </Page>
+        {coverImage ? (
+            <Page orientation="landscape" size="A4" style={{ padding: 0 }}>
+                <Image src={coverImage} style={styles.fullImage} />
+            </Page>
+        ) : book.coverUrl ? (
+            // Fallback to URL if base64 not provided (might fail CORS but worth trying)
+            <Page orientation="landscape" size="A4" style={{ padding: 0 }}>
+                <Image src={book.coverUrl} style={styles.fullImage} />
+            </Page>
+        ) : null}
         {imageUrls.map((url, index) => (
             <Page key={index} orientation="landscape" size="A4" style={{ padding: 0 }}>
                 <Image src={url} style={styles.fullImage} />
@@ -186,7 +193,7 @@ const PictureBookDocument = ({ book, imageUrls }: { book: Book; imageUrls: NonNu
 
 const MarkdownBookDocument = ({ book, pages }: { book: Book; pages: NonNullable<BookDocumentProps['pages']> }) => (
     <Document title={book.title} author={book.author}>
-         <Page size="A5" style={styles.page}>
+        <Page size="A5" style={styles.page}>
             <View style={styles.titlePage}>
                 <Text style={styles.title}>{book.title}</Text>
                 {book.author && <Text style={styles.subtitle}>{book.author}</Text>}
@@ -215,7 +222,7 @@ export const BookDocument = (props: BookDocumentProps) => {
     }
 
     if (imageUrls && imageUrls.length > 0) {
-        return <PictureBookDocument book={book} imageUrls={imageUrls} />;
+        return <PictureBookDocument book={book} imageUrls={imageUrls} coverImage={props.coverImage} />;
     }
 
     if (pages && pages.length > 0) {
