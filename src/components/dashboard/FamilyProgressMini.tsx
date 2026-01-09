@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
 import { students } from '@/lib/api';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
@@ -7,7 +7,6 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { CaretRight } from '@phosphor-icons/react';
 
 export function FamilyProgressMini() {
-    const navigate = useNavigate();
     const { data: studentsList, isLoading } = useQuery({
         queryKey: ['students'],
         queryFn: students.list,
@@ -28,16 +27,17 @@ export function FamilyProgressMini() {
     const activeCount = studentsList.length; // Simply counting all for now
 
     return (
-        <div
-            className="mt-8 mb-8 cursor-pointer group"
-            onClick={() => navigate('/early-years/progress')}
+        <Link
+            to="/early-years/progress"
+            className="block mt-8 mb-8 group no-underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary rounded-lg"
+            aria-label="View family progress"
         >
             <div className="flex items-center justify-between px-1 mb-3">
                  <span className="text-sm font-medium text-muted-foreground">
                     {activeCount} {activeCount === 1 ? 'child' : 'children'} active this week
                 </span>
                 <div className="flex items-center text-xs text-primary font-medium group-hover:underline">
-                    View Progress <CaretRight className="ml-1 w-3 h-3" />
+                    View Progress <CaretRight className="ml-1 w-3 h-3" aria-hidden="true" />
                 </div>
             </div>
 
@@ -46,7 +46,7 @@ export function FamilyProgressMini() {
                     <div key={student.id} className="flex flex-col items-center gap-1 shrink-0">
                         <div className="relative p-0.5 rounded-full border-2 border-green-500/50">
                             <Avatar className="h-12 w-12 border-2 border-background">
-                                <AvatarImage src={student.avatarUrl} />
+                                <AvatarImage src={student.avatarUrl} alt={student.name} />
                                 <AvatarFallback>{student.name[0]}</AvatarFallback>
                             </Avatar>
                         </div>
@@ -54,6 +54,6 @@ export function FamilyProgressMini() {
                     </div>
                 ))}
             </Card>
-        </div>
+        </Link>
     );
 }
