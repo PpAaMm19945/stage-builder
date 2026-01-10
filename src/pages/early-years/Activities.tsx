@@ -147,12 +147,12 @@ export default function Activities() {
       {/* Header */}
       <div className="space-y-2">
         <h1 className="text-3xl font-display font-bold text-foreground">
-          Activity Library
+          Formation Library
         </h1>
         <p className="text-muted-foreground">
           {showAgeAppropriate && selectedChild
-            ? `${filteredActivities.length} activities for ${selectedChild.name}`
-            : `${filteredActivities.length} activities available`}
+            ? `${filteredActivities.length} formations for ${selectedChild.name}`
+            : `${filteredActivities.length} formations available`}
         </p>
       </div>
 
@@ -162,7 +162,7 @@ export default function Activities() {
         <div className="relative">
           <MagnifyingGlass className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" weight="duotone" />
           <Input
-            placeholder="Search activities..."
+            placeholder="Search formations..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             className="pl-10"
@@ -254,8 +254,8 @@ export default function Activities() {
       ) : (
         <EmptyState
           icon={MagnifyingGlassMinus}
-          title="No Activities Found"
-          description="Try adjusting your filters or browse all activities."
+          title="No Formations Found"
+          description="Try adjusting your filters or browse all formations."
           actionLabel="Clear Filters"
           onAction={() => {
             setSearch('');

@@ -38,7 +38,7 @@ export default function Library() {
                 <TabsList className="grid grid-cols-3 w-full h-auto p-1 bg-muted/50 rounded-xl max-w-md">
                     <TabsTrigger value="activities" className="flex flex-col sm:flex-row items-center gap-2 py-2.5 sm:py-2 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
                         <Shapes className="h-5 w-5" weight={activeTab === 'activities' ? 'fill' : 'duotone'} />
-                        <span>Activities</span>
+                        <span>Formations</span>
                     </TabsTrigger>
                     <TabsTrigger value="books" className="flex flex-col sm:flex-row items-center gap-2 py-2.5 sm:py-2 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
                         <Books className="h-5 w-5" weight={activeTab === 'books' ? 'fill' : 'duotone'} />

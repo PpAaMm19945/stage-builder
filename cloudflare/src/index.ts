@@ -731,65 +731,65 @@ app.get('/api/notifications', async (c) => {
     const notifications = [];
     const today = new Date().toISOString().split('T')[0];
 
-    // 1. Milestone Triggers (Simplified: Count completions per domain)
-    const { results: domainCounts } = await c.env.DB.prepare(`
-      SELECT a.domain, COUNT(*) as count
-      FROM observations o
-      JOIN activities a ON o.activity_id = a.id
-      WHERE o.student_id IN (SELECT id FROM students WHERE parent_id = ?)
-      GROUP BY a.domain
+    // 1. Milestone Triggers (Simplified: Count completions per virtue)
+    const { results: virtueCounts } = await c.env.DB.prepare(`
+      SELECT f.primary_virtue as virtue, COUNT(*) as count
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+      GROUP BY f.primary_virtue
       HAVING count >= 5
     `).bind(user.id).all();
 
-    domainCounts.forEach((d: any) => {
+    virtueCounts.forEach((v: any) => {
       // Logic to determine if this is a "new" milestone could be complex
       // For now, we just show "Milestone" if count is a multiple of 10
-      if (d.count % 10 === 0 && d.count > 0) {
+      if (v.count % 10 === 0 && v.count > 0) {
         notifications.push({
-          id: `milestone-${d.domain}-${d.count}`,
+          id: `milestone-${v.virtue}-${v.count}`,
           type: 'milestone',
           title: `Milestone Unlocked!`,
-          message: `Your family has completed ${d.count} activities in ${d.domain}!`,
+          message: `Your family has completed ${v.count} formations in the virtue of ${v.virtue}!`,
           date: today
         });
       }
     });
 
-    // 2. Coverage Alerts (2+ weeks without domain)
-    // Simplified: Check distinct domains in last 14 days
-    const { results: recentDomains } = await c.env.DB.prepare(`
-      SELECT DISTINCT a.domain
-      FROM observations o
-      JOIN activities a ON o.activity_id = a.id
-      WHERE o.student_id IN (SELECT id FROM students WHERE parent_id = ?)
-      AND o.completed_at > datetime('now', '-14 days')
+    // 2. Coverage Alerts (2+ weeks without virtue)
+    // Simplified: Check distinct virtues in last 14 days
+    const { results: recentVirtues } = await c.env.DB.prepare(`
+      SELECT DISTINCT f.primary_virtue as virtue
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+      AND e.created_at > datetime('now', '-14 days')
     `).bind(user.id).all();
 
-    const recentDomainSet = new Set(recentDomains.map((r: any) => r.domain));
-    const allDomains = ['motor', 'language', 'cognitive', 'social-emotional', 'pre-academic'];
+    const recentVirtueSet = new Set(recentVirtues.map((r: any) => r.virtue));
+    const allVirtues = ['Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder'];
 
-    // Only alert if we have SOME activity but missing a domain (avoid alerting new users with 0 activity)
-    if (recentDomains.length > 0) {
-      const missing = allDomains.find(d => !recentDomainSet.has(d));
+    // Only alert if we have SOME evidence but missing a virtue (avoid alerting new users with 0 evidence)
+    if (recentVirtues.length > 0) {
+      const missing = allVirtues.find(v => !recentVirtueSet.has(v));
       if (missing) {
         notifications.push({
           id: `alert-missing-${missing}`,
           type: 'alert',
           title: 'Coverage Alert',
-          message: `You haven't done any ${missing} activities recently.`,
+          message: `You haven't focused on the virtue of ${missing} recently.`,
           date: today
         });
       }
     }
 
     // 3. Encouragement (Weekly Balance)
-    // If > 3 domains covered this week
-    if (recentDomains.length >= 3) {
+    // If > 3 virtues covered this week
+    if (recentVirtues.length >= 3) {
       notifications.push({
         id: `enc-balance-${today}`,
         type: 'encouragement',
         title: 'Great Balance!',
-        message: 'You are covering a wide range of developmental areas this week.',
+        message: 'You are cultivating a wide range of virtues this week.',
         date: today
       });
     }
@@ -946,22 +946,22 @@ app.put('/api/students/:id', async (c) => {
   }
 });
 
-// ============ ACTIVITIES ROUTES ============
+// ============ FORMATIONS ROUTES ============
 
-// Get activities (filtered by age and domain)
-app.get('/api/activities', async (c) => {
-  const domain = c.req.query('domain');
+// Get formations (filtered by age and virtue)
+app.get('/api/formations', async (c) => {
+  const virtue = c.req.query('virtue'); // Previously 'domain'
   const ageMonths = c.req.query('ageMonths');
-  const activityType = c.req.query('activityType');
+  const formationType = c.req.query('formationType');
   const context = c.req.query('context');
   const limit = c.req.query('limit') || '50';
 
-  let query = "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (archived = 0 OR archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL) AND (deprecated = 0 OR deprecated IS NULL)";
+  let query = "SELECT * FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (archived = 0 OR archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL) AND (deprecated = 0 OR deprecated IS NULL)";
   const params: any[] = [];
 
-  if (domain) {
-    query += ' AND domain = ?';
-    params.push(domain);
+  if (virtue) {
+    query += ' AND primary_virtue = ?';
+    params.push(virtue);
   }
 
   if (ageMonths) {
@@ -970,117 +970,130 @@ app.get('/api/activities', async (c) => {
     params.push(age, age);
   }
 
-  if (activityType) {
-    query += ' AND activity_type = ?';
-    params.push(activityType);
+  if (formationType) {
+    query += ' AND formation_type = ?';
+    params.push(formationType);
   }
 
   if (context) {
-    query += ' AND context_embedding = ?';
+    query += ' AND context_anchor = ?';
     params.push(context);
   }
 
-  query += ' ORDER BY domain, min_age_months LIMIT ?';
-  params.push(parseInt(limit === '50' ? '1000' : limit)); // Default to 1000 if not specified (or default param was 50)
+  query += ' ORDER BY primary_virtue, min_age_months LIMIT ?';
+  params.push(parseInt(limit === '50' ? '1000' : limit));
 
   const stmt = c.env.DB.prepare(query);
   const { results } = await stmt.bind(...params).all();
 
   // Parse JSON fields
-  const activities = results.map((a: any) => ({
-    ...a,
-    materials: JSON.parse(a.materials || '[]'),
-    instructions: JSON.parse(a.instructions || '[]'),
-    learning_outcomes: JSON.parse(a.learning_outcomes || '[]'),
+  const formations = results.map((f: any) => ({
+    ...f,
+    materials: JSON.parse(f.materials || '[]'),
+    guide_steps: JSON.parse(f.guide_steps || '[]'),
+    success_indicators: JSON.parse(f.success_indicators || '[]'),
+    tips: JSON.parse(f.tips || '[]'),
+    tiered_expectations: JSON.parse(f.tiered_expectations || '[]')
   }));
 
-  return c.json(activities);
+  return c.json(formations);
 });
 
-// Get single activity
-app.get('/api/activities/:id', async (c) => {
+// Get single formation
+app.get('/api/formations/:id', async (c) => {
   const id = c.req.param('id');
-  const activity = await c.env.DB.prepare(
-    'SELECT * FROM activities WHERE id = ?'
+  const formation = await c.env.DB.prepare(
+    'SELECT * FROM formations WHERE id = ?'
   ).bind(id).first();
 
-  if (!activity) {
-    return c.json({ error: 'Activity not found' }, 404);
+  if (!formation) {
+    return c.json({ error: 'Formation not found' }, 404);
   }
 
   return c.json({
-    ...activity,
-    materials: JSON.parse((activity as any).materials || '[]'),
-    instructions: JSON.parse((activity as any).instructions || '[]'),
-    learning_outcomes: JSON.parse((activity as any).learning_outcomes || '[]'),
+    ...formation,
+    materials: JSON.parse((formation as any).materials || '[]'),
+    guide_steps: JSON.parse((formation as any).guide_steps || '[]'),
+    success_indicators: JSON.parse((formation as any).success_indicators || '[]'),
+    tips: JSON.parse((formation as any).tips || '[]'),
+    tiered_expectations: JSON.parse((formation as any).tiered_expectations || '[]')
   });
 });
 
-// Simple Activity Completion
-app.post('/api/activity-completions', async (c) => {
+// ============ EVIDENCES ROUTES (Legacy + New) ============
+
+// Simple Evidence Creation (replaces activity-completions)
+app.post('/api/evidences', async (c) => {
   try {
     const user = requireAuth(c);
-    const { activityId, notes } = await c.req.json();
+    const { studentId, formationId, stage, note, url, type } = await c.req.json();
 
     const id = crypto.randomUUID();
+    const now = new Date().toISOString();
+
     await c.env.DB.prepare(`
-            INSERT INTO activity_completions (id, parent_id, activity_id, notes)
-            VALUES (?, ?, ?, ?)
-        `).bind(id, user.id, activityId, notes || null).run();
+            INSERT INTO evidences (id, student_id, formation_id, stage, note, url, type, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(id, studentId, formationId, stage || 'seeding', note || null, url || null, type || 'observation', now, now).run();
 
     return c.json({ success: true, id });
   } catch (error: any) {
-    return c.json({ error: error.message || 'Failed to record completion' }, 400);
+    console.error("Create Evidence Error:", error);
+    return c.json({ error: error.message || 'Failed to record evidence' }, 400);
   }
 });
 
-// Get today's recommended activities for a student (LEGACY/FALLBACK)
-// Helper: Get or generate daily recommendations for a student
+// Legacy adapter for 'activity-completions' if frontend still calls it briefly
+app.post('/api/activity-completions', async (c) => {
+  return c.json({ error: "Endpoint deprecated. Use /api/evidences" }, 410);
+});
+
+// Helper: Get or generate daily recommendations for a student (using formations)
 async function getStudentDailyRecommendations(db: D1Database, student: any) {
   const today = new Date().toISOString().split('T')[0];
   const studentId = student.id;
 
-  // Check for existing recommendations
+  // Check for existing family rhythms (formerly daily_recommendations)
   let { results: recommendations } = await db.prepare(`
-    SELECT dr.*, a.* FROM daily_recommendations dr
-    JOIN activities a ON dr.activity_id = a.id
-    WHERE dr.student_id = ? AND dr.recommended_date = ?
-    ORDER BY dr.position
+    SELECT fr.*, f.* FROM family_rhythms fr
+    JOIN formations f ON fr.formation_id = f.id
+    WHERE fr.student_id = ? AND fr.rhythm_date = ?
+    ORDER BY fr.position
   `).bind(studentId, today).all();
 
   // Generate recommendations if none exist
   if (recommendations.length === 0) {
     const ageMonths = (student as any).age_in_months;
 
-    // Get one activity from each domain that hasn't been completed recently
-    const domains = ['cognitive', 'motor', 'language', 'social-emotional', 'pre-academic'];
+    // Get one formation from each virtue that hasn't been completed recently
+    const virtues = ['Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder']; // New Virtues
 
-    for (let i = 0; i < domains.length; i++) {
-      const domain = domains[i];
-      const activity = await db.prepare(`
-        SELECT * FROM activities 
-        WHERE domain = ? AND min_age_months <= ? AND max_age_months >= ? AND is_active = 1
+    for (let i = 0; i < virtues.length; i++) {
+      const virtue = virtues[i];
+      const formation = await db.prepare(`
+        SELECT * FROM formations 
+        WHERE primary_virtue = ? AND min_age_months <= ? AND max_age_months >= ? AND is_active = 1
         AND id NOT IN (
-          SELECT activity_id FROM observations WHERE student_id = ? 
-          AND completed_at > datetime('now', '-7 days')
+          SELECT formation_id FROM evidences WHERE student_id = ? 
+          AND created_at > datetime('now', '-7 days')
         )
         ORDER BY RANDOM() LIMIT 1
-      `).bind(domain, ageMonths, ageMonths, studentId).first();
+      `).bind(virtue, ageMonths, ageMonths, studentId).first();
 
-      if (activity) {
-        const recId = generateId('rec');
+      if (formation) {
+        const rhythmId = generateId('rhythm');
         await db.prepare(
-          'INSERT INTO daily_recommendations (id, student_id, activity_id, recommended_date, position) VALUES (?, ?, ?, ?, ?)'
-        ).bind(recId, studentId, (activity as any).id, today, i).run();
+          'INSERT INTO family_rhythms (id, student_id, formation_id, rhythm_date, position) VALUES (?, ?, ?, ?, ?)'
+        ).bind(rhythmId, studentId, (formation as any).id, today, i).run();
       }
     }
 
     // Fetch the newly created recommendations
     const result = await db.prepare(`
-      SELECT dr.*, a.* FROM daily_recommendations dr
-      JOIN activities a ON dr.activity_id = a.id
-      WHERE dr.student_id = ? AND dr.recommended_date = ?
-      ORDER BY dr.position
+      SELECT fr.*, f.* FROM family_rhythms fr
+      JOIN formations f ON fr.formation_id = f.id
+      WHERE fr.student_id = ? AND fr.rhythm_date = ?
+      ORDER BY fr.position
     `).bind(studentId, today).all();
     recommendations = result.results;
   }
@@ -1088,7 +1101,7 @@ async function getStudentDailyRecommendations(db: D1Database, student: any) {
   return recommendations;
 }
 
-// Get today's recommended activities for a student
+// Get today's recommended formations for a student
 app.get('/api/students/:studentId/today', async (c) => {
   try {
     const user = requireAuth(c);
@@ -1106,11 +1119,13 @@ app.get('/api/students/:studentId/today', async (c) => {
     const recommendations = await getStudentDailyRecommendations(c.env.DB, student);
 
     // Parse JSON fields
-    const activities = recommendations.map((r: any) => ({
+    const formations = recommendations.map((r: any) => ({
       ...r,
       materials: JSON.parse(r.materials || '[]'),
-      instructions: JSON.parse(r.instructions || '[]'),
-      learning_outcomes: JSON.parse(r.learning_outcomes || '[]'),
+      guide_steps: JSON.parse(r.guide_steps || '[]'),
+      success_indicators: JSON.parse(r.success_indicators || '[]'),
+      tips: JSON.parse(r.tips || '[]'),
+      tiered_expectations: JSON.parse(r.tiered_expectations || '[]')
     }));
 
     // ========== SIBLING-AWARE RECOMMENDATIONS ==========
@@ -1121,32 +1136,31 @@ app.get('/api/students/:studentId/today', async (c) => {
 
     let familyActivities: any[] = [];
 
-    // Only compute family activities if there are multiple children
+    // Only compute family formations if there are multiple children
     if (allChildren.length > 1) {
       // Find age range that covers all children
       const ages = allChildren.map((c: any) => c.age_in_months);
       const oldestAge = Math.max(...ages);
       const youngestAge = Math.min(...ages);
 
-      // Find activities where the age range overlaps with ALL children
-      // An activity is suitable for family if its range encompasses all children
-      const { results: sharedActivities } = await c.env.DB.prepare(`
-        SELECT * FROM activities 
+      // Find formations where the age range overlaps with ALL children
+      const { results: sharedFormations } = await c.env.DB.prepare(`
+        SELECT * FROM formations 
         WHERE min_age_months <= ? AND max_age_months >= ? AND is_active = 1
         ORDER BY RANDOM() LIMIT 3
       `).bind(youngestAge, oldestAge).all();
 
-      // Build family activity recommendations with variations
-      familyActivities = sharedActivities.map((activity: any) => {
+      // Build family formation recommendations with variations
+      familyActivities = sharedFormations.map((formation: any) => {
         const variations: Record<string, string> = {};
 
         allChildren.forEach((child: any) => {
           const childAge = child.age_in_months;
-          const activityMidpoint = (activity.min_age_months + activity.max_age_months) / 2;
+          const formationMidpoint = (formation.min_age_months + formation.max_age_months) / 2;
 
-          if (childAge < activityMidpoint - 6) {
+          if (childAge < formationMidpoint - 6) {
             variations[child.id] = 'easier';
-          } else if (childAge > activityMidpoint + 6) {
+          } else if (childAge > formationMidpoint + 6) {
             variations[child.id] = 'harder';
           } else {
             variations[child.id] = 'standard';
@@ -1154,11 +1168,12 @@ app.get('/api/students/:studentId/today', async (c) => {
         });
 
         return {
-          activity: {
-            ...activity,
-            materials: JSON.parse(activity.materials || '[]'),
-            instructions: JSON.parse(activity.instructions || '[]'),
-            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          formation: {
+            ...formation,
+            materials: JSON.parse(formation.materials || '[]'),
+            guide_steps: JSON.parse(formation.guide_steps || '[]'),
+            success_indicators: JSON.parse(formation.success_indicators || '[]'),
+            tips: JSON.parse(formation.tips || '[]'),
           },
           suitableFor: allChildren.map((c: any) => c.id),
           variations,
@@ -1166,7 +1181,7 @@ app.get('/api/students/:studentId/today', async (c) => {
       });
     }
 
-    return c.json({ student, activities, familyActivities });
+    return c.json({ student, formations, familyActivities });
   } catch (error: any) {
     console.error('Student today error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
@@ -1177,16 +1192,17 @@ app.get('/api/students/:studentId/today', async (c) => {
 // Helper function to fetch daily practices
 async function getDailyPractices(db: D1Database) {
   const { results: dailyPractices } = await db.prepare(`
-    SELECT * FROM activities 
-    WHERE activity_type = 'daily_practice' AND is_active = 1
+    SELECT * FROM formations 
+    WHERE formation_type = 'daily_practice' AND is_active = 1
     ORDER BY RANDOM() LIMIT 3
   `).all();
 
-  return dailyPractices.map((activity: any) => ({
-    ...activity,
-    materials: JSON.parse(activity.materials || '[]'),
-    instructions: JSON.parse(activity.instructions || '[]'),
-    learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+  return dailyPractices.map((formation: any) => ({
+    ...formation,
+    materials: JSON.parse(formation.materials || '[]'),
+    guide_steps: JSON.parse(formation.guide_steps || '[]'),
+    success_indicators: JSON.parse(formation.success_indicators || '[]'),
+    tips: JSON.parse(formation.tips || '[]'),
   }));
 }
 
@@ -1263,24 +1279,24 @@ app.get('/api/family/today', async (c) => {
     const planData = JSON.parse((plan as any).plan_json);
     const todaysSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
 
-    // Hydrate activities
-    const activityIds = todaysSlots.map((s: any) => s.activityId);
+    // Hydrate formations
+    const activityIds = todaysSlots.map((s: any) => s.activityId); // Retain 'activityId' in slots for back-compat
     let familySessions: any[] = [];
     let materialsList: any[] = [];
 
     if (activityIds.length > 0) {
       const placeholders = activityIds.map(() => '?').join(',');
-      const { results: activities } = await c.env.DB.prepare(`
-            SELECT * FROM activities WHERE id IN (${placeholders})
+      const { results: formations } = await c.env.DB.prepare(`
+            SELECT * FROM formations WHERE id IN (${placeholders})
         `).bind(...activityIds).all();
 
-      const activityMap = new Map(activities.map((a: any) => [a.id, a]));
+      const formationMap = new Map(formations.map((f: any) => [f.id, f]));
 
       familySessions = todaysSlots.map((slot: any) => {
-        const activity: any = activityMap.get(slot.activityId);
-        if (!activity) return null;
+        const formation: any = formationMap.get(slot.activityId);
+        if (!formation) return null;
 
-        const tiers = JSON.parse(activity.tiered_expectations || '[]');
+        const tiers = JSON.parse(formation.tiered_expectations || '[]');
         const childTiers = children.map((child: any) => {
           const age = child.age_in_months;
           let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
@@ -1297,26 +1313,21 @@ app.get('/api/family/today', async (c) => {
           };
         });
 
-        const domainLabels: Record<string, string> = {
-          'motor': 'Stewardship & Dominion',
-          'language': 'Word & Truth',
-          'cognitive': 'Wisdom & Order',
-          'social-emotional': 'Virtue & Sanctification',
-          'pre-academic': 'Foundations & Patterns'
-        };
-        const domainName = domainLabels[activity.domain] || activity.domain;
+        // Map Virtue (formerly Domain)
+        const virtue = formation.primary_virtue;
 
         return {
-          activity: {
-            ...activity,
-            materials: JSON.parse(activity.materials || '[]'),
-            instructions: JSON.parse(activity.instructions || '[]'),
-            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          formation: {
+            ...formation,
+            materials: JSON.parse(formation.materials || '[]'),
+            guide_steps: JSON.parse(formation.guide_steps || '[]'),
+            success_indicators: JSON.parse(formation.success_indicators || '[]'),
+            tips: JSON.parse(formation.tips || '[]'),
           },
           childTiers,
-          messLevel: activity.mess_level,
-          prepMinutes: activity.prep_time_minutes,
-          materialsAvailable: true, // simplified for now
+          messLevel: formation.mess_level,
+          prepMinutes: 5, // Default or add to schema if needed
+          materialsAvailable: true,
           reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
           timeSlot: slot.timeSlot,
           day: slot.day
@@ -1326,7 +1337,7 @@ app.get('/api/family/today', async (c) => {
       // Collect materials
       const neededMaterials = new Set<string>();
       familySessions.forEach((session: any) => {
-        session.activity.materials.forEach((m: string) => neededMaterials.add(m));
+        session.formation.materials.forEach((m: string) => neededMaterials.add(m));
       });
 
       if (neededMaterials.size > 0) {
@@ -1349,8 +1360,8 @@ app.get('/api/family/today', async (c) => {
     }
 
     // Compute metrics
-    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
-    const coreKitCount = familySessions.filter((s: any) => s.activity.uses_core_kit).length;
+    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.formation.duration_minutes || 15), 0);
+    const coreKitCount = familySessions.filter((s: any) => s.formation.uses_core_kit).length;
     const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
 
     return c.json({
@@ -1444,17 +1455,17 @@ app.get('/api/family/day/:date', async (c) => {
 
     if (activityIds.length > 0) {
       const placeholders = activityIds.map(() => '?').join(',');
-      const { results: activities } = await c.env.DB.prepare(`
-        SELECT * FROM activities WHERE id IN (${placeholders})
+      const { results: formations } = await c.env.DB.prepare(`
+        SELECT * FROM formations WHERE id IN (${placeholders})
       `).bind(...activityIds).all();
 
-      const activityMap = new Map(activities.map((a: any) => [a.id, a]));
+      const formationMap = new Map(formations.map((f: any) => [f.id, f]));
 
       familySessions = daySlots.map((slot: any) => {
-        const activity: any = activityMap.get(slot.activityId);
-        if (!activity) return null;
+        const formation: any = formationMap.get(slot.activityId);
+        if (!formation) return null;
 
-        const tiers = JSON.parse(activity.tiered_expectations || '[]');
+        const tiers = JSON.parse(formation.tiered_expectations || '[]');
         const childTiers = children.map((child: any) => {
           const age = child.age_in_months;
           let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
@@ -1472,11 +1483,12 @@ app.get('/api/family/day/:date', async (c) => {
         });
 
         return {
-          activity: {
-            ...activity,
-            materials: JSON.parse(activity.materials || '[]'),
-            instructions: JSON.parse(activity.instructions || '[]'),
-            learning_outcomes: JSON.parse(activity.learning_outcomes || '[]'),
+          formation: {
+            ...formation,
+            materials: JSON.parse(formation.materials || '[]'),
+            guide_steps: JSON.parse(formation.guide_steps || '[]'),
+            success_indicators: JSON.parse(formation.success_indicators || '[]'),
+            tips: JSON.parse(formation.tips || '[]'),
           },
           childTiers,
           reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
@@ -1486,21 +1498,22 @@ app.get('/api/family/day/:date', async (c) => {
       }).filter(Boolean);
     }
 
-    // Get completions for this day
+    // Get completions for this day (Using evidences table)
     const { results: completions } = await c.env.DB.prepare(`
-      SELECT activity_id FROM activity_completions 
-      WHERE parent_id = ? AND date(completed_at) = ?
+      SELECT formation_id FROM evidences 
+      WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) 
+      AND date(created_at) = ?
     `).bind(user.id, dateParam).all();
 
-    const completedIds = new Set(completions.map((c: any) => c.activity_id));
+    const completedIds = new Set(completions.map((c: any) => c.formation_id));
 
     // Mark completed sessions
     familySessions = familySessions.map((session: any) => ({
       ...session,
-      isCompleted: completedIds.has(session.activity.id)
+      isCompleted: completedIds.has(session.formation.id)
     }));
 
-    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.activity.duration_minutes || 15), 0);
+    const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.formation.duration_minutes || 15), 0);
 
     return c.json({
       date: dateParam,
@@ -1547,9 +1560,10 @@ app.get('/api/family/week-summary', async (c) => {
     const weekEndStr = weekEnd.toISOString().split('T')[0];
 
     const { results: completions } = await c.env.DB.prepare(`
-      SELECT activity_id, date(completed_at) as completed_date 
-      FROM activity_completions 
-      WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
+      SELECT formation_id, date(created_at) as completed_date 
+      FROM evidences 
+      WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) 
+      AND date(created_at) >= ? AND date(created_at) <= ?
     `).bind(user.id, weekStartParam, weekEndStr).all();
 
     const completedByDay: Record<string, Set<string>> = {};
@@ -1557,7 +1571,7 @@ app.get('/api/family/week-summary', async (c) => {
       const compDate = new Date((comp as any).completed_date);
       const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][compDate.getDay()];
       if (!completedByDay[dayName]) completedByDay[dayName] = new Set();
-      completedByDay[dayName].add((comp as any).activity_id);
+      completedByDay[dayName].add((comp as any).formation_id);
     }
 
     // Build response
@@ -1574,12 +1588,12 @@ app.get('/api/family/week-summary', async (c) => {
       const completedSet = completedByDay[dayName] || new Set();
 
       const completedCount = slotsForDay.filter((s: any) => completedSet.has(s.activityId)).length;
-      const domains = [...new Set(slotsForDay.map((s: any) => s.domain))];
+      const virtues = [...new Set(slotsForDay.map((s: any) => s.virtue || 'Wisdom'))]; // Fallback if virtue not in slot yet
 
       days[dateStr] = {
         completed: completedCount,
         total: slotsForDay.length,
-        domains
+        domains: virtues // Keeping key as 'domains' for frontend compatibility for now, but sending virtues
       };
     }
 
@@ -1615,18 +1629,18 @@ app.post('/api/family/swap-persist', async (c) => {
     let updated = false;
     for (const slot of planData.slots) {
       if (slot.day === day && slot.activityId === oldActivityId) {
-        // Fetch new activity details
-        const newActivity = await c.env.DB.prepare('SELECT * FROM activities WHERE id = ?')
+        // Fetch new formation details
+        const newFormation = await c.env.DB.prepare('SELECT * FROM formations WHERE id = ?')
           .bind(newActivityId).first();
 
-        if (!newActivity) {
-          return c.json({ error: 'New activity not found' }, 404);
+        if (!newFormation) {
+          return c.json({ error: 'New formation not found' }, 404);
         }
 
         slot.activityId = newActivityId;
-        slot.activityTitle = (newActivity as any).title;
-        slot.domain = (newActivity as any).domain;
-        slot.duration = (newActivity as any).duration_minutes;
+        slot.activityTitle = (newFormation as any).title; // Kept as activityTitle for compatibility if needed, or change to title
+        slot.virtue = (newFormation as any).primary_virtue;
+        slot.duration = (newFormation as any).duration_minutes;
         slot.reasoning = `Manually swapped by parent.`;
         updated = true;
         break;
@@ -1641,16 +1655,18 @@ app.post('/api/family/swap-persist', async (c) => {
     await c.env.DB.prepare('UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?')
       .bind(JSON.stringify(planData), (plan as any).id).run();
 
-    // Get the new activity for response
-    const newActivity = await c.env.DB.prepare('SELECT * FROM activities WHERE id = ?')
+    // Get the new formation for response
+    const newFormation = await c.env.DB.prepare('SELECT * FROM formations WHERE id = ?')
       .bind(newActivityId).first();
 
     return c.json({
       success: true,
-      newActivity: {
-        ...newActivity,
-        materials: JSON.parse((newActivity as any)?.materials || '[]'),
-        instructions: JSON.parse((newActivity as any)?.instructions || '[]'),
+      newFormation: {
+        ...newFormation,
+        materials: JSON.parse((newFormation as any)?.materials || '[]'),
+        guide_steps: JSON.parse((newFormation as any)?.guide_steps || '[]'),
+        success_indicators: JSON.parse((newFormation as any)?.success_indicators || '[]'),
+        tips: JSON.parse((newFormation as any)?.tips || '[]'),
       }
     });
   } catch (error: any) {
