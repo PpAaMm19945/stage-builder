@@ -231,8 +231,16 @@ export const BookDocument = (props: BookDocumentProps) => {
 
     return (
         <Document>
-            <Page>
-                <Text>No content available for PDF generation.</Text>
+            <Page size="A5" style={styles.page}>
+                <View style={styles.titlePage}>
+                    <Text style={styles.title}>{book.title}</Text>
+                    <Text style={[styles.subtitle, { color: '#E53E3E' }]}>
+                        Content is not available for PDF generation.
+                    </Text>
+                    <Text style={{ textAlign: 'center', fontSize: 10, color: '#666' }}>
+                        This book may use a format that cannot be printed.
+                    </Text>
+                </View>
             </Page>
         </Document>
     );
