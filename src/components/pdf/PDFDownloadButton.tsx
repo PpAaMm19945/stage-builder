@@ -26,35 +26,52 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
     const imageUrlToBase64 = async (url: string): Promise<string> => {
         try {
             console.log('[PDF] Fetching image:', url);
-            const response = await fetch(url);
+            let response = await fetch(url);
+
+            // If primary fetch fails, try fallbacks
             if (!response.ok) {
-                console.warn(`[PDF] Image fetch failed for ${url} (Status: ${response.status}). Trying fallback...`);
-                // If API proxy URL failed, try direct R2 URL as fallback
-                // API URL format: /api/books/:series/:id/pages/:num
-                // Direct R2 format: https://r2.schoolos.io/books/:series/:id/images/page-:num.png
-                // Note: The direct R2 structure might vary, but it's a reasonable fallback
+                console.warn(`[PDF] Image fetch failed for ${url} (Status: ${response.status}). Trying fallbacks...`);
+
+                // If API proxy URL failed, try direct R2 URL fallbacks
                 if (url.includes('/api/books/')) {
                     const match = url.match(/\/api\/books\/([^\/]+)\/([^\/]+)\/pages\/(\d+)/);
                     if (match) {
                         const [_, series, bookId, pageNum] = match;
-                        // Assuming 0-based index or 1-based index handling. API usually expects 01, 02.
-                        // But image files might be page-1.png or page-01.png
-                        const directUrl = `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${parseInt(pageNum)}.png`;
-                        console.log('[PDF] Attempting direct R2 fallback:', directUrl);
-                        const directResponse = await fetch(directUrl);
-                        if (directResponse.ok) {
-                             const blob = await directResponse.blob();
-                             return new Promise((resolve, reject) => {
-                                 const reader = new FileReader();
-                                 reader.onloadend = () => resolve(reader.result as string);
-                                 reader.onerror = reject;
-                                 reader.readAsDataURL(blob);
-                             });
+                        const pageNumInt = parseInt(pageNum);
+
+                        // Try multiple common naming patterns for R2
+                        // We try the padded version first as it's most common for image sequences
+                        const fallbackPatterns = [
+                            `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${pageNum}.png`,      // page-01.png
+                            `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${pageNumInt}.png`,   // page-1.png
+                            `https://r2.schoolos.io/books/${series}/${bookId}/page-${pageNum}.png`,             // root/page-01.png
+                            `https://r2.schoolos.io/books/${series}/${bookId}/page-${pageNumInt}.png`,          // root/page-1.png
+                            `https://r2.schoolos.io/books/${series}/${bookId}/images/${pageNum}.png`,           // images/01.png
+                            `https://r2.schoolos.io/books/${series}/${bookId}/${pageNum}.png`                   // root/01.png
+                        ];
+
+                        for (const fallbackUrl of fallbackPatterns) {
+                            console.log('[PDF] Attempting fallback:', fallbackUrl);
+                            try {
+                                const fbResponse = await fetch(fallbackUrl);
+                                if (fbResponse.ok) {
+                                    console.log('[PDF] Fallback success:', fallbackUrl);
+                                    response = fbResponse;
+                                    break;
+                                }
+                            } catch (e) {
+                                // Continue to next fallback
+                            }
                         }
                     }
                 }
+            }
+
+            if (!response.ok) {
+                console.error('[PDF] All attempts failed for image:', url);
                 return '';
             }
+
             const blob = await response.blob();
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
