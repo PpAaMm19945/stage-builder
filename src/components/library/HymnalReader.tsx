@@ -133,7 +133,12 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
                                 styleProfile: 'hymn-book',
                                 pageCount: hymns.length + 1,
                                 coverUrl: '',
-                                renderFormat: 'hymn-book'
+                                renderFormat: 'hymnal',
+                                minAgeMonths: 0,
+                                maxAgeMonths: 999,
+                                learningStage: 'all',
+                                domain: 'wisdom',
+                                description: 'The SchoolOS Hymnal'
                             }}
                         />
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
