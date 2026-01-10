@@ -7,3 +7,8 @@
 **Vulnerability:** The Admin Dashboard used inline event handlers like `onclick="toggleRow('${log.id}')"`. If `log.id` contained single quotes or other malicious characters, it could break out of the string context and execute arbitrary JavaScript (DOM XSS). Even if `escapeHtml` was used, the browser decodes HTML entities in attributes *before* executing the JS, potentially re-introducing the vulnerability.
 **Learning:** Avoid injecting dynamic data directly into inline JavaScript event handlers. HTML entity encoding is not sufficient protection for data inside inline event handlers because of the decoding order.
 **Prevention:** Use `data-*` attributes to store dynamic data and access it via `this.dataset.*` or `event.target.dataset.*` inside the event handler, or attach event listeners programmatically instead of using inline HTML attributes.
+
+## 2026-01-10 - Timing Attack on Admin Secrets
+**Vulnerability:** Admin endpoints (`/api/books/upload`, etc.) were comparing the `ADMIN_SECRET` using strict equality (`!==`). This allows attackers to perform timing attacks to deduce the secret character-by-character by measuring the response time differences.
+**Learning:** Never use standard string comparison for security secrets. The V8 engine (and most runtimes) optimizes string comparison to return `false` as soon as the first character mismatch is found, leaking information about how much of the secret was correct.
+**Prevention:** Always use a constant-time comparison function (like `crypto.subtle` or a manual XOR loop) for validating secrets and tokens.
