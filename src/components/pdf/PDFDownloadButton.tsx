@@ -44,19 +44,19 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
         setLoadingData(true);
         try {
             // Check for Hymnal
-            if (book.series === 'reformed-hymns' || book.styleProfile === 'hymn-book' || book.title.toLowerCase().includes('hymnal')) {
+            if (book.renderFormat === 'hymnal' || book.series === 'reformed-hymns' || book.styleProfile === 'hymn-book') {
                 const series = book.series || 'reformed-hymns';
                 const data = await fetchAllHymns(series);
                 setHymns(data);
             }
             // Check for Catechism
-            else if (book.series === 'catechism' || book.title.toLowerCase().includes('catechism')) {
+            else if (book.renderFormat === 'catechism' || book.series === 'catechism') {
                 const series = book.series || 'catechism';
                 const data = await fetchCatechism(series);
                 setCatechismData(data);
             }
             // Check for Image Book
-            else if (book.renderFormat === 'image') {
+            else if (book.renderFormat === 'image' || (!book.renderFormat && book.pageCount > 0)) {
                 const urls = Array.from({ length: book.pageCount }, (_, i) => {
                     return books.getPageUrl(book.series, book.id, i + 1);
                 });
@@ -72,7 +72,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                 setImageUrls(base64Images.filter(img => !!img));
             }
             // Check for JSON-embedded content (like African Men of Faith series)
-            else if (!book.renderFormat || book.renderFormat === 'json-embedded') {
+            else if (book.renderFormat === 'json-embedded' || !book.renderFormat) {
                 try {
                     // Fetch the book's metadata which contains embedded pages
                     const metadataUrl = books.getPageUrl(book.series, book.id, 0).replace('/pages/0.', '/metadata.json').replace(/\.[^.]+$/, '');

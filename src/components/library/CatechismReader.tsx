@@ -63,7 +63,12 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
                                 series: 'catechism',
                                 pageCount: items.length + 1,
                                 coverUrl: '',
-                                renderFormat: 'catechism'
+                                renderFormat: 'catechism',
+                                minAgeMonths: 0,
+                                maxAgeMonths: 999,
+                                learningStage: 'all',
+                                domain: 'wisdom',
+                                description: 'Westminster Shorter Catechism'
                             }}
                         />
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
