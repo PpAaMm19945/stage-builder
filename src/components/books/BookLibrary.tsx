@@ -14,6 +14,12 @@ import {
     SelectTrigger,
     SelectValue,
 } from '@/components/ui/select';
+import {
+    Accordion,
+    AccordionContent,
+    AccordionItem,
+    AccordionTrigger,
+} from '@/components/ui/accordion';
 import { useAuth } from '@/contexts/AuthContext';
 import { Books as BooksIcon, Book as BookIcon } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
@@ -56,12 +62,20 @@ const CATECHISM_BOOK: Book = {
     readingPrompts: []
 };
 
+const BOOK_CATEGORIES = [
+    { value: 'all', label: 'All Books' },
+    { value: 'picture-books', label: 'Picture Books' },
+    { value: 'bible', label: 'The Paperback Bible' },
+    { value: 'worship', label: 'Worship Resources' },
+];
+
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const [showHymnal, setShowHymnal] = useState(false);
     const [showCatechism, setShowCatechism] = useState(false);
     const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
+    const [categoryFilter, setCategoryFilter] = useState('picture-books');
 
     // Fetch ALL books without age filtering (user chose "Show all by default")
     const { data: allBooks = [], isLoading, error } = useQuery({
@@ -72,11 +86,23 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }),
     });
 
-    // Inject Hymnal and Catechism
-    const displayBooks = useMemo(
-        () => [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK, ...PAPERBACK_BIBLE_BOOKS],
-        [allBooks]
-    );
+    // Inject Hymnal and Catechism and Filter
+    const displayBooks = useMemo(() => {
+        let books = [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK, ...PAPERBACK_BIBLE_BOOKS];
+
+        if (categoryFilter === 'picture-books') {
+             // Exclude Bible and Worship
+             books = books.filter(b => !b.series?.startsWith('Bible') &&
+                                  b.renderFormat !== 'hymnal' &&
+                                  b.renderFormat !== 'catechism');
+        } else if (categoryFilter === 'bible') {
+             books = books.filter(b => b.series?.startsWith('Bible'));
+        } else if (categoryFilter === 'worship') {
+             books = books.filter(b => b.renderFormat === 'hymnal' || b.renderFormat === 'catechism');
+        }
+
+        return books;
+    }, [allBooks, categoryFilter]);
 
     // Group books by series
     const booksBySeries = useMemo(() => {
@@ -92,6 +118,11 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         () => Object.keys(booksBySeries).sort(),
         [booksBySeries]
     );
+
+    // Compute default open series (everything except Bible to prevent flood)
+    const defaultOpenSeries = useMemo(() => {
+        return seriesNames.filter(s => !s.startsWith('Bible'));
+    }, [seriesNames]);
 
     const handleBookClick = (book: Book) => {
         if (book.id === 'schoolos-hymnal') {
@@ -114,7 +145,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     return (
         <div className="space-y-6">
             {/* Filters */}
-            <div className="flex items-center gap-4">
+            <div className="flex flex-wrap items-center gap-4">
                 <Select value={stageFilter} onValueChange={setStageFilter}>
                     <SelectTrigger className="w-48">
                         <SelectValue placeholder="Filter by stage" />
@@ -126,12 +157,21 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                     </SelectContent>
                 </Select>
 
-                <span className="text-sm text-muted-foreground">
-                    Showing all books
-                </span>
+                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
+                    <SelectTrigger className="w-48">
+                        <SelectValue placeholder="Category" />
+                    </SelectTrigger>
+                    <SelectContent>
+                        {BOOK_CATEGORIES.map(cat => (
+                            <SelectItem key={cat.value} value={cat.value}>
+                                {cat.label}
+                            </SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
             </div>
 
-            {/* Loading State - Updated for landscape cards */}
+            {/* Loading State */}
             {isLoading && (
                 <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
                     {Array.from({ length: 8 }).map((_, i) => (
@@ -150,35 +190,47 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                     <BooksIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
                     <h3 className="text-lg font-medium mb-2">No Books Found</h3>
                     <p className="text-muted-foreground">
-                        {stageFilter !== 'all'
-                            ? 'Try removing the filter to see all available books.'
+                        {stageFilter !== 'all' || categoryFilter !== 'all'
+                            ? 'Try changing the filters to see available books.'
                             : 'Books are being added. Check back soon!'}
                     </p>
                 </div>
             )}
 
-            {/* Book Grid by Series - Updated for landscape cards */}
-            {!isLoading && seriesNames.map(series => (
-                <section key={series} className="space-y-4">
-                    <h2 className="text-lg font-semibold flex items-center gap-2">
-                        <BookIcon className="h-5 w-5 text-primary" weight="duotone" />
-                        {series}
-                        <span className="text-sm font-normal text-muted-foreground">
-                            ({booksBySeries[series].length} {booksBySeries[series].length === 1 ? 'book' : 'books'})
-                        </span>
-                    </h2>
-
-                    <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                        {booksBySeries[series].map(book => (
-                            <BookCard
-                                key={`${book.series}-${book.id}`}
-                                book={book}
-                                onClick={() => handleBookClick(book)}
-                            />
-                        ))}
-                    </div>
-                </section>
-            ))}
+            {/* Book Grid by Series - Using Accordion */}
+            {!isLoading && (
+                <Accordion type="multiple" defaultValue={defaultOpenSeries} className="space-y-4">
+                    {seriesNames.map(series => (
+                        <AccordionItem key={series} value={series} className="border-none">
+                            <AccordionTrigger className="hover:no-underline py-2">
+                                <h2 className="text-lg font-semibold flex items-center gap-2">
+                                    <BookIcon className="h-5 w-5 text-primary" weight="duotone" />
+                                    {series}
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        ({booksBySeries[series].length} {booksBySeries[series].length === 1 ? 'book' : 'books'})
+                                    </span>
+                                </h2>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                {series.startsWith('Bible') && (
+                                    <p className="text-sm text-muted-foreground mb-4 ml-1">
+                                        Audio kindly provided by <a href="https://www.sermonaudio.com" target="_blank" rel="noreferrer" className="underline decoration-dotted hover:text-primary">SermonAudio</a>
+                                    </p>
+                                )}
+                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
+                                    {booksBySeries[series].map(book => (
+                                        <BookCard
+                                            key={`${book.series}-${book.id}`}
+                                            book={book}
+                                            onClick={() => handleBookClick(book)}
+                                        />
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            )}
 
             {/* Book Reader Modal */}
             <BookReader
