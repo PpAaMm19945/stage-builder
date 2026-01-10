@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,10 +8,10 @@ import { Books as BooksIcon, Heart } from '@phosphor-icons/react';
 
 interface BookCardProps {
     book: Book;
-    onClick?: () => void;
+    onClick?: (book: Book) => void;
 }
 
-export function BookCard({ book, onClick }: BookCardProps) {
+export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -54,7 +54,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
     return (
         <Card
             className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
-            onClick={onClick}
+            onClick={() => onClick?.(book)}
         >
             {/* Landscape aspect ratio for picture book covers */}
             <div className="aspect-[4/3] relative overflow-hidden bg-muted">
@@ -123,4 +123,4 @@ export function BookCard({ book, onClick }: BookCardProps) {
             </CardContent>
         </Card >
     );
-}
+});
