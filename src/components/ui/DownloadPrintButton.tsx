@@ -92,18 +92,13 @@ export function DownloadPrintButton({
                         <Button variant={variant} size={size} asChild className={className}>
                             <a href={url || '#'} download={fileName}>
                                 <FilePdf className="mr-2 h-4 w-4" />
-                                {label}
+                                <span className="hidden sm:inline">{label}</span>
+                                <span className="sm:hidden">PDF</span>
                             </a>
                         </Button>
-                        {/* Optional separate print button if space permits, or stick to just download. 
-                For this unified component, I'll add a separate small print button or dropdown.
-                Let's use a split button approach or just the dropdown if confusing.
-                Actually, let's keep it simple: Primary action Download, Secondary Print via Dropdown?
-                Or just a dropdown for both.
-             */}
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9">
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20">
                                     <CaretDown className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>

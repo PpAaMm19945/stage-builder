@@ -16,6 +16,7 @@ import {
 } from '@/components/ui/select';
 import { useAuth } from '@/contexts/AuthContext';
 import { Books as BooksIcon, Book as BookIcon } from '@phosphor-icons/react';
+import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 
 interface BookLibraryProps {
     initialStage?: string;
@@ -55,27 +56,6 @@ const CATECHISM_BOOK: Book = {
     readingPrompts: []
 };
 
-const PAPERBACK_BIBLE_BOOK: Book = {
-    id: 'paperback-bible-sample',
-    title: 'The Paperback Bible',
-    author: 'Sermon Audio',
-    series: 'Bible',
-    minAgeMonths: 0,
-    maxAgeMonths: 120,
-    learningStage: 'all',
-    domain: 'wisdom',
-    pageCount: 1,
-    renderFormat: 'pdf',
-    // Using a placeholder PDF URL since the exact URL is behind a cart/download
-    // This allows the feature to be tested/used if a valid URL is provided later.
-    // For now, using a sample PDF to demonstrate functionality.
-    pdfUrl: 'https://www.w3.org/WAI/ER/tests/xhtml/testfiles/resources/pdf/dummy.pdf',
-    coverUrl: 'https://www.sermonaudio.com/news/paperback-bible-fragments/@@images/image-1600-0e1136b9076f62b7245842817293a525.png', // Logo from search result snippet or similar
-    description: 'The Paperback Bible presents the Bible by the Book and is designed to be portable, readable, and truly personal.',
-    topics: ['bible', 'scripture'],
-    readingPrompts: []
-};
-
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -94,7 +74,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     // Inject Hymnal and Catechism
     const displayBooks = useMemo(
-        () => [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK, PAPERBACK_BIBLE_BOOK],
+        () => [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK, ...PAPERBACK_BIBLE_BOOKS],
         [allBooks]
     );
 
@@ -165,7 +145,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             )}
 
             {/* Empty State */}
-            {!isLoading && allBooks.length === 0 && (
+            {!isLoading && displayBooks.length === 0 && (
                 <div className="text-center py-12">
                     <BooksIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
                     <h3 className="text-lg font-medium mb-2">No Books Found</h3>

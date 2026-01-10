@@ -192,7 +192,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     <BookOpenText className="w-6 h-6" />
                                 </Button>
                             )}
-                            {!isPdf && <PDFDownloadButton book={book} pages={parsedPages} />}
+                            {/* Always show PDF button if available (moved from !isPdf condition to support downloading image books too) */}
+                            <PDFDownloadButton book={book} pages={parsedPages} />
+
                             <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
                                 <X className="w-6 h-6" />
                             </Button>
