@@ -51,10 +51,21 @@ export function BookCard({ book, onClick }: BookCardProps) {
     };
     const seriesColor = getSeriesColor(book.series);
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (onClick && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onClick();
+        }
+    };
+
     return (
         <Card
-            className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98]"
+            className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
             onClick={onClick}
+            role="button"
+            tabIndex={0}
+            aria-label={`Open ${book.title}`}
+            onKeyDown={handleKeyDown}
         >
             {/* Landscape aspect ratio for picture book covers */}
             <div className="aspect-[4/3] relative overflow-hidden bg-muted">
@@ -80,7 +91,7 @@ export function BookCard({ book, onClick }: BookCardProps) {
 
                 <img
                     src={coverUrl}
-                    alt={book.title}
+                    alt=""
                     loading="lazy"
                     className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
                         }`}
