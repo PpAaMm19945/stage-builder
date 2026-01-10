@@ -3108,8 +3108,10 @@ app.get('/api/reading/history', async (c) => {
 
 // Upload book image (Admin only)
 app.put('/api/books/upload', async (c) => {
-  const secret = c.req.query('key');
-  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) {
+  const key = c.req.query('key');
+  const secret = c.env.ADMIN_SECRET;
+
+  if (!secret || !safeCompare(key, secret)) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3127,8 +3129,10 @@ app.put('/api/books/upload', async (c) => {
 
 // Debug R2 endpoint
 app.get('/api/debug/r2', async (c) => {
-  const secret = c.req.query('key');
-  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) {
+  const key = c.req.query('key');
+  const secret = c.env.ADMIN_SECRET;
+
+  if (!secret || !safeCompare(key, secret)) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3154,8 +3158,12 @@ app.get('/api/debug/r2', async (c) => {
 // Debug Book Audit
 app.get('/api/debug/books/audit', async (c) => {
   // Protect
-  const secret = c.req.query('key');
-  if (!c.env.ADMIN_SECRET || secret !== c.env.ADMIN_SECRET) return c.json({ error: 'Unauthorized' }, 401);
+  const key = c.req.query('key');
+  const secret = c.env.ADMIN_SECRET;
+
+  if (!secret || !safeCompare(key, secret)) {
+    return c.json({ error: 'Unauthorized' }, 401);
+  }
 
   const bucket = c.env.BOOKS_BUCKET;
   const violations: any[] = [];
