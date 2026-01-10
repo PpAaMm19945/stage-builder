@@ -204,15 +204,32 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                     {/* Reader Area */}
                     <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
                         {isPdf ? (
-                            <div className="w-full h-full flex flex-col items-center">
+                            <div className="w-full h-full flex flex-col items-center relative">
+                                {/* Fallback/Loading Background */}
+                                <div className="absolute inset-0 flex items-center justify-center z-0 text-gray-400 bg-white">
+                                    <div className="text-center p-8 max-w-sm">
+                                        <p className="mb-4">Loading PDF...</p>
+                                        <p className="text-sm text-gray-500 mb-6">If the document doesn't appear, it may be blocked by security settings.</p>
+                                        <Button
+                                            variant="outline"
+                                            onClick={() => window.open(book.pdfUrl, '_blank')}
+                                            className="gap-2"
+                                        >
+                                            Open PDF in New Tab
+                                        </Button>
+                                    </div>
+                                </div>
+
                                 {/* Use iframe for PDF display - most modern browsers support this */}
                                 <iframe
                                     src={book.pdfUrl}
-                                    className="w-full h-full bg-white"
+                                    className="w-full h-full relative z-10"
                                     title={book.title}
+                                    allow="fullscreen"
                                 />
+
                                 {/* Quick finish button for PDFs since we don't track page turns */}
-                                <div className="absolute bottom-6 right-6">
+                                <div className="absolute bottom-6 right-6 z-20">
                                     <Button
                                         size="lg"
                                         className="shadow-xl"
@@ -356,4 +373,3 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         </>
     );
 }
-
