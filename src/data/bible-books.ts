@@ -81,10 +81,17 @@ const BIBLE_BOOKS_DATA: BibleBook[] = [
 export const PAPERBACK_BIBLE_BOOKS: Book[] = BIBLE_BOOKS_DATA.map(book => {
   const paddedNum = String(book.number).padStart(2, '0');
   // Construct URL slug: spaces become underscores, lowercase
-  // e.g. "Song of Solomon" -> "song_of_solomon"
-  // Note: Some multi-word books (like 1 Samuel) might have different patterns on SermonAudio
-  // but we can rely on BookCard's fallback behavior for now.
-  const urlSlug = book.name.toLowerCase().replace(/\s/g, '_');
+  // Special handling for numbered books: "1 Corinthians" -> "1corinthians" (no underscore)
+  // "Song of Solomon" -> "song_of_solomon"
+  let urlSlug = book.name.toLowerCase();
+
+  if (/^\d\s/.test(book.name)) {
+    // Numbered book: remove the first space
+    urlSlug = urlSlug.replace(' ', '');
+  }
+
+  // Replace remaining spaces with underscores
+  urlSlug = urlSlug.replace(/\s/g, '_');
 
   return {
     id: `pbb-${book.name.toLowerCase().replace(/\s/g, '-')}`,

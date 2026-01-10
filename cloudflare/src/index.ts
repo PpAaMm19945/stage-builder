@@ -1881,7 +1881,7 @@ app.post('/api/passion-signals', async (c) => {
 app.get('/api/hymns', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      "SELECT * FROM liturgy_items WHERE type = 'hymn' AND is_active = 1 ORDER BY sequence_number"
+      "SELECT * FROM legacy_liturgy_items WHERE type = 'hymn' AND is_active = 1 ORDER BY sequence_number"
     ).all();
     return c.json(results);
   } catch (error: any) {
@@ -1893,7 +1893,7 @@ app.get('/api/hymns', async (c) => {
 app.get('/api/catechism', async (c) => {
   try {
     const { results } = await c.env.DB.prepare(
-      "SELECT * FROM liturgy_items WHERE type = 'catechism' AND is_active = 1 ORDER BY sequence_number"
+      "SELECT * FROM legacy_liturgy_items WHERE type = 'catechism' AND is_active = 1 ORDER BY sequence_number"
     ).all();
     return c.json(results);
   } catch (error: any) {
@@ -1942,7 +1942,7 @@ app.get('/api/family/daily-rhythm', async (c) => {
 
         // Get today's liturgy items based on current weeks
         const { results: liturgyItems } = await c.env.DB.prepare(`
-          SELECT * FROM liturgy_items 
+          SELECT * FROM legacy_liturgy_items 
           WHERE (
             (type = 'catechism' AND source = ? AND sequence_number = ?) OR
             (type = 'hymn' AND source = ? AND sequence_number = ?) OR
@@ -3285,7 +3285,7 @@ app.get('/api/liturgy/today', async (c) => {
 
   if ((settings as any).catechism_enabled) {
     const catechism = await c.env.DB.prepare(`
-      SELECT * FROM liturgy_items
+      SELECT * FROM legacy_liturgy_items
       WHERE type = 'catechism' AND source = ? AND sequence_number = ? AND is_active = 1
     `).bind((settings as any).catechism_source, (settings as any).current_catechism_week).first();
     if (catechism) items.push({ ...catechism, itemType: 'catechism' });
@@ -3293,7 +3293,7 @@ app.get('/api/liturgy/today', async (c) => {
 
   if ((settings as any).hymnal_enabled) {
     const hymn = await c.env.DB.prepare(`
-      SELECT * FROM liturgy_items
+      SELECT * FROM legacy_liturgy_items
       WHERE type = 'hymn' AND source = ? AND sequence_number = ? AND is_active = 1
     `).bind((settings as any).hymnal_source, (settings as any).current_hymn_week).first();
     if (hymn) items.push({ ...hymn, itemType: 'hymn' });
@@ -3301,7 +3301,7 @@ app.get('/api/liturgy/today', async (c) => {
 
   if ((settings as any).scripture_enabled) {
     const scripture = await c.env.DB.prepare(`
-      SELECT * FROM liturgy_items
+      SELECT * FROM legacy_liturgy_items
       WHERE type = 'scripture' AND source = ? AND sequence_number = ? AND is_active = 1
     `).bind((settings as any).bible_translation, (settings as any).current_scripture_week).first();
     if (scripture) items.push({ ...scripture, itemType: 'scripture' });
@@ -5519,6 +5519,55 @@ app.post('/api/support/log-click', async (c) => {
   } catch (error: any) {
     console.error('Support log error:', error);
     return c.json({ error: error.message }, 500);
+  }
+});
+
+// ============ BOOK ROUTES ============
+app.get('/api/books/:series/:bookId/cover', async (c) => {
+  try {
+    const { series, bookId } = c.req.param();
+    // Proxy to R2 - Standard cover location
+    const url = `https://r2.schoolos.io/books/${series}/${bookId}/images/cover.png`;
+    const response = await fetch(url);
+
+    if (!response.ok) {
+      // Try root cover.png as fallback
+      const fallbackUrl = `https://r2.schoolos.io/books/${series}/${bookId}/cover.png`;
+      const fallbackResponse = await fetch(fallbackUrl);
+      if (fallbackResponse.ok) {
+        const newResponse = new Response(fallbackResponse.body, fallbackResponse);
+        newResponse.headers.set('Access-Control-Allow-Origin', '*');
+        newResponse.headers.set('Cache-Control', 'public, max-age=3600');
+        return newResponse;
+      }
+      return c.json({ error: 'Cover not found' }, 404);
+    }
+
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    newResponse.headers.set('Cache-Control', 'public, max-age=3600');
+    return newResponse;
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.get('/api/books/:series/:bookId/pages/:page', async (c) => {
+  try {
+    const { series, bookId, page } = c.req.param();
+    // Proxy to R2 - Standard page location (images/page-{N}.png)
+    // Frontend commonly requests this via books.getPageUrl
+    const url = `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${page}.png`;
+    const response = await fetch(url);
+
+    if (!response.ok) return c.json({ error: 'Page not found' }, 404);
+
+    const newResponse = new Response(response.body, response);
+    newResponse.headers.set('Access-Control-Allow-Origin', '*');
+    newResponse.headers.set('Cache-Control', 'public, max-age=3600');
+    return newResponse;
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
   }
 });
 

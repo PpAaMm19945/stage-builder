@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
         marginBottom: 5
     },
     hymnContent: {
-        fontSize: 10,
-        lineHeight: 1.25,
+        fontSize: 9,
+        lineHeight: 1.15,
         fontFamily: 'Times-Roman'
     },
     catechismQuestion: {
@@ -117,36 +117,38 @@ const HtmlTextRenderer = ({ content }: { content: string }) => {
 
 const HymnalDocument = ({ book, hymns }: { book: Book; hymns: NonNullable<BookDocumentProps['hymns']> }) => (
     <Document title={book.title} author={book.author}>
-        <Page size="A5" style={styles.page}>
+        <Page size="A4" style={[styles.page, { padding: 40 }]}>
             <View style={styles.titlePage}>
                 <Text style={styles.title}>{book.title}</Text>
                 {book.author && <Text style={styles.subtitle}>{book.author}</Text>}
             </View>
         </Page>
-        {hymns.map((hymn, index) => (
-            <Page key={index} size="A5" style={styles.page}>
-                <View style={{ marginBottom: 20 }}>
-                    <Text style={styles.hymnNumber}>
-                        {hymn.number ? `#${hymn.number}` : ''}
-                    </Text>
-                    <Text style={styles.hymnTitle}>
-                        {hymn.title}
-                    </Text>
+        <Page size="A4" style={[styles.page, { flexDirection: 'row', flexWrap: 'wrap', padding: 30, paddingTop: 40 }]}>
+            {hymns.map((hymn, index) => (
+                <View key={index} style={{ width: '48%', marginRight: '2%', marginBottom: 15 }} wrap={false}>
+                    <View style={{ flexDirection: 'row', alignItems: 'baseline', marginBottom: 2 }}>
+                        <Text style={[styles.hymnNumber, { fontSize: 9, marginRight: 4, width: 20 }]}>
+                            {hymn.number ? `${hymn.number}.` : ''}
+                        </Text>
+                        <Text style={[styles.hymnTitle, { fontSize: 10, textAlign: 'left', marginBottom: 0, flex: 1 }]}>
+                            {hymn.title}
+                        </Text>
+                    </View>
+
+                    <View style={{ marginLeft: 24 }}>
+                        {/* Manually render content with reduced styles */}
+                        <HtmlTextRenderer content={hymn.content} />
+                    </View>
+
+                    {hymn.author && (
+                        <Text style={{ fontSize: 8, textAlign: 'right', fontStyle: 'italic', marginTop: 2, color: '#666' }}>
+                            {hymn.author}
+                        </Text>
+                    )}
                 </View>
-
-                <View style={{ flexGrow: 1 }}>
-                    <HtmlTextRenderer content={hymn.content} />
-                </View>
-
-                {hymn.author && (
-                    <Text style={{ fontSize: 10, textAlign: 'right', fontStyle: 'italic', marginTop: 10 }}>
-                        {hymn.author}
-                    </Text>
-                )}
-
-                <Text style={styles.footer}>Soli Deo Gloria</Text>
-            </Page>
-        ))}
+            ))}
+            <Text style={[styles.footer, { bottom: 10 }]}>Soli Deo Gloria</Text>
+        </Page>
     </Document>
 );
 
