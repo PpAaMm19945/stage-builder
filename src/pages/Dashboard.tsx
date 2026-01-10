@@ -72,9 +72,12 @@ export default function Dashboard() {
   });
 
   // Fetch day data - use getToday for today, getDay for other days
-  const { data: dayData, isLoading: dayLoading, error: dayError } = useQuery({
+  // Use keepPreviousData to avoid jarring full-page reloads
+  const { data: dayData, isLoading: dayLoading, isFetching: dayFetching, error: dayError } = useQuery({
     queryKey: ['family-day', selectedDateStr],
     queryFn: () => isToday ? family.getToday() : family.getDay(selectedDateStr),
+    placeholderData: (previousData) => previousData, // Keep showing previous data while fetching
+    staleTime: 30000, // Consider data fresh for 30 seconds
   });
 
   // Fetch week summary for the week strip
@@ -172,7 +175,8 @@ export default function Dashboard() {
   };
 
   // Loading State
-  if (dayLoading) {
+  // Loading State - only show full spinner on initial load (no cached data)
+  if (dayLoading && !dayData) {
     return (
       <div className="flex flex-col items-center justify-center min-h-[400px]">
         <CircleNotch className="h-8 w-8 animate-spin text-primary" />
@@ -420,9 +424,14 @@ export default function Dashboard() {
       {/* Timeline */}
       <Collapsible open={showFullDay || !isToday} onOpenChange={setShowFullDay} className="space-y-4">
         <div className="flex items-center justify-between px-2">
-          <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-            {isToday ? `Full Schedule (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Activities (${timelineItems.length})`}
-          </h3>
+          <div className="flex items-center gap-2">
+            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+              {isToday ? `Full Schedule (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Activities (${timelineItems.length})`}
+            </h3>
+            {dayFetching && (
+              <CircleNotch className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+            )}
+          </div>
           {isToday && (
             <CollapsibleTrigger asChild>
               <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
@@ -437,16 +446,18 @@ export default function Dashboard() {
         </div>
 
         <CollapsibleContent forceMount={!isToday ? true : undefined}>
-          <DailyRhythm
-            items={timelineItems}
-            onComplete={(item) => completeActivityMutation.mutate(item)}
-            onBookClick={() => setSelectedBook(todaysBook)}
-            onSwap={isToday ? (item) => {
-              if (item.type === 'activity' && item.data?.id) {
-                setSwapActivity({ id: item.data.id, title: item.title });
-              }
-            } : undefined}
-          />
+          <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
+            <DailyRhythm
+              items={timelineItems}
+              onComplete={(item) => completeActivityMutation.mutate(item)}
+              onBookClick={() => setSelectedBook(todaysBook)}
+              onSwap={isToday ? (item) => {
+                if (item.type === 'activity' && item.data?.id) {
+                  setSwapActivity({ id: item.data.id, title: item.title });
+                }
+              } : undefined}
+            />
+          </div>
         </CollapsibleContent>
       </Collapsible>
 
