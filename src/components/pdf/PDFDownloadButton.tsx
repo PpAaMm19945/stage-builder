@@ -25,7 +25,12 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
     // Helper to convert URL to base64
     const imageUrlToBase64 = async (url: string): Promise<string> => {
         try {
+            console.log('[PDF] Fetching image:', url);
             const response = await fetch(url);
+            if (!response.ok) {
+                console.error('[PDF] Image fetch failed:', url, response.status);
+                return '';
+            }
             const blob = await response.blob();
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -34,7 +39,7 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                 reader.readAsDataURL(blob);
             });
         } catch (error) {
-            console.error('Error converting image to base64:', error);
+            console.error('[PDF] Error converting image to base64:', url, error);
             return '';
         }
     };
@@ -42,63 +47,84 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
     // Prepare data function
     const prepareData = async () => {
         setLoadingData(true);
+        let contentLoaded = false;
+
         try {
-            // Check for Hymnal
+            // 1. Hymnal
             if (book.renderFormat === 'hymnal' || book.series === 'reformed-hymns' || book.styleProfile === 'hymn-book') {
                 const series = book.series || 'reformed-hymns';
                 const data = await fetchAllHymns(series);
-                setHymns(data);
+                if (data.length > 0) {
+                    setHymns(data);
+                    contentLoaded = true;
+                }
             }
-            // Check for Catechism
+            // 2. Catechism
             else if (book.renderFormat === 'catechism' || book.series === 'catechism') {
                 const series = book.series || 'catechism';
                 const data = await fetchCatechism(series);
-                setCatechismData(data);
+                if (data.length > 0) {
+                    setCatechismData(data);
+                    contentLoaded = true;
+                }
             }
-            // Check for Image Book
-            else if (book.renderFormat === 'image' || (!book.renderFormat && book.pageCount > 0)) {
-                const urls = Array.from({ length: book.pageCount }, (_, i) => {
-                    return books.getPageUrl(book.series, book.id, i + 1);
-                });
+            // 3. Image-based books (try first if pageCount > 0)
+            else if (book.pageCount > 0) {
+                const urls = Array.from({ length: book.pageCount }, (_, i) =>
+                    books.getPageUrl(book.series, book.id, i + 1)
+                );
 
-                // Convert cover if exists
+                // Try to load cover
                 if (book.coverUrl) {
                     const coverBase64 = await imageUrlToBase64(book.coverUrl);
-                    setCoverImage(coverBase64);
+                    if (coverBase64) setCoverImage(coverBase64);
+                } else {
+                    // Try API cover URL
+                    const apiCoverUrl = books.getCoverUrl(book.series, book.id);
+                    const coverBase64 = await imageUrlToBase64(apiCoverUrl);
+                    if (coverBase64) setCoverImage(coverBase64);
                 }
 
-                // Convert to base64
                 const base64Images = await Promise.all(urls.map(imageUrlToBase64));
-                setImageUrls(base64Images.filter(img => !!img));
-            }
-            // Check for JSON-embedded content (like African Men of Faith series)
-            else if (book.renderFormat === 'json-embedded' || !book.renderFormat) {
-                try {
-                    // Fetch the book's metadata which contains embedded pages
-                    const metadataUrl = books.getPageUrl(book.series, book.id, 0).replace('/pages/0.', '/metadata.json').replace(/\.[^.]+$/, '');
-                    // Actually, let's use a cleaner URL pattern
-                    const cleanMetadataUrl = `https://r2.schoolos.io/books/${book.series}/${book.id}/metadata.json`;
-                    const res = await fetch(cleanMetadataUrl);
-                    if (res.ok) {
-                        const metadata = await res.json();
-                        if (metadata.pages && Array.isArray(metadata.pages)) {
-                            // Extract text content from each page
-                            const extractedPages = metadata.pages
-                                .filter((p: any) => p.text || p.type === 'content')
-                                .map((p: any) => {
-                                    if (Array.isArray(p.text)) return p.text.join('\n\n');
-                                    return p.text || '';
-                                })
-                                .filter((text: string) => text.trim().length > 0);
+                const validImages = base64Images.filter(img => !!img);
 
+                if (validImages.length > 0) {
+                    setImageUrls(validImages);
+                    contentLoaded = true;
+                } else {
+                    console.warn('[PDF] No images loaded successfully, trying JSON-embedded fallback');
+                }
+            }
+
+            // 4. JSON-embedded fallback (if nothing loaded yet)
+            if (!contentLoaded) {
+                const cleanMetadataUrl = `https://r2.schoolos.io/books/${book.series}/${book.id}/metadata.json`;
+                const res = await fetch(cleanMetadataUrl);
+                if (res.ok) {
+                    const metadata = await res.json();
+                    if (metadata.pages && Array.isArray(metadata.pages)) {
+                        const extractedPages = metadata.pages
+                            .filter((p: any) => p.text || p.type === 'content')
+                            .map((p: any) => Array.isArray(p.text) ? p.text.join('\n\n') : (p.text || ''))
+                            .filter((text: string) => text.trim().length > 0);
+
+                        if (extractedPages.length > 0) {
                             setParsedPages(extractedPages);
+                            contentLoaded = true;
                         }
                     }
-                } catch (e) {
-                    console.error('Failed to load embedded book content', e);
                 }
             }
-            // Markdown pages are passed via props if available.
+
+            // 5. Check if pages were passed as props
+            if (!contentLoaded && parsedPages.length > 0) {
+                contentLoaded = true;
+            }
+
+            // 6. Show error if nothing loaded
+            if (!contentLoaded) {
+                toast.error("No printable content found for this book.");
+            }
 
             setReady(true);
         } catch (e) {
@@ -108,6 +134,21 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
             setLoadingData(false);
         }
     };
+
+    // Direct PDF download support
+    if (book.renderFormat === 'pdf' && book.pdfUrl) {
+        return (
+            <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => window.open(book.pdfUrl, '_blank')}
+                className="text-white hover:bg-white/20 rounded-full"
+                title="Open PDF"
+            >
+                <FilePdf className="w-6 h-6" />
+            </Button>
+        );
+    }
 
     // If data is not ready, show a button that triggers preparation
     if (!ready) {
