@@ -28,7 +28,31 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
             console.log('[PDF] Fetching image:', url);
             const response = await fetch(url);
             if (!response.ok) {
-                console.error('[PDF] Image fetch failed:', url, response.status);
+                console.warn(`[PDF] Image fetch failed for ${url} (Status: ${response.status}). Trying fallback...`);
+                // If API proxy URL failed, try direct R2 URL as fallback
+                // API URL format: /api/books/:series/:id/pages/:num
+                // Direct R2 format: https://r2.schoolos.io/books/:series/:id/images/page-:num.png
+                // Note: The direct R2 structure might vary, but it's a reasonable fallback
+                if (url.includes('/api/books/')) {
+                    const match = url.match(/\/api\/books\/([^\/]+)\/([^\/]+)\/pages\/(\d+)/);
+                    if (match) {
+                        const [_, series, bookId, pageNum] = match;
+                        // Assuming 0-based index or 1-based index handling. API usually expects 01, 02.
+                        // But image files might be page-1.png or page-01.png
+                        const directUrl = `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${parseInt(pageNum)}.png`;
+                        console.log('[PDF] Attempting direct R2 fallback:', directUrl);
+                        const directResponse = await fetch(directUrl);
+                        if (directResponse.ok) {
+                             const blob = await directResponse.blob();
+                             return new Promise((resolve, reject) => {
+                                 const reader = new FileReader();
+                                 reader.onloadend = () => resolve(reader.result as string);
+                                 reader.onerror = reject;
+                                 reader.readAsDataURL(blob);
+                             });
+                        }
+                    }
+                }
                 return '';
             }
             const blob = await response.blob();
@@ -74,16 +98,19 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                     books.getPageUrl(book.series, book.id, i + 1)
                 );
 
-                // Try to load cover
+                // Try to load cover with fallback
+                let coverBase64 = '';
                 if (book.coverUrl) {
-                    const coverBase64 = await imageUrlToBase64(book.coverUrl);
-                    if (coverBase64) setCoverImage(coverBase64);
-                } else {
+                    coverBase64 = await imageUrlToBase64(book.coverUrl);
+                }
+
+                if (!coverBase64) {
                     // Try API cover URL
                     const apiCoverUrl = books.getCoverUrl(book.series, book.id);
-                    const coverBase64 = await imageUrlToBase64(apiCoverUrl);
-                    if (coverBase64) setCoverImage(coverBase64);
+                    coverBase64 = await imageUrlToBase64(apiCoverUrl);
                 }
+
+                if (coverBase64) setCoverImage(coverBase64);
 
                 const base64Images = await Promise.all(urls.map(imageUrlToBase64));
                 const validImages = base64Images.filter(img => !!img);
@@ -140,12 +167,14 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
         return (
             <Button
                 variant="ghost"
-                size="icon"
+                size="default" // Changed from 'icon' to 'default' to allow text
                 onClick={() => window.open(book.pdfUrl, '_blank')}
-                className="text-white hover:bg-white/20 rounded-full"
+                className="text-white hover:bg-white/20 rounded-full px-4"
                 title="Open PDF"
             >
-                <FilePdf className="w-6 h-6" />
+                <FilePdf className="w-5 h-5 mr-2" />
+                <span className="hidden sm:inline">Download PDF</span>
+                <span className="sm:hidden">PDF</span>
             </Button>
         );
     }
@@ -155,13 +184,15 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
         return (
             <Button
                 variant="ghost"
-                size="icon"
+                size="default" // Changed to default for text
                 onClick={prepareData}
                 disabled={loadingData}
-                className="text-white hover:bg-white/20 rounded-full"
+                className="text-white hover:bg-white/20 rounded-full px-4"
                 title="Prepare PDF Download"
             >
-                {loadingData ? <Spinner className="w-6 h-6 animate-spin" /> : <FilePdf className="w-6 h-6" />}
+                {loadingData ? <Spinner className="w-5 h-5 animate-spin mr-2" /> : <FilePdf className="w-5 h-5 mr-2" />}
+                <span className="hidden sm:inline">{loadingData ? "Preparing..." : "Download PDF"}</span>
+                <span className="sm:hidden">{loadingData ? "..." : "PDF"}</span>
             </Button>
         );
     }
@@ -179,8 +210,8 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
                 />
             }
             fileName={`${book.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}
-            label="Download"
-            size="icon"
+            label="Download PDF"
+            size="sm" // Changed to sm (which has text padding) instead of icon
             variant="ghost"
             className="text-white hover:bg-white/20 rounded-full"
         />
