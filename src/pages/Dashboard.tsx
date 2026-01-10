@@ -274,18 +274,18 @@ export default function Dashboard() {
   }
 
   // BUILD TIMELINE ITEMS
-  const timelineItems: RhythmItem[] = [];
+  const rawItems: RhythmItem[] = [];
 
-  // 1. Liturgy (Morning) - only for today
+  // 1. Liturgy (Morning)
   if (isToday) {
-    timelineItems.push({
+    rawItems.push({
       id: 'liturgy-morning',
       timeSlot: '08:00',
       title: 'Morning Liturgy',
       description: 'Scripture, hymnal, and catechism.',
       type: 'liturgy',
       status: 'upcoming',
-      data: {}
+      data: { context_anchor: 'Morning Circle' }
     });
   }
 
@@ -294,53 +294,106 @@ export default function Dashboard() {
     dayData.familySessions.forEach((session: any, index: number) => {
       let time = '09:00';
       if (session.timeSlot === 'afternoon') time = '14:00';
-      if (index > 0 && time === '09:00') time = '10:00';
 
       const isCompleted = session.isCompleted ||
         (weeklyPlanData?.completions && weeklyPlanData.completions[session.activity.id]);
 
-      timelineItems.push({
+      // Determine context anchor
+      const context = session.activity.context_anchor ||
+        (session.activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
+
+      rawItems.push({
         id: `session-${index}`,
         timeSlot: time,
         title: session.activity.title,
         description: session.activity.description,
         type: 'activity',
         status: isCompleted ? 'completed' : 'upcoming',
-        data: session.activity
+        data: { ...session.activity, context_anchor: context }
       });
     });
   }
 
-  // 3. Book (Read Aloud) - only for today
+  // 3. Book (Read Aloud)
   if (isToday && todaysBook) {
-    timelineItems.push({
+    rawItems.push({
       id: 'book-reading',
       timeSlot: '11:00',
       title: 'Read Aloud Time',
       description: todaysBook.title,
       type: 'book',
       status: 'upcoming',
-      data: todaysBook
+      data: { ...todaysBook, context_anchor: 'Morning Circle' }
     });
   }
 
-  // 4. Daily Practices - only for today
+  // 4. Daily Practices
   if (isToday && dayData.dailyPractices) {
     dayData.dailyPractices.forEach((practice: any, index: number) => {
-      timelineItems.push({
+      rawItems.push({
         id: `practice-${index}`,
         timeSlot: '18:00',
         title: practice.title,
         description: practice.description,
         type: 'activity',
         status: 'upcoming',
-        data: practice
+        data: { ...practice, context_anchor: 'Walk By The Way' }
       });
     });
   }
 
-  // Sort by time
-  timelineItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+  // Sort raw items by time first to ensure order within groups
+  rawItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+
+  // Group by Context Anchor
+  const groups: Record<string, RhythmItem[]> = {
+    'Morning Circle': [],
+    'Table Fellowship': [],
+    'Walk By The Way': [],
+    'Other': []
+  };
+
+  rawItems.forEach(item => {
+    const context = item.data?.context_anchor;
+    if (context && groups[context]) {
+      groups[context].push(item);
+    } else if (context) {
+      // Handle custom contexts dynamically if needed, or fallback
+      if (!groups[context]) groups[context] = [];
+      groups[context].push(item);
+    } else {
+      // Fallback mapping based on type
+      if (item.type === 'liturgy' || item.type === 'book') groups['Morning Circle'].push(item);
+      else if (item.type === 'activity') groups['Table Fellowship'].push(item); // Default for sessions
+      else groups['Walk By The Way'].push(item);
+    }
+  });
+
+  // Flatten into timelineItems with Headers
+  const timelineItems: RhythmItem[] = [];
+  const orderedContexts = ['Morning Circle', 'Table Fellowship', 'Walk By The Way'];
+
+  // Add any custom contexts found
+  Object.keys(groups).forEach(k => {
+    if (!orderedContexts.includes(k) && k !== 'Other') orderedContexts.push(k);
+  });
+  orderedContexts.push('Other');
+
+  orderedContexts.forEach(context => {
+    const items = groups[context];
+    if (items && items.length > 0) {
+      // Add Header
+      timelineItems.push({
+        id: `header-${context}`,
+        timeSlot: 'Header',
+        title: context,
+        type: 'section_header',
+        status: 'upcoming' // not used for header
+      });
+      // Add Items
+      items.forEach(item => timelineItems.push(item));
+    }
+  });
 
   const nextItem = timelineItems.find(i => i.status !== 'completed') || null;
   const pendingCount = timelineItems.filter(i => i.status !== 'completed').length;

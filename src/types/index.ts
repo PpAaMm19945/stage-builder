@@ -34,43 +34,54 @@ export interface Student {
 }
 
 // Learning Domains for Early Years
-export type EarlyYearsDomain =
-  | 'motor'           // Gross & fine motor skills
-  | 'language'        // Speech, vocabulary, listening
-  | 'cognitive'       // Problem-solving, memory
-  | 'social-emotional' // Sharing, emotions, cooperation
-  | 'pre-academic';   // Sorting, patterns, sequencing
+// Virtues (Replaces Domains)
+export type PrimaryVirtue =
+  | 'Wisdom'
+  | 'Stewardship'
+  | 'Love'
+  | 'Order'
+  | 'Wonder';
 
-export const DOMAIN_LABELS: Record<EarlyYearsDomain, string> = {
-  'motor': 'Stewardship & Dominion',
-  'language': 'Word & Truth',
-  'cognitive': 'Wisdom & Order',
-  'social-emotional': 'Virtue & Sanctification',
-  'pre-academic': 'Foundations & Patterns'
+export const VIRTUE_LABELS: Record<PrimaryVirtue, string> = {
+  'Wisdom': 'Wisdom',
+  'Stewardship': 'Stewardship',
+  'Love': 'Love',
+  'Order': 'Order',
+  'Wonder': 'Wonder'
 };
 
-export const DOMAIN_DESCRIPTIONS: Record<EarlyYearsDomain, string> = {
-  'motor': 'Physical skills & body care',
-  'language': 'Speech, listening & communication',
-  'cognitive': 'Thinking, problem-solving & memory',
-  'social-emotional': 'Character, emotions & relationships',
-  'pre-academic': 'Sorting, counting & readiness'
+export const VIRTUE_DESCRIPTIONS: Record<PrimaryVirtue, string> = {
+  'Wisdom': 'Discernment and understanding',
+  'Stewardship': 'Care for body and world',
+  'Love': 'Kindness and service',
+  'Order': 'Structure and diligence',
+  'Wonder': 'Awe and creativity'
 };
 
-// Mastery Levels
-export type MasteryLevel = 'emerging' | 'developing' | 'secure';
+// Legacy Domain Support (for backward compatibility if needed temporarily)
+export type EarlyYearsDomain = PrimaryVirtue;
+export const DOMAIN_LABELS = VIRTUE_LABELS;
 
-export const MASTERY_LABELS: Record<MasteryLevel, string> = {
-  'emerging': 'Emerging',
-  'developing': 'Developing',
-  'secure': 'Secure'
+
+// Formation Stages (Replaces Mastery)
+export type FormationStage = 'seeding' | 'rooting' | 'fruiting';
+
+export const STAGE_LABELS: Record<FormationStage, string> = {
+  'seeding': 'Seeding',
+  'rooting': 'Rooting',
+  'fruiting': 'Fruiting'
 };
 
-export const MASTERY_DESCRIPTIONS: Record<MasteryLevel, string> = {
-  'emerging': 'Just starting to explore this skill',
-  'developing': 'Making good progress, needs more practice',
-  'secure': 'Confident and consistent with this skill'
+export const STAGE_DESCRIPTIONS: Record<FormationStage, string> = {
+  'seeding': 'Just introduced (Hearing)',
+  'rooting': 'Practicing with help (Doing)',
+  'fruiting': 'Second nature (Being)'
 };
+
+// Legacy Mastery Support
+export type MasteryLevel = FormationStage;
+export const MASTERY_LABELS = STAGE_LABELS;
+
 
 // Child Role Labels (for tiered expectations)
 export type ChildRole = 'Observer' | 'Participant' | 'Leader';
@@ -81,112 +92,114 @@ export function getChildRole(ageInMonths: number): ChildRole {
   return 'Leader';
 }
 
-// Activity Definition
-export interface Activity {
+// Formation Definition (Replaces Activity)
+export type FormationType = 'liturgy' | 'habit' | 'skill' | 'service' | 'rest';
+
+export interface Formation {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
-  minAgeMonths: number;
-  maxAgeMonths: number;
-  difficultyLevel: 1 | 2 | 3 | 4 | 5;
-  estimatedMinutes: number;
+  primary_virtue: PrimaryVirtue;
+  formation_type: FormationType;
+  context_anchor: string; // e.g., 'Meal_Table', 'Walk_By_The_Way'
+  parent_posture: string; // CRITICAL: Parent's spirit
+  liturgical_script?: string;
+  min_age_months: number;
+  max_age_months: number;
+  guide_steps: string[]; // Replaces instructions
+
+  // Optional / Legacy compatible
   materials: string[];
-  instructions: string[];
-  successIndicators: string[];
-  easierVariation?: string;
-  harderVariation?: string;
-  tips?: string[];
+  duration_minutes: number;
   imageUrl?: string;
 }
 
-// Activity Result (Observation)
-export interface ActivityResult {
+// Evidence (Replaces ActivityResult/Observation)
+export interface Evidence {
   id: string;
   studentId: string;
-  activityId: string;
+  formationId: string; // was activityId
   completedAt: string;
-  masteryLevel: MasteryLevel;
-  parentNotes?: string;
-  duration?: number; // in minutes
+  stage: FormationStage; // was masteryLevel
+  note?: string; // was parentNotes
+  duration?: number;
 }
 
 // Competency State (Aggregated Progress)
 export interface CompetencyState {
   studentId: string;
-  domain: EarlyYearsDomain;
-  currentLevel: MasteryLevel;
-  activitiesCompleted: number;
-  lastActivityAt?: string;
+  virtue: PrimaryVirtue;
+  currentStage: FormationStage;
+  formationsCompleted: number;
+  lastFormationAt?: string;
   updatedAt: string;
 }
 
 // Progress Summary
 export interface ProgressSummary {
   studentId: string;
-  domains: {
-    domain: EarlyYearsDomain;
-    level: MasteryLevel;
-    activitiesCompleted: number;
+  virtues: {
+    virtue: PrimaryVirtue;
+    stage: FormationStage;
+    formationsCompleted: number;
     percentComplete: number;
   }[];
-  totalActivitiesCompleted: number;
-  lastActivityAt?: string;
+  totalFormationsCompleted: number;
+  lastFormationAt?: string;
 }
 
-// Daily Recommendation
-export interface DailyRecommendation {
-  primary: Activity;
-  alternatives: Activity[];
+// Daily Recommendation -> Family Rhythm
+export interface FamilyRhythm {
+  primary: Formation;
+  alternatives: Formation[];
   reasoning?: string;
 }
 
-// Raw API Activity (as returned from Cloudflare Worker - snake_case)
-export interface ApiActivity {
+// Raw API Formation (from DB)
+export interface ApiFormation {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  primary_virtue: PrimaryVirtue;
+  formation_type: FormationType;
+  context_anchor: string;
+  parent_posture: string;
+  liturgical_script?: string;
+  guide_steps: string[];
   min_age_months: number;
   max_age_months: number;
-  difficulty: number;
   duration_minutes: number;
   materials: string[];
-  instructions: string[];
+
+  // Legacy / Optional
+  difficulty?: number;
   learning_outcomes?: string[];
-  // New fields
-  activity_type?: 'family_session' | 'individual' | 'daily_practice';
-  assessment_prohibited?: number;
-  context_embedding?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor' | null;
-  tiered_expectations?: any[];
-  uses_core_kit?: number;
-  mess_level?: string | number;
-  prep_time_minutes?: number;
-  // Overhaul fields
-  content_status?: 'draft' | 'reviewed' | 'restricted' | 'blacklisted' | 'published';
-  is_archived?: number; // 0 or 1
-  biblical_domain?: 'wisdom' | 'stature' | 'favor_with_god' | 'favor_with_man';
-  parent_script?: string;
+  content_status?: string;
+  is_archived?: number;
+  biblical_domain?: string;
   safety_note?: string;
   success_cue?: string;
   cluster_tag?: string;
-  // Feedback
   upvote_count?: number;
   comment_count?: number;
 }
 
-// Family Activity (for sibling-aware recommendations - legacy)
-export interface FamilyActivity {
-  activity: ApiActivity;
+export type ApiActivity = ApiFormation; // Alias for legacy code
+
+// Family Formation (for sibling-aware recommendations)
+export interface FamilyFormation {
+  formation: ApiFormation;
   suitableFor: string[];
   variations: Record<string, 'easier' | 'standard' | 'harder'>;
 }
 
-// Today's Learning Response (extended for family activities)
+export type FamilyActivity = FamilyFormation; // Alias
+
+// Today's Learning Response
 export interface TodaysLearningResponse {
   student: Student;
-  activities: ApiActivity[];
-  familyActivities?: FamilyActivity[];
+  formations: ApiFormation[];
+  familyFormations?: FamilyFormation[];
 }
 
 export interface MaterialItem {
@@ -195,7 +208,7 @@ export interface MaterialItem {
 }
 
 export interface FamilySession {
-  activity: ApiActivity;
+  activity: ApiFormation; // Keeps 'activity' key for now to avoid breaking everything instantly
   childTiers: {
     childId: string;
     childName: string;

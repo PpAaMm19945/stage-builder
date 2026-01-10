@@ -11,9 +11,10 @@ import { fetchAllHymns, fetchCatechism, HymnData, CatechismData } from '@/lib/bo
 interface PDFDownloadButtonProps {
     book: Book;
     pages?: string[]; // Markdown pages
+    catechismData?: CatechismData[]; // Pre-fetched catechism data (avoids R2 fetch)
 }
 
-export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
+export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatechism }: PDFDownloadButtonProps) {
     const [hymns, setHymns] = useState<HymnData[]>([]);
     const [catechismData, setCatechismData] = useState<CatechismData[]>([]);
     const [imageUrls, setImageUrls] = useState<string[]>([]);
@@ -102,11 +103,17 @@ export function PDFDownloadButton({ book, pages }: PDFDownloadButtonProps) {
             }
             // 2. Catechism
             else if (book.renderFormat === 'catechism' || book.series === 'catechism') {
-                const series = book.series || 'catechism';
-                const data = await fetchCatechism(series);
-                if (data.length > 0) {
-                    setCatechismData(data);
+                // Use pre-fetched data if available, otherwise try to fetch (may fail)
+                if (prefetchedCatechism && prefetchedCatechism.length > 0) {
+                    setCatechismData(prefetchedCatechism);
                     contentLoaded = true;
+                } else {
+                    const series = book.series || 'catechism';
+                    const data = await fetchCatechism(series);
+                    if (data.length > 0) {
+                        setCatechismData(data);
+                        contentLoaded = true;
+                    }
                 }
             }
             // 3. Image-based books (try first if pageCount > 0)

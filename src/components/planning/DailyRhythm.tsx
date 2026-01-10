@@ -30,7 +30,7 @@ export interface RhythmItem {
     timeSlot: string; // "08:00", "Morning", etc.
     title: string;
     description?: string;
-    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning';
+    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header';
     status: 'upcoming' | 'current' | 'completed';
     data?: any; // The full object (Activity, Book, etc.)
 }
@@ -63,6 +63,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
             case 'meal': return <ForkKnife weight="duotone" />;
             case 'outdoor': return <Sun weight="duotone" />;
             case 'rest': return <Bed weight="duotone" />;
+            case 'section_header': return <Circle weight="duotone" />; // Icon unused for header
             default: return <Circle weight="duotone" />;
         }
     };
@@ -105,73 +106,86 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
             {timelineItems.map((item, index) => (
                 <div
                     key={item.id}
-                    className="flex gap-4 group cursor-pointer"
-                    onClick={() => setActiveItem(item)}
+                    className={cn("flex gap-4 group", item.type !== 'section_header' ? "cursor-pointer" : "")}
+                    onClick={() => item.type !== 'section_header' && setActiveItem(item)}
                 >
-                    {/* Time Column */}
-                    <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
-                        <div className={cn(
-                            "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
-                            getTypeColor(item.type),
-                            item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
-                        )}>
-                            {item.status === 'completed' ? (
-                                <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
-                            ) : (
-                                <>
-                                    {getIcon(item.type)}
-                                    {/* Hover checkmark for quick completion */}
-                                    <div
-                                        className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
-                                        onClick={(e) => handleQuickComplete(e, item)}
-                                        title="Mark complete"
-                                    >
-                                        <CheckCircle className="h-6 w-6 text-green-500" />
-                                    </div>
-                                </>
-                            )}
-                        </div>
-                    </div>
-
-                    {/* Content Card */}
-                    <Card className={cn(
-                        "flex-1 p-4 hover:shadow-md transition-all border-l-4",
-                        item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
-                    )}>
-                        {item.status === 'completed' && (
-                            <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
-                                <CheckCircle weight="fill" className="h-5 w-5" />
+                    {item.type === 'section_header' ? (
+                        <div className="w-full py-4 flex items-center gap-4">
+                            <div className="w-[54px] flex justify-center shrink-0">
+                                <div className="h-2 w-2 rounded-full bg-primary/20" />
                             </div>
-                        )}
-                        <div className="flex justify-between items-start">
-                            <div>
-                                <div className="flex items-center gap-2 mb-1">
-                                    <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                        {item.timeSlot}
-                                    </span>
-                                    <h4 className={cn("font-semibold", item.status === 'completed' && "line-through decoration-slate-400")}>
-                                        {item.title}
-                                    </h4>
+                            <h3 className="font-display text-lg font-bold text-primary pt-1">{item.title}</h3>
+                        </div>
+                    ) : (
+                        <>
+                            {/* Time Column */}
+                            <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
+                                <div className={cn(
+                                    "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
+                                    getTypeColor(item.type),
+                                    item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
+                                )}>
+                                    {item.status === 'completed' ? (
+                                        <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
+                                    ) : (
+                                        <>
+                                            {getIcon(item.type)}
+                                            {/* Hover checkmark for quick completion */}
+                                            <div
+                                                className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
+                                                onClick={(e) => handleQuickComplete(e, item)}
+                                                title="Mark complete"
+                                            >
+                                                <CheckCircle className="h-6 w-6 text-green-500" />
+                                            </div>
+                                        </>
+                                    )}
                                 </div>
-                                <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
                             </div>
-                            <div className="flex items-center gap-1">
-                                {/* Swap button for activities */}
-                                {onSwap && item.type === 'activity' && item.status !== 'completed' && (
-                                    <Button
-                                        variant="ghost"
-                                        size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                                        onClick={(e) => handleSwap(e, item)}
-                                        title="Swap activity"
-                                    >
-                                        <ArrowsClockwise className="h-4 w-4" />
-                                    </Button>
+
+                            {/* Content Card */}
+                            <Card className={cn(
+                                "flex-1 p-4 hover:shadow-md transition-all border-l-4",
+                                item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
+                            )}>
+                                {item.status === 'completed' && (
+                                    <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
+                                        <CheckCircle weight="fill" className="h-5 w-5" />
+                                    </div>
                                 )}
-                                <CaretRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                            </div>
-                        </div>
-                    </Card>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <div className="flex items-center gap-2 mb-1">
+                                            {item.timeSlot && item.timeSlot !== 'Header' && (
+                                                <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
+                                                    {item.timeSlot}
+                                                </span>
+                                            )}
+                                            <h4 className={cn("font-semibold", item.status === 'completed' && "line-through decoration-slate-400")}>
+                                                {item.title}
+                                            </h4>
+                                        </div>
+                                        <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
+                                    </div>
+                                    <div className="flex items-center gap-1">
+                                        {/* Swap button for activities */}
+                                        {onSwap && item.type === 'activity' && item.status !== 'completed' && (
+                                            <Button
+                                                variant="ghost"
+                                                size="icon"
+                                                className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                                onClick={(e) => handleSwap(e, item)}
+                                                title="Swap activity"
+                                            >
+                                                <ArrowsClockwise className="h-4 w-4" />
+                                            </Button>
+                                        )}
+                                        <CaretRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
+                                    </div>
+                                </div>
+                            </Card>
+                        </>
+                    )}
                 </div>
             ))}
 
@@ -189,6 +203,13 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
 
                     <ScrollArea className="flex-1 px-6">
                         <div className="pb-8 pt-2">
+                            {/* Section Header (should usually not be clickable to open sheet, but handled safely) */}
+                            {activeItem?.type === 'section_header' && (
+                                <div className="py-4 text-center">
+                                    <h3 className="font-display text-lg font-bold">{activeItem.title}</h3>
+                                </div>
+                            )}
+
                             {/* Render Content Based on Type */}
                             {activeItem?.type === 'liturgy' && (
                                 <DailyLiturgy embedded />

@@ -97,25 +97,29 @@ export const students = {
 };
 
 // Activities
-export const activities = {
+// Formations (Replaces Activities)
+export const formations = {
   list: (params?: {
-    domain?: string;
+    primary_virtue?: string; // mapped from domain
     ageMonths?: number;
-    activityType?: 'family_session' | 'individual' | 'daily_practice';
-    context?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor';
+    formationType?: string; // mapped from activityType
+    context_anchor?: string; // mapped from context
   }) => {
     const query = new URLSearchParams();
-    if (params?.domain) query.set('domain', params.domain);
+    if (params?.primary_virtue) query.set('primary_virtue', params.primary_virtue);
     if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
-    if (params?.activityType) query.set('activityType', params.activityType);
-    if (params?.context) query.set('context', params.context);
-    return apiRequest<any[]>(`/api/activities?${query}`);
+    if (params?.formationType) query.set('formation_type', params.formationType);
+    if (params?.context_anchor) query.set('context_anchor', params.context_anchor);
+    return apiRequest<any[]>('/api/formations?' + query.toString());
   },
 
-  get: (id: string) => apiRequest<any>(`/api/activities/${id}`),
+  get: (id: string) => apiRequest<any>(`/api/formations/${id}`),
 
-  export: () => apiRequest<any[]>('/api/activities/export'),
+  export: () => apiRequest<any[]>('/api/formations/export'),
 };
+
+export const activities = formations; // Alias for backward compatibility during refactor
+
 
 // Family
 export const family = {
@@ -165,20 +169,47 @@ export const family = {
     }),
 };
 
-// Observations
+// Evidences (Replaces Observations)
+export const evidences = {
+  create: (data: {
+    studentId: string;
+    formationId: string; // was activityId
+    stage: string;       // was masteryLevel ('seeding', 'rooting', 'fruiting')
+    note?: string;       // was parentNotes
+    tier?: string;
+  }) =>
+    apiRequest<any>('/api/evidences', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+};
+
 export const observations = {
+  // Adapter for legacy calls
   create: (data: {
     studentId: string;
     activityId: string;
     masteryLevel: string;
     parentNotes?: string;
     tier?: string;
-  }) =>
-    apiRequest<any>('/api/observations', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  }) => {
+    // Map legacy mastery to new stages
+    const stageMap: Record<string, string> = {
+      'emerging': 'seeding',
+      'developing': 'rooting',
+      'secure': 'fruiting'
+    };
+
+    return evidences.create({
+      studentId: data.studentId,
+      formationId: data.activityId,
+      stage: stageMap[data.masteryLevel] || 'rooting',
+      note: data.parentNotes,
+      tier: data.tier
+    });
+  }
 };
+
 
 // Activity Completions (Simple)
 export const activityCompletions = {

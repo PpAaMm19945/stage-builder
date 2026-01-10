@@ -9,7 +9,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { useToast } from '@/hooks/use-toast';
 import { UploadSimple, Camera, X, Image as ImageIcon, FileAudio, FileText, SpinnerGap, Star } from '@phosphor-icons/react';
 import { portfolio } from '@/lib/api';
-import { PortfolioItemType, MILESTONE_TAGS } from '@/types';
+import { PortfolioItemType, MILESTONE_TAGS, VIRTUE_LABELS, PrimaryVirtue } from '@/types';
 
 interface PortfolioUploadModalProps {
     studentId: string;
@@ -30,7 +30,7 @@ export function PortfolioUploadModal({
 }: PortfolioUploadModalProps) {
     const [title, setTitle] = useState('');
     const [description, setDescription] = useState('');
-    const [domain, setDomain] = useState<string>(preselectedDomain || 'wisdom');
+    const [domain, setDomain] = useState<string>(preselectedDomain || 'Wisdom');
     const [file, setFile] = useState<File | null>(null);
     const [isUploading, setIsUploading] = useState(false);
     const [uploadProgress, setUploadProgress] = useState(0);
@@ -163,11 +163,9 @@ export function PortfolioUploadModal({
                         role={!file ? "button" : undefined}
                         tabIndex={!file ? 0 : undefined}
                         aria-label={!file ? "Upload file: Drag and drop or press enter to select" : undefined}
-                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${
-                            !file ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2' : ''
-                        } ${
-                            file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
-                        }`}
+                        className={`border-2 border-dashed rounded-lg p-6 text-center transition-colors ${!file ? 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2' : ''
+                            } ${file ? 'border-primary bg-primary/5' : 'border-muted-foreground/25 hover:border-primary/50'
+                            }`}
                         onDragOver={(e) => e.preventDefault()}
                         onDrop={handleDrop}
                         onClick={() => !file && fileInputRef.current?.click()}
@@ -231,17 +229,15 @@ export function PortfolioUploadModal({
                     </div>
 
                     <div className="space-y-2">
-                        <Label htmlFor="domain">Domain</Label>
+                        <Label htmlFor="domain">Primary Virtue</Label>
                         <Select value={domain} onValueChange={setDomain}>
                             <SelectTrigger>
-                                <SelectValue placeholder="Select domain" />
+                                <SelectValue placeholder="Select virtue" />
                             </SelectTrigger>
                             <SelectContent>
-                                <SelectItem value="wisdom">Wisdom (Cognitive)</SelectItem>
-                                <SelectItem value="stature">Stature (Physical)</SelectItem>
-                                <SelectItem value="favor_with_god">Favor with God (Spiritual)</SelectItem>
-                                <SelectItem value="favor_with_man">Favor with Man (Social)</SelectItem>
-                                <SelectItem value="foundations">Foundations</SelectItem>
+                                {Object.entries(VIRTUE_LABELS).map(([key, label]) => (
+                                    <SelectItem key={key} value={key}>{label}</SelectItem>
+                                ))}
                             </SelectContent>
                         </Select>
                     </div>

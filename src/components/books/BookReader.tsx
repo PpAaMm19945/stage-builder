@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -18,7 +18,7 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { X, CaretLeft, CaretRight, BookOpenText } from '@phosphor-icons/react';
+import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { books, reading } from '@/lib/api';
@@ -45,6 +45,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
+    const [isFullscreen, setIsFullscreen] = useState(false);
+    const dialogRef = useRef<HTMLDivElement>(null);
     const { user, children: authChildren } = useAuth();
     const queryClient = useQueryClient();
 
@@ -166,10 +168,45 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         ? book.coverUrl
         : books.getCoverUrl(book.series, book.id);
 
+    // Determine if PDF download should be shown (only for pdf, hymnal, catechism formats)
+    const showPdfButton = book.renderFormat === 'pdf' ||
+        book.renderFormat === 'hymnal' ||
+        book.renderFormat === 'catechism' ||
+        book.series === 'reformed-hymns' ||
+        book.series === 'catechism';
+
+    // Fullscreen toggle handler
+    const toggleFullscreen = async () => {
+        try {
+            if (!document.fullscreenElement && dialogRef.current) {
+                await dialogRef.current.requestFullscreen();
+                setIsFullscreen(true);
+            } else if (document.exitFullscreen) {
+                await document.exitFullscreen();
+                setIsFullscreen(false);
+            }
+        } catch (err) {
+            console.log('Fullscreen not supported:', err);
+        }
+    };
+
+    // Listen for fullscreen exit (e.g., pressing Esc)
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
     return (
         <>
             <Dialog open={open} onOpenChange={handleClose}>
-                <DialogContent className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none" hideCloseButton>
+                <DialogContent
+                    ref={dialogRef}
+                    className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none"
+                    hideCloseButton
+                >
                     {/* Header */}
                     <div className="flex items-center justify-between p-2 sm:p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
                         <div>
@@ -192,8 +229,22 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     <BookOpenText className="w-6 h-6" />
                                 </Button>
                             )}
-                            {/* Always show PDF button if available (moved from !isPdf condition to support downloading image books too) */}
-                            <PDFDownloadButton book={book} pages={parsedPages} />
+                            {/* Fullscreen toggle for mobile/tablet */}
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={toggleFullscreen}
+                                className="text-white hover:bg-white/20 rounded-full sm:hidden"
+                                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                            >
+                                {isFullscreen ? (
+                                    <ArrowsInSimple className="w-6 h-6" />
+                                ) : (
+                                    <ArrowsOutSimple className="w-6 h-6" />
+                                )}
+                            </Button>
+                            {/* PDF button - only for supported formats */}
+                            {showPdfButton && <PDFDownloadButton book={book} pages={parsedPages} />}
 
                             <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
                                 <X className="w-6 h-6" />

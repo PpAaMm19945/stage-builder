@@ -8,33 +8,33 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { MasteryLevel, MASTERY_LABELS, MASTERY_DESCRIPTIONS } from '@/types';
-import { Sparkles, TrendingUp, CheckCircle2 } from 'lucide-react';
+import { FormationStage, STAGE_LABELS, STAGE_DESCRIPTIONS } from '@/types';
+import { Sparkles, Sprout, Grape, CheckCircle2 } from 'lucide-react'; // Updated icons
 import { cn } from '@/lib/utils';
 
 interface ObservationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activityTitle: string;
-  onSubmit: (masteryLevel: MasteryLevel, notes?: string) => void;
+  onSubmit: (stage: FormationStage, notes?: string) => void;
   onAddToPortfolio?: () => void;
 }
 
-const masteryOptions: { level: MasteryLevel; icon: typeof Sparkles; color: string }[] = [
+const stageOptions: { level: FormationStage; icon: typeof Sparkles; color: string }[] = [
   {
-    level: 'emerging',
+    level: 'seeding',
     icon: Sparkles,
-    color: 'border-mastery-emerging text-mastery-emerging bg-mastery-emerging/10 hover:bg-mastery-emerging/20'
+    color: 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'
   },
   {
-    level: 'developing',
-    icon: TrendingUp,
-    color: 'border-mastery-developing text-mastery-developing bg-mastery-developing/10 hover:bg-mastery-developing/20'
+    level: 'rooting',
+    icon: Sprout,
+    color: 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
   },
   {
-    level: 'secure',
-    icon: CheckCircle2,
-    color: 'border-mastery-secure text-mastery-secure bg-mastery-secure/10 hover:bg-mastery-secure/20'
+    level: 'fruiting',
+    icon: Grape,
+    color: 'border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100'
   },
 ];
 
@@ -45,21 +45,21 @@ export function ObservationModal({
   onSubmit,
   onAddToPortfolio
 }: ObservationModalProps) {
-  const [selectedLevel, setSelectedLevel] = useState<MasteryLevel | null>(null);
+  const [selectedStage, setSelectedStage] = useState<FormationStage | null>(null);
   const [notes, setNotes] = useState('');
 
   const handleSubmit = () => {
-    if (selectedLevel) {
-      onSubmit(selectedLevel, notes || undefined);
+    if (selectedStage) {
+      onSubmit(selectedStage, notes || undefined);
       // Reset state
-      setSelectedLevel(null);
+      setSelectedStage(null);
       setNotes('');
     }
   };
 
   const handleOpenChange = (isOpen: boolean) => {
     if (!isOpen) {
-      setSelectedLevel(null);
+      setSelectedStage(null);
       setNotes('');
     }
     onOpenChange(isOpen);
@@ -76,39 +76,39 @@ export function ObservationModal({
         </DialogHeader>
 
         <div className="space-y-6 py-4">
-          {/* Mastery Level Selection */}
+          {/* Stage Selection */}
           <div className="space-y-3">
             <label className="text-sm font-medium text-foreground">
-              Select mastery level
+              Select formation stage
             </label>
             <div className="grid grid-cols-1 gap-3">
-              {masteryOptions.map(({ level, icon: Icon, color }) => (
+              {stageOptions.map(({ level, icon: Icon, color }) => (
                 <button
                   key={level}
-                  onClick={() => setSelectedLevel(level)}
+                  onClick={() => setSelectedStage(level)}
                   className={cn(
                     'flex items-start gap-3 p-4 rounded-lg border-2 text-left transition-all',
-                    selectedLevel === level
+                    selectedStage === level
                       ? color + ' border-current'
                       : 'border-border hover:border-muted-foreground/40 bg-card'
                   )}
                 >
                   <Icon className={cn(
                     'h-5 w-5 mt-0.5 shrink-0',
-                    selectedLevel === level ? 'text-current' : 'text-muted-foreground'
+                    selectedStage === level ? 'text-current' : 'text-muted-foreground'
                   )} />
                   <div className="space-y-1">
                     <div className={cn(
                       'font-medium',
-                      selectedLevel === level ? 'text-current' : 'text-foreground'
+                      selectedStage === level ? 'text-current' : 'text-foreground'
                     )}>
-                      {MASTERY_LABELS[level]}
+                      {STAGE_LABELS[level]}
                     </div>
                     <div className={cn(
                       'text-sm',
-                      selectedLevel === level ? 'text-current/80' : 'text-muted-foreground'
+                      selectedStage === level ? 'text-current/80' : 'text-muted-foreground'
                     )}>
-                      {MASTERY_DESCRIPTIONS[level]}
+                      {STAGE_DESCRIPTIONS[level]}
                     </div>
                   </div>
                 </button>
@@ -145,7 +145,7 @@ export function ObservationModal({
             </Button>
             <Button
               onClick={handleSubmit}
-              disabled={!selectedLevel}
+              disabled={!selectedStage}
               className="gap-2"
             >
               <CheckCircle2 className="h-4 w-4" />

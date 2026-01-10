@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { VIRTUE_LABELS, type PrimaryVirtue, type EarlyYearsDomain, DOMAIN_LABELS } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -29,7 +29,16 @@ import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { ActivityDocument } from '@/components/pdf/documents';
 import { ApiActivity } from '@/types';
 
-const domainColors: Record<EarlyYearsDomain, string> = {
+const virtueColors: Record<PrimaryVirtue, string> = {
+    'Wisdom': 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300',
+    'Stewardship': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300',
+    'Love': 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/20 dark:text-rose-300',
+    'Order': 'bg-teal-100 text-teal-800 border-teal-200 dark:bg-teal-900/20 dark:text-teal-300',
+    'Wonder': 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/20 dark:text-amber-300',
+};
+
+// Fallback for legacy domains
+const domainColors: Record<string, string> = {
     'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
     'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
     'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
@@ -43,20 +52,23 @@ export interface ActivityDetailsProps {
         id: string;
         title: string;
         description: string;
-        domain: EarlyYearsDomain;
+        primary_virtue?: PrimaryVirtue;
+        domain?: EarlyYearsDomain; // Legacy support
+        parent_posture?: string;
+        formation_type?: string;
+        context_anchor?: string;
+        liturgical_script?: string;
+
         estimatedMinutes?: number;
         duration_minutes?: number; // Handle both
         difficultyLevel?: number;
         difficulty?: number;
         materials: string[];
-        instructions: string[];
+        instructions?: string[];
+        guide_steps?: string[]; // New
         successIndicators?: string[];
         success_indicators?: string[];
         tips?: string[];
-        easierVariation?: string;
-        easier_variation?: string;
-        harderVariation?: string;
-        harder_variation?: string;
         minAgeMonths?: number;
         min_age_months?: number;
         maxAgeMonths?: number;
@@ -94,24 +106,28 @@ export function ActivityDetails({
     hideActions = false
 }: ActivityDetailsProps) {
     const navigate = useNavigate();
-    const [showEasier, setShowEasier] = useState(false);
-    const [showHarder, setShowHarder] = useState(false);
 
-    // Normalize specific fields
+    // Normalize fields
     const duration = activity.estimatedMinutes || activity.duration_minutes || 15;
     const minAge = activity.minAgeMonths || activity.min_age_months || 0;
     const maxAge = activity.maxAgeMonths || activity.max_age_months || 60;
     const difficulty = activity.difficultyLevel || activity.difficulty || 1;
     const successIndicators = activity.successIndicators || activity.success_indicators || [];
     const tips = activity.tips || [];
-    const easierVar = activity.easierVariation || activity.easier_variation;
-    const harderVar = activity.harderVariation || activity.harder_variation;
-    const type = activity.activityType || activity.activity_type;
+    const type = activity.activityType || activity.activity_type || activity.formation_type;
     const tiers = activity.tieredExpectations || activity.tiered_expectations || [];
     const safety = activity.safetyNote || activity.safety_note;
+    const script = activity.liturgical_script || activity.parentScript || activity.parent_script;
     const culture = activity.culturalNotes || activity.cultural_notes;
-    const script = activity.parentScript || activity.parent_script;
     const noAssessment = activity.assessmentProhibited === 1 || activity.assessment_prohibited === 1 || type === 'daily_practice';
+
+    // Formation specific
+    const virtue = activity.primary_virtue || (activity.domain as PrimaryVirtue);
+    const posture = activity.parent_posture;
+    const steps = activity.guide_steps || activity.instructions || [];
+
+    const virtueColor = virtueColors[virtue] || domainColors[virtue] || 'bg-primary/10 text-primary';
+
 
     return (
         <div className="space-y-6 max-w-3xl pb-8">
@@ -125,10 +141,30 @@ export function ActivityDetails({
 
             {/* Header */}
             <div className="space-y-4">
+
+                {/* PARENT POSTURE BANNER */}
+                {posture && (
+                    <div className="bg-blue-50 dark:bg-blue-950/40 border-l-4 border-blue-400 p-4 rounded-r-lg mb-4">
+                        <div className="flex items-start gap-3">
+                            <div className="p-1 bg-blue-100 dark:bg-blue-900 rounded-full">
+                                <Sparkles className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                            </div>
+                            <div>
+                                <h3 className="text-xs font-bold text-blue-600 dark:text-blue-400 uppercase tracking-widest mb-1">
+                                    Parent Posture
+                                </h3>
+                                <p className="text-blue-900 dark:text-blue-100 font-medium text-lg italic leading-relaxed">
+                                    "{posture}"
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
                 <div className="flex items-start justify-between gap-4">
                     <div className="space-y-2">
-                        <Badge variant="outline" className={cn(domainColors[activity.domain] || 'bg-primary/10', 'mb-2')}>
-                            {DOMAIN_LABELS[activity.domain] || activity.domain}
+                        <Badge variant="outline" className={cn(virtueColor, 'mb-2')}>
+                            {VIRTUE_LABELS[virtue] || virtue}
                         </Badge>
                         <h1 className="text-3xl font-display font-bold text-foreground">
                             {activity.title}
@@ -235,23 +271,23 @@ export function ActivityDetails({
                 </Card>
             )}
 
-            {/* Instructions */}
-            {activity.instructions && (
+            {/* Instructions / Guide Steps */}
+            {steps && steps.length > 0 && (
                 <Card>
                     <CardHeader className="pb-3">
                         <CardTitle className="text-lg flex items-center gap-2">
                             <ListOrdered className="h-5 w-5 text-primary" />
-                            Step-by-Step Instructions
+                            Formation Guide
                         </CardTitle>
                     </CardHeader>
                     <CardContent>
                         <ol className="space-y-4">
-                            {activity.instructions.map((instruction, idx) => (
+                            {steps.map((step, idx) => (
                                 <li key={idx} className="flex gap-4">
                                     <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0">
                                         {idx + 1}
                                     </span>
-                                    <p className="text-foreground pt-0.5">{instruction}</p>
+                                    <p className="text-foreground pt-0.5">{step}</p>
                                 </li>
                             ))}
                         </ol>

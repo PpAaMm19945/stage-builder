@@ -2,8 +2,8 @@ import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { activities as activitiesApi, observations, students } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain, type MasteryLevel } from '@/types';
+import { activities as activitiesApi, evidences, students } from '@/lib/api';
+import { DOMAIN_LABELS, type EarlyYearsDomain, type FormationStage } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -35,12 +35,12 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
-const domainColors: Record<EarlyYearsDomain, string> = {
-  'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
-  'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
-  'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
-  'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
-  'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
+const virtueColors: Record<string, string> = {
+  'Wisdom': 'bg-blue-100 text-blue-800 border-blue-200 dark:bg-blue-900/30 dark:text-blue-300 dark:border-blue-800',
+  'Stewardship': 'bg-green-100 text-green-800 border-green-200 dark:bg-green-900/30 dark:text-green-300 dark:border-green-800',
+  'Love': 'bg-rose-100 text-rose-800 border-rose-200 dark:bg-rose-900/30 dark:text-rose-300 dark:border-rose-800',
+  'Order': 'bg-amber-100 text-amber-800 border-amber-200 dark:bg-amber-900/30 dark:text-amber-300 dark:border-amber-800',
+  'Wonder': 'bg-purple-100 text-purple-800 border-purple-200 dark:bg-purple-900/30 dark:text-purple-300 dark:border-purple-800',
 };
 
 // Map API response fields to UI expected fields
@@ -51,93 +51,97 @@ interface TieredExpectation {
   expectation: string;
 }
 
-interface ApiActivity {
+interface ApiFormation {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  primary_virtue: string;
+  formation_type: 'habit' | 'skill' | 'liturgy' | 'service' | 'rest' | 'family_session' | 'daily_practice'; // Inclusive
+  parent_posture: string;
+  context_anchor: string;
+  guide_steps: string[];
   duration_minutes: number;
   difficulty: number;
   materials: string[];
-  instructions: string[];
   success_indicators: string[];
   tips: string[];
   easier_variation: string;
   harder_variation: string;
   min_age_months: number;
   max_age_months: number;
-  // New fields for family sessions
-  activity_type?: 'family_session' | 'individual' | 'daily_practice';
+  cultural_notes?: string;
+  safety_note?: string;
+  parent_script?: string;
   tiered_expectations?: TieredExpectation[];
   uses_core_kit?: number;
   mess_level?: string;
   setting?: string;
-  parent_script?: string;
-  // Infancy mode fields
   assessment_prohibited?: number;
   context_embedding?: string;
-  // Phase 4 fields
-  safety_note?: string;
-  cultural_notes?: string;
 }
 
-interface Activity {
+interface Formation {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  primaryVirtue: string;
   estimatedMinutes: number;
   difficultyLevel: number;
   materials: string[];
-  instructions: string[];
+  guideSteps: string[];
   successIndicators: string[];
   tips: string[];
   easierVariation: string;
   harderVariation: string;
   minAgeMonths: number;
   maxAgeMonths: number;
-  // Family session fields
-  activityType?: 'family_session' | 'individual' | 'daily_practice';
+  // Formation specific
+  formationType: string;
+  parentPosture: string;
+  contextAnchor: string;
+
+  // Legacy support fields
   tieredExpectations?: TieredExpectation[];
   usesCoreKit?: boolean;
   messLevel?: string;
   setting?: string;
   parentScript?: string;
-  // Infancy mode fields
   assessmentProhibited?: boolean;
-  contextEmbedding?: 'feeding' | 'diapering' | 'holding' | 'sleep' | 'outdoor' | null;
-  // Phase 4 fields
+  contextEmbedding?: string | null;
   safetyNote?: string;
   culturalNotes?: string;
 }
 
-const mapApiActivity = (activity: ApiActivity): Activity => ({
-  id: activity.id,
-  title: activity.title,
-  description: activity.description,
-  domain: activity.domain,
-  estimatedMinutes: activity.duration_minutes,
-  difficultyLevel: activity.difficulty,
-  materials: activity.materials || [],
-  instructions: activity.instructions || [],
-  successIndicators: activity.success_indicators || [],
-  tips: activity.tips || [],
-  easierVariation: activity.easier_variation || '',
-  harderVariation: activity.harder_variation || '',
-  minAgeMonths: activity.min_age_months,
-  maxAgeMonths: activity.max_age_months,
-  // Family session fields
-  activityType: activity.activity_type,
-  tieredExpectations: Array.isArray(activity.tiered_expectations) ? activity.tiered_expectations : [],
-  usesCoreKit: activity.uses_core_kit === 1,
-  messLevel: activity.mess_level,
-  setting: activity.setting,
-  parentScript: activity.parent_script,
-  // Infancy mode fields
-  assessmentProhibited: activity.assessment_prohibited === 1,
-  contextEmbedding: activity.context_embedding as Activity['contextEmbedding'] || null,
-  safetyNote: activity.safety_note,
-  culturalNotes: activity.cultural_notes,
+const mapApiFormation = (formation: ApiFormation): Formation => ({
+  id: formation.id,
+  title: formation.title,
+  description: formation.description,
+  primaryVirtue: formation.primary_virtue,
+  estimatedMinutes: formation.duration_minutes,
+  difficultyLevel: formation.difficulty,
+  materials: formation.materials || [],
+  guideSteps: formation.guide_steps || [],
+  successIndicators: formation.success_indicators || [],
+  tips: formation.tips || [],
+  easierVariation: formation.easier_variation || '',
+  harderVariation: formation.harder_variation || '',
+  minAgeMonths: formation.min_age_months,
+  maxAgeMonths: formation.max_age_months,
+
+  formationType: formation.formation_type,
+  parentPosture: formation.parent_posture,
+  contextAnchor: formation.context_anchor,
+
+  // Legacy mappings
+  tieredExpectations: Array.isArray(formation.tiered_expectations) ? formation.tiered_expectations : [],
+  usesCoreKit: formation.uses_core_kit === 1,
+  messLevel: formation.mess_level,
+  setting: formation.setting,
+  parentScript: formation.parent_script,
+  assessmentProhibited: formation.assessment_prohibited === 1,
+  contextEmbedding: formation.context_embedding || null,
+  safetyNote: formation.safety_note,
+  culturalNotes: formation.cultural_notes,
 });
 
 export default function ActivityViewer() {
@@ -168,22 +172,22 @@ export default function ActivityViewer() {
     staleTime: 2 * 60 * 1000,
   });
 
-  // Mutation for creating observation
-  const createObservationMutation = useMutation({
-    mutationFn: (data: { masteryLevel: string; parentNotes?: string }) =>
-      observations.create({
+  // Mutation for creating evidence
+  const createEvidenceMutation = useMutation({
+    mutationFn: (data: { stage: FormationStage; note?: string }) =>
+      evidences.create({
         studentId: selectedChild!.id,
-        activityId: id!,
-        masteryLevel: data.masteryLevel,
-        parentNotes: data.parentNotes,
+        formationId: id!,
+        stage: data.stage,
+        note: data.note,
       }),
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['observations', selectedChild?.id] });
+      queryClient.invalidateQueries({ queryKey: ['observations', selectedChild?.id] }); // Legacy key for now
       queryClient.invalidateQueries({ queryKey: ['progress', selectedChild?.id] });
     },
   });
 
-  const activity = activityData ? mapApiActivity(activityData) : undefined;
+  const activity = activityData ? mapApiFormation(activityData as any) : undefined;
 
   // Check if activity was completed by looking at observations
   const previousResult = observationsData?.find(
@@ -248,11 +252,11 @@ export default function ActivityViewer() {
     );
   }
 
-  const handleObservationSubmit = async (masteryLevel: MasteryLevel, notes?: string) => {
+  const handleObservationSubmit = async (stage: FormationStage, notes?: string) => {
     if (!selectedChild) return;
 
     try {
-      await createObservationMutation.mutateAsync({ masteryLevel, parentNotes: notes });
+      await createEvidenceMutation.mutateAsync({ stage, note: notes });
       setObservationModalOpen(false);
       toast.success('Great job!', {
         description: `Observation recorded for ${activity.title}`,
@@ -281,8 +285,8 @@ export default function ActivityViewer() {
       <div className="space-y-4">
         <div className="flex items-start justify-between gap-4">
           <div className="space-y-2">
-            <Badge variant="outline" className={cn(domainColors[activity.domain], 'mb-2')}>
-              {DOMAIN_LABELS[activity.domain]}
+            <Badge variant="outline" className={cn(virtueColors[activity.primaryVirtue] || 'bg-slate-100', 'mb-2')}>
+              {activity.primaryVirtue}
             </Badge>
             <h1 className="text-3xl font-display font-bold text-foreground">
               {activity.title}
@@ -292,7 +296,7 @@ export default function ActivityViewer() {
             </p>
           </div>
           {isCompleted && (
-            <Badge className="bg-mastery-secure/10 text-mastery-secure border-mastery-secure/20 shrink-0 gap-1">
+            <Badge className="bg-green-100 text-green-700 border-green-200 shrink-0 gap-1">
               <CheckCircle2 className="h-3 w-3" />
               Completed
             </Badge>
@@ -383,12 +387,12 @@ export default function ActivityViewer() {
         <CardHeader className="pb-3">
           <CardTitle className="text-lg flex items-center gap-2">
             <ListOrdered className="h-5 w-5 text-primary" />
-            Step-by-Step Instructions
+            Formation Guide
           </CardTitle>
         </CardHeader>
         <CardContent>
           <ol className="space-y-4">
-            {activity.instructions.map((instruction, idx) => (
+            {activity.guideSteps.map((instruction, idx) => (
               <li key={idx} className="flex gap-4">
                 <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0">
                   {idx + 1}
@@ -421,7 +425,7 @@ export default function ActivityViewer() {
       </Card>
 
       {/* Tiered Expectations - Only show for family sessions */}
-      {activity.activityType === 'family_session' && activity.tieredExpectations && activity.tieredExpectations.length > 0 && (
+      {activity.formationType === 'family_session' && activity.tieredExpectations && activity.tieredExpectations.length > 0 && (
         <Card className="border-primary/30 bg-primary/5">
           <CardHeader className="pb-3">
             <CardTitle className="text-lg flex items-center gap-2 text-primary">
@@ -528,7 +532,7 @@ export default function ActivityViewer() {
       {/* Action Buttons */}
       <div className="flex flex-col sm:flex-row gap-3 pt-4">
         {/* Daily practices: No assessment - just a soft acknowledgement */}
-        {activity.assessmentProhibited || activity.activityType === 'daily_practice' ? (
+        {activity.assessmentProhibited || activity.formationType === 'daily_practice' ? (
           <Button
             size="lg"
             variant="outline"
@@ -608,7 +612,7 @@ export default function ActivityViewer() {
           toast.success('Added to portfolio!');
         }}
         relatedActivityId={activity.id}
-        preselectedDomain={activity.domain}
+        preselectedDomain={activity.primaryVirtue as any}
       />
 
       <div className="pt-8 border-t">

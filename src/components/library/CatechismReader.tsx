@@ -70,6 +70,13 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
                                 domain: 'wisdom',
                                 description: 'Westminster Shorter Catechism'
                             }}
+                            catechismData={items.map((item: any) => {
+                                // Parse Q&A from content format: "Q: ... \n\n A: ..."
+                                const parts = item.content.split('\nA: ');
+                                const question = parts[0]?.replace('Q: ', '').trim();
+                                const answer = parts[1]?.trim();
+                                return { question, answer, week: item.week };
+                            })}
                         />
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
                             <X className="w-6 h-6" />

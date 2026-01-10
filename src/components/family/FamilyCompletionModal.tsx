@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { observations, activityCompletions, family } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
-import { FamilySession, MasteryLevel, getChildRole } from '@/types';
+import { FormationStage, getChildRole, STAGE_LABELS, STAGE_DESCRIPTIONS } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
 import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
 
@@ -18,10 +18,10 @@ interface FamilyCompletionModalProps {
     onSuccess: () => void;
 }
 
-const MASTERY_OPTIONS: { value: MasteryLevel; label: string; color: string }[] = [
-    { value: 'emerging', label: 'Emerging', color: 'bg-yellow-100 text-yellow-800 border-yellow-200 hover:bg-yellow-200' },
-    { value: 'developing', label: 'Developing', color: 'bg-blue-100 text-blue-800 border-blue-200 hover:bg-blue-200' },
-    { value: 'secure', label: 'Secure', color: 'bg-green-100 text-green-800 border-green-200 hover:bg-green-200' },
+const STAGE_OPTIONS: { value: FormationStage; label: string; description: string; color: string }[] = [
+    { value: 'seeding', label: 'Seeding', description: 'Hearing / Introduced', color: 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100' },
+    { value: 'rooting', label: 'Rooting', description: 'Doing / Practicing', color: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
+    { value: 'fruiting', label: 'Fruiting', description: 'Being / Second Nature', color: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' },
 ];
 
 export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: FamilyCompletionModalProps) {
@@ -29,10 +29,10 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [notes, setNotes] = useState('');
 
-    // State for child ratings: { [childId]: MasteryLevel }
-    // Initialize with 'developing' as default or null
-    const [ratings, setRatings] = useState<Record<string, MasteryLevel>>({});
+    // State for child stages: { [childId]: FormationStage }
+    const [stages, setStages] = useState<Record<string, FormationStage>>({});
     const [showStoryPrompt, setShowStoryPrompt] = useState(false);
+
     const [showPortfolioModal, setShowPortfolioModal] = useState(false);
     const [selectedStudentForPortfolio, setSelectedStudentForPortfolio] = useState<string | null>(null);
     const [passionSignals, setPassionSignals] = useState<Record<string, boolean>>({});
@@ -44,10 +44,10 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
     const isDailyPractice = session?.activity.activity_type === 'daily_practice';
 
-    const handleRatingChange = (childId: string, rating: MasteryLevel) => {
-        setRatings(prev => ({
+    const handleStageChange = (childId: string, stage: FormationStage) => {
+        setStages(prev => ({
             ...prev,
-            [childId]: rating
+            [childId]: stage
         }));
     };
 
@@ -96,24 +96,23 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 // The prompt says: "In mastery modal, for Observer-role children: ... (Observer) — watching and learning"
 
                 const role = getChildRole(child.childAge);
-                let rating = ratings[child.childId];
+                let stage = stages[child.childId];
 
-                // If no rating selected:
-                if (!rating) {
+                // If no stage selected:
+                if (!stage) {
                     if (role === 'Observer') {
-                        rating = 'emerging'; // Default for observer? Or maybe we don't record mastery for observer?
-                        // For now, let's record emerging so it counts as done.
+                        stage = 'seeding';
                     } else {
-                        rating = 'developing';
+                        stage = 'rooting';
                     }
                 }
 
-                return observations.create({
+                return observations.create({ // Used adapter which calls evidences.create internally
                     studentId: child.childId,
                     activityId: session.activity.id,
-                    masteryLevel: rating,
+                    masteryLevel: stage, // Adapter maps this, or we can use evidences.create directly if we updated import
                     parentNotes: notes ? `[Family Session] ${notes}` : undefined,
-                    tier: child.tier, // Include tier for progress tracking,
+                    tier: child.tier,
                 });
             });
 
@@ -141,7 +140,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
             // Transition to success story
             setShowStoryPrompt(true);
-            setRatings({});
+            setStages({});
             setNotes('');
             setPassionSignals({});
         } catch (error) {
@@ -181,7 +180,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
             // Transition to success story
             setShowStoryPrompt(true);
-            setRatings({});
+            setStages({});
             setNotes('');
         } catch (error) {
             toast({
@@ -294,16 +293,17 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                                         </div>
                                     ) : (
                                         <div className="flex gap-2 w-full">
-                                            {MASTERY_OPTIONS.map(option => (
+                                            {STAGE_OPTIONS.map(option => (
                                                 <button
                                                     key={option.value}
-                                                    onClick={() => handleRatingChange(child.childId, option.value)}
-                                                    className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${ratings[child.childId] === option.value
+                                                    onClick={() => handleStageChange(child.childId, option.value)}
+                                                    className={`flex-1 py-2 px-1 rounded-md border text-xs font-medium transition-all ${stages[child.childId] === option.value
                                                         ? `ring-2 ring-primary ring-offset-1 ${option.color}`
                                                         : 'bg-muted/30 border-transparent hover:bg-muted text-muted-foreground'
                                                         }`}
                                                 >
-                                                    {option.label}
+                                                    <div className="font-semibold">{option.label}</div>
+                                                    <div className="text-[10px] opacity-80">{option.description}</div>
                                                 </button>
                                             ))}
                                         </div>
@@ -314,7 +314,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
 
                         <div className="space-y-2">
                             <div className="flex justify-between items-center">
-                                <Label htmlFor="notes">Notes (Optional)</Label>
+                                <Label htmlFor="notes">Evidence of Grace (Optional)</Label>
                                 {session.childTiers.length > 0 && (
                                     <Button
                                         variant="ghost"
@@ -332,7 +332,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                             </div>
                             <Textarea
                                 id="notes"
-                                placeholder="Any notable moments or struggles..."
+                                placeholder="What truth, beauty, or goodness did you capture?"
                                 value={notes}
                                 onChange={(e) => setNotes(e.target.value)}
                                 className="resize-none"

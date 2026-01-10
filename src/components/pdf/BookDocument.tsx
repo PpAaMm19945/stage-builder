@@ -70,8 +70,8 @@ const styles = StyleSheet.create({
         marginBottom: 5
     },
     hymnContent: {
-        fontSize: 12,
-        lineHeight: 1.6,
+        fontSize: 10,
+        lineHeight: 1.25,
         fontFamily: 'Times-Roman'
     },
     catechismQuestion: {
