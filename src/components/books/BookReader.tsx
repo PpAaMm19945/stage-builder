@@ -133,6 +133,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         });
     }, [api]);
 
+    // Listen for fullscreen exit (e.g., pressing Esc)
+    // MOVED: This effect must be before the early return to satisfy Rules of Hooks
+    useEffect(() => {
+        const handleFullscreenChange = () => {
+            setIsFullscreen(!!document.fullscreenElement);
+        };
+        document.addEventListener('fullscreenchange', handleFullscreenChange);
+        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
+    }, []);
+
     // Generate page URLs based on folder convention (for Image books)
     const imagePages = (book && (!book.renderFormat || book.renderFormat === 'image')) ? Array.from({ length: book.pageCount }, (_, i) => {
         return books.getPageUrl(book.series, book.id, i + 1);
@@ -190,15 +200,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         }
     };
 
-    // Listen for fullscreen exit (e.g., pressing Esc)
-    useEffect(() => {
-        const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
-        };
-        document.addEventListener('fullscreenchange', handleFullscreenChange);
-        return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
-    }, []);
-
     return (
         <>
             <Dialog open={open} onOpenChange={handleClose}>
@@ -225,6 +226,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                     size="icon"
                                     onClick={() => setShowPrompts(!showPrompts)}
                                     className={showPrompts ? "text-primary bg-white/10" : "text-gray-400"}
+                                    aria-label={showPrompts ? "Hide reading prompts" : "Show reading prompts"}
                                 >
                                     <BookOpenText className="w-6 h-6" />
                                 </Button>
@@ -236,6 +238,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                 onClick={toggleFullscreen}
                                 className="text-white hover:bg-white/20 rounded-full sm:hidden"
                                 title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
                             >
                                 {isFullscreen ? (
                                     <ArrowsInSimple className="w-6 h-6" />
@@ -246,7 +249,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                             {/* PDF button - only for supported formats */}
                             {showPdfButton && <PDFDownloadButton book={book} pages={parsedPages} />}
 
-                            <Button variant="ghost" size="icon" onClick={handleClose} className="text-white hover:bg-white/20 rounded-full">
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={handleClose}
+                                className="text-white hover:bg-white/20 rounded-full"
+                                aria-label="Close reader"
+                            >
                                 <X className="w-6 h-6" />
                             </Button>
                         </div>
