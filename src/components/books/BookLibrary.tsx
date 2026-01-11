@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
@@ -124,7 +124,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         return seriesNames.filter(s => !s.startsWith('Bible'));
     }, [seriesNames]);
 
-    const handleBookClick = (book: Book) => {
+    const handleBookClick = useCallback((book: Book) => {
         if (book.id === 'schoolos-hymnal') {
             setShowHymnal(true);
         } else if (book.id === 'schoolos-catechism') {
@@ -132,7 +132,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         } else {
             setSelectedBook(book);
         }
-    };
+    }, []);
 
     if (error) {
         return (
@@ -222,7 +222,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                         <BookCard
                                             key={`${book.series}-${book.id}`}
                                             book={book}
-                                            onClick={() => handleBookClick(book)}
+                                            onClick={handleBookClick}
                                         />
                                     ))}
                                 </div>
