@@ -26,11 +26,18 @@ interface SwapActivitySheetProps {
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
+    // Legacy domain support
     motor: 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
     language: 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300',
     cognitive: 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
     'social-emotional': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
     'pre-academic': 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-300',
+    // New virtue-based keys
+    'Wisdom': 'bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-300',
+    'Stewardship': 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300',
+    'Love': 'bg-pink-100 text-pink-700 dark:bg-pink-900/30 dark:text-pink-300',
+    'Order': 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-300',
+    'Wonder': 'bg-cyan-100 text-cyan-700 dark:bg-cyan-900/30 dark:text-cyan-300',
 };
 
 export function SwapActivitySheet({
