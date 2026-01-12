@@ -31,7 +31,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { WeeklyPlanDocument, DayPlan } from '@/components/pdf/documents';
-import { LiturgyItem, ApiActivity, Book } from '@/types';
+import { LiturgyItem, ApiActivity, Book, LiturgyType } from '@/types';
 
 // Helper to get smart week start (matches backend)
 function getSmartWeekStart(date = new Date()) {
@@ -149,6 +149,27 @@ export default function Planner() {
                                     // Filter slots for this day
                                     const daySlots = planData.plan.slots.filter((s: any) => s.day === dayStr);
 
+                                    // Extract liturgy
+                                    const liturgy = daySlots
+                                        .filter((s: any) => s.type === 'liturgy')
+                                        .map((s: any) => {
+                                            let type: LiturgyType = 'catechism';
+                                            const titleLower = (s.activityTitle || '').toLowerCase();
+                                            if (titleLower.includes('hymn')) type = 'hymn';
+                                            else if (titleLower.includes('verse') || titleLower.includes('scripture')) type = 'scripture';
+
+                                            return {
+                                                id: s.activityId,
+                                                type,
+                                                title: s.activityTitle,
+                                                content: '',
+                                                source: '',
+                                                sequence_number: 0,
+                                                min_age_months: 0,
+                                                max_age_months: 120
+                                            } as LiturgyItem;
+                                        });
+
                                     // Extract activities
                                     const activities = daySlots
                                         .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading' && s.type !== 'book')
@@ -192,7 +213,7 @@ export default function Planner() {
                                     return {
                                         date: dateStr,
                                         dayName: format(dayDate, 'EEEE'),
-                                        liturgy: [], // TODO: If planData includes liturgy, add here. Otherwise empty for now.
+                                        liturgy,
                                         activities: activities,
                                         reading: reading
                                     } as DayPlan;
