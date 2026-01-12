@@ -151,7 +151,7 @@ export default function Planner() {
 
                                     // Extract activities
                                     const activities = daySlots
-                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading')
+                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading' && s.type !== 'book')
                                         .map((s: any) => ({
                                             id: s.activityId,
                                             title: s.activityTitle,
@@ -170,12 +170,31 @@ export default function Planner() {
                                             max_age_months: 120
                                         } as ApiActivity));
 
+                                    // Extract reading
+                                    const readingSlot = daySlots.find((s: any) => s.type === 'reading' || s.type === 'book');
+                                    let reading: Book | undefined;
+
+                                    if (readingSlot) {
+                                        reading = {
+                                            id: readingSlot.activityId || 'unknown',
+                                            title: readingSlot.activityTitle || 'Reading Time',
+                                            series: readingSlot.series || 'library',
+                                            description: readingSlot.description || readingSlot.reasoning || '',
+                                            author: readingSlot.author,
+                                            minAgeMonths: 0,
+                                            maxAgeMonths: 120,
+                                            pageCount: 0,
+                                            domain: readingSlot.domain || 'language',
+                                            learningStage: 'early-years'
+                                        } as Book;
+                                    }
+
                                     return {
                                         date: dateStr,
                                         dayName: format(dayDate, 'EEEE'),
                                         liturgy: [], // TODO: If planData includes liturgy, add here. Otherwise empty for now.
                                         activities: activities,
-                                        reading: undefined // TODO: If planData includes reading.
+                                        reading: reading
                                     } as DayPlan;
                                 })}
                             />
