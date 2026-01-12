@@ -52,8 +52,8 @@ export default function DailyPractices() {
   const { data: practices, isLoading, error } = useQuery({
     queryKey: ['daily-practices', selectedContext],
     queryFn: () => activitiesApi.list({ 
-      activityType: 'daily_practice',
-      context: selectedContext || undefined,
+      formationType: 'daily_practice',
+      context_anchor: selectedContext || undefined,
       ageMonths: youngestChild?.ageInMonths
     }),
     enabled: !!selectedContext,

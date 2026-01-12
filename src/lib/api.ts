@@ -82,8 +82,15 @@ export const students = {
       body: JSON.stringify(data),
     }),
 
-  getToday: (studentId: string) =>
-    apiRequest<TodaysLearningResponse>(`/api/students/${studentId}/today`),
+  getToday: async (studentId: string) => {
+    const data = await apiRequest<TodaysLearningResponse>(`/api/students/${studentId}/today`);
+    // Normalize response for legacy compatibility
+    return {
+      ...data,
+      activities: data.formations || data.activities || [],
+      familyActivities: data.familyFormations || data.familyActivities || []
+    };
+  },
 
   getProgress: (studentId: string) =>
     apiRequest<any>(`/api/students/${studentId}/progress`),

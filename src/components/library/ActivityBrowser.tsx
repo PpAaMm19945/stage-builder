@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { activities as activitiesApi } from '@/lib/api';
-import { EarlyYearsDomain, DOMAIN_LABELS } from '@/types';
+import { EarlyYearsDomain, PrimaryVirtue, DOMAIN_TO_VIRTUE } from '@/types';
 import {
     Accordion,
     AccordionContent,
@@ -12,60 +12,61 @@ import {
 import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
-import { Clock, CaretRight, Brain, HandPalm, ChatCircleDots, Heart, Shapes } from '@phosphor-icons/react';
+import { Clock, CaretRight, Brain, HandPalm, Heart, Shapes, Sparkle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils'; // Keep this relative
 
-const domainConfigs: Record<EarlyYearsDomain, { label: string; icon: any; color: string; bgColor: string; borderColor: string }> = {
-    'motor': {
-        label: 'Stewardship & Dominion',
-        icon: HandPalm,
-        color: 'text-emerald-600 dark:text-emerald-400',
-        bgColor: 'bg-emerald-50 dark:bg-emerald-900/10',
-        borderColor: 'border-emerald-200 dark:border-emerald-800'
-    },
-    'language': {
-        label: 'Word & Truth',
-        icon: ChatCircleDots,
-        color: 'text-blue-600 dark:text-blue-400',
-        bgColor: 'bg-blue-50 dark:bg-blue-900/10',
-        borderColor: 'border-blue-200 dark:border-blue-800'
-    },
-    'cognitive': {
-        label: 'Wisdom & Order',
+const virtueConfigs: Record<PrimaryVirtue, { label: string; icon: any; color: string; bgColor: string; borderColor: string }> = {
+    'Wisdom': {
+        label: 'Wisdom',
         icon: Brain,
         color: 'text-purple-600 dark:text-purple-400',
         bgColor: 'bg-purple-50 dark:bg-purple-900/10',
         borderColor: 'border-purple-200 dark:border-purple-800'
     },
-    'social-emotional': {
-        label: 'Virtue & Sanctification',
+    'Stewardship': {
+        label: 'Stewardship',
+        icon: HandPalm,
+        color: 'text-emerald-600 dark:text-emerald-400',
+        bgColor: 'bg-emerald-50 dark:bg-emerald-900/10',
+        borderColor: 'border-emerald-200 dark:border-emerald-800'
+    },
+    'Love': {
+        label: 'Love',
         icon: Heart,
         color: 'text-rose-600 dark:text-rose-400',
         bgColor: 'bg-rose-50 dark:bg-rose-900/10',
         borderColor: 'border-rose-200 dark:border-rose-800'
     },
-    'pre-academic': {
-        label: 'Foundations & Patterns',
+    'Order': {
+        label: 'Order',
         icon: Shapes,
         color: 'text-amber-600 dark:text-amber-400',
         bgColor: 'bg-amber-50 dark:bg-amber-900/10',
         borderColor: 'border-amber-200 dark:border-amber-800'
+    },
+    'Wonder': {
+        label: 'Wonder',
+        icon: Sparkle,
+        color: 'text-blue-600 dark:text-blue-400',
+        bgColor: 'bg-blue-50 dark:bg-blue-900/10',
+        borderColor: 'border-blue-200 dark:border-blue-800'
     }
 };
 
-const DOMAIN_ORDER: EarlyYearsDomain[] = [
-    'motor',
-    'language',
-    'cognitive',
-    'social-emotional',
-    'pre-academic'
+const VIRTUE_ORDER: PrimaryVirtue[] = [
+    'Wisdom',
+    'Stewardship',
+    'Love',
+    'Order',
+    'Wonder'
 ];
 
 interface ApiActivity {
     id: string;
     title: string;
     description: string;
-    domain: EarlyYearsDomain;
+    domain?: EarlyYearsDomain;
+    primary_virtue?: PrimaryVirtue;
     duration_minutes: number;
     difficulty: number;
     materials: string[];
@@ -89,37 +90,42 @@ export function ActivityBrowser() {
         </div>;
     }
 
-    // Group activities by domain
+    // Group activities by virtue (mapping legacy domains if needed)
     const groupedActivities = activities.reduce((acc, activity: ApiActivity) => {
-        const domain = activity.domain;
-        if (!acc[domain]) acc[domain] = [];
-        acc[domain].push(activity);
-        return acc;
-    }, {} as Record<EarlyYearsDomain, ApiActivity[]>);
+        // Determine virtue: explicit or mapped from legacy domain
+        const virtue: PrimaryVirtue =
+            activity.primary_virtue ||
+            (activity.domain ? DOMAIN_TO_VIRTUE[activity.domain as string] : undefined) ||
+            'Wisdom';
 
-    // Sort activities by age within domains
+        if (!acc[virtue]) acc[virtue] = [];
+        acc[virtue].push(activity);
+        return acc;
+    }, {} as Record<PrimaryVirtue, ApiActivity[]>);
+
+    // Sort activities by age within virtues
     Object.keys(groupedActivities).forEach((key) => {
-        const domain = key as EarlyYearsDomain;
-        groupedActivities[domain].sort((a, b) => a.min_age_months - b.min_age_months);
+        const virtue = key as PrimaryVirtue;
+        groupedActivities[virtue].sort((a, b) => a.min_age_months - b.min_age_months);
     });
 
     return (
         <div className="space-y-6">
             <div className="prose prose-sm dark:prose-invert max-w-none">
                 <p className="text-muted-foreground">
-                    Browse our complete collection of developmentally appropriate activities, categorized by domain and ordered by age progression.
+                    Browse our complete collection of developmentally appropriate activities, categorized by virtue and ordered by age progression.
                 </p>
             </div>
 
-            <Accordion type="multiple" defaultValue={['motor']} className="space-y-4">
-                {DOMAIN_ORDER.map((domain) => {
-                    const config = domainConfigs[domain];
-                    const domainActivities = groupedActivities[domain] || [];
+            <Accordion type="multiple" defaultValue={['Wisdom']} className="space-y-4">
+                {VIRTUE_ORDER.map((virtue) => {
+                    const config = virtueConfigs[virtue];
+                    const domainActivities = groupedActivities[virtue] || [];
 
                     return (
                         <AccordionItem
-                            key={domain}
-                            value={domain}
+                            key={virtue}
+                            value={virtue}
                             className={cn(
                                 "border rounded-xl overflow-hidden transition-all duration-200",
                                 config.borderColor,

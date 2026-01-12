@@ -134,18 +134,20 @@ export const DailyPlanDocument = ({ day, children }: DailyPlanDocumentProps) => 
                     <View style={styles.sectionHeader}>
                         <Text style={styles.sectionTitle}>Activities</Text>
                     </View>
-                    {day.activities.map((act, i) => (
+                    {day.activities.map((act, i) => {
+                        const domain = act.primary_virtue || act.domain || 'General';
+                        return (
                         <View key={i} style={styles.row}>
                             <View style={styles.checkbox} />
                             <View style={styles.content}>
                                 <Text style={styles.itemTitle}>{act.title}</Text>
                                 <Text style={styles.itemDesc}>{act.description}</Text>
                                 <Text style={styles.itemMeta}>
-                                    {act.duration_minutes} min • {act.domain} • Materials: {act.materials.join(', ')}
+                                    {act.duration_minutes} min • {domain} • Materials: {act.materials.join(', ')}
                                 </Text>
                             </View>
                         </View>
-                    ))}
+                    )})}
                 </View>
             )}
 

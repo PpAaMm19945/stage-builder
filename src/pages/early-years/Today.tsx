@@ -9,7 +9,7 @@ import { WelcomeFlow } from '@/components/onboarding/WelcomeFlow';
 import { useNavigate } from 'react-router-dom';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { students } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain, type ApiActivity } from '@/types';
+import { DOMAIN_LABELS, DOMAIN_TO_VIRTUE, VIRTUE_LABELS, type EarlyYearsDomain, type ApiActivity, type PrimaryVirtue } from '@/types';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { 
   Star, 
@@ -21,12 +21,12 @@ import {
   Compass 
 } from '@phosphor-icons/react';
 
-const domainColors: Record<EarlyYearsDomain, string> = {
-  'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
-  'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
-  'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
-  'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
-  'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
+const virtueColors: Record<PrimaryVirtue, string> = {
+  'Wisdom': 'bg-purple-50 text-purple-700 border-purple-200',
+  'Stewardship': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Love': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Order': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Wonder': 'bg-blue-50 text-blue-700 border-blue-200',
 };
 
 // UI Activity interface (camelCase)
@@ -34,7 +34,7 @@ interface Activity {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  domain: PrimaryVirtue;
   estimatedMinutes: number;
   difficultyLevel: number;
   materials: string[];
@@ -47,11 +47,11 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   id: activity.id,
   title: activity.title,
   description: activity.description,
-  domain: activity.domain,
+  domain: activity.primary_virtue || (activity.domain ? DOMAIN_TO_VIRTUE[activity.domain as string] : 'Wisdom') || 'Wisdom',
   estimatedMinutes: activity.duration_minutes,
-  difficultyLevel: activity.difficulty,
+  difficultyLevel: activity.difficulty || 1,
   materials: activity.materials || [],
-  instructions: activity.instructions || [],
+  instructions: activity.guide_steps || activity.instructions || [],
   minAgeMonths: activity.min_age_months,
   maxAgeMonths: activity.max_age_months,
 });
@@ -162,8 +162,8 @@ export default function Today() {
                     {recommendedActivity.description}
                   </CardDescription>
                 </div>
-                <Badge className={`${domainColors[recommendedActivity.domain]} shrink-0`}>
-                  {DOMAIN_LABELS[recommendedActivity.domain]}
+                <Badge className={`${virtueColors[recommendedActivity.domain]} shrink-0`}>
+                  {VIRTUE_LABELS[recommendedActivity.domain]}
                 </Badge>
               </div>
             </CardHeader>
@@ -253,8 +253,8 @@ export default function Today() {
                   onClick={() => navigate(`/early-years/activities/${activity.id}`)}
                 >
                   <CardContent className="p-4 space-y-3">
-                    <Badge variant="outline" className={domainColors[activity.domain]}>
-                      {DOMAIN_LABELS[activity.domain]}
+                    <Badge variant="outline" className={virtueColors[activity.domain]}>
+                      {VIRTUE_LABELS[activity.domain]}
                     </Badge>
                     <h3 className="font-medium text-foreground leading-tight">
                       {activity.title}
@@ -292,9 +292,16 @@ export default function Today() {
                 >
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
-                      <Badge variant="outline" className={domainColors[familyActivity.activity.domain as EarlyYearsDomain]}>
-                        {DOMAIN_LABELS[familyActivity.activity.domain as EarlyYearsDomain]}
-                      </Badge>
+                      {(() => {
+                        const virtue = familyActivity.activity.primary_virtue ||
+                                      (familyActivity.activity.domain ? DOMAIN_TO_VIRTUE[familyActivity.activity.domain as string] : 'Wisdom') ||
+                                      'Wisdom';
+                        return (
+                          <Badge variant="outline" className={virtueColors[virtue]}>
+                            {VIRTUE_LABELS[virtue]}
+                          </Badge>
+                        );
+                      })()}
                       <Badge variant="secondary" className="text-xs">
                         For Everyone
                       </Badge>

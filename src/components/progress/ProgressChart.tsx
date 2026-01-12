@@ -6,7 +6,7 @@ import { students } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ChartLineUp, TrendUp, Calendar, Target } from '@phosphor-icons/react';
-import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { DOMAIN_LABELS, DOMAIN_TO_VIRTUE, type PrimaryVirtue, type EarlyYearsDomain, VIRTUE_LABELS } from '@/types';
 import {
     LineChart,
     Line,
@@ -22,12 +22,12 @@ import {
 } from 'recharts';
 import { format, subMonths, startOfMonth, eachMonthOfInterval } from 'date-fns';
 
-const DOMAIN_COLORS: Record<EarlyYearsDomain, string> = {
-    'motor': '#10b981',
-    'language': '#3b82f6',
-    'cognitive': '#8b5cf6',
-    'social-emotional': '#ec4899',
-    'pre-academic': '#f97316',
+const VIRTUE_COLORS: Record<PrimaryVirtue, string> = {
+    'Wisdom': '#8b5cf6',
+    'Stewardship': '#10b981',
+    'Love': '#ec4899',
+    'Order': '#f97316',
+    'Wonder': '#3b82f6',
 };
 
 interface ProgressChartProps {
@@ -68,23 +68,25 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
             const monthEnd = new Date(monthStart);
             monthEnd.setMonth(monthEnd.getMonth() + 1);
 
-            // Count activities per domain for this month
+            // Count activities per virtue for this month
             const monthObs = observationsData.filter((obs: any) => {
                 const obsDate = new Date(obs.created_at);
                 return obsDate >= monthStart && obsDate < monthEnd;
             });
 
-            const domainCounts: Record<string, number> = {
-                motor: 0,
-                language: 0,
-                cognitive: 0,
-                'social-emotional': 0,
-                'pre-academic': 0,
+            const virtueCounts: Record<string, number> = {
+                'Wisdom': 0,
+                'Stewardship': 0,
+                'Love': 0,
+                'Order': 0,
+                'Wonder': 0,
             };
 
             monthObs.forEach((obs: any) => {
-                if (domainCounts[obs.domain] !== undefined) {
-                    domainCounts[obs.domain]++;
+                // Map legacy domain to virtue if necessary
+                const virtue = obs.primary_virtue || DOMAIN_TO_VIRTUE[obs.domain as string] || 'Wisdom';
+                if (virtueCounts[virtue] !== undefined) {
+                    virtueCounts[virtue]++;
                 }
             });
 
@@ -92,7 +94,7 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
                 month: format(date, 'MMM'),
                 fullMonth: monthKey,
                 total: monthObs.length,
-                ...domainCounts,
+                ...virtueCounts,
             };
         });
 
@@ -270,20 +272,20 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
             {hasData && (
                 <Card>
                     <CardHeader>
-                        <CardTitle className="text-lg">Progress by Domain</CardTitle>
-                        <CardDescription>See how activities are distributed across learning areas</CardDescription>
+                        <CardTitle className="text-lg">Progress by Virtue</CardTitle>
+                        <CardDescription>See how activities are distributed across primary virtues</CardDescription>
                     </CardHeader>
                     <CardContent>
                         <div className="flex flex-wrap gap-2 mb-4">
-                            {Object.entries(DOMAIN_LABELS).map(([domain, label]) => (
+                            {Object.entries(VIRTUE_LABELS).map(([virtue, label]) => (
                                 <Badge
-                                    key={domain}
+                                    key={virtue}
                                     variant="outline"
-                                    style={{ borderColor: DOMAIN_COLORS[domain as EarlyYearsDomain], color: DOMAIN_COLORS[domain as EarlyYearsDomain] }}
+                                    style={{ borderColor: VIRTUE_COLORS[virtue as PrimaryVirtue], color: VIRTUE_COLORS[virtue as PrimaryVirtue] }}
                                 >
                                     <span
                                         className="w-2 h-2 rounded-full mr-1"
-                                        style={{ backgroundColor: DOMAIN_COLORS[domain as EarlyYearsDomain] }}
+                                        style={{ backgroundColor: VIRTUE_COLORS[virtue as PrimaryVirtue] }}
                                     />
                                     {label}
                                 </Badge>

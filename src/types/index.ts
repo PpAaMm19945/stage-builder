@@ -58,8 +58,24 @@ export const VIRTUE_DESCRIPTIONS: Record<PrimaryVirtue, string> = {
   'Wonder': 'Awe and creativity'
 };
 
-// Legacy Domain Support (for backward compatibility if needed temporarily)
-export type EarlyYearsDomain = PrimaryVirtue;
+// Legacy Domain Support (for backward compatibility)
+export type LegacyDomain = 'motor' | 'language' | 'cognitive' | 'social-emotional' | 'pre-academic';
+
+export const DOMAIN_TO_VIRTUE: Record<LegacyDomain | string, PrimaryVirtue> = {
+  'motor': 'Stewardship',
+  'language': 'Wisdom',
+  'cognitive': 'Wisdom',
+  'social-emotional': 'Love',
+  'pre-academic': 'Order',
+  'Wisdom': 'Wisdom',
+  'Stewardship': 'Stewardship',
+  'Love': 'Love',
+  'Order': 'Order',
+  'Wonder': 'Wonder'
+};
+
+// Legacy compatibility: EarlyYearsDomain now points to PrimaryVirtue but we allow string for legacy
+export type EarlyYearsDomain = PrimaryVirtue | LegacyDomain | string;
 export const DOMAIN_LABELS = VIRTUE_LABELS;
 
 
@@ -79,7 +95,7 @@ export const STAGE_DESCRIPTIONS: Record<FormationStage, string> = {
 };
 
 // Legacy Mastery Support
-export type MasteryLevel = FormationStage;
+export type MasteryLevel = FormationStage | string;
 export const MASTERY_LABELS = STAGE_LABELS;
 
 
@@ -112,6 +128,17 @@ export interface Formation {
   materials: string[];
   duration_minutes: number;
   imageUrl?: string;
+
+  // Legacy aliases
+  domain?: EarlyYearsDomain;
+  instructions?: string[];
+  parent_script?: string;
+  estimatedMinutes?: number;
+  difficultyLevel?: number;
+  successIndicators?: string[];
+  easierVariation?: string;
+  harderVariation?: string;
+  tips?: string[];
 }
 
 // Evidence (Replaces ActivityResult/Observation)
@@ -172,6 +199,10 @@ export interface ApiFormation {
   materials: string[];
 
   // Legacy / Optional
+  domain?: EarlyYearsDomain;
+  instructions?: string[];
+  parent_script?: string;
+  activity_type?: string;
   difficulty?: number;
   learning_outcomes?: string[];
   content_status?: string;
@@ -182,9 +213,41 @@ export interface ApiFormation {
   cluster_tag?: string;
   upvote_count?: number;
   comment_count?: number;
+
+  // Static data compatibility
+  estimatedMinutes?: number;
+  difficultyLevel?: number;
+  successIndicators?: string[];
+  easierVariation?: string;
+  harderVariation?: string;
+  tips?: string[];
+  imageUrl?: string;
 }
 
 export type ApiActivity = ApiFormation; // Alias for legacy code
+
+// Legacy Static Data Interface (camelCase) - used in src/data/activities.ts
+export interface LegacyStaticActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: EarlyYearsDomain | string;
+  minAgeMonths: number;
+  maxAgeMonths: number;
+  difficultyLevel: number;
+  estimatedMinutes: number;
+  materials: string[];
+  instructions: string[];
+  successIndicators?: string[];
+  easierVariation?: string;
+  harderVariation?: string;
+  tips?: string[];
+  imageUrl?: string;
+}
+
+// Re-export Formation as Activity for legacy code,
+// but ensure it covers legacy fields (which Formation does now)
+export type Activity = Formation | ApiFormation | LegacyStaticActivity;
 
 // Family Formation (for sibling-aware recommendations)
 export interface FamilyFormation {
@@ -200,6 +263,10 @@ export interface TodaysLearningResponse {
   student: Student;
   formations: ApiFormation[];
   familyFormations?: FamilyFormation[];
+
+  // Legacy aliases
+  activities?: ApiFormation[];
+  familyActivities?: FamilyFormation[];
 }
 
 export interface MaterialItem {
@@ -275,6 +342,7 @@ export interface ReadingSession {
   childrenPresent?: string[];
   notes?: string;
   completedAt: string;
+  duration?: number;
 }
 
 // ============================================
@@ -413,6 +481,8 @@ export interface WeeklyPlanResponse {
   plan: any; // We can refine this later if needed
   cached: boolean;
   completions?: Record<string, ActivityCompletion>;
+  balance_preference?: string;
+  tier_distribution?: any;
 }
 
 // ============================================
@@ -519,7 +589,7 @@ export interface DailyRhythmItem {
   timeSlot: string;
   title: string;
   description?: string;
-  type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning';
+  type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header';
   status: 'upcoming' | 'current' | 'completed';
   data?: any;
 }
@@ -547,4 +617,3 @@ export interface FormationProgress {
     currentStreak: number;
   };
 }
-
