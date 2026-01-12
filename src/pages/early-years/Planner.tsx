@@ -151,16 +151,23 @@ export default function Planner() {
 
                                     // Extract activities
                                     const activities = daySlots
-                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading') // Assuming slots have types, or infer from somewhere. Plan data usually just has activities.
+                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading')
                                         .map((s: any) => ({
                                             id: s.activityId,
                                             title: s.activityTitle,
-                                            domain: s.domain,
+                                            primary_virtue: s.primary_virtue || s.domain || 'Wisdom',
+                                            domain: s.domain || s.primary_virtue || 'Wisdom',
                                             duration_minutes: s.duration,
                                             // Mock other required fields for PDF if missing in slot
                                             description: s.description || '',
                                             materials: [],
-                                            instructions: []
+                                            guide_steps: [],
+                                            instructions: [],
+                                            formation_type: s.formation_type || 'skill',
+                                            context_anchor: s.context_anchor || 'Anytime',
+                                            parent_posture: '',
+                                            min_age_months: 0,
+                                            max_age_months: 120
                                         } as ApiActivity));
 
                                     return {

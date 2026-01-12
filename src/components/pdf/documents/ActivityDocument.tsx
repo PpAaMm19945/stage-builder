@@ -88,14 +88,21 @@ interface ActivityDocumentProps {
     date?: string;
 }
 
-export const ActivityDocument = ({ activity, childName, date }: ActivityDocumentProps) => (
+export const ActivityDocument = ({ activity, childName, date }: ActivityDocumentProps) => {
+    // Normalize fields with legacy fallbacks
+    const domain = activity.primary_virtue || activity.domain;
+    const domainLabel = domain ? DOMAIN_LABELS[domain] : 'General';
+    const instructions = activity.guide_steps || activity.instructions || [];
+    const parentScript = activity.parent_posture || activity.parent_script;
+
+    return (
     <Document title={activity.title} author="SchoolOS">
         <Page size="A4" style={styles.page}>
             {/* Header */}
             <View style={styles.header}>
                 <Text style={styles.title}>{activity.title}</Text>
                 <View style={styles.meta}>
-                    <Text>{DOMAIN_LABELS[activity.domain]}</Text>
+                    <Text>{domainLabel}</Text>
                     <Text>•</Text>
                     <Text>{activity.duration_minutes} min</Text>
                     <Text>•</Text>
@@ -122,10 +129,10 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
             )}
 
             {/* Instructions */}
-            {activity.instructions && activity.instructions.length > 0 && (
+            {instructions.length > 0 && (
                 <View style={styles.section}>
                     <Text style={styles.sectionTitle}>Instructions</Text>
-                    {activity.instructions.map((step, i) => (
+                    {instructions.map((step, i) => (
                         <View key={i} style={styles.listItem}>
                             <Text style={styles.bullet}>{i + 1}.</Text>
                             <Text style={styles.listContent}>{step}</Text>
@@ -135,10 +142,10 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
             )}
 
             {/* Parent Script */}
-            {activity.parent_script && (
+            {parentScript && (
                 <View style={styles.scriptBox}>
-                    <Text style={styles.scriptTitle}>What to Say</Text>
-                    <Text style={styles.scriptText}>"{activity.parent_script}"</Text>
+                    <Text style={styles.scriptTitle}>Parent Posture / Script</Text>
+                    <Text style={styles.scriptText}>"{parentScript}"</Text>
                 </View>
             )}
 
@@ -161,4 +168,5 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
             </Text>
         </Page>
     </Document>
-);
+    );
+};

@@ -16,6 +16,7 @@ import {
   CaretUp
 } from '@phosphor-icons/react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import { cn } from '@/lib/utils';
 import { UpNextCard } from '@/components/dashboard/UpNextCard';
 import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
 import { toast } from 'sonner';

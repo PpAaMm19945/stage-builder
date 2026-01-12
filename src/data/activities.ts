@@ -1,4 +1,4 @@
-import { Activity, EarlyYearsDomain } from '@/types';
+import { LegacyStaticActivity as Activity, EarlyYearsDomain } from '@/types';
 
 // ============================================
 // Early Years Activity Seed Data

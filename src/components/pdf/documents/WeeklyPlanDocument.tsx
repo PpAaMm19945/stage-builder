@@ -118,12 +118,14 @@ export const WeeklyPlanDocument = ({ weekStart, children, days }: WeeklyPlanDocu
                         {day.activities.length > 0 && (
                             <View>
                                 <Text style={styles.sectionTitle}>Activities</Text>
-                                {day.activities.map((act, idx) => (
+                                {day.activities.map((act, idx) => {
+                                    const domain = act.primary_virtue || act.domain || 'General';
+                                    return (
                                     <View key={idx} style={styles.item}>
                                         <Text style={styles.itemTitle}>{act.title}</Text>
-                                        <Text style={styles.itemMeta}>{act.duration_minutes}m • {act.domain}</Text>
+                                        <Text style={styles.itemMeta}>{act.duration_minutes}m • {domain}</Text>
                                     </View>
-                                ))}
+                                )})}
                             </View>
                         )}
 

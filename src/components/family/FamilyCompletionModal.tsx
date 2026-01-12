@@ -10,6 +10,7 @@ import { Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
 import { FormationStage, getChildRole, STAGE_LABELS, STAGE_DESCRIPTIONS } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
 import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
+import { FamilySession } from '@/types';
 
 interface FamilyCompletionModalProps {
     isOpen: boolean;

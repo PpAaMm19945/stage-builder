@@ -11,23 +11,23 @@ import { EmptyState } from '@/components/ui/EmptyState';
 import { useQuery } from '@tanstack/react-query';
 import { MagnifyingGlass, Clock, Funnel, X, MagnifyingGlassMinus } from '@phosphor-icons/react';
 import { activities as activitiesApi } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain } from '@/types';
+import { DOMAIN_LABELS, DOMAIN_TO_VIRTUE, VIRTUE_LABELS, type EarlyYearsDomain, type PrimaryVirtue } from '@/types';
 
-const domainColors: Record<EarlyYearsDomain, string> = {
-  'motor': 'bg-domain-motor/10 text-domain-motor border-domain-motor/20',
-  'language': 'bg-domain-language/10 text-domain-language border-domain-language/20',
-  'cognitive': 'bg-domain-cognitive/10 text-domain-cognitive border-domain-cognitive/20',
-  'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
-  'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
+const virtueColors: Record<PrimaryVirtue, string> = {
+  'Wisdom': 'bg-purple-50 text-purple-700 border-purple-200',
+  'Stewardship': 'bg-emerald-50 text-emerald-700 border-emerald-200',
+  'Love': 'bg-rose-50 text-rose-700 border-rose-200',
+  'Order': 'bg-amber-50 text-amber-700 border-amber-200',
+  'Wonder': 'bg-blue-50 text-blue-700 border-blue-200',
 };
 
-const domainFilters: { id: EarlyYearsDomain | 'all'; label: string }[] = [
-  { id: 'all', label: 'All Domains' },
-  { id: 'motor', label: 'Stewardship & Dominion' },
-  { id: 'language', label: 'Word & Truth' },
-  { id: 'cognitive', label: 'Wisdom & Order' },
-  { id: 'social-emotional', label: 'Virtue & Sanctification' },
-  { id: 'pre-academic', label: 'Foundations & Patterns' },
+const virtueFilters: { id: PrimaryVirtue | 'all'; label: string }[] = [
+  { id: 'all', label: 'All Virtues' },
+  { id: 'Wisdom', label: 'Wisdom' },
+  { id: 'Stewardship', label: 'Stewardship' },
+  { id: 'Love', label: 'Love' },
+  { id: 'Order', label: 'Order' },
+  { id: 'Wonder', label: 'Wonder' },
 ];
 
 // Map API response fields to UI expected fields
@@ -35,11 +35,13 @@ interface ApiActivity {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  domain?: EarlyYearsDomain;
+  primary_virtue?: PrimaryVirtue;
   duration_minutes: number;
   difficulty: number;
   materials: string[];
   instructions: string[];
+  guide_steps?: string[];
   min_age_months: number;
   max_age_months: number;
 }
@@ -48,7 +50,7 @@ interface Activity {
   id: string;
   title: string;
   description: string;
-  domain: EarlyYearsDomain;
+  domain: PrimaryVirtue;
   estimatedMinutes: number;
   difficultyLevel: number;
   materials: string[];
@@ -61,11 +63,11 @@ const mapApiActivity = (activity: ApiActivity): Activity => ({
   id: activity.id,
   title: activity.title,
   description: activity.description,
-  domain: activity.domain,
+  domain: activity.primary_virtue || (activity.domain ? DOMAIN_TO_VIRTUE[activity.domain as string] : 'Wisdom') || 'Wisdom',
   estimatedMinutes: activity.duration_minutes,
   difficultyLevel: activity.difficulty,
   materials: activity.materials || [],
-  instructions: activity.instructions || [],
+  instructions: activity.guide_steps || activity.instructions || [],
   minAgeMonths: activity.min_age_months,
   maxAgeMonths: activity.max_age_months,
 });
@@ -74,13 +76,13 @@ export default function Activities() {
   const { selectedChild } = useAuth();
   const navigate = useNavigate();
   const [search, setSearch] = useState('');
-  const [selectedDomain, setSelectedDomain] = useState<EarlyYearsDomain | 'all'>('all');
+  const [selectedDomain, setSelectedDomain] = useState<PrimaryVirtue | 'all'>('all');
   const [showAgeAppropriate, setShowAgeAppropriate] = useState(true);
 
   // Build query params for API
-  const queryParams: { domain?: string; ageMonths?: number } = {};
+  const queryParams: { primary_virtue?: string; ageMonths?: number } = {};
   if (selectedDomain !== 'all') {
-    queryParams.domain = selectedDomain;
+    queryParams.primary_virtue = selectedDomain;
   }
   if (showAgeAppropriate && selectedChild) {
     queryParams.ageMonths = selectedChild.ageInMonths;
@@ -177,18 +179,18 @@ export default function Activities() {
           )}
         </div>
 
-        {/* Domain Pills */}
+        {/* Virtue Pills */}
         <div className="flex flex-wrap items-center gap-2">
           <Funnel className="h-4 w-4 text-muted-foreground" weight="duotone" />
-          {domainFilters.map((domain) => (
+          {virtueFilters.map((virtue) => (
             <Button
-              key={domain.id}
-              variant={selectedDomain === domain.id ? 'default' : 'outline'}
+              key={virtue.id}
+              variant={selectedDomain === virtue.id ? 'default' : 'outline'}
               size="sm"
-              onClick={() => setSelectedDomain(domain.id)}
+              onClick={() => setSelectedDomain(virtue.id)}
               className="rounded-full"
             >
-              {domain.label}
+              {virtue.label}
             </Button>
           ))}
         </div>
@@ -218,8 +220,8 @@ export default function Activities() {
             >
               <CardContent className="p-4 space-y-3">
                 <div className="flex items-start justify-between gap-2">
-                  <Badge variant="outline" className={domainColors[activity.domain]}>
-                    {DOMAIN_LABELS[activity.domain]}
+                  <Badge variant="outline" className={virtueColors[activity.domain]}>
+                    {VIRTUE_LABELS[activity.domain]}
                   </Badge>
                   <div className="flex gap-0.5 shrink-0">
                     {[1, 2, 3, 4, 5].map((level) => (
