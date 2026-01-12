@@ -1,6 +1,6 @@
 -- Migration 0049: Seed History Short Stories
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
-('hist_story_01_god_made_africa', 'God Made Africa', 'narrative', 'Wonder', 'Imagination', '# God Made Africa
+INSERT OR REPLACE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
+('hist_story_01_god_made_africa', 'God Made Africa', 'liturgy', 'Wonder', 'Imagination', '# God Made Africa
 
 ## Spread 1 (Pages 1-2)
 
@@ -98,7 +98,7 @@ Map: The Sons of Ham. This map shows where the three brothers'' families went. C
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_02_the_river_of_time', 'The River of Time', 'narrative', 'Wonder', 'Imagination', '# The River of Time
+('hist_story_02_the_river_of_time', 'The River of Time', 'liturgy', 'Wonder', 'Imagination', '# The River of Time
 
 ## Spread 1 (Pages 1-2)
 
@@ -196,7 +196,7 @@ Map: The Black Land. See the long blue line of the Nile flowing North. Find the 
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_03_the_green_sahara', 'The Green Sahara', 'narrative', 'Wonder', 'Imagination', '# The Green Sahara
+('hist_story_03_the_green_sahara', 'The Green Sahara', 'liturgy', 'Wonder', 'Imagination', '# The Green Sahara
 
 ## Spread 1 (Pages 1-2)
 
@@ -294,7 +294,7 @@ Map: The Changing Land. This map shows North Africa. The green spots show where 
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_04_the_iron_kingdom', 'The Iron Kingdom', 'narrative', 'Wonder', 'Imagination', '# The Iron Kingdom
+('hist_story_04_the_iron_kingdom', 'The Iron Kingdom', 'liturgy', 'Wonder', 'Imagination', '# The Iron Kingdom
 
 ## Spread 1 (Pages 1-2)
 
@@ -392,7 +392,7 @@ Map: The Land of the Bow. This map shows the Nile bending in an ''S'' shape. The
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_05_the_garden_of_faith', 'The Garden of Faith', 'narrative', 'Wonder', 'Imagination', '# The Garden of Faith
+('hist_story_05_the_garden_of_faith', 'The Garden of Faith', 'liturgy', 'Wonder', 'Imagination', '# The Garden of Faith
 
 ## Spread 1 (Pages 1-2)
 
@@ -490,7 +490,7 @@ Map: The Coast of Saints. This map shows the cities of Carthage and Hippo along 
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_06_the_desert_prayer', 'The Desert Prayer', 'narrative', 'Wonder', 'Imagination', '# The Desert Prayer
+('hist_story_06_the_desert_prayer', 'The Desert Prayer', 'liturgy', 'Wonder', 'Imagination', '# The Desert Prayer
 
 ## Spread 1 (Pages 1-2)
 
@@ -588,7 +588,7 @@ Map: The Desert Cells. This map shows the Nile Delta and the Red Sea. Small cros
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_07_the_cross_on_the_coin', 'The Cross on the Coin', 'narrative', 'Wonder', 'Imagination', '# The Cross on the Coin
+('hist_story_07_the_cross_on_the_coin', 'The Cross on the Coin', 'liturgy', 'Wonder', 'Imagination', '# The Cross on the Coin
 
 ## Spread 1 (Pages 1-2)
 
@@ -686,7 +686,7 @@ Map: The Highland Kingdom. This map shows the Red Sea and the mountains of Ethio
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_08_the_great_trek_south', 'The Great Trek South', 'narrative', 'Wonder', 'Imagination', '# The Great Trek South
+('hist_story_08_the_great_trek_south', 'The Great Trek South', 'liturgy', 'Wonder', 'Imagination', '# The Great Trek South
 
 ## Spread 1 (Pages 1-2)
 
@@ -784,7 +784,7 @@ Map: The Moving Families. This map shows arrows moving from West Africa down to 
 
 ---
 ', '', 'Bedside', 48, 120),
-('hist_story_09_the_churches_in_the_rock', 'The Churches in the Rock', 'narrative', 'Wonder', 'Imagination', '# The Churches in the Rock
+('hist_story_09_the_churches_in_the_rock', 'The Churches in the Rock', 'liturgy', 'Wonder', 'Imagination', '# The Churches in the Rock
 
 ## Spread 1 (Pages 1-2)
 

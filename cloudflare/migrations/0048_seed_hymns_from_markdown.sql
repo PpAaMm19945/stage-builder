@@ -1,5 +1,5 @@
 -- Migration 0048: Seed Hymns from Markdown
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
+INSERT OR REPLACE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
 ('hymn_a_mighty_fortress_is_our_god', 'A Mighty Fortress Is Our God', 'liturgy', 'Worship', 'Affection', '
 
 
@@ -751,7 +751,8 @@ She ever shall prevail.
 1. Guide me, O Thou great Jehovah,
 Pilgrim through this barren land;
 I am weak, but Thou art mighty,
-Hold me with Thy powerful hand....', '<div class="hymn">
+Hold me with Thy powerful hand.
+...', '<div class="hymn">
 
 <div class="hymn-verse">
 1. Guide me, O Thou great Jehovah,<br>

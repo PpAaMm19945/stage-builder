@@ -1,4 +1,4 @@
-INSERT INTO formations (id, title, formation_type, primary_virtue, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
+INSERT OR REPLACE INTO formations (id, title, formation_type, primary_virtue, description, liturgical_script, context_anchor, min_age_months, max_age_months) VALUES
 ('verse_week_01', 'Week 1: Creation', 'liturgy', 'Wonder', 'Genesis 1:1', 'In the beginning, God created the heavens and the earth.', 'Morning_Circle', 48, 216),
 ('verse_week_02', 'Week 2: Image of God', 'liturgy', 'Identity', 'Genesis 1:27', 'So God created man in his own image, in the image of God created he him; male and female created he them.', 'Morning_Circle', 48, 216),
 ('verse_week_03', 'Week 3: The Promise', 'liturgy', 'Hope', 'Genesis 3:15', 'And I will put enmity between thee and the woman, and between thy seed and her seed; it shall bruise thy head, and thou shalt bruise his heel.', 'Morning_Circle', 48, 216),
