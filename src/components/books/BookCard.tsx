@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Card, CardContent } from '@/components/ui/card';
@@ -8,10 +8,10 @@ import { Books as BooksIcon, Heart } from '@phosphor-icons/react';
 
 interface BookCardProps {
     book: Book;
-    onClick?: () => void;
+    onClick?: (book: Book) => void;
 }
 
-export function BookCard({ book, onClick }: BookCardProps) {
+export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -54,14 +54,14 @@ export function BookCard({ book, onClick }: BookCardProps) {
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
             e.preventDefault();
-            onClick();
+            onClick(book);
         }
     };
 
     return (
         <Card
             className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
-            onClick={onClick}
+            onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}
             aria-label={`Open ${book.title}`}
@@ -134,4 +134,4 @@ export function BookCard({ book, onClick }: BookCardProps) {
             </CardContent>
         </Card >
     );
-}
+});
