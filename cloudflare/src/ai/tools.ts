@@ -63,11 +63,11 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
     const keywords = query.split(/\s+/).map(k => k.replace(/[^a-zA-Z0-9]/g, '')).filter(k => k.length > 2);
     if (keywords.length === 0) return [];
 
-    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR domain LIKE ?)`).join(' OR ');
+    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR primary_virtue LIKE ?)`).join(' OR ');
 
     const sql = `
-        SELECT id, title, description, domain, materials 
-        FROM activities 
+        SELECT id, title, description, primary_virtue as domain, materials
+        FROM formations
         WHERE is_active = 1 
         AND (${conditions})
         LIMIT 7
