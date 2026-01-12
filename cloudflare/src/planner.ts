@@ -65,12 +65,12 @@ interface ActivityHistorySummary {
 }
 
 // Domain weights for balanced coverage
-const DOMAIN_WEIGHTS: Record<string, number> = {
-    'motor': 0.25,
-    'language': 0.20,
-    'cognitive': 0.20,
-    'social-emotional': 0.20,
-    'pre-academic': 0.15,
+const VIRTUE_WEIGHTS: Record<string, number> = {
+    'Wisdom': 0.25,
+    'Stewardship': 0.25,
+    'Love': 0.20,
+    'Order': 0.15,
+    'Wonder': 0.15,
 };
 
 // Balance preference modifiers (added to base score)
@@ -114,16 +114,25 @@ function isSuitableForChildren(activity: Activity, children: Student[]): boolean
 async function prefetchActivityHistory(db: D1Database, parentId: string): Promise<Map<string, ActivityHistorySummary>> {
     const historyMap = new Map<string, ActivityHistorySummary>();
 
-    // 1. Fetch Observations
+    // 1. Fetch Evidences (New)
+    const { results: evidences } = await db.prepare(`
+        SELECT e.formation_id as activity_id, e.created_at as completed_at, e.stage as mastery_level
+        FROM evidences e
+        JOIN students s ON e.student_id = s.id
+        WHERE s.parent_id = ?
+        ORDER BY e.created_at DESC
+    `).bind(parentId).all();
+
+    // 2. Fetch Legacy Observations (Old)
     const { results: observations } = await db.prepare(`
         SELECT o.activity_id, o.completed_at, o.mastery_level
-        FROM observations o
+        FROM legacy_observations o
         JOIN students s ON o.student_id = s.id
         WHERE s.parent_id = ?
         ORDER BY o.completed_at DESC
     `).bind(parentId).all();
 
-    // 2. Fetch Completions
+    // 3. Fetch Completions (Legacy)
     const { results: completions } = await db.prepare(`
         SELECT activity_id, completed_at
         FROM activity_completions
@@ -131,7 +140,7 @@ async function prefetchActivityHistory(db: D1Database, parentId: string): Promis
         ORDER BY completed_at DESC
     `).bind(parentId).all();
 
-    // 3. Process and Merge
+    // 4. Process and Merge
     // We want a list of events per activity, sorted by date DESC
     const eventsByActivity = new Map<string, Array<{ date: string, mastery?: string }>>();
 
@@ -142,6 +151,9 @@ async function prefetchActivityHistory(db: D1Database, parentId: string): Promis
         eventsByActivity.get(activityId)!.push({ date, mastery });
     };
 
+    if (evidences) {
+        evidences.forEach((e: any) => addEvent(e.activity_id, e.completed_at, e.mastery_level));
+    }
     if (observations) {
         observations.forEach((o: any) => addEvent(o.activity_id, o.completed_at, o.mastery_level));
     }
@@ -250,7 +262,7 @@ function scoreActivity(
 
     // Domain balance: boost underrepresented domains
     const domainCount = domainCounts[activity.domain] || 0;
-    const targetWeight = DOMAIN_WEIGHTS[activity.domain] || 0.2;
+    const targetWeight = VIRTUE_WEIGHTS[activity.domain] || 0.2;
     const totalActivities = Object.values(domainCounts).reduce((a, b) => a + b, 0) || 1;
     const currentRatio = domainCount / totalActivities;
 
@@ -315,15 +327,15 @@ function generateReasoning(
     domainCounts: Record<string, number>,
     totalPlanned: number
 ): string {
-    const domainLabels: Record<string, string> = {
-        'motor': 'Stewardship & Dominion',
-        'language': 'Word & Truth',
-        'cognitive': 'Wisdom & Order',
-        'social-emotional': 'Virtue & Sanctification',
-        'pre-academic': 'Foundations & Patterns'
+    const virtueLabels: Record<string, string> = {
+        'Wisdom': 'Wisdom & Discernment',
+        'Stewardship': 'Stewardship & Dominion',
+        'Love': 'Love & Service',
+        'Order': 'Order & Diligence',
+        'Wonder': 'Wonder & Awe'
     };
 
-    const domainLabel = domainLabels[activity.domain] || activity.domain;
+    const domainLabel = virtueLabels[activity.domain] || activity.domain;
     const domainCount = domainCounts[activity.domain] || 0;
 
     if (domainCount === 0) {
