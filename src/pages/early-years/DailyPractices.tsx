@@ -53,7 +53,7 @@ export default function DailyPractices() {
     queryKey: ['daily-practices', selectedContext],
     queryFn: () => activitiesApi.list({ 
       formationType: 'daily_practice',
-      context_anchor: selectedContext || undefined,
+      context: selectedContext || undefined,
       ageMonths: youngestChild?.ageInMonths
     }),
     enabled: !!selectedContext,
