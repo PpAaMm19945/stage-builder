@@ -98,6 +98,8 @@ app.use('*', async (c, next) => {
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
   c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';");
   c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
+  // Security: Force HTTPS
+  c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 });
 
 // Monitor Dashboard
@@ -533,6 +535,9 @@ async function verifyJWT(token: string, secret: string): Promise<JWTPayload | nu
 
 // Auth middleware
 app.use('/api/*', async (c, next) => {
+  // Prevent caching of sensitive API responses
+  c.header('Cache-Control', 'no-store, max-age=0');
+
   const authHeader = c.req.header('Authorization');
   const token = authHeader?.replace('Bearer ', '');
 
@@ -4812,6 +4817,11 @@ app.get('/api/portfolio/file/:key', async (c) => {
     const headers = new Headers();
     object.writeHttpMetadata(headers);
     headers.set('etag', object.httpEtag);
+    // Security: Prevent execution of uploaded HTML/JS by forcing download
+    // Sanitize filename to prevent header injection
+    const filename = key.split('/').pop()?.replace(/"/g, '') || 'download';
+    headers.set('Content-Disposition', `attachment; filename="${filename}"`);
+    headers.set('X-Content-Type-Options', 'nosniff');
 
     return new Response(object.body, {
       headers,

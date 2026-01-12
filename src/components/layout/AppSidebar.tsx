@@ -31,8 +31,12 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import type { Student } from '@/types';
 import { FundingWidget } from '@/components/funding/FundingWidget';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from '@/components/ui/tooltip';
 
-// Simplified primary navigation (stage-agnostic)
 // Simplified primary navigation (stage-agnostic)
 const primaryLinks = [
   { title: 'Home', url: '/', icon: House },
@@ -166,12 +170,20 @@ export function AppSidebar() {
               </p>
               <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
             </div>
-            <button
-              onClick={logout}
-              className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-            >
-              <SignOut className="h-4 w-4" weight="duotone" />
-            </button>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button
+                  onClick={logout}
+                  className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                  aria-label="Sign out"
+                >
+                  <SignOut className="h-4 w-4" weight="duotone" />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Sign out</p>
+              </TooltipContent>
+            </Tooltip>
           </div>
 
           {/* Funding Progress */}
