@@ -55,12 +55,12 @@ async function fetchHymnContent(title: string): Promise<string | null> {
     }
 }
 
-export function useHymnContent(title: string) {
+export function useHymnContent(title: string, enabled: boolean = true) {
     return useQuery({
         queryKey: ['hymn-content', title],
         queryFn: () => fetchHymnContent(title),
         staleTime: 1000 * 60 * 60, // 1 hour
         retry: 1,
-        enabled: !!title
+        enabled: !!title && enabled
     });
 }
