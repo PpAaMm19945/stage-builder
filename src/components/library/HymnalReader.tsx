@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import {
     Dialog,
     DialogContent,
@@ -26,13 +26,43 @@ interface HymnalReaderProps {
 }
 
 function HymnPage({ hymn }: { hymn: any }) {
-    const { data: richContent, isLoading } = useHymnContent(hymn.title);
+    const [isVisible, setIsVisible] = useState(false);
+    const containerRef = useRef<HTMLDivElement>(null);
+
+    useEffect(() => {
+        if (isVisible) return; // Already visible, no need to observe
+
+        const observer = new IntersectionObserver(
+            (entries) => {
+                if (entries[0].isIntersecting) {
+                    setIsVisible(true);
+                    observer.disconnect();
+                }
+            },
+            {
+                root: null, // viewport
+                rootMargin: '200px', // Load when within 200px of viewport (e.g. next/prev slide)
+                threshold: 0.01
+            }
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => observer.disconnect();
+    }, [isVisible]);
+
+    const { data: richContent, isLoading } = useHymnContent(hymn.title, isVisible);
 
     // Fallback if rich content fails or is loading
     const content = richContent || hymn.content.replace(/\\n/g, '\n');
 
     return (
-        <div className="w-full max-w-md h-full max-h-[80dvh] aspect-[148/210] bg-[#fbfaf8] text-slate-900 p-8 sm:p-12 shadow-xl rounded-sm flex flex-col relative overflow-hidden">
+        <div
+            ref={containerRef}
+            className="w-full max-w-md h-full max-h-[80dvh] aspect-[148/210] bg-[#fbfaf8] text-slate-900 p-8 sm:p-12 shadow-xl rounded-sm flex flex-col relative overflow-hidden"
+        >
             {/* Paper texture/corner */}
             <div className="absolute top-0 right-0 w-16 h-16 bg-gradient-to-bl from-gray-200/50 to-transparent pointer-events-none" />
 
