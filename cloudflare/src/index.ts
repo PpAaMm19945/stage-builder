@@ -1549,7 +1549,13 @@ app.get('/api/family/day/:date', async (c) => {
 app.get('/api/family/week-summary', async (c) => {
   try {
     const user = requireAuth(c);
-    const weekStartParam = c.req.query('weekStart') || getSmartWeekStart();
+    const queryParam = c.req.query('weekStart');
+    let weekStartParam = queryParam || getSmartWeekStart();
+
+    // Validate weekStartParam
+    if (!weekStartParam || isNaN(new Date(weekStartParam).getTime())) {
+       weekStartParam = getSmartWeekStart();
+    }
 
     // Get the weekly plan
     const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
@@ -1559,8 +1565,15 @@ app.get('/api/family/week-summary', async (c) => {
       return c.json({ days: {} });
     }
 
-    const planData = JSON.parse((plan as any).plan_json);
-    const slots = planData.slots;
+    let planData;
+    try {
+        planData = JSON.parse((plan as any).plan_json);
+    } catch (e) {
+        console.error('Failed to parse plan_json', e);
+        return c.json({ days: {} });
+    }
+
+    const slots = Array.isArray(planData?.slots) ? planData.slots : [];
 
     // Group slots by day
     const daySlots: Record<string, any[]> = {};
@@ -1574,19 +1587,31 @@ app.get('/api/family/week-summary', async (c) => {
     weekEnd.setDate(weekEnd.getDate() + 6);
     const weekEndStr = weekEnd.toISOString().split('T')[0];
 
-    const { results: completions } = await c.env.DB.prepare(`
-      SELECT formation_id, date(created_at) as completed_date 
-      FROM evidences 
-      WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) 
-      AND date(created_at) >= ? AND date(created_at) <= ?
-    `).bind(user.id, weekStartParam, weekEndStr).all();
+    let completions: any[] = [];
+    try {
+        const result = await c.env.DB.prepare(`
+          SELECT formation_id, date(created_at) as completed_date
+          FROM evidences
+          WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?)
+          AND date(created_at) >= ? AND date(created_at) <= ?
+        `).bind(user.id, weekStartParam, weekEndStr).all();
+        completions = result.results || [];
+    } catch (dbError) {
+        console.error('Failed to fetch completions', dbError);
+        // Continue with empty completions to show the plan at least
+    }
 
     const completedByDay: Record<string, Set<string>> = {};
     for (const comp of completions) {
-      const compDate = new Date((comp as any).completed_date);
+      // Safety check for date parsing
+      if (!comp.completed_date) continue;
+
+      const compDate = new Date(comp.completed_date);
+      if (isNaN(compDate.getTime())) continue;
+
       const dayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][compDate.getDay()];
       if (!completedByDay[dayName]) completedByDay[dayName] = new Set();
-      completedByDay[dayName].add((comp as any).formation_id);
+      completedByDay[dayName].add(comp.formation_id);
     }
 
     // Build response

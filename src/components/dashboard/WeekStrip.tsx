@@ -15,11 +15,18 @@ interface WeekStripProps {
 }
 
 const DOMAIN_COLORS: Record<string, string> = {
+    // Legacy domain support
     motor: 'bg-blue-500',
     language: 'bg-green-500',
     cognitive: 'bg-purple-500',
     'social-emotional': 'bg-amber-500',
     'pre-academic': 'bg-red-500',
+    // New virtue-based keys
+    'Wisdom': 'bg-purple-500',
+    'Stewardship': 'bg-blue-500',
+    'Love': 'bg-pink-500',
+    'Order': 'bg-amber-500',
+    'Wonder': 'bg-cyan-500',
 };
 
 // Get Monday of the current week
