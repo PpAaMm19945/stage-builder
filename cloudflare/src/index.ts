@@ -867,7 +867,7 @@ app.get('/api/family/tomorrow-preview', async (c) => {
     if (activityIds.length > 0) {
       const placeholders = activityIds.map(() => '?').join(',');
       const { results } = await c.env.DB.prepare(`
-            SELECT id, title, description, domain FROM activities WHERE id IN (${placeholders})
+            SELECT id, title, description, primary_virtue as domain FROM formations WHERE id IN (${placeholders})
         `).bind(...activityIds).all();
       activities = results;
     }
@@ -2228,7 +2228,7 @@ app.post('/api/family/swap', async (c) => {
 
     // Get the current activity to understand criteria
     const currentActivity = await c.env.DB.prepare(
-      'SELECT * FROM activities WHERE id = ?'
+      'SELECT *, primary_virtue as domain FROM formations WHERE id = ?'
     ).bind(activityId).first();
 
     if (!currentActivity) {
@@ -2261,8 +2261,8 @@ app.post('/api/family/swap', async (c) => {
 
     // Find alternative activity with same criteria but different ID
     const { results: alternatives } = await c.env.DB.prepare(`
-      SELECT * FROM activities 
-      WHERE activity_type = 'family_session'
+      SELECT *, primary_virtue as domain FROM formations
+      WHERE formation_type = 'family_session'
         AND id != ?
         AND min_age_months <= ? 
         AND max_age_months >= ?
@@ -2361,8 +2361,8 @@ app.post('/family-sessions/compose', async (c) => {
     const maxAge = Math.max(...ages);
 
     let query = `
-      SELECT * FROM activities 
-      WHERE activity_type = 'family_session'
+      SELECT *, primary_virtue as domain FROM formations
+      WHERE formation_type = 'family_session'
         AND min_age_months <= ? 
         AND max_age_months >= ?
         AND tiered_expectations IS NOT NULL
@@ -2377,13 +2377,10 @@ app.post('/family-sessions/compose', async (c) => {
 
     // Domain filter (mapped to biblical or standard)
     if (preferred_domain) {
-      if (['wisdom', 'stature', 'favor_with_god', 'favor_with_man'].includes(preferred_domain)) {
-        query += ' AND biblical_domain = ?';
-        params.push(preferred_domain);
-      } else {
-        query += ' AND domain = ?';
-        params.push(preferred_domain);
-      }
+      // Check if mapped to new virtues or legacy biblical domains
+      // For now, assume primary_virtue is the target column
+      query += ' AND primary_virtue = ?';
+      params.push(preferred_domain);
     }
 
     // Material matching logic could be added here similar to getFamilyDailyRecommendations
@@ -2444,7 +2441,7 @@ app.get('/api/activities/export', async (c) => {
     const user = requireAuth(c);
 
     const { results } = await c.env.DB.prepare(
-      'SELECT * FROM activities ORDER BY id'
+      'SELECT *, primary_virtue as domain FROM formations ORDER BY id'
     ).all();
 
     const activities = results.map((a: any) => ({
@@ -4423,18 +4420,18 @@ app.post('/api/ai/weekly-summary', async (c) => {
 
     // Get completions for the week
     const { results: completions } = await c.env.DB.prepare(`
-      SELECT ac.activity_id, ac.completed_at, ac.notes, a.title, a.domain
+      SELECT ac.activity_id, ac.completed_at, ac.notes, f.title, f.primary_virtue as domain
       FROM activity_completions ac
-      JOIN activities a ON ac.activity_id = a.id
+      LEFT JOIN formations f ON ac.activity_id = f.id
       WHERE ac.parent_id = ? AND date(ac.completed_at) >= ? AND date(ac.completed_at) <= ?
     `).bind(user.id, weekStart, weekEnd).all();
 
     // Get observations for the week
     const { results: observations } = await c.env.DB.prepare(`
       SELECT o.activity_id, o.mastery_level, o.parent_notes, o.completed_at, 
-             a.title, a.domain, s.name as child_name
+             f.title, f.primary_virtue as domain, s.name as child_name
       FROM observations o
-      JOIN activities a ON o.activity_id = a.id
+      LEFT JOIN formations f ON o.activity_id = f.id
       JOIN students s ON o.student_id = s.id
       WHERE s.parent_id = ? AND date(o.completed_at) >= ? AND date(o.completed_at) <= ?
     `).bind(user.id, weekStart, weekEnd).all();
@@ -4601,9 +4598,9 @@ app.post('/api/ai/feedback-draft', async (c) => {
 
     // Get recent observations
     const { results: observations } = await c.env.DB.prepare(`
-      SELECT o.mastery_level, o.parent_notes, o.completed_at, a.title, a.domain
+      SELECT o.mastery_level, o.parent_notes, o.completed_at, f.title, f.primary_virtue as domain
       FROM observations o
-      JOIN activities a ON o.activity_id = a.id
+      LEFT JOIN formations f ON o.activity_id = f.id
       WHERE o.student_id = ?
       ORDER BY o.completed_at DESC
       LIMIT 10

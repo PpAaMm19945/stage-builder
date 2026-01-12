@@ -101,7 +101,7 @@ export function TomorrowPreview() {
                                         <div className="flex-1 min-w-0">
                                             <div className="flex items-center gap-2 mb-1">
                                                 <h4 className="font-medium text-sm truncate">{activity.title}</h4>
-                                                <Badge variant="secondary" className="text-[10px] h-4 px-1">{activity.domain}</Badge>
+                                                <Badge variant="secondary" className="text-[10px] h-4 px-1">{activity.primary_virtue || activity.domain}</Badge>
                                             </div>
                                             <p className="text-xs text-muted-foreground line-clamp-2">{activity.description}</p>
                                         </div>
