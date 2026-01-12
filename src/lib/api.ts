@@ -107,16 +107,16 @@ export const students = {
 // Formations (Replaces Activities)
 export const formations = {
   list: (params?: {
-    primary_virtue?: string; // mapped from domain
+    virtue?: string; // mapped from domain
     ageMonths?: number;
     formationType?: string; // mapped from activityType
-    context_anchor?: string; // mapped from context
+    context?: string; // mapped from context
   }) => {
     const query = new URLSearchParams();
-    if (params?.primary_virtue) query.set('primary_virtue', params.primary_virtue);
+    if (params?.virtue) query.set('virtue', params.virtue);
     if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
-    if (params?.formationType) query.set('formation_type', params.formationType);
-    if (params?.context_anchor) query.set('context_anchor', params.context_anchor);
+    if (params?.formationType) query.set('formationType', params.formationType);
+    if (params?.context) query.set('context', params.context);
     return apiRequest<any[]>('/api/formations?' + query.toString());
   },
 
