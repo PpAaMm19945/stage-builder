@@ -5582,5 +5582,125 @@ app.get('/api/books/:series/:bookId/pages/:page', async (c) => {
   }
 });
 
+// ============ LITURGY ROUTES ============
+
+app.get('/api/liturgy/today', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    // 1. Calculate Date info
+    const today = new Date();
+    const startOfYear = new Date(today.getFullYear(), 0, 0);
+    const diff = today.getTime() - startOfYear.getTime();
+    const oneDay = 1000 * 60 * 60 * 24;
+    const dayOfYear = Math.floor(diff / oneDay);
+
+    // ISO Week (simplified)
+    const weekNumber = Math.ceil((((today.getTime() - startOfYear.getTime()) / 86400000) + startOfYear.getDay() + 1) / 7);
+    const todayStr = today.toISOString().split('T')[0];
+
+    // 2. Fetch Content
+    // A. Memory Verse (Weekly)
+    const normalizedWeek = ((weekNumber - 1) % 52) + 1;
+    const verseId = `verse_week_${String(normalizedWeek).padStart(2, '0')}`;
+    const verse = await c.env.DB.prepare('SELECT * FROM formations WHERE id = ?').bind(verseId).first();
+
+    // B. Hymn (Weekly rotation) 
+    const hymnOffset = (weekNumber - 1) % 20;
+    const hymn = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "hymn_%" ORDER BY id LIMIT 1 OFFSET ?').bind(hymnOffset).first();
+
+    // C. Catechism (Daily)
+    const wscOffset = (dayOfYear - 1) % 107;
+    const catechism = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "wsc_q%" ORDER BY id LIMIT 1 OFFSET ?').bind(wscOffset).first();
+
+    // 3. Fetch Completions
+    const { results: completions } = await c.env.DB.prepare(
+      "SELECT activity_id FROM activity_completions WHERE parent_id = ? AND date(created_at) = ?"
+    ).bind(user.id, todayStr).all();
+    const completedIds = new Set(completions.map((c: any) => c.activity_id));
+
+    // 4. Construct Response
+    const items = [];
+
+    if (verse) {
+      items.push({
+        id: verse.id,
+        type: 'scripture',
+        title: verse.title,
+        content: verse.liturgical_script,
+        reference: verse.description,
+        completedToday: completedIds.has(verse.id)
+      });
+    }
+
+    if (hymn) {
+      items.push({
+        id: hymn.id,
+        type: 'hymn',
+        title: hymn.title,
+        content: hymn.description,
+        audio_url: null,
+        completedToday: completedIds.has(hymn.id)
+      });
+    }
+
+    if (catechism) {
+      items.push({
+        id: catechism.id,
+        type: 'catechism',
+        title: catechism.title,
+        content: catechism.liturgical_script,
+        reference: null,
+        completedToday: completedIds.has(catechism.id)
+      });
+    }
+
+    return c.json({
+      date: todayStr,
+      items
+    });
+  } catch (e: any) {
+    console.error("Liturgy Error", e);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.post('/api/liturgy/complete', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { itemId } = await c.req.json();
+    const id = generateId('comp');
+    await c.env.DB.prepare(
+      'INSERT INTO activity_completions (id, parent_id, activity_id, created_at) VALUES (?, ?, ?, datetime("now"))'
+    ).bind(id, user.id, itemId).run();
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.post('/api/liturgy/uncomplete', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { itemId } = await c.req.json();
+    await c.env.DB.prepare(
+      'DELETE FROM activity_completions WHERE parent_id = ? AND activity_id = ? AND date(created_at) = date("now")'
+    ).bind(user.id, itemId).run();
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+app.get('/api/hymns', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "hymn_%"').all();
+  return c.json(results);
+});
+
+app.get('/api/catechism', async (c) => {
+  const { results } = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "wsc_q%" ORDER BY id').all();
+  return c.json(results);
+});
+
 export default app;
 
