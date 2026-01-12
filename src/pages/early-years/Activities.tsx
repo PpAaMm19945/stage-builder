@@ -80,9 +80,9 @@ export default function Activities() {
   const [showAgeAppropriate, setShowAgeAppropriate] = useState(true);
 
   // Build query params for API
-  const queryParams: { primary_virtue?: string; ageMonths?: number } = {};
+  const queryParams: { virtue?: string; ageMonths?: number } = {};
   if (selectedDomain !== 'all') {
-    queryParams.primary_virtue = selectedDomain;
+    queryParams.virtue = selectedDomain;
   }
   if (showAgeAppropriate && selectedChild) {
     queryParams.ageMonths = selectedChild.ageInMonths;

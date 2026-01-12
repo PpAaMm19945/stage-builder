@@ -331,11 +331,11 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
                                             return null;
                                         }}
                                     />
-                                    {Object.entries(DOMAIN_COLORS).map(([domain, color]) => (
+                                    {Object.entries(VIRTUE_COLORS).map(([virtue, color]) => (
                                         <Line
-                                            key={domain}
+                                            key={virtue}
                                             type="monotone"
-                                            dataKey={domain}
+                                            dataKey={virtue}
                                             stroke={color}
                                             strokeWidth={2}
                                             dot={{ r: 3 }}

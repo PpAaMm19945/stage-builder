@@ -2504,19 +2504,20 @@ app.get('/api/students/:studentId/observations', async (c) => {
     }
 
     let query = `
-      SELECT o.*, a.title, a.domain, a.description 
-      FROM observations o
-      JOIN activities a ON o.activity_id = a.id
-      WHERE o.student_id = ?
+      SELECT e.id, e.student_id, e.formation_id as activity_id, e.stage as mastery_level, e.note as parent_notes, e.created_at as completed_at,
+             f.title, f.primary_virtue as domain, f.description
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id = ?
     `;
     const params: any[] = [studentId];
 
     if (domain) {
-      query += ' AND a.domain = ?';
+      query += ' AND f.primary_virtue = ?';
       params.push(domain);
     }
 
-    query += ' ORDER BY o.completed_at DESC LIMIT ?';
+    query += ' ORDER BY e.created_at DESC LIMIT ?';
     params.push(parseInt(limit));
 
     const { results } = await c.env.DB.prepare(query).bind(...params).all();
@@ -2552,27 +2553,27 @@ app.get('/api/students/:studentId/progress', async (c) => {
     if (!prefs || prefs.reading_enabled) enabledStreams.push('reading');
     if (!prefs || prefs.liturgy_enabled) enabledStreams.push('liturgy');
 
-    // ACTIVITY PROGRESS: Get counts by domain and mastery level
+    // ACTIVITY PROGRESS: Get counts by virtue (domain) and stage (mastery)
     const { results: byDomain } = await c.env.DB.prepare(`
-      SELECT a.domain, o.mastery_level, COUNT(*) as count
-      FROM observations o
-      JOIN activities a ON o.activity_id = a.id
-      WHERE o.student_id = ?
-      GROUP BY a.domain, o.mastery_level
+      SELECT f.primary_virtue as domain, e.stage as mastery_level, COUNT(*) as count
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id = ?
+      GROUP BY f.primary_virtue, e.stage
     `).bind(studentId).all();
 
     // Get recent activity (last 7 days)
     const { results: recentActivity } = await c.env.DB.prepare(`
-      SELECT DATE(o.completed_at) as date, COUNT(*) as count
-      FROM observations o
-      WHERE o.student_id = ? AND o.completed_at > datetime('now', '-7 days')
-      GROUP BY DATE(o.completed_at)
+      SELECT DATE(e.created_at) as date, COUNT(*) as count
+      FROM evidences e
+      WHERE e.student_id = ? AND e.created_at > datetime('now', '-7 days')
+      GROUP BY DATE(e.created_at)
       ORDER BY date
     `).bind(studentId).all();
 
-    // Get total completed activities
+    // Get total completed formations
     const totalResult = await c.env.DB.prepare(`
-      SELECT COUNT(DISTINCT activity_id) as total FROM observations WHERE student_id = ?
+      SELECT COUNT(DISTINCT formation_id) as total FROM evidences WHERE student_id = ?
     `).bind(studentId).first();
 
     const activityProgress = {
@@ -3937,9 +3938,9 @@ app.get('/api/family/weekly-plan', async (c) => {
     const oldestAge = Math.max(...ages);
 
     const { results: activities } = await c.env.DB.prepare(`
-      SELECT id, title, domain, min_age_months, max_age_months, duration_minutes, 
-             materials, cluster_tag, mess_level, activity_type, primary_tier
-      FROM activities 
+      SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes,
+             materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier
+      FROM formations
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
@@ -4057,9 +4058,9 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     const oldestAge = Math.max(...ages);
 
     const { results: activities } = await c.env.DB.prepare(`
-      SELECT id, title, domain, min_age_months, max_age_months, duration_minutes,
-             materials, cluster_tag, mess_level, activity_type, primary_tier
-      FROM activities
+      SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes,
+             materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier
+      FROM formations
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
@@ -5377,7 +5378,7 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     // Activities (fetch relevant ones)
     // We assume is_active=1. Also handle archived flags if present
     const { results: activities } = await c.env.DB.prepare(
-      "SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)"
+      "SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)"
     ).bind().all();
 
     // Parse timeModel
@@ -5479,7 +5480,7 @@ app.post('/api/rhythm/readjust', async (c) => {
     // ... Fetch data again for regeneration (can be optimized but safe way)
     const { results: children } = await c.env.DB.prepare('SELECT * FROM students WHERE parent_id = ?').bind(user.id).all();
     const { results: overrides } = await c.env.DB.prepare('SELECT * FROM overrides WHERE parent_id = ? AND is_active = 1').bind(user.id).all();
-    const { results: activities } = await c.env.DB.prepare("SELECT * FROM activities WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)").bind().all();
+    const { results: activities } = await c.env.DB.prepare("SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)").bind().all();
     const activitiesMapped = activities.map((a: any) => ({
       ...a,
       materials: JSON.parse(a.materials || '[]'),
