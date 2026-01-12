@@ -1,0 +1,31 @@
+{
+  "section_title": "9.2 The Rise of the Zagwe Dynasty (c. 900–1270 AD)",
+  "word_count": 556,
+  "characters": 3447,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "redemptive_thread_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "[IMAGE_PLACEHOLDER: Lalibela rock-hewn churches — description and suggested filename chapter_09/images/lalibela_churches.jpg]"
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": true,
+  "debate_box_present": false,
+  "active_learning_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [
+    "The"
+  ],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial draft of section 9.2"
+  ],
+  "notes": "This section successfully incorporates an 'Archaeological Window' as required. The content is rich and detailed, and all basic requirements are met. No audit failures. Consecutive failure count is zero."
+}

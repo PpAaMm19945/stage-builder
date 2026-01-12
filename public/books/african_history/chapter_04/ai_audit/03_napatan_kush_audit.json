@@ -1,0 +1,20 @@
+{
+  "section_title": "4.3 Napatan Kush: The Re-emergence of a Nubian Kingdom (c. 1000–590 BC)",
+  "word_count": 487,
+  "characters": 2816,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["TIMELINE: Napatan Kush — list c. 1000–591 BC (conventional estimate) and corresponding biblical tags"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": false,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": ["This", "The"],
+  "requires_source": false,
+  "audit_score": 82,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.3."],
+  "notes": "The audit flagged some long sentences and the use of 'significant'. The overall score is good and the section meets all requirements."
+}

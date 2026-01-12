@@ -1,0 +1,30 @@
+{
+  "section_title": "6.7 The Coptic Church under Byzantine and Early Arab Rule",
+  "word_count": 486,
+  "characters": 2884,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "theological_reflection_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "IMAGE_PLACEHOLDER: Coptic manuscript — show distinctive Coptic script and art style"
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": false,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": [
+    "The "
+  ],
+  "requires_source": false,
+  "audit_score": 76,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial creation of section 6.7."
+  ],
+  "notes": "The audit passed, but the score is lower than previous sections due to long sentences and passive voice. The content is accurate and meets requirements."
+}

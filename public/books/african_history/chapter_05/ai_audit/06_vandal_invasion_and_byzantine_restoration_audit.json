@@ -1,0 +1,20 @@
+{
+  "section_title": "5.6 Rome’s Shadow: Vandal Invasion & Byzantine Restoration (429–647 AD)",
+  "word_count": 529,
+  "characters": 3087,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": false,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "key_figures_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 94,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial draft of section 5.6."],
+  "notes": "Very high audit score. The writing style has improved, with fewer flags for passive voice. The content includes the required debate box."
+}

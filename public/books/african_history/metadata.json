@@ -1,0 +1,79 @@
+{
+  "bookId": "my-first-textbook",
+  "id": "my-first-textbook",
+  "title": "THE HISTORY OF AFRICA",
+  "author": "ANTHONY JR. MWESIGWA",
+  "description": "A textbook for Christian high school and early university students exploring the rich tapestry of African history through a biblical lens, reclaiming narratives and fostering a deeper understanding of God's work in the continent.",
+  "cover_image_url": "pwa-512x512.png",
+  "creationDate": "2024-01-15T10:00:00Z",
+  "genre": "History & Theology",
+  "price": "0",
+  "totalChapters": 10,
+  "estimatedReadTime": "15 hours",
+  "pageFormat": {
+    "size": "A4",
+    "orientation": "portrait",
+    "width": "210mm",
+    "height": "297mm",
+    "flip": "long-edge",
+    "margins": {
+      "top": "20mm",
+      "right": "15mm",
+      "bottom": "20mm",
+      "left": "15mm"
+    }
+  },
+  "styleProfile": "print-a4-portrait.css",
+  "chapters": [
+    {
+      "chapterNumber": 1,
+      "title": "The Charter of Nations",
+      "filepath": "chapter_01/chapters/Chapter_01_FINAL_UPGRADED.md"
+    },
+    {
+      "chapterNumber": 2,
+      "title": "Chapter 2",
+      "filepath": "chapter_02/chapters/Chapter_02.md"
+    },
+    {
+      "chapterNumber": 3,
+      "title": "The Lands of Phut — Carthage, Numidia, and the Desert Kingdoms",
+      "filepath": "chapter_03/chapters/Chapter_03.md"
+    },
+    {
+      "chapterNumber": 4,
+      "title": "The Lands of Cush — From Babel to the Eve of Roman Africa",
+      "filepath": "chapter_04/chapters/Chapter_04.md"
+    },
+    {
+      "chapterNumber": 5,
+      "title": "The Church in Roman Africa (c. 30 BC – 700 AD)",
+      "filepath": "chapter_05/chapters/Chapter_05.md"
+    },
+    {
+      "chapterNumber": 6,
+      "title": "Egypt under Rome and the Rise of the Alexandrian Church (30 BC – 700 AD)",
+      "filepath": "chapter_06/chapters/Chapter_06.md"
+    },
+    {
+      "chapterNumber": 7,
+      "title": "The Churches of the Highlands: Aksum, Conversion, and Survival (c. 50–900 AD)",
+      "filepath": "chapter_07/chapters/Chapter_07.md"
+    },
+    {
+      "chapterNumber": 8,
+      "title": "The Peopling of Africa: The Bantu Migrations and the Forgotten Clans (c. 300 BC – 800 AD)",
+      "filepath": "chapter_08/chapters/Chapter_08.md"
+    },
+    {
+      "chapterNumber": 9,
+      "title": "Ethiopia Alone: The Hidden Kingdom (c. 900–1500 AD)",
+      "filepath": "chapter_09/chapters/Chapter_09.md"
+    },
+    {
+      "chapterNumber": 10,
+      "title": "Trade Winds and Stone Cities (c. 1000–1500 AD)",
+      "filepath": "chapter_10/chapters/Chapter_10.md"
+    }
+  ]
+}

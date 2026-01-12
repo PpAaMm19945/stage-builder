@@ -1,0 +1,32 @@
+{
+  "section_title": "9.5 Ethiopia and the Wider Christian World (c. 14th–15th Centuries)",
+  "word_count": 566,
+  "characters": 3537,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "redemptive_thread_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "[SIDEBAR: Prester John — legend vs diplomatic reality (explain sources and timeframes).]",
+    "[IMAGE_PLACEHOLDER: Ethiopian manuscript page (psalter) — chapter_09/images/geez_manuscript.jpg]"
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": false,
+  "debate_box_present": false,
+  "active_learning_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [
+    "The"
+  ],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial draft of section 9.5"
+  ],
+  "notes": "This section successfully incorporates the 'SIDEBAR' and 'IMAGE_PLACEHOLDER' elements. The content flows well and meets all requirements. No audit failures. Consecutive failure count is zero."
+}

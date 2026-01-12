@@ -1,0 +1,34 @@
+{
+  "section_title": "3. The Rise of Western Kingdoms and Desert Cultures",
+  "word_count": 863,
+  "characters": 5012,
+  "theological_checks": [
+    "theological_reflection_present",
+    "sovereignty_theme_present",
+    "redemptive_thread_present"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "maps_present": [
+    "Garamantes_map_placeholder"
+  ],
+  "archaeological_windows_present": true,
+  "debate_boxes_count": 1,
+  "theology_mini_lesson_present": true,
+  "primary_source_tasks_present": true,
+  "how_historians_sidebar_present": false,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 81,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged all numeric dates with '(conventional estimate)'.",
+    "Added the [MAP: Garamantian kingdom] placeholder.",
+    "Added the 'Archaeological Window: Foggaras / Qanats' callout.",
+    "Added the 'Debate Box — Garamantes' feature.",
+    "Converted a 'Think It Through' question into a 'Data Task: Biblical Timeline Correlation'.",
+    "Appended a 'Theological Reflection' to the end of the section.",
+    "Performed a significant rewrite to address a failing audit score (67), focusing on shortening sentences, removing passive voice, and replacing banned words. The revised score is 81."
+  ],
+  "notes": "The first audit failed with a score of 67. The section was revised to improve readability and address specific flags, resulting in a passing score of 81."
+}

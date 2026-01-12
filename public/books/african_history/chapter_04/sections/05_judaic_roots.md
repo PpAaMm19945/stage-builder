@@ -1,0 +1,19 @@
+## 4.5 Cush and the Red Sea World: Ancient Judaic Roots (c. 1000 BC–1st Century AD)
+
+This section explores the vibrant Red Sea trade networks that connected Cushite polities with the wider world, and examines the compelling, though debated, evidence for an ancient Judaic presence in the Ethiopian highlands.
+
+While the Nile was the traditional artery of Cushite civilization, the Red Sea provided a crucial gateway to the wider world. From the highlands of modern-day Ethiopia and Eritrea, maritime routes connected the Horn of Africa to South Arabia (the land of Sheba), the Persian Gulf, and even India. This trade brought not only wealth but also a dynamic exchange of cultures and ideas. Over centuries, significant South Arabian (Sabaean) cultural influences, including architectural styles and religious concepts, became layered into the identity of the highland peoples, creating a unique cultural fusion.
+
+Within this context of cultural exchange, we encounter the *contested* history of the Beta Israel community (often known as "Ethiopian Jews"). Long before the arrival of Christianity, there is compelling evidence for a pre-Talmudic Judaic presence in the Ethiopian highlands. This evidence is threefold: cultural practices like male circumcision and dietary laws (avoiding pork), archaeological findings at some sites that lack pig bones, and faith traditions that appear to be rooted in the Old Testament without knowledge of later rabbinic interpretations (the Talmud). While some scholars interpret this as evidence of a direct lineage from ancient Israel, perhaps connected to trade, the precise origins of this community are still a matter of intense scholarly debate. [CITATION NEEDED: placeholder for scholarly source on Beta Israel origins].
+
+> **Key Term: Beta Israel**
+> The historic community of Jews in Ethiopia. Their origins are a subject of ongoing research, with theories pointing to various periods of migration and influence.
+
+> **Key Term: Sabaean**
+> Pertaining to the ancient kingdom of Saba (biblical Sheba) in South Arabia (modern-day Yemen). Sabaean culture had a notable influence on the Ethiopian highlands.
+
+### Sidebar — Queen of Sheba: Memory vs. Evidence
+The Ethiopian national epic, the *Kebra Nagast*, tells the story of Makeda, the Queen of Sheba, who visited King Solomon and bore him a son, Menilek I, who is said to have brought the Ark of the Covenant to Ethiopia. This powerful story is a cornerstone of Ethiopian national and religious identity. While direct archaeological proof for this specific narrative is lacking, it should be understood as a profound work of cultural memory. The story powerfully reflects the historical reality of close contact and exchange between the powerful kingdom of Saba in South Arabia and the African polities of the Horn. The biblical account affirms a historical Queen of Sheba (1 Kings 10), a powerful monarch from this region, and the archaeological record confirms the deep ties across the Red Sea.
+
+### Theological Reflection
+The evidence for an ancient Judaic presence in Ethiopia is a fascinating evidence of the "diaspora" (scattering) of God's people even in the Old Testament era. It suggests that knowledge of the God of Abraham, Isaac, and Jacob was not confined to the borders of Israel. This pre-Christian monotheistic presence may be seen as part of God's providential preparation for the Gospel. The Ethiopian eunuch in Acts 8, a court official of the Candace (Queen) of Meroe, was already reading the prophet Isaiah. His heart was prepared, and Philip was sent to bring him the good news of Jesus. This story is a beautiful picture of how God works through historical and cultural currents to draw people from every nation, tribe, and tongue to Himself.

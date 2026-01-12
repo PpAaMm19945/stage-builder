@@ -1,0 +1,30 @@
+{
+  "section_title": "7. The Late Period and Foreign Domination",
+  "word_count": 520,
+  "characters": 2987,
+  "theological_checks": ["scripture_used_in_context", "sovereignty_theme_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "includes_map_placeholder": false,
+  "primary_source_spotlight_present": false,
+  "think_it_through_analytic": true,
+  "repeated_openers_detected": [
+    "The Bible gives us...",
+    "This early era...",
+    "The scattered settlements...",
+    "With the two lands united...",
+    "This era...",
+    "For centuries..."
+  ],
+  "requires_source": false,
+  "audit_score": 88,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged dates with '(conventional estimate)'.",
+    "Split the dense final paragraph into two shorter, more readable paragraphs.",
+    "Varied the paragraph openers in this section to avoid repetition found in earlier sections."
+  ],
+  "notes": "Section 7 revision complete. Paragraph structure improved and sentence variety increased. The list of repeated openers is based on a review of the entire chapter draft."
+}

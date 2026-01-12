@@ -1,0 +1,25 @@
+{
+  "section_title": "7.4 Aksum on the International Stage: Kaleb, Abraha, and the Red Sea Crisis (c. 520–575 AD)",
+  "word_count": 550,
+  "characters": 3200,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["MAP: Kaleb’s Red Sea expedition routes"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": true,
+  "debate_box_present": true,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 81,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Replaced the word 'significant' with 'defining' to be more specific.",
+    "Revised several long sentences for better readability.",
+    "Converted passive voice to active voice (e.g., 'was driven by' to 'drove').",
+    "Shortened introductory sentences."
+  ],
+  "notes": "Section passed the audit. Revisions focused on improving style and addressing flagged words."
+}

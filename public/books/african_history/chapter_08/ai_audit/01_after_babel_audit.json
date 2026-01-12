@@ -1,0 +1,21 @@
+{
+  "section_title": "8.1 After Babel: Remembering the First Dispersions (c. 2000–1000 BC)",
+  "word_count": 583,
+  "characters": 3769,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "biblical chronology",
+  "dates_tagged": true,
+  "visual_assets": ["TIMELINE: Bantu Expansion — rows: Conventional carbon-dating bands vs Biblical chronology bands; include key markers Urewe (c. 500 BC), Nok parallels, settlement horizons 300–800 AD."],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "archaeological_window_present": false,
+  "primary_source_spotlight_present": false,
+  "active_learning_present": false,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Authored initial section on post-Babel dispersion.", "Included key terms and theological reflection."],
+  "notes": "Section is foundational and primarily biblical; no archaeological claims made yet."
+}

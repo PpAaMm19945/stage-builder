@@ -1,0 +1,20 @@
+{
+  "section_title": "4.6 The Aksumite Rise: From Local Kingdom to Regional Empire (c. 1st Century BC–4th Century AD)",
+  "word_count": 551,
+  "characters": 3208,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["IMAGE_PLACEHOLDER: Aksum coin obverse — include description"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": false,
+  "archaeological_window_present": true,
+  "repeated_openers_detected": ["The", "Aksum's"],
+  "requires_source": false,
+  "audit_score": 88,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.6."],
+  "notes": "The audit score is high. The section includes the required Archaeological Window and an image placeholder."
+}

@@ -1,0 +1,25 @@
+{
+  "section_title": "7.7 The Decline of Aksum and the Reorientation of the Highlands (c. 7th–9th centuries)",
+  "word_count": 480,
+  "characters": 2780,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["IMAGE_PLACEHOLDER: A highland church or rural liturgical scene"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": false,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 78,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Replaced 'significant' with 'major'.",
+    "Revised several long sentences for better readability.",
+    "Converted passive voice to active voice.",
+    "Shortened introductory sentences."
+  ],
+  "notes": "Section passed the audit. Revisions focused on improving style and addressing flagged words."
+}

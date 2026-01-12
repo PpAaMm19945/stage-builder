@@ -1,0 +1,20 @@
+{
+  "section_title": "5.4 The Age of the African Fathers (c. 150–450 AD)",
+  "word_count": 595,
+  "characters": 3449,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": false,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "key_figures_present": true,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 87,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial draft of section 5.4."],
+  "notes": "Audit passed. The report again flagged passive voice (e.g., 'was martyred', 'be resolved'). This is a recurring pattern that I will actively try to correct in the subsequent sections to improve the writing style."
+}

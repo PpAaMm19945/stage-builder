@@ -1,0 +1,25 @@
+{
+  "section_title": "7.2 The Christian Mission: Frumentius, Aedesius, and King Ezana (c. 320–360 AD)",
+  "word_count": 529,
+  "characters": 3050,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["PRIMARY SOURCE: Ezana inscription", "IMAGE_PLACEHOLDER: Aksumite coin with Christian motif"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": true,
+  "archaeological_window_present": false,
+  "debate_box_present": true,
+  "requires_source": true,
+  "repeated_openers_detected": [],
+  "audit_score": 83,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Revised several long sentences to improve readability and flow.",
+    "Converted passive voice constructions to active voice.",
+    "Shortened introductory sentences.",
+    "Noted the presence of a `[citation needed]` tag regarding the Frumentius tradition."
+  ],
+  "notes": "The section passed the audit. It correctly treats the Frumentius narrative as a historical tradition and flags it for citation, as per the instructions."
+}

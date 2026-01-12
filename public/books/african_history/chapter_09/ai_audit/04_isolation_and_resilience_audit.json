@@ -1,0 +1,31 @@
+{
+  "section_title": "9.4 Ethiopia’s Isolation and Resilience (c. 13th–15th Centuries)",
+  "word_count": 568,
+  "characters": 3535,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "redemptive_thread_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "[TIMELINE: Zagwe → Solomonic transition — c. 900–1300 AD; include Lalibela, Yekuno Amlak (1270), Amda Seyon (1314–1344), Zara Yaqob (1434–1468).]"
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": false,
+  "debate_box_present": true,
+  "active_learning_present": true,
+  "requires_source": true,
+  "repeated_openers_detected": [
+    "The"
+  ],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial draft of section 9.4"
+  ],
+  "notes": "This section includes a timeline and another debate box, fulfilling those requirements. The 'requires_source' flag is set due to the mention of the royal chronicles as primary sources. No audit failures. Consecutive failure count is zero."
+}

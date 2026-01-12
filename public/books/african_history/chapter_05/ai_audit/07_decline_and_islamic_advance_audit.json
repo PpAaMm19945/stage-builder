@@ -1,0 +1,20 @@
+{
+  "section_title": "5.7 Intellectual & Spiritual Decline and Islamic Advance (600s–700 AD)",
+  "word_count": 523,
+  "characters": 3062,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": false,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": false,
+  "key_figures_present": false,
+  "requires_source": true,
+  "repeated_openers_detected": [],
+  "audit_score": 91,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial draft of section 5.7."],
+  "notes": "Audit passed. I have manually added a '[citation needed]' flag in the text for the claim about monastic preservation of texts, and set 'requires_source' to true in this audit file."
+}

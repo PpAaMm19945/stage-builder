@@ -1,0 +1,33 @@
+{
+  "section_title": "7. The Kingdoms of Numidia and Mauretania",
+  "word_count": 967,
+  "characters": 5689,
+  "theological_checks": [
+    "theological_reflection_present",
+    "sovereignty_theme_present",
+    "redemptive_thread_present"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "maps_present": [
+    "Numidia_Mauretania_map_placeholder"
+  ],
+  "archaeological_windows_present": true,
+  "debate_boxes_count": 1,
+  "theology_mini_lesson_present": true,
+  "primary_source_tasks_present": true,
+  "how_historians_sidebar_present": false,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 80,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged all numeric dates with '(conventional estimate)'.",
+    "Added the [MAP: Numidia & Mauretania] placeholder.",
+    "Added the 'Archaeological Window: Roman Provincial Records' callout.",
+    "Added the 'Debate Box — Numidia: Roman client or independent polity?'.",
+    "Converted one 'Think It Through' question into a 'Data Task: The Shifting Alliances of Power Politics'.",
+    "Appended a 'Theological Reflection' to the end of the section."
+  ],
+  "notes": "The audit score was a passing 80. No further revisions were deemed necessary."
+}

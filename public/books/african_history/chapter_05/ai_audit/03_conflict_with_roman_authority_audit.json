@@ -1,0 +1,20 @@
+{
+  "section_title": "5.3 Conflict with Roman Authority (c. 150–300 AD)",
+  "word_count": 486,
+  "characters": 2776,
+  "theological_checks": ["redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["IMAGE_PLACEHOLDER: Perpetua & Felicitas manuscript excerpt image description"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": false,
+  "primary_source_spotlight_present": true,
+  "debate_box_present": false,
+  "key_figures_present": true,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 87,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial draft of section 5.3."],
+  "notes": "Audit passed with a high score. The report noted several instances of passive voice (e.g., 'was expressed', 'were executed'). I will actively work to use more active voice in the upcoming sections."
+}

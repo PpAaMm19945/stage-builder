@@ -1,0 +1,30 @@
+{
+  "section_title": "1. After Babel: The Migrations to the Western Lands",
+  "word_count": 621,
+  "characters": 3548,
+  "theological_checks": [
+    "theological_reflection_present",
+    "sovereignty_theme_present",
+    "redemptive_thread_present"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "maps_present": [],
+  "archaeological_windows_present": false,
+  "debate_boxes_count": 0,
+  "theology_mini_lesson_present": true,
+  "primary_source_tasks_present": true,
+  "how_historians_sidebar_present": false,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 83,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged all numeric dates with '(conventional estimate)'.",
+    "Added a parenthetical definition for 'Maghreb' and 'aridification'.",
+    "Converted the 'Think It Through' section into a 'Data Task: Analyzing Rock Art' with analysis questions.",
+    "Appended a 150-word 'Theological Reflection' to the end of the section.",
+    "Revised several long sentences to improve readability based on initial audit feedback."
+  ],
+  "notes": "Initial audit score was a pass at 83. I proactively edited several long sentences flagged in the report to improve flow before finalizing this audit."
+}

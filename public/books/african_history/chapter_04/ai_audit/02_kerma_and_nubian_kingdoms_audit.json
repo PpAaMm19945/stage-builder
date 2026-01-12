@@ -1,0 +1,20 @@
+{
+  "section_title": "4.2 Early State Formation: Kerma and the First Nubian Kingdoms (c. 2400–1500 BC)",
+  "word_count": 516,
+  "characters": 2969,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["CHART: Kerma — urban composition (agriculture, craft, trade) and relations with Egypt"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "archaeological_window_present": true,
+  "repeated_openers_detected": ["Kerma's", "While"],
+  "requires_source": false,
+  "audit_score": 88,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.2."],
+  "notes": "The audit flagged some long sentences, but the overall score is high. The content meets all requirements for this section, including the Archaeological Window and Debate Box."
+}

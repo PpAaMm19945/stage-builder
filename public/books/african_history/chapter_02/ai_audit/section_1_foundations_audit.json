@@ -1,0 +1,26 @@
+{
+  "section_title": "1. Foundations After Babel",
+  "word_count": 478,
+  "characters": 2654,
+  "theological_checks": ["scripture_used_in_context", "sovereignty_theme_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "visual_assets": [
+    "MAP: Ancient Egypt — show Upper & Lower Egypt, Memphis, Thebes, Nile Delta, Sinai Peninsula, major trade routes; label Nile flow direction; include scale and key cities.",
+    "TIMELINE: Egyptian Periods — rows: Biblical Chronology (YEC) vs Conventional Archaeological Dates. Periods: Predynastic, Old Kingdom, Middle Kingdom, Second Intermediate (Hyksos), New Kingdom, Late Period, Hellenistic. Include short captions and a 2-line classroom note: 'How to reconcile dates for discussion'."
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "includes_map_placeholder": true,
+  "primary_source_spotlight_present": false,
+  "think_it_through_analytic": true,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 95,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged the main date range as '(conventional estimate)'.",
+    "Inserted the [MAP: Ancient Egypt...] placeholder.",
+    "Inserted the [TIMELINE: Egyptian Periods...] placeholder."
+  ],
+  "notes": "Section 1 revision complete. All required placeholders and tags have been added."
+}

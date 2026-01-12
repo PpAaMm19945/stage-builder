@@ -1,0 +1,24 @@
+{
+  "section_title": "2. The Unification and the Old Kingdom",
+  "word_count": 820,
+  "characters": 4721,
+  "theological_checks": ["scripture_used_in_context", "sovereignty_theme_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "includes_map_placeholder": false,
+  "primary_source_spotlight_present": false,
+  "think_it_through_analytic": true,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 92,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged dates with '(conventional estimate)'.",
+    "Added the '[CASE: Narmer Palette...]' box with all subheadings and an excerpt placeholder.",
+    "Added a citation placeholder for the Narmer Palette case study.",
+    "Added a 2-sentence exegetical note following the biblical parallel."
+  ],
+  "notes": "Section 2 revision complete. Case study and exegetical note added as required."
+}

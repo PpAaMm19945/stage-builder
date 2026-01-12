@@ -1,0 +1,30 @@
+{
+  "section_title": "6.1 The Roman Annexation of Egypt",
+  "word_count": 489,
+  "characters": 2789,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "theological_reflection_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "MAP: Roman Egypt — Alexandria, Fayum, Thebes, Nile Valley; mark major ports, grain districts, and major monastic centers (Nitria, Kellia)."
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": [
+    "The "
+  ],
+  "requires_source": false,
+  "audit_score": 83,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial creation of section 6.1."
+  ],
+  "notes": "The audit score is high, but the report flagged long sentences and use of 'significant'. Will monitor in future sections."
+}

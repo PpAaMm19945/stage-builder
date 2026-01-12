@@ -1,0 +1,21 @@
+{
+  "section_title": "8.8 The Historical Horizon (c. 700–800 AD)",
+  "word_count": 688,
+  "characters": 4259,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["[SIDEBAR: What Carbon Dating Can and Cannot Tell Us — short explanatory box for students.]"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "archaeological_window_present": false,
+  "primary_source_spotlight_present": false,
+  "active_learning_present": false,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Authored the concluding section of the chapter.", "Included a sidebar on carbon dating, key terms, and a theological reflection."],
+  "notes": "Final section is complete and meets all requirements."
+}

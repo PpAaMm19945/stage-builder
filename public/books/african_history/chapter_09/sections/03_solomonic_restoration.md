@@ -1,0 +1,25 @@
+In this section you will learn about the overthrow of the Zagwe Dynasty and the rise of the Solomonic line, the central role of the *Kebra Nagast* epic in establishing their legitimacy, and the powerful alliance forged between the newly restored crown and the Ethiopian Church.
+
+## 9.3 The Solomonic Restoration (1270 AD)
+
+The Zagwe Dynasty’s rule, for all its architectural and spiritual achievements, rested on a contested foundation. They were not of the ancient Axumite line, a fact that a growing movement of their rivals used to challenge their legitimacy. This movement championed a powerful narrative: that the only true rulers of Ethiopia were those descended from **Menelik I**, the legendary son of King Solomon of Israel and the Queen of Sheba. This belief, which had been preserved for centuries, culminated in the overthrow of the Zagwe and the establishment of a new dynasty that would rule Ethiopia for over 700 years.
+
+The pivotal moment came in 1270 AD (conventional estimate), when **Yekuno Amlak**, a nobleman from the Amhara region, led a successful revolt against the last Zagwe king. Supported by influential leaders in the Ethiopian Church, Yekuno Amlak’s rise to power was framed not as a usurpation, but as a righteous “restoration” of the divinely ordained Solomonic line. To solidify this claim, the new dynasty championed a foundational national epic, the ***Kebra Nagast*** (“The Glory of Kings”).
+
+[PRIMARY SOURCE: The *Kebra Nagast* on the Transfer of the Covenant — "And the Ark of the Covenant shall be carried in a wagon, and it shall not be separated from thee for ever. And I will give thee a sign, and it shall be a sign for thee and for thy seed for ever. When thou goest into the land of Ethiopia, the Ark of the Covenant shall go with thee. And when thou comest to the gate of the city, the gates shall be opened, and the Ark shall enter, and the city shall be blessed."]
+**Analytic Questions:**
+1. According to this excerpt, what is the divine promise made to Menelik regarding the Ark of the Covenant? How does this promise legitimize his new kingdom in Ethiopia?
+2. What does the language used in this passage suggest about the relationship between political power and divine favor in the Ethiopian worldview?
+
+> **Key Term:** ***Kebra Nagast*** — ("The Glory of Kings") is a 14th-century (conventional estimate) epic that details the lineage of the Solomonic dynasty. It recounts the story of the Queen of Sheba's visit to King Solomon, the birth of their son Menelik I, and Menelik's bringing of the Ark of the Covenant to Ethiopia, thus establishing it as the "New Zion." [citation needed]
+
+This powerful narrative provided the Solomonic Dynasty with an unassailable claim to both political and religious authority. It established a direct lineage back to the biblical kings of Israel, and by extension, to Christ himself. The new dynasty also moved quickly to strengthen its ties with the wider Christian world, restoring formal communication with the Coptic Church in Alexandria. This resulted in the appointment of a new **Abuna**, or metropolitan bishop, for Ethiopia, an act that reaffirmed the church’s apostolic succession and cemented the crucial alliance between the restored monarchy and the ecclesiastical hierarchy.
+
+> **Debate Box — Solomonic Legitimacy: Sacred Truth or Political Construction?**
+> Was the Solomonic Restoration a return to a sacred, unbroken lineage, or was it a masterful act of political engineering? One side argues that the *Kebra Nagast* codified an ancient and authentic oral tradition, and that Yekuno Amlak was indeed the heir of a long-hidden Solomonic line. From this perspective, the restoration was a divinely guided event. The opposing view, held by many historians, is that the *Kebra Nagast* was a brilliant piece of political propaganda, composed in the 14th century to retroactively justify the dynasty's seizure of power. In this view, the "restoration" was a revolution that invented a tradition to secure its rule.
+> **Prompts:**
+> 1. Compare the Solomonic claim to the stories of other ancient dynasties that claimed divine or legendary origins. What is similar or different?
+> 2. Does it matter for our understanding of Ethiopian history if the *Kebra Nagast* is taken as literal history or as a foundational myth? Why? [MEMORY TRADITION: Solomonic Descent]
+
+### Theological Reflection
+The Solomonic Restoration highlights a recurring theme in salvation history: the power of a promised lineage. From God’s covenant with Abraham, to the royal line of David, the Bible traces a sacred genealogy that culminates in Jesus Christ, the Son of David. The Ethiopian belief in the Solomonic line is a profound expression of this same pattern. It is a deep-seated conviction that God’s promises are tied to a specific people and a specific history. While earthly dynasties rise and fall, the story of the *Kebra Nagast* is a powerful reminder that legitimacy eventually comes not from military might, but from being grafted into God’s unfolding story of redemption. It reflects a deep desire to be part of that sacred history, to be a people of the covenant.

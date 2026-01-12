@@ -1,0 +1,30 @@
+{
+  "section_title": "9. Legacy of the Lands of Phut",
+  "word_count": 826,
+  "characters": 4894,
+  "theological_checks": [
+    "theological_reflection_present",
+    "sovereignty_theme_present",
+    "redemptive_thread_present"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "maps_present": [],
+  "archaeological_windows_present": false,
+  "debate_boxes_count": 0,
+  "theology_mini_lesson_present": true,
+  "primary_source_tasks_present": true,
+  "how_historians_sidebar_present": true,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 74,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged all numeric dates with '(conventional estimate)'.",
+    "Filled in the content for the '[SIDEBAR: How historians know this]'.",
+    "Converted one 'Think It Through' question into a 'Data Task: Synthesizing Historical Threads'.",
+    "Added the '[LOOKING AHEAD: Key North African figures for early Christian mission]' feature.",
+    "Appended a 'Theological Reflection' to the end of the section."
+  ],
+  "notes": "The audit score was a passing 74. No further revisions were deemed necessary."
+}

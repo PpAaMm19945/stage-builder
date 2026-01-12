@@ -1,0 +1,29 @@
+{
+  "section_title": "9.6 The Coming Storm (c. 15th–Early 16th Centuries)",
+  "word_count": 421,
+  "characters": 2574,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "redemptive_thread_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "archaeological_window_present": false,
+  "debate_box_present": false,
+  "active_learning_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [
+    "The"
+  ],
+  "audit_score": 80,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial draft of section 9.6"
+  ],
+  "notes": "This concluding section effectively wraps up the historical narrative and sets the stage for the next chapter. It meets all basic requirements. No audit failures. Consecutive failure count is zero."
+}

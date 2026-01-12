@@ -1,0 +1,30 @@
+{
+  "section_title": "6.5 The Arian Controversy and the Council of Nicaea",
+  "word_count": 523,
+  "characters": 3121,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "theological_reflection_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [
+    "TIMELINE: Alexandrian theological events — Nicaea (325), Arian controversies, Council of Ephesus (431), Chalcedon (451); tag dates as (conventional estimate)"
+  ],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": true,
+  "debate_box_present": false,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": [
+    "The "
+  ],
+  "requires_source": true,
+  "audit_score": 91,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial creation of section 6.5."
+  ],
+  "notes": "Passed with a high score. A primary source citation is needed for Athanasius."
+}

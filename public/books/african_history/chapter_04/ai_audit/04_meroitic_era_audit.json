@@ -1,0 +1,20 @@
+{
+  "section_title": "4.4 The Meroitic Era: Meroe and the Southward Shift (c. 590 BC–350 AD)",
+  "word_count": 483,
+  "characters": 2831,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["MAP: Meroe & Red Sea trade — show Butana plain, iron ore sites, Red Sea connections to South Arabia"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": ["The", "Meroe's"],
+  "requires_source": false,
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.4."],
+  "notes": "The audit flagged some long sentences and use of 'significant'. The overall score is good and the section meets all requirements."
+}

@@ -1,0 +1,18 @@
+## 5.5 Augustine of Hippo (354–430 AD)
+
+In this section, you will be introduced to the most influential Christian thinker of the first millennium, Augustine of Hippo, whose life and work deeply shaped Western theology.
+
+No figure dominates the landscape of the African church—or indeed, Western Christian thought—like Augustine of Hippo. Born in the provincial town of Thagaste, Numidia (modern Souk Ahras, Algeria), Augustine was a product of the very Romano-African culture he would later critique. His devout Christian mother, Monica, prayed fervently for him, while his pagan father invested in his classical education. A brilliant student, Augustine's ambition led him to study rhetoric in the bustling city of Carthage, and later to teach in Rome and Milan.
+
+> **Key Figure — Augustine of Hippo (354–430 AD):** A philosopher, theologian, and bishop, Augustine’s journey from a restless intellectual to a devoted servant of Christ is one of history’s great conversion stories. He battled the major heresies of his day, articulated foundational doctrines on grace, sin, and the church, and left behind a vast body of writing that has influenced countless theologians and thinkers for over 1,500 years. His work stands as a pillar of both Catholic and Protestant thought.
+
+In Milan, Augustine's life changed forever. Under the preaching of Bishop Ambrose, and after a dramatic spiritual crisis in a garden, he converted to Christianity in 386 AD (conventional estimate). He returned to North Africa, where fellow Christians pressed him into service as a priest and, eventually, as the Bishop of Hippo Regius (modern Annaba, Algeria). For the next thirty years, this intellectual giant poured his energy into pastoring a modest port town.
+
+From this humble post, he produced literary and theological masterpieces. His *Confessions* pioneered the genre of spiritual autobiography, chronicling his soul's search for rest in God. His monumental work, *The City of God*, written after the sack of Rome in 410 AD (conventional estimate), offered a sweeping Christian philosophy of history. He relentlessly debated the Donatists, arguing for a universal church, and refuted the teachings of Pelagius, championing the necessity of God's sovereign grace for salvation. Though his ideas would later shape medieval Europe, Augustine remained thoroughly African—passionate, earthy, and deeply rooted in the biblical text.
+
+[PRIMARY SOURCE: Augustine's Confessions, Book 8 — Placeholder for the famous "tolle, lege" (take up and read) conversion scene in the garden in Milan.]
+1. How does Augustine's personal experience of conversion shape his later theological emphasis on grace?
+2. In what ways does this story challenge the idea that faith is a purely intellectual decision?
+
+### Theological Reflection
+Augustine's life is a powerful evidence of the doctrine of irresistible grace he so eloquently defended. For years, he ran from God, seeking truth in philosophy and fulfillment in worldly pleasure. Yet, God pursued him relentlessly through the prayers of his mother, the preaching of a bishop, and the cry of a child in a garden. His story is a comfort to every parent who prays for a wandering child and an encouragement to every believer who feels their past is a barrier to serving God. Augustine’s transformation from a proud rhetorician to the humble shepherd of Hippo shows that God’s call is not dependent on our merit, but on His sovereign, loving choice. He delights in taking the most unlikely vessels and making them powerful instruments for His glory.

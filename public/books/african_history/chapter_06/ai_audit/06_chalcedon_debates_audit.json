@@ -1,0 +1,28 @@
+{
+  "section_title": "6.6 Christological Debates and the Council of Chalcedon",
+  "word_count": 619,
+  "characters": 3716,
+  "theological_checks": [
+    "scripture_used_in_context",
+    "theological_reflection_present",
+    "chronology_tagged"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": true,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": [
+    "The "
+  ],
+  "requires_source": false,
+  "audit_score": 86,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Initial creation of section 6.6."
+  ],
+  "notes": "Passed with a good score. The report flagged the use of 'significant', but the section reads well."
+}

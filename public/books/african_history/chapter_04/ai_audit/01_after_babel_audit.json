@@ -1,0 +1,20 @@
+{
+  "section_title": "4.1 After Babel: Early Migrations into the Upper Nile and Horn (c. 3200–2200 BC)",
+  "word_count": 348,
+  "characters": 1948,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": ["MAP: Upper Nile & Horn — show headwaters, Kerma region, Napata, Meroe, Aksum; label Nile flow, trade routes, key sites (Kerma, Napata, Meroe, Aksum)."],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": false,
+  "debate_box_present": false,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": ["The"],
+  "requires_source": false,
+  "audit_score": 83,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.1."],
+  "notes": "The audit flagged some long sentences and formal tone, but the overall score is high. The content meets all requirements for this section."
+}

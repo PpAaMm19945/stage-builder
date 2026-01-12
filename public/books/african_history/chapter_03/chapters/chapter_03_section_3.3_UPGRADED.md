@@ -1,0 +1,12 @@
+## 3.3 Encounters with Egypt: From Mercenaries to Pharaohs (c. 1200–700 BC, YEC)
+
+For centuries, the relationship between the descendants of Phut and their powerful neighbors in Egypt (the descendants of Mizraim) was one of tension and symbiosis. Egyptian records frequently refer to the peoples on their western border by names such as the **Tehenu** and, most importantly, the **Meshwesh**. They were seen as a source of valuable trade goods, a pool of fierce mercenaries for the Egyptian army, and a constant threat of raids.
+
+This dynamic, however, was not static. The descendants of Phut were not destined to remain a peripheral people. In a stunning display of God's sovereignty over the nations, He raised up these Libyan tribes to rule over the most powerful empire of the age.
+
+During the decline of Egypt’s New Kingdom, Meshwesh mercenaries, who had served in the Egyptian army for generations, grew increasingly powerful. Around 945 BC (a date where biblical and conventional chronologies align), a Meshwesh military leader named **Shoshenq I** seized the Egyptian throne, founding the 22nd Dynasty. This Libyan pharaoh is a pivotal figure in the Old Testament, known to us as **Shishak**.
+
+> **Biblical Intersection: Shishak, King of Egypt**
+> The Bible records that after the death of Solomon, "Shishak king of Egypt came up against Jerusalem and took away the treasures of the house of the LORD and the treasures of the king’s house; he took away everything. He also took away all the shields of gold which Solomon had made" (1 Kings 14:25-26). For centuries, critics doubted this account. Yet, a massive relief on the wall of the Temple of Amun at Karnak, commissioned by Shoshenq I, records his victorious campaign into Judah and Israel, listing dozens of conquered cities. The story of Phut's descendants thus intersects directly with the story of Israel's kings, demonstrating that God's hand is moving in the histories of all nations—even raising up a Libyan pharaoh to discipline the disobedient kingdom of Judah.
+
+The rise of the Libyan Dynasties is a powerful lesson in God's providence. He is not only the God of Israel, but the Lord of all nations, who "removes kings and sets up kings" (Daniel 2:21) according to His perfect will. The descendants of Phut were not a footnote in Egypt's history; for a time, they *were* its history.

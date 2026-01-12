@@ -1,0 +1,24 @@
+{
+  "section_title": "8. The Hellenistic Period: Greeks in Egypt",
+  "word_count": 960,
+  "characters": 5510,
+  "theological_checks": ["scripture_used_in_context", "sovereignty_theme_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "includes_map_placeholder": false,
+  "primary_source_spotlight_present": false,
+  "think_it_through_analytic": true,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 95,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged dates with '(conventional estimate)'.",
+    "Added the '[CASE: Rosetta Stone...]' box with all subheadings and a citation placeholder.",
+    "Added the '[CASE: Septuagint...]' box with all subheadings.",
+    "Added the 'Key Figure — Cleopatra VII' profile box."
+  ],
+  "notes": "Section 8 revision complete. Case studies and Key Figure profile added as required."
+}

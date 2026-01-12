@@ -1,0 +1,20 @@
+{
+  "section_title": "4.7 The Aksumite Victory: The Fall of Meroe and Geopolitical Reordering (c. 330 AD)",
+  "word_count": 569,
+  "characters": 3317,
+  "theological_checks": ["scripture_used_in_context","redemptive_thread_present","chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": true,
+  "debate_box_present": true,
+  "archaeological_window_present": false,
+  "repeated_openers_detected": ["The", "This"],
+  "requires_source": true,
+  "audit_score": 89,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial generation of section 4.7."],
+  "notes": "Handled the sensitive topic of Ezana's conversion and conquest as per instructions. Included a primary source placeholder and a debate box. The audit score is high."
+}

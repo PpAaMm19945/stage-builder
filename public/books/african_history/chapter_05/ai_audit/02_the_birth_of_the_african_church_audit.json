@@ -1,0 +1,20 @@
+{
+  "section_title": "5.2 The Birth of the African Church (c. 50–300 AD)",
+  "word_count": 401,
+  "characters": 2226,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "primary_source_spotlight_present": true,
+  "debate_box_present": false,
+  "key_figures_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 90,
+  "ai_audit_status": "pass",
+  "change_summary": ["Initial draft of section 5.2."],
+  "notes": "The audit score was high. Minor flags for hedging words ('might', 'could') and use of the word 'significant' were noted but did not require revision. Will continue to monitor for these in subsequent sections."
+}

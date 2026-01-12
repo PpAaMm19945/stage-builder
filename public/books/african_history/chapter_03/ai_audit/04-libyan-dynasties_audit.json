@@ -1,0 +1,28 @@
+{
+  "section_title": "4. The Libyan Dynasties of Egypt",
+  "word_count": 718,
+  "characters": 4185,
+  "theological_checks": [
+    "theological_reflection_present",
+    "sovereignty_theme_present",
+    "redemptive_thread_present"
+  ],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "maps_present": [],
+  "archaeological_windows_present": false,
+  "debate_boxes_count": 0,
+  "theology_mini_lesson_present": true,
+  "primary_source_tasks_present": true,
+  "how_historians_sidebar_present": false,
+  "repeated_openers_detected": [],
+  "requires_source": false,
+  "audit_score": 83,
+  "ai_audit_status": "pass",
+  "change_summary": [
+    "Tagged all numeric dates with '(conventional estimate)'.",
+    "Converted one 'Think It Through' question into a 'Data Task: Cross-Referencing Historical Records'.",
+    "Appended a 'Theological Reflection' to the end of the section."
+  ],
+  "notes": "The audit score was a passing 83. No further revisions were deemed necessary."
+}

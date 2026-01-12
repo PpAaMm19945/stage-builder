@@ -1,0 +1,21 @@
+{
+  "section_title": "8.3 The Linguistic Evidence: What “Bantu” Really Means",
+  "word_count": 577,
+  "characters": 3615,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "mixed",
+  "dates_tagged": true,
+  "visual_assets": ["[TABLE: Shared Bantu roots — ntu/ntu table — show example words and glosses across languages]"],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "archaeological_window_present": false,
+  "primary_source_spotlight_present": false,
+  "active_learning_present": false,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Authored section explaining the linguistic evidence for Bantu origins.", "Included key terms for 'Noun Classes' and 'Concord', a table placeholder, and a theological reflection."],
+  "notes": "Section is focused on linguistics and meets all requirements."
+}

@@ -1,0 +1,18 @@
+## 6.7 The Coptic Church under Byzantine and Early Arab Rule
+
+In this section you will learn about the experience of the Coptic Church after the Council of Chalcedon, including its relationship with the Byzantine state and the dramatic changes brought by the Arab conquest of Egypt.
+
+Following the Council of Chalcedon in 451 AD (conventional estimate), the Coptic Church found itself officially at odds with the Byzantine Empire. The emperors in Constantinople, committed to the Chalcedonian formula, periodically attempted to impose their will on the Egyptian church, leading to the appointment of pro-Chalcedonian (or *Melkite*) patriarchs in Alexandria who were supported by imperial troops. This created a deep and lasting alienation between the Coptic majority and the Byzantine state. The Coptic Church, however, maintained its own line of non-Chalcedonian patriarchs, who were seen by the local population as the legitimate spiritual leaders.
+
+> **Key Term:** **Melkite** — A term derived from the Syriac word for "king" or "emperor," used to describe those Christians in the Middle East who accepted the Christology of the Council of Chalcedon, which was supported by the Byzantine emperor.
+
+> **Key Term:** **Dhimmi** — A protected, non-Muslim subject living in a state under Islamic law. Dhimmis, such as Jews and Christians, were allowed to practice their religion and manage their own communities, but were required to pay a special poll tax (*jizya*) and abide by certain social restrictions.
+
+This period of internal division and imperial pressure came to an abrupt end with the Arab conquest of Egypt, which took place between 639 and 646 AD (conventional estimate). The Byzantine forces, weakened by wars with Persia and unpopular with the local populace, were defeated by the Arab army led by 'Amr ibn al-'As. Many Copts, weary of Byzantine persecution, were initially ambivalent or even welcoming of the change in rulers.
+
+Under Arab rule, the Coptic Church was granted *dhimmi* status. This offered them a degree of religious freedom and autonomy that they had not enjoyed under the later Byzantine emperors. They were free to worship and to be governed by their own patriarch, without the imposition of a rival Chalcedonian leader. However, this came at the cost of the *jizya* tax and a subordinate social status. Over the centuries, the pressures of Islamic rule, including taxation and social incentives, led to a gradual process of Islamization and the replacement of Coptic and Greek with Arabic as the dominant language of administration and, eventually, popular use.
+
+[IMAGE_PLACEHOLDER: Coptic manuscript — show distinctive Coptic script and art style]
+
+### Theological Reflection
+The long history of the Coptic Church under non-Christian rule is a powerful evidence of the resilience of faith in the midst of adversity. Their story illustrates the biblical theme of the church as a "sojourner and exile" in the world (1 Peter 2:11). The Copts learned to be the people of God under the authority of earthly powers who did not share their faith. This experience forged in them a deep reliance on God's sovereignty and a strong sense of community identity centered on the church and its liturgical life. Their perseverance is an encouragement to Christians everywhere who find themselves in minority or marginalized situations. It reminds us that the survival and flourishing of the Church do not depend on political power or cultural prestige, but on the faithfulness of God and the enduring power of the Gospel to sustain His people through centuries of trial and change.

@@ -1,0 +1,13 @@
+## 3.7 The End of an Era: The Islamic Conquest and the Removed Lampstand (c. 533–700 AD)
+
+The Byzantine Empire, under Emperor Justinian, reconquered North Africa from the Vandals in 534 AD, restoring a semblance of Roman rule. But the church they restored was a shadow of its former self—devastated by the Vandal persecution and still bearing the scars of the Donatist schism. It was this weakened and fractured Christian society that faced the final, cataclysmic challenge.
+
+Beginning in 647 AD, Arab armies, unified by the new religion of Islam, swept out of Egypt and began the conquest of the Maghreb (see **Map 14: Islamic Conquest of North Africa**). The Byzantines, overextended and poorly led, were defeated at the Battle of Sufetula. The Arabs established their first permanent inland capital at **Kairouan** in 670 AD, strategically placing it beyond the reach of the Byzantine navy.
+
+The indigenous Berbers mounted a fierce, decades-long resistance, first under the Christian king **Kusaila** and most famously under the warrior queen **Kahina**, who inflicted several defeats on the Arab armies. But the resistance was eventually broken, and Carthage, the last bastion of Roman power, fell in 698 AD.
+
+The question that has haunted historians for centuries is: Why did the North African Church, once the home of Augustine and Tertullian, disappear, while the Coptic Church in Egypt survived? The answer is a sobering theological lesson.
+
+1.  **A Church Divided:** Centuries of infighting between Donatists and Catholics had exhausted the church spiritually and shattered its unity. It was a house divided against itself.
+2.  **A Foreign Tongue:** The church in North Africa remained a largely Latin-speaking, Roman institution. Unlike in Egypt, where the Bible and liturgy were translated into the native Coptic language, the Scriptures were never translated into the Berber tongues. The faith had failed to take deep root in the soil of the indigenous culture.
+3.  **The Removed Lampstand:** From a biblical perspective, the fate of the North African church is a chilling illustration of Christ's warning to the church at Ephesus: "Repent and do the first works, or else I will come to you quickly and remove your lampstand from its place" (Revelation 2:5). Weakened by division, heresy, and a failure to evangelize the very people of the land, its lampstand was removed. The Islamic conquest was not the cause of the church's death, but the final verdict upon a church that had, in many ways, already died from within.

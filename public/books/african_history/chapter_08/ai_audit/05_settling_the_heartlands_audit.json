@@ -1,0 +1,21 @@
+{
+  "section_title": "8.5 Settling the Heartlands (c. 300 – 800 AD)",
+  "word_count": 708,
+  "characters": 4615,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "conventional estimate",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "archaeological_window_present": false,
+  "primary_source_spotlight_present": false,
+  "active_learning_present": true,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Authored section on the three streams of Bantu migration.", "Included key terms, a Memory Tradition element, and a theological reflection."],
+  "notes": "Section successfully covers the major migration routes and their outcomes."
+}

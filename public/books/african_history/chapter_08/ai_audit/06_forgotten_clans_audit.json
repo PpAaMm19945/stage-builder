@@ -1,0 +1,21 @@
+{
+  "section_title": "8.6 The Forgotten Clans: Before the Bantu Came",
+  "word_count": 701,
+  "characters": 4593,
+  "theological_checks": ["scripture_used_in_context", "redemptive_thread_present", "chronology_tagged"],
+  "chronology_tag": "mixed",
+  "dates_tagged": true,
+  "visual_assets": [],
+  "pedagogy_packet_present": true,
+  "defines_key_terms": true,
+  "archaeological_window_present": false,
+  "primary_source_spotlight_present": false,
+  "active_learning_present": false,
+  "debate_box_present": false,
+  "requires_source": false,
+  "repeated_openers_detected": [],
+  "audit_score": 85,
+  "ai_audit_status": "pass",
+  "change_summary": ["Authored section on the pre-Bantu inhabitants of central and southern Africa.", "Included key terms for 'Click Consonants' and 'Linguistic Isolate', and a theological reflection."],
+  "notes": "Section successfully covers the indigenous groups and their interactions with Bantu migrants."
+}
