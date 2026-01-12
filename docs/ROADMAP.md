@@ -163,6 +163,62 @@ This phase prevents:
 
 ---
 
+## 4.5. Phase 2.5: History & Liturgy Foundation
+
+**Goal:** Establish the two pillars (History, Liturgy) that anchor all learning across all ages.
+
+> [!IMPORTANT]
+> This phase is foundational. Everything else builds on a child knowing their story (History) and practicing daily discipline (Liturgy).
+
+### Age Stages Model
+
+Instead of grades, we use Formation Stages:
+
+| Stage | Age Range | Description |
+|-------|-----------|-------------|
+| Seedling | 0-3 | Picture stories, simple phrases, sung catechism |
+| Sprout | 4-6 | Simple narrative, paraphrased Q&A, short verses |
+| Sapling | 7-10 | Story-rich chapters, full catechism begins |
+| Tree | 11-14 | Full content, critical thinking, WSC complete |
+| Oak | 15-18 | Source documents, Larger Catechism, apologetics |
+
+### Liturgy Outcomes
+
+- [x] `liturgy_progressions` table for age-scaled content (Migration 0039)
+- [ ] Complete WSC Q1-107 in database
+- [ ] Add age-stage paraphrases for Q1-107 (Seedling through Oak)
+- [ ] Expand hymns to 50+ (from reformed-hymns folder + additions)
+- [ ] Expand memory verses to 52 (one per week, systematic selection)
+
+### History Outcomes
+
+- [ ] Finalize all 10 chapters of African History (Tree/Oak level)
+- [ ] Create "story summaries" for Sprout/Sapling levels (10 stories)
+- [ ] Create picture book companion series for Seedling (long-term goal)
+- [ ] Design 2-3 activities per chapter, per age stage
+
+### Integration Outcomes
+
+- [ ] Weekly rhythm templates linking History + Liturgy
+- [ ] Dashboard shows "This Week's Liturgy" summary
+- [ ] History reader mode in app
+
+### Why This Phase Matters
+
+This phase ensures:
+- Parents don't need expensive curriculum—History tells them what to teach
+- Daily liturgy builds habit and memory without requiring parent preparation
+- Content scales with age without requiring separate "grade-level" products
+
+> The two pillars (History + Liturgy) replace the need for a $500 boxed curriculum.
+
+**Exit Criteria:**
+- [ ] A family can run a year of liturgy without running out of content
+- [ ] History content exists for at least 2 age stages (Sapling + Tree)
+- [ ] Weekly rhythm flows naturally between History story and Liturgy practice
+
+---
+
 ## 5. Phase 3: Graduated Independence
 
 **Goal:** Transition responsibility from parent to child in a visible, controlled way.
@@ -334,12 +390,15 @@ If it weakens it, the feature waits.
 | Phase | Status | Key Deliverables |
 | :--- | :--- | :--- |
 | Phase 0: Constitutional | ✅ Complete | All governance docs |
-| Phase 1: Faithful Minimum | ✅ Complete | Core features, content gaps |
-| Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav, daily rhythm ✅ |
-| Phase 3: Graduated Independence | 🔄 In Progress | Coach Chat, AI Explanations |
-| Phase 4: Pace Flexibility | 🔄 In Progress | Pace settings, passion signals, learning focus |
+| Phase 1: Faithful Minimum | ✅ Complete | Core features, book library |
+| Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav |
+| **Phase 2.5: History & Liturgy** | 🔄 In Progress | WSC Q1-107, age progressions, history stories |
+| Phase 3: Graduated Independence | ⏸️ Paused | Coach Chat, AI Explanations |
+| Phase 4: Pace Flexibility | ⏸️ Paused | Pace settings, passion signals |
 | Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |
 | Phase 6: Maturity | ⬜ Not Started | Full independence |
+
+> **Current Focus:** Phase 2.5 (History & Liturgy Foundation) for Gemini 3 Hackathon submission.
 
 ---
 
@@ -347,3 +406,5 @@ If it weakens it, the feature waits.
 - See `PRODUCT_VISION.md` for the desired end state
 - See `PEDAGOGICAL_PHILOSOPHY.md` for the theological filter
 - See `AI_GOVERNANCE_AND_ETHICS.md` for AI boundaries
+- See `AI_CONTEXT.md` for AI coding assistant quick reference
+

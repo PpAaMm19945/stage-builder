@@ -1,73 +1,102 @@
-# Welcome to your Lovable project
+# HomeLine Academy (SchoolOS)
 
-## Project info
+> **Reformed Christian education for African families—from birth to high school.**
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+HomeLine Academy is a family formation platform that helps parents teach their children at home through daily liturgy, history narratives, and age-appropriate activities. It replaces expensive curriculum with AI-assisted formation, grounded in Scripture and the Reformed confessions.
 
-## How can I edit this code?
+## Quick Context for AI Assistants
 
-There are several ways of editing your application.
+**What this is:** A React + Cloudflare Workers app for home education. Parents add children, and the app generates daily formation activities (liturgy, history, skills) scaled to each child's age.
 
-**Use Lovable**
+**Theology matters:** This is a Reformed Christian app. All AI must respect the authority hierarchy (Scripture → Parent → Curriculum → AI). See `/docs/AI_GOVERNANCE_AND_ETHICS.md`.
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+**Age Stages (not grades):** Seedling (0-3), Sprout (4-6), Sapling (7-10), Tree (11-14), Oak (15-18).
 
-Changes made via Lovable will be committed automatically to this repo.
+**Key tables:** `formations` (activities), `liturgy_progressions` (age-scaled content), `evidences` (observations), `family_rhythms` (daily schedules).
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## Tech Stack
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui |
+| Backend | Cloudflare Workers, D1 (SQLite), R2 (Storage) |
+| AI | Google Gemini API (via Cloudflare AI Gateway) |
+| Auth | Google OAuth |
 
-Follow these steps:
+## Local Development
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+```bash
+# Prerequisites: Node.js 18+, npm
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+# 1. Clone and install
+git clone <repo-url>
+cd stage-builder
+npm install
 
-# Step 3: Install the necessary dependencies.
-npm i
+# 2. Start frontend dev server
+npm run dev
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
+# 3. Start Cloudflare Worker (separate terminal)
+cd cloudflare
+npm install
 npm run dev
 ```
 
-**Edit a file directly in GitHub**
+## Project Structure
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+```
+stage-builder/
+├── src/                    # React frontend
+│   ├── components/         # UI components
+│   ├── pages/              # Route pages
+│   ├── lib/                # Utilities, API client
+│   └── types/              # TypeScript types
+├── cloudflare/             # Backend
+│   ├── src/index.ts        # Main worker entry
+│   └── migrations/         # D1 SQL migrations
+├── public/
+│   └── books/              # Book content (markdown, images)
+├── docs/                   # Philosophy, roadmap, guides
+└── scripts/                # Build and utility scripts
+```
 
-**Use GitHub Codespaces**
+## Documentation
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+| Document | Purpose |
+|----------|---------|
+| [ROADMAP.md](./docs/ROADMAP.md) | Development phases and current status |
+| [PEDAGOGICAL_PHILOSOPHY.md](./docs/PEDAGOGICAL_PHILOSOPHY.md) | Theological foundation |
+| [AI_GOVERNANCE_AND_ETHICS.md](./docs/AI_GOVERNANCE_AND_ETHICS.md) | AI behavior constraints |
+| [PRODUCT_VISION.md](./docs/PRODUCT_VISION.md) | Desired end state |
+| [AI_CONTEXT.md](./docs/AI_CONTEXT.md) | Quick reference for AI coding assistants |
 
-## What technologies are used for this project?
+## Current Phase
 
-This project is built with:
+**Phase 2.5: History & Liturgy Foundation** (In Progress)
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS .
+Building the two pillars that anchor all learning:
+- **Liturgy:** Hymns, Catechism (WSC Q1-107), Memory Verses—with age-stage simplifications
+- **History:** African History as narrative backbone, with World History interwoven
 
-## How can I deploy this project?
+See [ROADMAP.md](./docs/ROADMAP.md) for full details.
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+## Hackathon Submission (Gemini 3)
 
-## Can I connect a custom domain to my Lovable project?
+This app is being submitted to the **Gemini 3 Hackathon** (deadline: Feb 10, 2026).
 
-Yes, you can!
+The submission demonstrates:
+- **Multimodal AI:** Content adaptation based on child's age and family context
+- **Reasoning:** Age-appropriate catechism paraphrasing, activity recommendations
+- **Reformed AI Governance:** Explicit theological constraints on AI behavior
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+---
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+## License
+
+Proprietary. All rights reserved.
+
+## Author
+
+Anthony Jr. Mwesigwa

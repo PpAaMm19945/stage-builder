@@ -1,0 +1,74 @@
+[
+  {
+    "page": 1,
+    "spread_index": 0,
+    "description": "A split image. Left side: Hot, dry sand dunes of the modern Sahara. Right side: The same landscape but lush, green, and full of grass and lakes.",
+    "text_content": "Imagine standing in the Sahara desert. Today, it is hot and sandy. But if you could travel back in time, you would see something amazing."
+  },
+  {
+    "page": 3,
+    "spread_index": 1,
+    "description": "A prehistoric scene of the 'Green Sahara'. A lake with hippos, and people fishing in dug-out canoes. Giraffes grazing in the background.",
+    "text_content": "Thousands of years ago, the Sahara was green! It was a land of flowing rivers, splashing hippos, and tall giraffes. People lived there happily."
+  },
+  {
+    "page": 5,
+    "spread_index": 2,
+    "description": "A close-up of ancient rock art on a sandstone cave wall, depicting cattle and hunters. A hand of a modern child is reaching out to touch it (implied).",
+    "text_content": "These people were the children of Phut. They painted pictures on the rocks of the animals they saw. We can still see these paintings today."
+  },
+  {
+    "page": 7,
+    "spread_index": 3,
+    "description": "A time-lapse style composite showing the landscape transitioning from green savanna to dry scrubland, and finally to desert dunes. The mood is melancholic.",
+    "text_content": "Slowly, the rain stopped falling. The grass turned brown. The lakes dried up. The sand took over. The people had to move."
+  },
+  {
+    "page": 9,
+    "spread_index": 4,
+    "description": "Ancient engineers digging a 'foggara' tunnel in the desert rock. Water flows through a stone channel, irrigating a small oasis garden.",
+    "text_content": "Some people learned to live in the desert. They were called the Garamantes. They dug deep tunnels to find water hidden underground."
+  },
+  {
+    "page": 11,
+    "spread_index": 5,
+    "description": "A caravan of camels walking through a sandstorm, carrying goods. The riders are wrapped in indigo cloth. The sun is a hazy ball of white.",
+    "text_content": "They rode horses and chariots across the sands. Later, they used camels. The camel was the 'ship of the desert' that helped them trade."
+  },
+  {
+    "page": 13,
+    "spread_index": 6,
+    "description": "The ancient harbor of Carthage. It is circular and filled with wooden warships (triremes). The city rises white and majestic in the background.",
+    "text_content": "On the coast, huge ships arrived. The Phoenicians built a great city called Carthage. It was famous for its purple cloth and mighty ships."
+  },
+  {
+    "page": 15,
+    "spread_index": 7,
+    "description": "A dramatic scene of Hannibal\u2019s army crossing the snowy Alps. War elephants are tramping through the snow, soldiers bracing against the wind.",
+    "text_content": "Carthage became powerful. But a city called Rome wanted to be the boss. They fought huge wars. A general named Hannibal even rode elephants over mountains!"
+  },
+  {
+    "page": 17,
+    "spread_index": 8,
+    "description": "An Amazigh family in a mountain village, wearing traditional wool cloaks. They look proud and resilient. Roman ruins are visible in the far distance.",
+    "text_content": "In the end, Rome won. But the people of Phut\u2014the Amazigh\u2014stayed strong. They kept their own language and their own ways."
+  },
+  {
+    "page": 19,
+    "spread_index": 9,
+    "description": "A simple early Christian meeting in a North African home. Light streams in from a window. People are listening intently to a reader.",
+    "text_content": "God had a plan for these tough people. Soon, the news of Jesus would come to their cities and farms, and they would become heroes of the faith."
+  },
+  {
+    "page": 21,
+    "spread_index": 10,
+    "description": "A lone tree standing in the desert (an acacia), symbolizing resilience. The sun is setting, painting the sky in deep purples and oranges.",
+    "text_content": "The desert may remain, but the history of the Green Sahara reminds us that the world is always changing in God's hands."
+  },
+  {
+    "page": 23,
+    "spread_index": 11,
+    "description": "A parchment map of North Africa. It shows the Atlas Mountains and the Mediterranean coast. A dot for 'Carthage' and symbols for 'Oases' in the desert.",
+    "text_content": "Map: The Changing Land. This map shows North Africa. The green spots show where the oasis cities were. Carthage is on the coast."
+  }
+]

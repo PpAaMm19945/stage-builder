@@ -1,4 +1,4 @@
-CREATE TABLE support_clicks (
+CREATE TABLE IF NOT EXISTS support_clicks (
   id TEXT PRIMARY KEY,
   user_id TEXT,
   source TEXT NOT NULL,

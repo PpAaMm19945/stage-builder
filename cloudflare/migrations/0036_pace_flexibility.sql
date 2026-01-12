@@ -1,7 +1,7 @@
 -- Migration: Pace Flexibility (Phase 4)
 
 -- Table for parent-defined pace settings per child/subject
-CREATE TABLE pace_settings (
+CREATE TABLE IF NOT EXISTS pace_settings (
     id TEXT PRIMARY KEY,
     parent_id TEXT NOT NULL,
     student_id TEXT NOT NULL,
@@ -15,7 +15,7 @@ CREATE TABLE pace_settings (
 );
 
 -- Table for tracking passion signals
-CREATE TABLE passion_signals (
+CREATE TABLE IF NOT EXISTS passion_signals (
     id TEXT PRIMARY KEY,
     student_id TEXT NOT NULL,
     parent_id TEXT NOT NULL,
@@ -27,5 +27,5 @@ CREATE TABLE passion_signals (
 );
 
 -- Index for efficient lookup during planning
-CREATE INDEX idx_pace_student_domain ON pace_settings(student_id, domain);
-CREATE INDEX idx_passion_student ON passion_signals(student_id);
+CREATE INDEX IF NOT EXISTS idx_pace_student_domain ON pace_settings(student_id, domain);
+CREATE INDEX IF NOT EXISTS idx_passion_student ON passion_signals(student_id);

@@ -1,7 +1,8 @@
 -- Migration 0021: Portfolio Milestones
 
 -- Add milestone_tag column to portfolio_items
-ALTER TABLE portfolio_items ADD COLUMN milestone_tag TEXT;
+-- FIX: Column already exists in live DB, commenting out to avoid error.
+-- ALTER TABLE portfolio_items ADD COLUMN milestone_tag TEXT;
 
 -- Create index for filtering by milestone
 CREATE INDEX IF NOT EXISTS idx_portfolio_milestone ON portfolio_items(milestone_tag);

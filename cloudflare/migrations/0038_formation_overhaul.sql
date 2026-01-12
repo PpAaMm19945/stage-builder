@@ -1,15 +1,20 @@
 -- Migration 0038: SchoolOS v2 - The Formation Engine
 -- "Deconstructing the Factory, Building the Sanctuary"
+-- REWRITTEN TO BE "SAFE" (Idempotent)
 
 -- ============================================================================
 -- PHASE 1: THE ARCHIVE (Safety First)
--- We rename existing tables to 'legacy_' so we don't lose data.
 -- ============================================================================
-ALTER TABLE activities RENAME TO legacy_activities;
-ALTER TABLE observations RENAME TO legacy_observations;
-ALTER TABLE liturgy_items RENAME TO legacy_liturgy_items;
-ALTER TABLE daily_recommendations RENAME TO legacy_daily_recommendations;
-ALTER TABLE family_liturgy_settings RENAME TO legacy_family_liturgy_settings;
+
+-- SAFETY CHECK:
+-- If you have ALREADY renamed these tables in the Console, keep these commented out.
+-- If you see an error saying "no such table: legacy_activities", UNCOMMENT these lines.
+
+-- ALTER TABLE activities RENAME TO legacy_activities;
+-- ALTER TABLE observations RENAME TO legacy_observations;
+-- ALTER TABLE liturgy_items RENAME TO legacy_liturgy_items;
+-- ALTER TABLE daily_recommendations RENAME TO legacy_daily_recommendations;
+-- ALTER TABLE family_liturgy_settings RENAME TO legacy_family_liturgy_settings;
 
 -- Note: 'users' and 'students' tables remain valid. Identity is constant.
 
@@ -18,27 +23,27 @@ ALTER TABLE family_liturgy_settings RENAME TO legacy_family_liturgy_settings;
 -- ============================================================================
 
 -- 1. FORMATIONS (The Atomic Unit of Discipleship)
--- Replaces 'activities' and 'liturgy_items'.
-CREATE TABLE formations (
+-- Added "IF NOT EXISTS" to prevent crashes if table is already there.
+CREATE TABLE IF NOT EXISTS formations (
   id TEXT PRIMARY KEY,
   title TEXT NOT NULL,
   
   -- THEOLOGY OF PRACTICE
   formation_type TEXT NOT NULL CHECK (formation_type IN ('liturgy', 'habit', 'skill', 'service', 'rest')),
-  primary_virtue TEXT NOT NULL, -- e.g., 'Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder'
-  biblical_faculty TEXT, -- e.g., 'Memory', 'Reason', 'Will', 'Affection', 'Conscience'
+  primary_virtue TEXT NOT NULL,
+  biblical_faculty TEXT,
   
   -- CONTENT
   description TEXT NOT NULL,
-  guide_steps TEXT, -- JSON array of simple steps
+  guide_steps TEXT, 
   
-  -- DISCIPLESHIP GUIDE (The "How" & "Why")
-  parent_posture TEXT, -- Directives for the parent's spirit (e.g., "Sit calmly.")
-  liturgical_script TEXT, -- Call-and-response or prayer script
+  -- DISCIPLESHIP GUIDE
+  parent_posture TEXT,
+  liturgical_script TEXT,
   
   -- CONTEXT & RHYTHM
-  context_anchor TEXT, -- e.g., 'Morning_Circle', 'Meal_Table', 'Walk_By_The_Way'
-  cultural_notes TEXT, -- Specific adaptations (e.g., Ugandan context)
+  context_anchor TEXT,
+  cultural_notes TEXT,
   
   -- SOFT GUIDES
   min_age_months INTEGER DEFAULT 0,
@@ -51,45 +56,44 @@ CREATE TABLE formations (
   updated_at TEXT NOT NULL DEFAULT (datetime('now'))
 );
 
-CREATE INDEX idx_formations_context ON formations(context_anchor);
-CREATE INDEX idx_formations_virtue ON formations(primary_virtue);
+CREATE INDEX IF NOT EXISTS idx_formations_context ON formations(context_anchor);
+CREATE INDEX IF NOT EXISTS idx_formations_virtue ON formations(primary_virtue);
 
 -- 2. FAMILY RHYTHMS (The Liturgy of Life)
--- Replaces 'daily_recommendations'. Formation happens in loops.
-CREATE TABLE family_rhythms (
+CREATE TABLE IF NOT EXISTS family_rhythms (
   id TEXT PRIMARY KEY,
   parent_id TEXT NOT NULL,
-  rhythm_name TEXT NOT NULL, -- e.g., "Morning Glory", "Table Fellowship"
-  anchor_time TEXT, -- e.g., "07:00" or "After Breakfast"
-  formation_chain TEXT NOT NULL DEFAULT '[]', -- JSON array of formation_ids
+  rhythm_name TEXT NOT NULL,
+  anchor_time TEXT,
+  formation_chain TEXT NOT NULL DEFAULT '[]',
   is_active INTEGER DEFAULT 1,
   created_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (parent_id) REFERENCES users(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_rhythms_parent ON family_rhythms(parent_id);
+CREATE INDEX IF NOT EXISTS idx_rhythms_parent ON family_rhythms(parent_id);
 
 -- 3. EVIDENCES OF GRACE (The Growth Journal)
--- Replaces 'observations'. Tracks the heart's posture.
-CREATE TABLE evidences (
+CREATE TABLE IF NOT EXISTS evidences (
   id TEXT PRIMARY KEY,
   student_id TEXT NOT NULL,
   formation_id TEXT NOT NULL,
   habit_stage TEXT NOT NULL CHECK (habit_stage IN ('Seeding', 'Rooting', 'Fruiting')),
-  evidence_note TEXT, -- "What did you see today?"
+  evidence_note TEXT,
   captured_at TEXT NOT NULL DEFAULT (datetime('now')),
   FOREIGN KEY (student_id) REFERENCES students(id) ON DELETE CASCADE,
   FOREIGN KEY (formation_id) REFERENCES formations(id) ON DELETE CASCADE
 );
 
-CREATE INDEX idx_evidences_student ON evidences(student_id);
+CREATE INDEX IF NOT EXISTS idx_evidences_student ON evidences(student_id);
 
 -- ============================================================================
 -- PHASE 3: THE GREAT MIGRATION (Transforming Data)
 -- ============================================================================
+-- Using INSERT OR IGNORE to prevent duplicate data if run twice.
 
 -- 1. MIGRATE LITURGY
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months)
+INSERT OR IGNORE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months)
 SELECT 
   id, 
   title, 
@@ -111,7 +115,7 @@ FROM legacy_liturgy_items;
 -- 2. MIGRATE ACTIVITIES (Map Factory Domains to Kingdom Virtues)
 
 -- Cognitive/Pre-academic -> Wisdom / Reason
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
+INSERT OR IGNORE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
 SELECT 
   id, title, 'skill', 'Wisdom', 'Reason', 
   description, instructions, 
@@ -120,7 +124,7 @@ SELECT
 FROM legacy_activities WHERE domain IN ('cognitive', 'pre-academic');
 
 -- Motor -> Stewardship / Will (Body control)
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
+INSERT OR IGNORE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
 SELECT 
   id, title, 'skill', 'Stewardship', 'Will', 
   description, instructions, 
@@ -129,7 +133,7 @@ SELECT
 FROM legacy_activities WHERE domain = 'motor';
 
 -- Social-Emotional -> Love / Conscience
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
+INSERT OR IGNORE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
 SELECT 
   id, title, 'habit', 'Love', 'Conscience', 
   description, instructions, 
@@ -138,7 +142,7 @@ SELECT
 FROM legacy_activities WHERE domain = 'social-emotional';
 
 -- Spiritual/Language -> Wisdom / Affection
-INSERT INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
+INSERT OR IGNORE INTO formations (id, title, formation_type, primary_virtue, biblical_faculty, description, guide_steps, parent_posture, context_anchor, min_age_months, max_age_months, cultural_notes)
 SELECT 
   id, title, 'liturgy', 'Wisdom', 'Affection', 
   description, instructions, 
