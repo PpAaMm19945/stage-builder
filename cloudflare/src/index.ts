@@ -965,6 +965,9 @@ app.put('/api/students/:id', async (c) => {
 
 // Get formations (filtered by age and virtue)
 app.get('/api/formations', async (c) => {
+  // Optimization: Allow caching for curriculum data
+  c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+
   const virtue = c.req.query('virtue'); // Previously 'domain'
   const ageMonths = c.req.query('ageMonths');
   const formationType = c.req.query('formationType');
@@ -1920,6 +1923,7 @@ app.post('/api/passion-signals', async (c) => {
 // Get all hymns
 app.get('/api/hymns', async (c) => {
   try {
+    c.header('Cache-Control', 'public, max-age=3600');
     const { results } = await c.env.DB.prepare(
       "SELECT * FROM legacy_liturgy_items WHERE type = 'hymn' AND is_active = 1 ORDER BY sequence_number"
     ).all();
@@ -1932,6 +1936,7 @@ app.get('/api/hymns', async (c) => {
 // Get all catechism items
 app.get('/api/catechism', async (c) => {
   try {
+    c.header('Cache-Control', 'public, max-age=3600');
     const { results } = await c.env.DB.prepare(
       "SELECT * FROM legacy_liturgy_items WHERE type = 'catechism' AND is_active = 1 ORDER BY sequence_number"
     ).all();
@@ -2805,6 +2810,9 @@ async function findMetadataFile(bucket: R2Bucket, bookPrefix: string): Promise<R
 // List all books
 app.get('/api/books', async (c) => {
   try {
+    // Optimization: Allow caching for this heavy static endpoint
+    c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
+
     const stage = c.req.query('stage');
     const ageMonths = c.req.query('ageMonths');
     const bucket = c.env.BOOKS_BUCKET;
