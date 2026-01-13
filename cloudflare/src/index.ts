@@ -1568,7 +1568,7 @@ app.get('/api/family/week-summary', async (c) => {
 
     // Validate weekStartParam
     if (!weekStartParam || isNaN(new Date(weekStartParam).getTime())) {
-       weekStartParam = getSmartWeekStart();
+      weekStartParam = getSmartWeekStart();
     }
 
     // Get the weekly plan
@@ -1581,10 +1581,10 @@ app.get('/api/family/week-summary', async (c) => {
 
     let planData;
     try {
-        planData = JSON.parse((plan as any).plan_json);
+      planData = JSON.parse((plan as any).plan_json);
     } catch (e) {
-        console.error('Failed to parse plan_json', e);
-        return c.json({ days: {} });
+      console.error('Failed to parse plan_json', e);
+      return c.json({ days: {} });
     }
 
     const slots = Array.isArray(planData?.slots) ? planData.slots : [];
@@ -1603,16 +1603,16 @@ app.get('/api/family/week-summary', async (c) => {
 
     let completions: any[] = [];
     try {
-        const result = await c.env.DB.prepare(`
+      const result = await c.env.DB.prepare(`
           SELECT formation_id, date(created_at) as completed_date
           FROM evidences
           WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?)
           AND date(created_at) >= ? AND date(created_at) <= ?
         `).bind(user.id, weekStartParam, weekEndStr).all();
-        completions = result.results || [];
+      completions = result.results || [];
     } catch (dbError) {
-        console.error('Failed to fetch completions', dbError);
-        // Continue with empty completions to show the plan at least
+      console.error('Failed to fetch completions', dbError);
+      // Continue with empty completions to show the plan at least
     }
 
     const completedByDay: Record<string, Set<string>> = {};
@@ -5656,6 +5656,11 @@ app.get('/api/liturgy/today', async (c) => {
     const wscOffset = (dayOfYear - 1) % 107;
     const catechism = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "wsc_q%" ORDER BY id LIMIT 1 OFFSET ?').bind(wscOffset).first();
 
+    // D. History Story (Weekly)
+    // There are approx 10 stories seeded in 0049. Rotate weekly.
+    const historyOffset = (weekNumber - 1) % 10;
+    const history = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "hist_story_%" ORDER BY id LIMIT 1 OFFSET ?').bind(historyOffset).first();
+
     // 3. Fetch Completions
     const { results: completions } = await c.env.DB.prepare(
       "SELECT activity_id FROM activity_completions WHERE parent_id = ? AND date(created_at) = ?"
@@ -5695,6 +5700,17 @@ app.get('/api/liturgy/today', async (c) => {
         content: catechism.liturgical_script,
         reference: null,
         completedToday: completedIds.has(catechism.id)
+      });
+    }
+
+    if (history) {
+      items.push({
+        id: history.id,
+        type: 'history', // New type
+        title: history.title,
+        content: history.description, // Markdown content
+        reference: null,
+        completedToday: completedIds.has(history.id)
       });
     }
 

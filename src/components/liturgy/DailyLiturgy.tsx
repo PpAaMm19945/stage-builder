@@ -13,12 +13,14 @@ import {
   BookBookmark,
   MusicNotes,
   Scroll,
+  Hourglass, // Added
   CaretDown,
   CaretUp,
   CheckCircle,
   ArrowRight,
   Info
 } from '@phosphor-icons/react';
+
 import { liturgy } from '@/lib/api';
 import { LiturgyItem, LiturgyType } from '@/types';
 import { toast } from 'sonner';
@@ -30,12 +32,14 @@ const ICONS: Record<LiturgyType, any> = {
   catechism: BookBookmark,
   hymn: MusicNotes,
   scripture: Scroll,
+  history: Hourglass,
 };
 
 const LABELS: Record<LiturgyType, string> = {
   catechism: 'Catechism',
   hymn: 'Hymn of the Week',
   scripture: 'Memory Verse',
+  history: 'History Story',
 };
 
 // Age-appropriate guidance based on youngest child's age
@@ -244,6 +248,19 @@ export function DailyLiturgy({ embedded = false }: DailyLiturgyProps) {
 
                     {item.type === 'hymn' ? (
                       <HymnContent title={item.title} fallbackContent={item.content} />
+                    ) : item.type === 'history' ? (
+                      <div className="text-sm space-y-4 bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
+                        {item.content.split('---').map((section, idx) => {
+                          // Simple clean up: remove image prompts and headers
+                          const cleanText = section
+                            .replace(/!\[.*?\]/g, '') // Remove image prompts
+                            .replace(/## Spread \d+ \(Pages \d+-\d+\)/g, '') // Remove spread headers
+                            .replace(/^# .*$/m, '') // Remove main title if repeated
+                            .trim();
+                          if (!cleanText) return null;
+                          return <p key={idx} className="leading-relaxed whitespace-pre-wrap">{cleanText}</p>;
+                        })}
+                      </div>
                     ) : (
                       <div className="text-sm whitespace-pre-wrap bg-amber-50/50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-100 dark:border-amber-800/30">
                         {item.content}

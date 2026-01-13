@@ -219,6 +219,91 @@ This phase ensures:
 
 ---
 
+## 4.6. Phase 2.6: Unified Architecture Migration
+
+**Goal:** Consolidate the fragmented data model (Activities, Liturgy, Books) into a single Unified Formation System for cleaner AI integration and parent experience.
+
+> [!IMPORTANT]
+> This is the most significant architectural change in the project. Review `docs/architecture_comparison.md` for full rationale.
+
+### Why This Phase Exists
+
+The current system has accumulated technical debt:
+- **15+ tables** with legacy prefixes and redundant tracking
+- **3 separate completion systems** (evidences, liturgy_completions, reading_sessions)
+- **Bug**: Catechism questions appearing in Activity feed under "Wisdom"
+- **Orphaned Books**: Books don't participate in the formation engine
+
+### The Unified Model
+
+Everything becomes a Formation with `formation_type` determining behavior:
+
+| Type | Examples | How It's Suggested |
+|------|----------|-------------------|
+| `skill` | Motor, History, Math | Weekly Planner |
+| `habit` | Chores, Greetings | Daily Rhythm |
+| `liturgy` | Catechism, Hymn, Verse | Rotation (Week #) |
+| `reading` | Books | Daily Suggestion |
+| `service` | Acts of Service | Weekly Planner |
+| `rest` | Sabbath, Quiet Time | Context-aware |
+
+### Migration Roadmap
+
+#### Step 1: Fresh D1 Database (New Production DB)
+
+- [ ] Create `schoolos-v2` D1 database
+- [ ] Apply clean schema (9 tables, see `architecture_comparison.md`)
+- [ ] Seed with exported `formations` content from current DB
+- [ ] Update Cloudflare Worker binding
+
+> [!WARNING]
+> **Breaking Change**: Old database will be retired. Export user data first.
+
+#### Step 2: API Consolidation
+
+- [ ] Create unified `/api/formations` endpoints
+- [ ] Deprecate `/api/liturgy/today`, `/api/books`, `/api/reading-sessions`
+- [ ] Single completion tracking via `evidences` table
+- [ ] New `/api/day/today` returns ordered Formation blocks
+
+**Files to Modify:**
+- `cloudflare/src/index.ts` (API routes)
+- `cloudflare/src/planner.ts` (Planner logic)
+
+#### Step 3: Frontend Refactor
+
+- [ ] Update `src/types/index.ts` to match new schema
+- [ ] Create unified `FormationCard` component
+- [ ] Refactor `Dashboard.tsx` to use single data source
+- [ ] Delete unused components
+
+**Files to Delete (After Verification):**
+- `src/components/liturgy/DailyLiturgy.tsx` (merge into FormationCard)
+- `src/components/reading/BookReader.tsx` (merge into FormationCard)
+- `src/components/activities/ActivityCard.tsx` (merge into FormationCard)
+- Legacy API call modules
+
+#### Step 4: AI Integration Cleanup
+
+- [ ] Update `cloudflare/src/ai.ts` system prompts
+- [ ] Simplify embedding generation (one content type)
+- [ ] Unify RAG retrieval logic
+
+### Exit Criteria
+
+- [ ] Database has 9 clean tables (not 15+)
+- [ ] Single API serves all formation types
+- [ ] Frontend uses one card component for all types
+- [ ] AI prompts reference single `formations` schema
+- [ ] No references to `legacy_*` tables anywhere
+
+### Reference Documents
+
+- **Architecture Comparison**: [architecture_comparison.md](file:///c:/Users/Anthony%20Mwesigwa/Documents/Home%20Line%20Shop/stage-builder/docs/architecture_comparison.md)
+- **Clean Schema SQL**: See Part 6 in architecture_comparison.md
+
+---
+
 ## 5. Phase 3: Graduated Independence
 
 **Goal:** Transition responsibility from parent to child in a visible, controlled way.
@@ -392,13 +477,14 @@ If it weakens it, the feature waits.
 | Phase 0: Constitutional | ✅ Complete | All governance docs |
 | Phase 1: Faithful Minimum | ✅ Complete | Core features, book library |
 | Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav |
-| **Phase 2.5: History & Liturgy** | 🔄 In Progress | WSC Q1-107, age progressions, history stories |
+| Phase 2.5: History & Liturgy | ✅ Complete | WSC Q1-107, age progressions, history stories |
+| **Phase 2.6: Unified Architecture** | 🎯 Next Up | Fresh DB, API consolidation, unified FormationCard |
 | Phase 3: Graduated Independence | ⏸️ Paused | Coach Chat, AI Explanations |
 | Phase 4: Pace Flexibility | ⏸️ Paused | Pace settings, passion signals |
 | Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |
 | Phase 6: Maturity | ⬜ Not Started | Full independence |
 
-> **Current Focus:** Phase 2.5 (History & Liturgy Foundation) for Gemini 3 Hackathon submission.
+> **Current Focus:** Phase 2.6 (Unified Architecture Migration) - See `docs/architecture_comparison.md` for full plan.
 
 ---
 

@@ -349,7 +349,7 @@ export interface ReadingSession {
 // Daily Liturgy System
 // ============================================
 
-export type LiturgyType = 'catechism' | 'hymn' | 'scripture';
+export type LiturgyType = 'catechism' | 'hymn' | 'scripture' | 'history';
 
 export interface LiturgyItem {
   id: string;
@@ -388,13 +388,15 @@ export interface LiturgyTodayResponse {
 export const LITURGY_TYPE_LABELS: Record<LiturgyType, string> = {
   catechism: 'Catechism',
   hymn: 'Hymn of the Week',
-  scripture: 'Memory Verse'
+  scripture: 'Memory Verse',
+  history: 'History Story'
 };
 
 export const LITURGY_TYPE_ICONS: Record<LiturgyType, string> = {
   catechism: 'BookBookmark',
   hymn: 'MusicNotes',
-  scripture: 'Scroll'
+  scripture: 'Scroll',
+  history: 'Hourglass'
 };
 
 // ============================================
