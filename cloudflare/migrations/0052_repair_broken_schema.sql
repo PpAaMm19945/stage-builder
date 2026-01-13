@@ -4,11 +4,12 @@
 -- 1. Rename tables if they haven't been renamed (fixing commented-out 0038)
 -- Note: If 0038 already renamed them, this will fail. BUT this is a corrective migration.
 -- We assume the user is in the "broken" state where 0038 ran but did nothing.
-ALTER TABLE activities RENAME TO legacy_activities;
-ALTER TABLE observations RENAME TO legacy_observations;
-ALTER TABLE liturgy_items RENAME TO legacy_liturgy_items;
-ALTER TABLE daily_recommendations RENAME TO legacy_daily_recommendations;
-ALTER TABLE family_liturgy_settings RENAME TO legacy_family_liturgy_settings;
+-- PATCH: These lines are commented out because 'legacy_activities' already exists.
+-- ALTER TABLE activities RENAME TO legacy_activities;
+-- ALTER TABLE observations RENAME TO legacy_observations;
+-- ALTER TABLE liturgy_items RENAME TO legacy_liturgy_items;
+-- ALTER TABLE daily_recommendations RENAME TO legacy_daily_recommendations;
+-- ALTER TABLE family_liturgy_settings RENAME TO legacy_family_liturgy_settings;
 
 -- 2. Add missing columns to formations (that were missed in 0038)
 ALTER TABLE formations ADD COLUMN duration_minutes INTEGER DEFAULT 15;
@@ -28,24 +29,17 @@ ALTER TABLE formations ADD COLUMN cluster_tag TEXT;
 ALTER TABLE formations ADD COLUMN primary_tier TEXT;
 
 -- 3. Populate existing rows (Backfill)
--- This covers rows that might have been inserted by a partial 0038 run but are missing the new columns.
+-- PATCHED: Only selecting columns that actually exist in legacy_activities (id, title, desc, domain, min/max age, duration, materials, instructions, outcomes, difficulty)
 UPDATE formations
 SET
   duration_minutes = (SELECT duration_minutes FROM legacy_activities WHERE legacy_activities.id = formations.id),
   materials = (SELECT materials FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  mess_level = (SELECT mess_level FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  uses_core_kit = (SELECT uses_core_kit FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  tiered_expectations = (SELECT tiered_expectations FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  activity_type = (SELECT activity_type FROM legacy_activities WHERE legacy_activities.id = formations.id),
   learning_outcomes = (SELECT learning_outcomes FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  success_indicators = (SELECT success_indicators FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  tips = (SELECT tips FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  safety_note = (SELECT safety_note FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  success_cue = (SELECT success_cue FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  content_status = (SELECT content_status FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  is_archived = (SELECT is_archived FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  cluster_tag = (SELECT cluster_tag FROM legacy_activities WHERE legacy_activities.id = formations.id),
-  primary_tier = (SELECT primary_tier FROM legacy_activities WHERE legacy_activities.id = formations.id)
+  -- Defaults for columns missing in legacy
+  mess_level = 'low',
+  uses_core_kit = 0,
+  is_archived = 0,
+  content_status = 'published'
 WHERE EXISTS (SELECT 1 FROM legacy_activities WHERE legacy_activities.id = formations.id);
 
 -- 4. Apply Defaults to existing rows
@@ -57,7 +51,7 @@ UPDATE formations SET primary_tier = 'participant' WHERE primary_tier IS NULL AN
 UPDATE formations SET primary_tier = 'leader' WHERE primary_tier IS NULL AND min_age_months > 36;
 
 -- 5. Insert missing rows (with full data)
--- This covers rows that 0038 failed to insert. We include ALL columns here to ensure they are fully populated.
+-- PATCHED: Using defaults for columns that don't exist in legacy_activities
 
 -- Cognitive/Pre-academic -> Wisdom / Reason
 INSERT OR IGNORE INTO formations (
@@ -66,10 +60,10 @@ INSERT OR IGNORE INTO formations (
 )
 SELECT
   id, title, 'skill', 'Wisdom', 'Reason',
-  description, instructions,
+  description, instructions, -- instructions maps to guide_steps
   'Approach this not as a test, but as a discovery of God''s world. Wonder with them.',
-  'Anytime', min_age_months, max_age_months, cultural_notes,
-  duration_minutes, materials, mess_level, uses_core_kit, tiered_expectations, activity_type, learning_outcomes, success_indicators, tips, safety_note, success_cue, content_status, is_archived, cluster_tag, primary_tier
+  'Anytime', min_age_months, max_age_months, NULL,
+  duration_minutes, materials, 'low', 0, NULL, 'guided', learning_outcomes, NULL, NULL, NULL, NULL, 'published', 0, NULL, NULL
 FROM legacy_activities WHERE domain IN ('cognitive', 'pre-academic');
 
 -- Motor -> Stewardship / Will
@@ -81,8 +75,8 @@ SELECT
   id, title, 'skill', 'Stewardship', 'Will',
   description, instructions,
   'Celebrate the strength and ability God has given them. Encourage effort over perfection.',
-  'Anytime', min_age_months, max_age_months, cultural_notes,
-  duration_minutes, materials, mess_level, uses_core_kit, tiered_expectations, activity_type, learning_outcomes, success_indicators, tips, safety_note, success_cue, content_status, is_archived, cluster_tag, primary_tier
+  'Anytime', min_age_months, max_age_months, NULL,
+  duration_minutes, materials, 'low', 0, NULL, 'guided', learning_outcomes, NULL, NULL, NULL, NULL, 'published', 0, NULL, NULL
 FROM legacy_activities WHERE domain = 'motor';
 
 -- Social-Emotional -> Love / Conscience
@@ -94,8 +88,8 @@ SELECT
   id, title, 'habit', 'Love', 'Conscience',
   description, instructions,
   'Model the gentleness you wish to see. Connection before correction.',
-  'Anytime', min_age_months, max_age_months, cultural_notes,
-  duration_minutes, materials, mess_level, uses_core_kit, tiered_expectations, activity_type, learning_outcomes, success_indicators, tips, safety_note, success_cue, content_status, is_archived, cluster_tag, primary_tier
+  'Anytime', min_age_months, max_age_months, NULL,
+  duration_minutes, materials, 'low', 0, NULL, 'guided', learning_outcomes, NULL, NULL, NULL, NULL, 'published', 0, NULL, NULL
 FROM legacy_activities WHERE domain = 'social-emotional';
 
 -- Spiritual/Language -> Wisdom / Affection
@@ -107,8 +101,8 @@ SELECT
   id, title, 'liturgy', 'Wisdom', 'Affection',
   description, instructions,
   'Let the words dwell richly. Do not rush the silence.',
-  'Morning_Circle', min_age_months, max_age_months, cultural_notes,
-  duration_minutes, materials, mess_level, uses_core_kit, tiered_expectations, activity_type, learning_outcomes, success_indicators, tips, safety_note, success_cue, content_status, is_archived, cluster_tag, primary_tier
+  'Morning_Circle', min_age_months, max_age_months, NULL,
+  duration_minutes, materials, 'low', 0, NULL, 'guided', learning_outcomes, NULL, NULL, NULL, NULL, 'published', 0, NULL, NULL
 FROM legacy_activities WHERE domain IN ('spiritual', 'language');
 
 -- Liturgy Items
