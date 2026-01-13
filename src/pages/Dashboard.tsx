@@ -293,24 +293,27 @@ export default function Dashboard() {
   // 2. Family Sessions
   if (dayData.familySessions) {
     dayData.familySessions.forEach((session: any, index: number) => {
+      const activity = session.formation || session.activity;
+      if (!activity) return;
+
       let time = '09:00';
       if (session.timeSlot === 'afternoon') time = '14:00';
 
       const isCompleted = session.isCompleted ||
-        (weeklyPlanData?.completions && weeklyPlanData.completions[session.activity.id]);
+        (weeklyPlanData?.completions && weeklyPlanData.completions[activity.id]);
 
       // Determine context anchor
-      const context = session.activity.context_anchor ||
-        (session.activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
+      const context = activity.context_anchor ||
+        (activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
 
       rawItems.push({
         id: `session-${index}`,
         timeSlot: time,
-        title: session.activity.title,
-        description: session.activity.description,
+        title: activity.title,
+        description: activity.description,
         type: 'activity',
         status: isCompleted ? 'completed' : 'upcoming',
-        data: { ...session.activity, context_anchor: context }
+        data: { ...activity, context_anchor: context }
       });
     });
   }
@@ -439,7 +442,7 @@ export default function Dashboard() {
                   date: new Date().toLocaleDateString(),
                   dayName: format(new Date(), 'EEEE'),
                   liturgy: liturgyData?.items || [],
-                  activities: dayData.familySessions?.map((s: any) => s.activity) || [],
+                  activities: dayData.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [],
                   reading: todaysBook || undefined
                 }}
                 children={dayData.children}
