@@ -983,7 +983,7 @@ app.get('/api/formations', async (c) => {
   const context = c.req.query('context');
   const limit = c.req.query('limit') || '50';
 
-  let query = "SELECT * FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (archived = 0 OR archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL) AND (deprecated = 0 OR deprecated IS NULL)";
+  let query = "SELECT * FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)";
   const params: any[] = [];
 
   if (virtue) {
@@ -2285,9 +2285,7 @@ app.post('/api/family/swap', async (c) => {
         AND tiered_expectations IS NOT NULL
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
-        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
-        AND (deprecated = 0 OR deprecated IS NULL)
       ORDER BY uses_core_kit DESC, RANDOM()
       LIMIT 5
     `).bind(activityId, youngestAge, oldestAge).all();
@@ -2384,9 +2382,7 @@ app.post('/family-sessions/compose', async (c) => {
         AND tiered_expectations IS NOT NULL
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
-        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
-        AND (deprecated = 0 OR deprecated IS NULL)
     `;
 
     const params: any[] = [minAge, maxAge];
@@ -3990,9 +3986,7 @@ app.get('/api/family/weekly-plan', async (c) => {
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
-        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
-        AND (deprecated = 0 OR deprecated IS NULL)
     `).bind(oldestAge, youngestAge).all();
 
     // Parse materials
@@ -4110,9 +4104,7 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
       WHERE min_age_months <= ? AND max_age_months >= ?
         AND is_active = 1
         AND (is_archived = 0 OR is_archived IS NULL)
-        AND (archived = 0 OR archived IS NULL)
         AND (content_status != 'blacklisted' OR content_status IS NULL)
-        AND (deprecated = 0 OR deprecated IS NULL)
     `).bind(oldestAge, youngestAge).all();
 
     // Parse materials
@@ -5429,7 +5421,7 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     // Activities (fetch relevant ones)
     // We assume is_active=1. Also handle archived flags if present
     const { results: activities } = await c.env.DB.prepare(
-      "SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)"
+      "SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)"
     ).bind().all();
 
     // Parse timeModel
@@ -5531,7 +5523,7 @@ app.post('/api/rhythm/readjust', async (c) => {
     // ... Fetch data again for regeneration (can be optimized but safe way)
     const { results: children } = await c.env.DB.prepare('SELECT * FROM students WHERE parent_id = ?').bind(user.id).all();
     const { results: overrides } = await c.env.DB.prepare('SELECT * FROM overrides WHERE parent_id = ? AND is_active = 1').bind(user.id).all();
-    const { results: activities } = await c.env.DB.prepare("SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL)").bind().all();
+    const { results: activities } = await c.env.DB.prepare("SELECT id, title, primary_virtue as domain, min_age_months, max_age_months, duration_minutes, materials, context_anchor as cluster_tag, mess_level, formation_type as activity_type, primary_tier FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)").bind().all();
     const activitiesMapped = activities.map((a: any) => ({
       ...a,
       materials: JSON.parse(a.materials || '[]'),
