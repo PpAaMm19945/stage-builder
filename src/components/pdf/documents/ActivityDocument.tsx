@@ -95,6 +95,19 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
     const instructions = activity.guide_steps || activity.instructions || [];
     const parentScript = activity.parent_posture || activity.parent_script;
 
+    // Safely handle learning_outcomes which might be a JSON string or array
+    let outcomes: string[] = [];
+    if (Array.isArray(activity.learning_outcomes)) {
+        outcomes = activity.learning_outcomes;
+    } else if (typeof activity.learning_outcomes === 'string') {
+        try {
+            outcomes = JSON.parse(activity.learning_outcomes);
+        } catch (e) {
+            console.error('Failed to parse learning_outcomes:', e);
+            outcomes = [];
+        }
+    }
+
     return (
     <Document title={activity.title} author="SchoolOS">
         <Page size="A4" style={styles.page}>
@@ -150,10 +163,10 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
             )}
 
             {/* Success Indicators */}
-            {activity.learning_outcomes && activity.learning_outcomes.length > 0 && (
+            {outcomes && outcomes.length > 0 && (
                 <View style={[styles.section, { marginTop: 20 }]}>
                     <Text style={[styles.sectionTitle, { fontSize: 12 }]}>What to Look For</Text>
-                    {activity.learning_outcomes.map((item, i) => (
+                    {outcomes.map((item, i) => (
                         <View key={i} style={styles.listItem}>
                             <Text style={styles.bullet}>✓</Text>
                             <Text style={[styles.listContent, { color: '#555' }]}>{item}</Text>

@@ -746,73 +746,82 @@ app.get('/api/notifications', async (c) => {
     const notifications = [];
     const today = new Date().toISOString().split('T')[0];
 
-    // 1. Milestone Triggers (Simplified: Count completions per virtue)
-    const { results: virtueCounts } = await c.env.DB.prepare(`
-      SELECT f.primary_virtue as virtue, COUNT(*) as count
-      FROM evidences e
-      JOIN formations f ON e.formation_id = f.id
-      WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
-      GROUP BY f.primary_virtue
-      HAVING count >= 5
-    `).bind(user.id).all();
+    try {
+      // 1. Milestone Triggers (Simplified: Count completions per virtue)
+      const { results: virtueCounts } = await c.env.DB.prepare(`
+        SELECT f.primary_virtue as virtue, COUNT(*) as count
+        FROM evidences e
+        JOIN formations f ON e.formation_id = f.id
+        WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+        GROUP BY f.primary_virtue
+        HAVING count >= 5
+      `).bind(user.id).all();
 
-    virtueCounts.forEach((v: any) => {
-      // Logic to determine if this is a "new" milestone could be complex
-      // For now, we just show "Milestone" if count is a multiple of 10
-      if (v.count % 10 === 0 && v.count > 0) {
-        notifications.push({
-          id: `milestone-${v.virtue}-${v.count}`,
-          type: 'milestone',
-          title: `Milestone Unlocked!`,
-          message: `Your family has completed ${v.count} formations in the virtue of ${v.virtue}!`,
-          date: today
-        });
-      }
-    });
-
-    // 2. Coverage Alerts (2+ weeks without virtue)
-    // Simplified: Check distinct virtues in last 14 days
-    const { results: recentVirtues } = await c.env.DB.prepare(`
-      SELECT DISTINCT f.primary_virtue as virtue
-      FROM evidences e
-      JOIN formations f ON e.formation_id = f.id
-      WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
-      AND e.created_at > datetime('now', '-14 days')
-    `).bind(user.id).all();
-
-    const recentVirtueSet = new Set(recentVirtues.map((r: any) => r.virtue));
-    const allVirtues = ['Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder'];
-
-    // Only alert if we have SOME evidence but missing a virtue (avoid alerting new users with 0 evidence)
-    if (recentVirtues.length > 0) {
-      const missing = allVirtues.find(v => !recentVirtueSet.has(v));
-      if (missing) {
-        notifications.push({
-          id: `alert-missing-${missing}`,
-          type: 'alert',
-          title: 'Coverage Alert',
-          message: `You haven't focused on the virtue of ${missing} recently.`,
-          date: today
-        });
-      }
+      virtueCounts.forEach((v: any) => {
+        // Logic to determine if this is a "new" milestone could be complex
+        // For now, we just show "Milestone" if count is a multiple of 10
+        if (v.count % 10 === 0 && v.count > 0) {
+          notifications.push({
+            id: `milestone-${v.virtue}-${v.count}`,
+            type: 'milestone',
+            title: `Milestone Unlocked!`,
+            message: `Your family has completed ${v.count} formations in the virtue of ${v.virtue}!`,
+            date: today
+          });
+        }
+      });
+    } catch (e: any) {
+      console.error('Milestone notification error:', e);
     }
 
-    // 3. Encouragement (Weekly Balance)
-    // If > 3 virtues covered this week
-    if (recentVirtues.length >= 3) {
-      notifications.push({
-        id: `enc-balance-${today}`,
-        type: 'encouragement',
-        title: 'Great Balance!',
-        message: 'You are cultivating a wide range of virtues this week.',
-        date: today
-      });
+    try {
+      // 2. Coverage Alerts (2+ weeks without virtue)
+      // Simplified: Check distinct virtues in last 14 days
+      const { results: recentVirtues } = await c.env.DB.prepare(`
+        SELECT DISTINCT f.primary_virtue as virtue
+        FROM evidences e
+        JOIN formations f ON e.formation_id = f.id
+        WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+        AND e.created_at > datetime('now', '-14 days')
+      `).bind(user.id).all();
+
+      const recentVirtueSet = new Set(recentVirtues.map((r: any) => r.virtue));
+      const allVirtues = ['Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder'];
+
+      // Only alert if we have SOME evidence but missing a virtue (avoid alerting new users with 0 evidence)
+      if (recentVirtues.length > 0) {
+        const missing = allVirtues.find(v => !recentVirtueSet.has(v));
+        if (missing) {
+          notifications.push({
+            id: `alert-missing-${missing}`,
+            type: 'alert',
+            title: 'Coverage Alert',
+            message: `You haven't focused on the virtue of ${missing} recently.`,
+            date: today
+          });
+        }
+      }
+
+      // 3. Encouragement (Weekly Balance)
+      // If > 3 virtues covered this week
+      if (recentVirtues.length >= 3) {
+        notifications.push({
+          id: `enc-balance-${today}`,
+          type: 'encouragement',
+          title: 'Great Balance!',
+          message: 'You are cultivating a wide range of virtues this week.',
+          date: today
+        });
+      }
+    } catch (e: any) {
+      console.error('Coverage/Balance notification error:', e);
     }
 
     // Limit to 2 for the UI stack
     return c.json(notifications.slice(0, 2));
 
   } catch (error: any) {
+    console.error('Notifications API error:', error);
     return c.json({ error: error.message }, 500);
   }
 });
@@ -1009,6 +1018,7 @@ app.get('/api/formations', async (c) => {
     ...f,
     materials: JSON.parse(f.materials || '[]'),
     guide_steps: JSON.parse(f.guide_steps || '[]'),
+    learning_outcomes: JSON.parse(f.learning_outcomes || '[]'),
     success_indicators: JSON.parse(f.success_indicators || '[]'),
     tips: JSON.parse(f.tips || '[]'),
     tiered_expectations: JSON.parse(f.tiered_expectations || '[]')
@@ -1032,6 +1042,7 @@ app.get('/api/formations/:id', async (c) => {
     ...formation,
     materials: JSON.parse((formation as any).materials || '[]'),
     guide_steps: JSON.parse((formation as any).guide_steps || '[]'),
+    learning_outcomes: JSON.parse((formation as any).learning_outcomes || '[]'),
     success_indicators: JSON.parse((formation as any).success_indicators || '[]'),
     tips: JSON.parse((formation as any).tips || '[]'),
     tiered_expectations: JSON.parse((formation as any).tiered_expectations || '[]')
