@@ -115,30 +115,49 @@ async function prefetchActivityHistory(db: D1Database, parentId: string): Promis
     const historyMap = new Map<string, ActivityHistorySummary>();
 
     // 1. Fetch Evidences (New)
-    const { results: evidences } = await db.prepare(`
-        SELECT e.formation_id as activity_id, e.created_at as completed_at, e.stage as mastery_level
-        FROM evidences e
-        JOIN students s ON e.student_id = s.id
-        WHERE s.parent_id = ?
-        ORDER BY e.created_at DESC
-    `).bind(parentId).all();
+    let evidences: any[] = [];
+    try {
+        const result = await db.prepare(`
+            SELECT e.formation_id as activity_id, e.created_at as completed_at, e.stage as mastery_level
+            FROM evidences e
+            JOIN students s ON e.student_id = s.id
+            WHERE s.parent_id = ?
+            ORDER BY e.created_at DESC
+        `).bind(parentId).all();
+        evidences = result.results || [];
+    } catch (e) {
+        console.warn('Failed to fetch evidences', e);
+    }
 
     // 2. Fetch Legacy Observations (Old)
-    const { results: observations } = await db.prepare(`
-        SELECT o.activity_id, o.completed_at, o.mastery_level
-        FROM legacy_observations o
-        JOIN students s ON o.student_id = s.id
-        WHERE s.parent_id = ?
-        ORDER BY o.completed_at DESC
-    `).bind(parentId).all();
+    let observations: any[] = [];
+    try {
+        const result = await db.prepare(`
+            SELECT o.activity_id, o.completed_at, o.mastery_level
+            FROM legacy_observations o
+            JOIN students s ON o.student_id = s.id
+            WHERE s.parent_id = ?
+            ORDER BY o.completed_at DESC
+        `).bind(parentId).all();
+        observations = result.results || [];
+    } catch (e) {
+        // Fallback for missing table
+        console.warn('Failed to fetch legacy_observations', e);
+    }
 
     // 3. Fetch Completions (Legacy)
-    const { results: completions } = await db.prepare(`
-        SELECT activity_id, completed_at
-        FROM activity_completions
-        WHERE parent_id = ?
-        ORDER BY completed_at DESC
-    `).bind(parentId).all();
+    let completions: any[] = [];
+    try {
+        const result = await db.prepare(`
+            SELECT activity_id, completed_at
+            FROM activity_completions
+            WHERE parent_id = ?
+            ORDER BY completed_at DESC
+        `).bind(parentId).all();
+        completions = result.results || [];
+    } catch (e) {
+        console.warn('Failed to fetch activity_completions', e);
+    }
 
     // 4. Process and Merge
     // We want a list of events per activity, sorted by date DESC
@@ -381,14 +400,18 @@ export async function generateWeeklyPlan(
     const childIds = children.map(c => c.id);
     const passionDomains = new Set<string>();
     if (childIds.length > 0) {
-        const placeholders = childIds.map(() => '?').join(',');
-        const { results: passionSignals } = await db.prepare(`
-            SELECT DISTINCT domain FROM passion_signals 
-            WHERE student_id IN (${placeholders}) 
-            AND created_at > datetime('now', '-30 days')
-        `).bind(...childIds).all();
+        try {
+            const placeholders = childIds.map(() => '?').join(',');
+            const { results: passionSignals } = await db.prepare(`
+                SELECT DISTINCT domain FROM passion_signals
+                WHERE student_id IN (${placeholders})
+                AND created_at > datetime('now', '-30 days')
+            `).bind(...childIds).all();
 
-        passionSignals.forEach((ps: any) => passionDomains.add(ps.domain));
+            passionSignals.forEach((ps: any) => passionDomains.add(ps.domain));
+        } catch (e) {
+            console.warn('Failed to fetch passion_signals', e);
+        }
     }
 
     // PHASE 4: Get learning focus preference

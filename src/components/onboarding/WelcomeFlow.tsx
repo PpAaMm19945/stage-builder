@@ -403,8 +403,17 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
         },
     ];
 
+    const handleOpenChange = (isOpen: boolean) => {
+        setOpen(isOpen);
+        if (!isOpen) {
+            // If closed (e.g. by X button or clicking outside), mark as complete/skipped
+            // to avoid persistent annoyance
+            localStorage.setItem(ONBOARDING_COMPLETE_KEY, 'true');
+        }
+    };
+
     return (
-        <Dialog open={open} onOpenChange={setOpen}>
+        <Dialog open={open} onOpenChange={handleOpenChange}>
             <DialogContent className="sm:max-w-lg">
                 <DialogHeader className="sr-only">
                     <DialogTitle>Onboarding</DialogTitle>
