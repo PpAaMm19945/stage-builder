@@ -4704,7 +4704,9 @@ app.put('/api/portfolio/upload-handler', async (c) => {
     const user = requireAuth(c);
     const key = c.req.query('key');
 
-    if (!key || !key.startsWith(user.id)) {
+    // Security: Ensure key belongs to user and prevent prefix collisions
+    // Key format: {userId}/{timestamp}-{filename}
+    if (!key || !key.startsWith(user.id + '/')) {
       return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
 
@@ -4836,8 +4838,10 @@ app.get('/api/portfolio/file/:key', async (c) => {
 
     // Check ownership by ensuring the key contains the user ID (part of the path strategy)
     // The key structure we defined is `portfolio/USER_ID/filename`
-    // So we check if key contains user.id
-    if (!key.includes(user.id)) {
+    // Security: We explicitly check the path structure to prevent IDOR via prefix collisions.
+    // The key MUST start with `portfolio/{userId}/`
+    const expectedPrefix = `portfolio/${user.id}/`;
+    if (!key.startsWith(expectedPrefix)) {
       return c.json({ error: 'Unauthorized access to file' }, 403);
     }
 
