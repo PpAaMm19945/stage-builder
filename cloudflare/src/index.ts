@@ -76,16 +76,22 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// Security helper: Constant-time comparison to prevent timing attacks
-function safeCompare(a: string | undefined | null, b: string | undefined | null): boolean {
-  if (!a || !b || a.length !== b.length) {
+// Security helper: Constant-time comparison using Web Crypto to prevent timing attacks
+async function safeCompare(a: string | undefined | null, b: string | undefined | null): Promise<boolean> {
+  if (!a || !b) {
     return false;
   }
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
+
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a);
+  const bBuf = encoder.encode(b);
+
+  // Use SHA-256 to hash inputs to fixed length, preventing length leaks
+  const aHash = await crypto.subtle.digest('SHA-256', aBuf);
+  const bHash = await crypto.subtle.digest('SHA-256', bBuf);
+
+  // Compare hashes in constant time
+  return crypto.subtle.timingSafeEqual(aHash, bHash);
 }
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
@@ -112,7 +118,7 @@ app.get('/', async (c) => {
   }
 
   // Use constant-time comparison
-  if (!safeCompare(key, secret)) {
+  if (!(await safeCompare(key, secret))) {
     return c.html(`
       <html>
         <head><title>Unauthorized</title><style>body{background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}</style></head>
@@ -3180,7 +3186,7 @@ app.put('/api/books/upload', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3201,7 +3207,7 @@ app.get('/api/debug/r2', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3230,7 +3236,7 @@ app.get('/api/debug/books/audit', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
