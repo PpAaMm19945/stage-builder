@@ -1,3 +1,4 @@
+import { memo } from 'react';
 import { RhythmItem } from '@/components/planning/DailyRhythm';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -19,7 +20,7 @@ interface UpNextCardProps {
     pendingCount: number;
 }
 
-export function UpNextCard({ item, onAction, onExpand, pendingCount }: UpNextCardProps) {
+export const UpNextCard = memo(function UpNextCard({ item, onAction, onExpand, pendingCount }: UpNextCardProps) {
     if (!item) {
         return (
             <Card className="bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/20 dark:to-background border-indigo-100 dark:border-indigo-900 shadow-sm">
@@ -117,4 +118,4 @@ export function UpNextCard({ item, onAction, onExpand, pendingCount }: UpNextCar
             </CardFooter>
         </Card>
     );
-}
+});

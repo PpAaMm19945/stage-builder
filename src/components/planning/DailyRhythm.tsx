@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import {
     Sheet,
     SheetContent,
@@ -42,7 +42,7 @@ interface DailyRhythmProps {
     onSwap?: (item: RhythmItem) => void;
 }
 
-export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: DailyRhythmProps) {
+export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: DailyRhythmProps) {
     const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
 
     const timelineItems = items.length > 0 ? items : [];
@@ -269,4 +269,4 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
             </Sheet>
         </div>
     );
-}
+});
