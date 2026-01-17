@@ -4834,10 +4834,11 @@ app.get('/api/portfolio/file/:key', async (c) => {
     const user = requireAuth(c);
     const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
 
-    // Check ownership by ensuring the key contains the user ID (part of the path strategy)
-    // The key structure we defined is `portfolio/USER_ID/filename`
-    // So we check if key contains user.id
-    if (!key.includes(user.id)) {
+    // Check ownership by ensuring the key starts with the user's portfolio path
+    // The key structure is `portfolio/USER_ID/filename`
+    // This prevents IDOR where a user could access another's file if the filename contained their ID
+    const expectedPrefix = `portfolio/${user.id}/`;
+    if (!key.startsWith(expectedPrefix)) {
       return c.json({ error: 'Unauthorized access to file' }, 403);
     }
 
