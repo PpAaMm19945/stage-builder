@@ -4986,7 +4986,15 @@ app.put('/api/portfolio/upload-handler', async (c) => {
       return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
 
-    const body = await c.req.arrayBuffer();
+    // Security: Enforce file size limit (e.g., 50MB) to prevent DoS/Storage abuse
+    const MAX_SIZE = 50 * 1024 * 1024; // 50MB
+    const contentLength = c.req.header('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_SIZE) {
+      return c.json({ error: 'File too large. Maximum size is 50MB.' }, 413);
+    }
+
+    // Use streaming to prevent memory exhaustion (DoS)
+    const body = c.req.raw.body;
 
     // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
     // Ideally we add PORTFOLIO_BUCKET to Env
