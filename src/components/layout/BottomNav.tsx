@@ -1,4 +1,4 @@
-import { useLocation, useNavigate } from 'react-router-dom';
+import { useLocation, Link } from 'react-router-dom';
 import { House, Books, TrendUp, SlidersHorizontal } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -11,7 +11,6 @@ const navItems = [
 
 export function BottomNav() {
     const location = useLocation();
-    const navigate = useNavigate();
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden pb-safe">
@@ -21,9 +20,9 @@ export function BottomNav() {
                         (item.path !== '/' && location.pathname.startsWith(item.path.split('#')[0]));
 
                     return (
-                        <button
+                        <Link
                             key={item.path}
-                            onClick={() => navigate(item.path)}
+                            to={item.path}
                             className={cn(
                                 "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
                                 isActive
@@ -33,7 +32,7 @@ export function BottomNav() {
                         >
                             <item.icon className="h-6 w-6" weight={isActive ? "fill" : "duotone"} />
                             <span className="text-xs font-medium">{item.label}</span>
-                        </button>
+                        </Link>
                     );
                 })}
             </div>
