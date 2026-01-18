@@ -691,7 +691,7 @@ app.get('/api/export/transcript/:studentId', async (c) => {
 
   c.header('Content-Type', 'application/pdf');
   c.header('Content-Disposition', `attachment; filename="${student.name}_Transcript.pdf"`);
-  return c.body(pdfBytes);
+  return c.body(pdfBytes.buffer as any);
 });
 
 app.get('/api/export/diploma/:studentId', async (c) => {
@@ -707,7 +707,7 @@ app.get('/api/export/diploma/:studentId', async (c) => {
 
   c.header('Content-Type', 'application/pdf');
   c.header('Content-Disposition', `attachment; filename="${student.name}_Diploma.pdf"`);
-  return c.body(pdfBytes);
+  return c.body(pdfBytes.buffer as any);
 });
 
 // ============ DEV BYPASS AUTH (Development Only) ============
@@ -5508,8 +5508,6 @@ app.delete('/api/portfolio/:itemId', async (c) => {
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
-  return c.json({ error: error.message }, 500);
-}
 });
 
 // ============ PHASE 6: DATA ARCHIVE (The Long Goodbye) ============
