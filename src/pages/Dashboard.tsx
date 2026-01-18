@@ -1,4 +1,4 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { family, books, weeklyPlan, activityCompletions, reading, liturgy } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -175,6 +175,156 @@ export default function Dashboard() {
     regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
   };
 
+  // Memoized handlers
+  const handleRhythmComplete = useCallback((item: RhythmItem) => {
+    completeActivityMutation.mutate(item);
+  }, [completeActivityMutation]);
+
+  const handleBookClick = useCallback(() => {
+    setSelectedBook(todaysBook);
+  }, [todaysBook]);
+
+  const handleSwap = useCallback((item: RhythmItem) => {
+    if (item.type === 'activity' && item.data?.id) {
+      setSwapActivity({ id: item.data.id, title: item.title });
+    }
+  }, []);
+
+  // BUILD TIMELINE ITEMS (Moved up before conditional returns)
+  const timelineItems = useMemo(() => {
+    if (!dayData) return []; // Safety check for early returns
+
+    const rawItems: RhythmItem[] = [];
+
+    // 1. Liturgy (Morning)
+    if (isToday) {
+      rawItems.push({
+        id: 'liturgy-morning',
+        timeSlot: '08:00',
+        title: 'Morning Liturgy',
+        description: 'Scripture, hymnal, and catechism.',
+        type: 'liturgy',
+        status: 'upcoming',
+        data: { context_anchor: 'Morning Circle' }
+      });
+    }
+
+    // 2. Family Sessions
+    if (dayData.familySessions) {
+      dayData.familySessions.forEach((session: any, index: number) => {
+        const activity = session.formation || session.activity;
+        if (!activity) return;
+
+        let time = '09:00';
+        if (session.timeSlot === 'afternoon') time = '14:00';
+
+        const isCompleted = session.isCompleted ||
+          (weeklyPlanData?.completions && weeklyPlanData.completions[activity.id]);
+
+        // Determine context anchor
+        const context = activity.context_anchor ||
+          (activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
+
+        rawItems.push({
+          id: `session-${index}`,
+          timeSlot: time,
+          title: activity.title,
+          description: activity.description,
+          type: 'activity',
+          status: isCompleted ? 'completed' : 'upcoming',
+          data: { ...activity, context_anchor: context }
+        });
+      });
+    }
+
+    // 3. Book (Read Aloud)
+    if (isToday && todaysBook) {
+      rawItems.push({
+        id: 'book-reading',
+        timeSlot: '11:00',
+        title: 'Read Aloud Time',
+        description: todaysBook.title,
+        type: 'book',
+        status: 'upcoming',
+        data: { ...todaysBook, context_anchor: 'Morning Circle' }
+      });
+    }
+
+    // 4. Daily Practices
+    if (isToday && dayData.dailyPractices) {
+      dayData.dailyPractices.forEach((practice: any, index: number) => {
+        rawItems.push({
+          id: `practice-${index}`,
+          timeSlot: '18:00',
+          title: practice.title,
+          description: practice.description,
+          type: 'activity',
+          status: 'upcoming',
+          data: { ...practice, context_anchor: 'Walk By The Way' }
+        });
+      });
+    }
+
+    // Sort raw items by time first to ensure order within groups
+    rawItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
+
+    // Group by Context Anchor
+    const groups: Record<string, RhythmItem[]> = {
+      'Morning Circle': [],
+      'Table Fellowship': [],
+      'Walk By The Way': [],
+      'Other': []
+    };
+
+    rawItems.forEach(item => {
+      const context = item.data?.context_anchor;
+      if (context && groups[context]) {
+        groups[context].push(item);
+      } else if (context) {
+        // Handle custom contexts dynamically if needed, or fallback
+        if (!groups[context]) groups[context] = [];
+        groups[context].push(item);
+      } else {
+        // Fallback mapping based on type
+        if (item.type === 'liturgy' || item.type === 'book') groups['Morning Circle'].push(item);
+        else if (item.type === 'activity') groups['Table Fellowship'].push(item); // Default for sessions
+        else groups['Walk By The Way'].push(item);
+      }
+    });
+
+    // Flatten into timelineItems with Headers
+    const flattenedItems: RhythmItem[] = [];
+    const orderedContexts = ['Morning Circle', 'Table Fellowship', 'Walk By The Way'];
+
+    // Add any custom contexts found
+    Object.keys(groups).forEach(k => {
+      if (!orderedContexts.includes(k) && k !== 'Other') orderedContexts.push(k);
+    });
+    orderedContexts.push('Other');
+
+    orderedContexts.forEach(context => {
+      const items = groups[context];
+      if (items && items.length > 0) {
+        // Add Header
+        flattenedItems.push({
+          id: `header-${context}`,
+          timeSlot: 'Header',
+          title: context,
+          type: 'section_header',
+          status: 'upcoming' // not used for header
+        });
+        // Add Items
+        items.forEach(item => flattenedItems.push(item));
+      }
+    });
+
+    return flattenedItems;
+  }, [isToday, dayData, weeklyPlanData, todaysBook]);
+
+  const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed') || null, [timelineItems]);
+  const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed').length, [timelineItems]);
+
+
   // Loading State
   // Loading State - only show full spinner on initial load (no cached data)
   if (dayLoading && !dayData) {
@@ -273,134 +423,6 @@ export default function Dashboard() {
       </div>
     );
   }
-
-  // BUILD TIMELINE ITEMS
-  const rawItems: RhythmItem[] = [];
-
-  // 1. Liturgy (Morning)
-  if (isToday) {
-    rawItems.push({
-      id: 'liturgy-morning',
-      timeSlot: '08:00',
-      title: 'Morning Liturgy',
-      description: 'Scripture, hymnal, and catechism.',
-      type: 'liturgy',
-      status: 'upcoming',
-      data: { context_anchor: 'Morning Circle' }
-    });
-  }
-
-  // 2. Family Sessions
-  if (dayData.familySessions) {
-    dayData.familySessions.forEach((session: any, index: number) => {
-      const activity = session.formation || session.activity;
-      if (!activity) return;
-
-      let time = '09:00';
-      if (session.timeSlot === 'afternoon') time = '14:00';
-
-      const isCompleted = session.isCompleted ||
-        (weeklyPlanData?.completions && weeklyPlanData.completions[activity.id]);
-
-      // Determine context anchor
-      const context = activity.context_anchor ||
-        (activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
-
-      rawItems.push({
-        id: `session-${index}`,
-        timeSlot: time,
-        title: activity.title,
-        description: activity.description,
-        type: 'activity',
-        status: isCompleted ? 'completed' : 'upcoming',
-        data: { ...activity, context_anchor: context }
-      });
-    });
-  }
-
-  // 3. Book (Read Aloud)
-  if (isToday && todaysBook) {
-    rawItems.push({
-      id: 'book-reading',
-      timeSlot: '11:00',
-      title: 'Read Aloud Time',
-      description: todaysBook.title,
-      type: 'book',
-      status: 'upcoming',
-      data: { ...todaysBook, context_anchor: 'Morning Circle' }
-    });
-  }
-
-  // 4. Daily Practices
-  if (isToday && dayData.dailyPractices) {
-    dayData.dailyPractices.forEach((practice: any, index: number) => {
-      rawItems.push({
-        id: `practice-${index}`,
-        timeSlot: '18:00',
-        title: practice.title,
-        description: practice.description,
-        type: 'activity',
-        status: 'upcoming',
-        data: { ...practice, context_anchor: 'Walk By The Way' }
-      });
-    });
-  }
-
-  // Sort raw items by time first to ensure order within groups
-  rawItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-
-  // Group by Context Anchor
-  const groups: Record<string, RhythmItem[]> = {
-    'Morning Circle': [],
-    'Table Fellowship': [],
-    'Walk By The Way': [],
-    'Other': []
-  };
-
-  rawItems.forEach(item => {
-    const context = item.data?.context_anchor;
-    if (context && groups[context]) {
-      groups[context].push(item);
-    } else if (context) {
-      // Handle custom contexts dynamically if needed, or fallback
-      if (!groups[context]) groups[context] = [];
-      groups[context].push(item);
-    } else {
-      // Fallback mapping based on type
-      if (item.type === 'liturgy' || item.type === 'book') groups['Morning Circle'].push(item);
-      else if (item.type === 'activity') groups['Table Fellowship'].push(item); // Default for sessions
-      else groups['Walk By The Way'].push(item);
-    }
-  });
-
-  // Flatten into timelineItems with Headers
-  const timelineItems: RhythmItem[] = [];
-  const orderedContexts = ['Morning Circle', 'Table Fellowship', 'Walk By The Way'];
-
-  // Add any custom contexts found
-  Object.keys(groups).forEach(k => {
-    if (!orderedContexts.includes(k) && k !== 'Other') orderedContexts.push(k);
-  });
-  orderedContexts.push('Other');
-
-  orderedContexts.forEach(context => {
-    const items = groups[context];
-    if (items && items.length > 0) {
-      // Add Header
-      timelineItems.push({
-        id: `header-${context}`,
-        timeSlot: 'Header',
-        title: context,
-        type: 'section_header',
-        status: 'upcoming' // not used for header
-      });
-      // Add Items
-      items.forEach(item => timelineItems.push(item));
-    }
-  });
-
-  const nextItem = timelineItems.find(i => i.status !== 'completed') || null;
-  const pendingCount = timelineItems.filter(i => i.status !== 'completed').length;
 
   // Build day data for week strip
   const weekDayData = weekSummary?.days || {};
@@ -506,13 +528,9 @@ export default function Dashboard() {
           <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
             <DailyRhythm
               items={timelineItems}
-              onComplete={(item) => completeActivityMutation.mutate(item)}
-              onBookClick={() => setSelectedBook(todaysBook)}
-              onSwap={isToday ? (item) => {
-                if (item.type === 'activity' && item.data?.id) {
-                  setSwapActivity({ id: item.data.id, title: item.title });
-                }
-              } : undefined}
+              onComplete={handleRhythmComplete}
+              onBookClick={handleBookClick}
+              onSwap={isToday ? handleSwap : undefined}
             />
           </div>
         </CollapsibleContent>

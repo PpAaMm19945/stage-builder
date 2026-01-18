@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import {
     Sheet,
     SheetContent,
@@ -10,20 +10,10 @@ import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import {
-    Sun,
-    BookOpen,
-    PersonSimpleRun,
-    ForkKnife,
-    Bed,
-    CheckCircle,
-    Circle,
-    CaretRight,
-    HandsPraying,
-    ArrowsClockwise
-} from '@phosphor-icons/react';
+import { BookOpen } from '@phosphor-icons/react';
 import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
+import { RhythmItemRow, getIcon, getTypeColor } from './RhythmItemRow';
 
 export interface RhythmItem {
     id: string;
@@ -55,138 +45,31 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
         );
     }
 
-    const getIcon = (type: RhythmItem['type']) => {
-        switch (type) {
-            case 'liturgy': return <HandsPraying weight="duotone" />;
-            case 'activity': return <PersonSimpleRun weight="duotone" />;
-            case 'book': return <BookOpen weight="duotone" />;
-            case 'meal': return <ForkKnife weight="duotone" />;
-            case 'outdoor': return <Sun weight="duotone" />;
-            case 'rest': return <Bed weight="duotone" />;
-            case 'section_header': return <Circle weight="duotone" />; // Icon unused for header
-            default: return <Circle weight="duotone" />;
+    const handleSelect = useCallback((item: RhythmItem) => {
+        if (item.type !== 'section_header') {
+            setActiveItem(item);
         }
-    };
+    }, []);
 
-    const getTypeColor = (type: RhythmItem['type']) => {
-        switch (type) {
-            case 'liturgy': return 'text-purple-500 bg-purple-50 dark:bg-purple-900/20 border-purple-100 dark:border-purple-900';
-            case 'activity': return 'text-blue-500 bg-blue-50 dark:bg-blue-900/20 border-blue-100 dark:border-blue-900';
-            case 'book': return 'text-amber-500 bg-amber-50 dark:bg-amber-900/20 border-amber-100 dark:border-amber-900';
-            case 'meal': return 'text-green-500 bg-green-50 dark:bg-green-900/20 border-green-100 dark:border-green-900';
-            default: return 'text-gray-500 bg-gray-50';
-        }
-    };
-
-    const handleComplete = () => {
+    const handleSheetComplete = () => {
         if (activeItem && onComplete) {
             onComplete(activeItem);
             setActiveItem(null);
         }
     };
 
-    const handleQuickComplete = (e: React.MouseEvent, item: RhythmItem) => {
-        e.stopPropagation();
-        if (onComplete && item.status !== 'completed') {
-            onComplete(item);
-        }
-    }
-
-    const handleSwap = (e: React.MouseEvent, item: RhythmItem) => {
-        e.stopPropagation();
-        if (onSwap && item.type === 'activity' && item.status !== 'completed') {
-            onSwap(item);
-        }
-    }
-
     return (
         <div className="space-y-4 relative">
             <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border/50 -z-10" />
 
-            {timelineItems.map((item, index) => (
-                <div
+            {timelineItems.map((item) => (
+                <RhythmItemRow
                     key={item.id}
-                    className={cn("flex gap-4 group", item.type !== 'section_header' ? "cursor-pointer" : "")}
-                    onClick={() => item.type !== 'section_header' && setActiveItem(item)}
-                >
-                    {item.type === 'section_header' ? (
-                        <div className="w-full py-4 flex items-center gap-4">
-                            <div className="w-[54px] flex justify-center shrink-0">
-                                <div className="h-2 w-2 rounded-full bg-primary/20" />
-                            </div>
-                            <h3 className="font-display text-lg font-bold text-primary pt-1">{item.title}</h3>
-                        </div>
-                    ) : (
-                        <>
-                            {/* Time Column */}
-                            <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
-                                <div className={cn(
-                                    "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
-                                    getTypeColor(item.type),
-                                    item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
-                                )}>
-                                    {item.status === 'completed' ? (
-                                        <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
-                                    ) : (
-                                        <>
-                                            {getIcon(item.type)}
-                                            {/* Hover checkmark for quick completion */}
-                                            <div
-                                                className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
-                                                onClick={(e) => handleQuickComplete(e, item)}
-                                                title="Mark complete"
-                                            >
-                                                <CheckCircle className="h-6 w-6 text-green-500" />
-                                            </div>
-                                        </>
-                                    )}
-                                </div>
-                            </div>
-
-                            {/* Content Card */}
-                            <Card className={cn(
-                                "flex-1 p-4 hover:shadow-md transition-all border-l-4",
-                                item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
-                            )}>
-                                {item.status === 'completed' && (
-                                    <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
-                                        <CheckCircle weight="fill" className="h-5 w-5" />
-                                    </div>
-                                )}
-                                <div className="flex justify-between items-start">
-                                    <div>
-                                        <div className="flex items-center gap-2 mb-1">
-                                            {item.timeSlot && item.timeSlot !== 'Header' && (
-                                                <span className="text-xs font-semibold text-muted-foreground bg-muted px-1.5 py-0.5 rounded">
-                                                    {item.timeSlot}
-                                                </span>
-                                            )}
-                                            <h4 className={cn("font-semibold", item.status === 'completed' && "line-through decoration-slate-400")}>
-                                                {item.title}
-                                            </h4>
-                                        </div>
-                                        <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
-                                    </div>
-                                    <div className="flex items-center gap-1">
-                                        {/* Swap button for activities */}
-                                        {onSwap && item.type === 'activity' && item.status !== 'completed' && (
-                                            <Button
-                                                variant="ghost"
-                                                size="icon"
-                                                className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
-                                                onClick={(e) => handleSwap(e, item)}
-                                                title="Swap activity"
-                                            >
-                                                <ArrowsClockwise className="h-4 w-4" />
-                                            </Button>
-                                        )}
-                                        <CaretRight className="h-4 w-4 text-muted-foreground group-hover:translate-x-1 transition-transform" />
-                                    </div>
-                                </div>
-                            </Card>
-                        </>
-                    )}
-                </div>
+                    item={item}
+                    onSelect={handleSelect}
+                    onComplete={onComplete}
+                    onSwap={onSwap}
+                />
             ))}
 
             <Sheet open={!!activeItem} onOpenChange={(open) => !open && setActiveItem(null)}>
@@ -229,7 +112,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                             {activeItem?.type === 'activity' && !activeItem.data && (
                                 <div className="py-12 text-center space-y-4">
                                     <p>Details not available.</p>
-                                    <Button onClick={handleComplete}>Mark Complete</Button>
+                                    <Button onClick={handleSheetComplete}>Mark Complete</Button>
                                 </div>
                             )}
 
@@ -249,7 +132,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                                                 Read Now
                                             </Button>
                                         )}
-                                        <Button onClick={handleComplete} variant={onBookClick ? "outline" : "default"} size="lg" className="w-full">
+                                        <Button onClick={handleSheetComplete} variant={onBookClick ? "outline" : "default"} size="lg" className="w-full">
                                             Mark as Read (Manual)
                                         </Button>
                                     </div>
@@ -260,7 +143,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                             {!['liturgy', 'activity', 'book'].includes(activeItem?.type || '') && (
                                 <div className="py-12 text-center space-y-4">
                                     <p>Details for this item are simple.</p>
-                                    <Button onClick={handleComplete}>Mark Complete</Button>
+                                    <Button onClick={handleSheetComplete}>Mark Complete</Button>
                                 </div>
                             )}
                         </div>
