@@ -4951,7 +4951,9 @@ app.put('/api/portfolio/upload-handler', async (c) => {
     const user = requireAuth(c);
     const key = c.req.query('key');
 
-    if (!key || !key.startsWith(user.id)) {
+    // Security: Strict path validation
+    // Ensure key starts with "{user.id}/" to prevent uploading to other users' directories
+    if (!key || !key.startsWith(`${user.id}/`)) {
       return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
 
@@ -4978,6 +4980,12 @@ app.post('/api/portfolio/items', async (c) => {
 
     if (!studentId || !title || !itemType) {
       return c.json({ error: 'studentId, title, and itemType are required' }, 400);
+    }
+
+    // Security: Validate that r2Key belongs to this user
+    // This prevents IDOR where users claim ownership of others' files
+    if (r2Key && !r2Key.startsWith(`${user.id}/`)) {
+      return c.json({ error: 'Invalid file key' }, 403);
     }
 
     const id = generateId('port');
@@ -5081,14 +5089,22 @@ app.get('/api/portfolio/file/:key', async (c) => {
     const user = requireAuth(c);
     const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
 
-    // Check ownership by ensuring the key contains the user ID (part of the path strategy)
-    // The key structure we defined is `portfolio/USER_ID/filename`
-    // So we check if key contains user.id
-    if (!key.includes(user.id)) {
+    // Security: Strict path validation
+    // Ensure key starts with "{user.id}/" or "portfolio/{user.id}/"
+    const validPrefix1 = `${user.id}/`;
+    const validPrefix2 = `portfolio/${user.id}/`;
+
+    if (!key.startsWith(validPrefix1) && !key.startsWith(validPrefix2)) {
       return c.json({ error: 'Unauthorized access to file' }, 403);
     }
 
-    const object = await c.env.BOOKS_BUCKET.get(key);
+    // Try finding the file (handle potential missing 'portfolio/' prefix in stored key)
+    let object = await c.env.BOOKS_BUCKET.get(key);
+
+    if (!object) {
+      // Fallback: Try with portfolio/ prefix if not found directly
+      object = await c.env.BOOKS_BUCKET.get(`portfolio/${key}`);
+    }
 
     if (!object) {
       return c.json({ error: 'File not found' }, 404);
