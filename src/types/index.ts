@@ -149,6 +149,7 @@ export interface Formation {
   // Metadata
   is_active: number; // 1 or 0
   content_source: string;
+  difficulty?: number;  // 1-5 scale, optional
 
   // ============================================
   // LEGACY COMPATIBILITY FIELDS
@@ -466,8 +467,8 @@ export interface StudentViewData {
 // ============================================
 
 // Extended to support legacy subjects used in components
-export type IndependenceLevel = 'parent-led' | 'guided' | 'independent' | 'parent_led';
-export type IndependenceSubject = 
+export type IndependenceLevel = 'parent_led' | 'guided' | 'independent';
+export type IndependenceSubject =
   | 'reading' | 'math' | 'science' | 'history' | 'writing' | 'all'
   // Legacy subject names used in existing components
   | 'bible' | 'motor' | 'language' | 'cognitive';
@@ -483,15 +484,13 @@ export interface IndependenceSettings {
   canViewPortfolio?: boolean;
 }
 
-export const INDEPENDENCE_LEVEL_LABELS: Record<string, string> = {
-  'parent-led': 'Parent-Led',
+export const INDEPENDENCE_LEVEL_LABELS: Record<IndependenceLevel, string> = {
   'parent_led': 'Parent-Led',
   'guided': 'Guided',
   'independent': 'Independent'
 };
 
-export const INDEPENDENCE_LEVEL_DESCRIPTIONS: Record<string, string> = {
-  'parent-led': 'Parent teaches and supervises all work',
+export const INDEPENDENCE_LEVEL_DESCRIPTIONS: Record<IndependenceLevel, string> = {
   'parent_led': 'Parent teaches and supervises all work',
   'guided': 'Student works with parent available for help',
   'independent': 'Student works alone, parent reviews later'

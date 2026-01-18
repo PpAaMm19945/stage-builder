@@ -174,7 +174,7 @@ export default function ActivityViewer() {
 
   // Mutation for creating evidence
   const createEvidenceMutation = useMutation({
-    mutationFn: (data: { stage: FormationStage; note?: string }) =>
+    mutationFn: (data: { stage: HabitStage; note?: string }) =>
       evidences.create({
         studentId: selectedChild!.id,
         formationId: id!,
@@ -252,7 +252,7 @@ export default function ActivityViewer() {
     );
   }
 
-  const handleObservationSubmit = async (stage: FormationStage, notes?: string) => {
+  const handleObservationSubmit = async (stage: HabitStage, notes?: string) => {
     if (!selectedChild) return;
 
     try {

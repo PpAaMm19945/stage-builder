@@ -10,6 +10,7 @@ interface AuthContextType {
   setSelectedChild: (child: Student) => void;
   isAuthenticated: boolean;
   logout: () => void;
+  signOut: () => void;  // Alias for logout
   refreshAuth: () => Promise<void>;
   isLoading: boolean;
 }

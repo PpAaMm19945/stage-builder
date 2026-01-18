@@ -18,13 +18,14 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
     if (keywords.length === 0) return []; // No valid keywords
 
     // 2. Build dynamic SQL for multiple keywords (OR logic)
-    // We want to find books that match ANY of the keywords
-    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR domain LIKE ?)`).join(' OR ');
+    // Query formations table with formation_type = 'reading' (unified schema)
+    const conditions = keywords.map(() => `(title LIKE ? OR description LIKE ? OR primary_virtue LIKE ?)`).join(' OR ');
 
     let sql = `
-        SELECT id, title, description, min_age_months, max_age_months, domain 
-        FROM books 
+        SELECT id, title, description, min_age_months, max_age_months, primary_virtue as domain, cover_image_url
+        FROM formations 
         WHERE is_active = 1 
+        AND formation_type = 'reading'
         AND (${conditions})
     `;
 
@@ -52,7 +53,8 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
         relevance: 1,
         metadata: {
             ageRange: `${b.min_age_months}-${b.max_age_months}m`,
-            domain: b.domain
+            domain: b.domain,
+            coverUrl: b.cover_image_url
         }
     }));
 }

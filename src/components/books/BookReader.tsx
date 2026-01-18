@@ -368,13 +368,17 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                                     />
 
                                                     {/* Overlay Prompt */}
-                                                    {showPrompts && book.readingPrompts?.find(p => p.page === index + 1) && (
-                                                        <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
-                                                            <p className="text-sm font-medium leading-relaxed">
-                                                                💡 {book.readingPrompts.find(p => p.page === index + 1)?.prompt}
-                                                            </p>
-                                                        </div>
-                                                    )}
+                                                    {showPrompts && book.readingPrompts?.some(p =>
+                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
+                                                    ) && (
+                                                            <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
+                                                                <p className="text-sm font-medium leading-relaxed">
+                                                                    💡 {(book.readingPrompts.find(p =>
+                                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
+                                                                    ) as { page: number; prompt: string } | undefined)?.prompt}
+                                                                </p>
+                                                            </div>
+                                                        )}
                                                 </div>
                                             </CarouselItem>
                                         );
