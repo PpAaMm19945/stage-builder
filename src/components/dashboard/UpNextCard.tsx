@@ -11,6 +11,12 @@ import {
     CaretRight
 } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface UpNextCardProps {
     item: RhythmItem | null;
@@ -100,20 +106,34 @@ export function UpNextCard({ item, onAction, onExpand, pendingCount }: UpNextCar
                     Start Now
                 </Button>
 
-                <Button
-                    variant="ghost"
-                    size="lg"
-                    className="aspect-square h-12 w-12 p-0 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
-                    onClick={onExpand}
-                    title="View Full Schedule"
-                >
-                    <div className="relative">
-                        <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
-                            {pendingCount}
-                        </span>
-                        <CaretRight weight="bold" className="w-5 h-5" />
-                    </div>
-                </Button>
+                <TooltipProvider>
+                    <Tooltip>
+                        <TooltipTrigger asChild>
+                            <Button
+                                variant="ghost"
+                                size="lg"
+                                className="aspect-square h-12 w-12 p-0 rounded-full hover:bg-black/5 dark:hover:bg-white/10"
+                                onClick={onExpand}
+                                aria-label={`View Full Schedule, ${pendingCount} pending items`}
+                            >
+                                <div className="relative">
+                                    <span className="absolute -top-1 -right-1 flex h-4 w-4 items-center justify-center rounded-full bg-primary text-[10px] text-primary-foreground font-bold">
+                                        <span className="sr-only">
+                                            {pendingCount} pending items
+                                        </span>
+                                        <span aria-hidden="true">
+                                            {pendingCount}
+                                        </span>
+                                    </span>
+                                    <CaretRight weight="bold" className="w-5 h-5" />
+                                </div>
+                            </Button>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                            <p>View Full Schedule</p>
+                        </TooltipContent>
+                    </Tooltip>
+                </TooltipProvider>
             </CardFooter>
         </Card>
     );
