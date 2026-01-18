@@ -3,6 +3,8 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentView } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { FormationCard } from '@/components/formations/FormationCard';
+import { AlumniView } from '@/components/dashboard/AlumniView';
+import { StudentAiChat } from '@/components/ai/StudentAiChat';
 import { Button } from '@/components/ui/button';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { CircleNotch, SignOut } from '@phosphor-icons/react';
@@ -57,7 +59,30 @@ export default function StudentPortal() {
         );
     }
 
+
     const { student, tasks, portfolioItems, permissions } = data;
+
+    if (student.is_graduated) {
+        return (
+            <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
+                <header className="bg-white dark:bg-slate-900 border-b sticky top-0 z-10 px-4 py-3 flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                        {student.avatarUrl && (
+                            <img src={student.avatarUrl} alt={student.name} className="w-10 h-10 rounded-full bg-slate-200" />
+                        )}
+                        <div>
+                            <h1 className="font-display font-bold text-lg leading-tight">{student.name}</h1>
+                            <p className="text-xs text-muted-foreground">Alumni Portal</p>
+                        </div>
+                    </div>
+                    <Button variant="ghost" size="icon" onClick={signOut}>
+                        <SignOut className="w-5 h-5" />
+                    </Button>
+                </header>
+                <AlumniView student={student} />
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen bg-slate-50 dark:bg-slate-950 pb-20">
@@ -113,6 +138,14 @@ export default function StudentPortal() {
                 </div>
 
             </main>
+
+            {/* AI Chat - Only show if student has canAskAi permission */}
+            {permissions.canAskAi && (
+                <StudentAiChat
+                    studentId={studentId}
+                    currentSubject={tasks[0]?.cluster_tag || tasks[0]?.primary_virtue}
+                />
+            )}
         </div>
     );
 }

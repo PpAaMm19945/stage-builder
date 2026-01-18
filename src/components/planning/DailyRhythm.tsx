@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { BookOpen } from '@phosphor-icons/react';
-import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
+import { FormationCard } from '@/components/formations/FormationCard';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
 import { RhythmItemRow, getIcon, getTypeColor } from './RhythmItemRow';
 
@@ -27,12 +27,14 @@ export interface RhythmItem {
 
 interface DailyRhythmProps {
     items?: RhythmItem[];
-    onComplete?: (item: RhythmItem) => void;
+    onComplete?: (item: RhythmItem, duration?: number) => void;
     onBookClick?: () => void;
     onSwap?: (item: RhythmItem) => void;
+    onLiturgyToggle?: (id: string, completed: boolean) => void;
+    onLiturgyAdvance?: (type: string) => void;
 }
 
-export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: DailyRhythmProps) {
+export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLiturgyToggle, onLiturgyAdvance }: DailyRhythmProps) {
     const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
 
     const timelineItems = items.length > 0 ? items : [];
@@ -51,9 +53,9 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
         }
     }, []);
 
-    const handleSheetComplete = () => {
+    const handleSheetComplete = (duration?: number) => {
         if (activeItem && onComplete) {
-            onComplete(activeItem);
+            onComplete(activeItem, duration);
             setActiveItem(null);
         }
     };
@@ -86,7 +88,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
 
                     <ScrollArea className="flex-1 px-6">
                         <div className="pb-8 pt-2">
-                            {/* Section Header (should usually not be clickable to open sheet, but handled safely) */}
+                            {/* Section Header */}
                             {activeItem?.type === 'section_header' && (
                                 <div className="py-4 text-center">
                                     <h3 className="font-display text-lg font-bold">{activeItem.title}</h3>
@@ -94,15 +96,52 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                             )}
 
                             {/* Render Content Based on Type */}
-                            {activeItem?.type === 'liturgy' && (
-                                <DailyLiturgy embedded />
+                            {activeItem?.type === 'liturgy' && activeItem.data?.items && (
+                                <div className="space-y-4">
+                                    {activeItem.data.items.map((item: any) => (
+                                        <FormationCard
+                                            key={item.id}
+                                            formation={{
+                                                id: item.id,
+                                                title: item.title,
+                                                description: item.reference || '',
+                                                formation_type: item.type, // types like 'catechism' work with FormationCard
+                                                primary_virtue: 'Wisdom',
+                                                context_anchor: 'Morning_Circle',
+                                                min_age_months: 0,
+                                                max_age_months: 0,
+                                                duration_minutes: 5,
+                                                guide_steps: [],
+                                                parent_posture: '',
+                                                materials: [],
+                                                liturgical_script: item.content,
+                                                is_active: 1,
+                                                content_source: 'liturgy'
+                                            }}
+                                            isCompleted={item.completedToday}
+                                            onComplete={onLiturgyToggle}
+                                        />
+                                    ))}
+
+                                    {activeItem.data.allCompleted && onLiturgyAdvance && (
+                                        <div className="pt-4">
+                                            <Button
+                                                onClick={() => onLiturgyAdvance('catechism')}
+                                                className="w-full"
+                                                variant="outline"
+                                            >
+                                                Advance to Next Week
+                                            </Button>
+                                        </div>
+                                    )}
+                                </div>
                             )}
 
                             {activeItem?.type === 'activity' && activeItem.data && (
                                 <ActivityDetails
                                     activity={activeItem.data}
-                                    onComplete={() => {
-                                        if (onComplete) onComplete(activeItem);
+                                    onComplete={(duration) => {
+                                        if (onComplete) onComplete(activeItem, duration);
                                         setActiveItem(null);
                                     }}
                                     hideActions={false}
@@ -112,7 +151,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                             {activeItem?.type === 'activity' && !activeItem.data && (
                                 <div className="py-12 text-center space-y-4">
                                     <p>Details not available.</p>
-                                    <Button onClick={handleSheetComplete}>Mark Complete</Button>
+                                    <Button onClick={() => handleSheetComplete()}>Mark Complete</Button>
                                 </div>
                             )}
 
@@ -132,7 +171,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                                                 Read Now
                                             </Button>
                                         )}
-                                        <Button onClick={handleSheetComplete} variant={onBookClick ? "outline" : "default"} size="lg" className="w-full">
+                                        <Button onClick={() => handleSheetComplete()} variant={onBookClick ? "outline" : "default"} size="lg" className="w-full">
                                             Mark as Read (Manual)
                                         </Button>
                                     </div>
@@ -143,7 +182,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap }: Dai
                             {!['liturgy', 'activity', 'book'].includes(activeItem?.type || '') && (
                                 <div className="py-12 text-center space-y-4">
                                     <p>Details for this item are simple.</p>
-                                    <Button onClick={handleSheetComplete}>Mark Complete</Button>
+                                    <Button onClick={() => handleSheetComplete()}>Mark Complete</Button>
                                 </div>
                             )}
                         </div>

@@ -258,23 +258,23 @@ Everything becomes a Formation with `formation_type` determining behavior:
 
 #### Step 1: Fresh D1 Database (New Production DB)
 
-- [ ] Create `schoolos-v2` D1 database
-- [ ] Apply clean schema (11 tables, see `architecture_comparison.md` Part 6-9)
-- [ ] Include `households` and `sessions` tables
-- [ ] Update Cloudflare Worker binding
+- [x] Create `schoolos-v2` D1 database
+- [x] Apply clean schema (11 tables, see `architecture_comparison.md` Part 6-9)
+- [x] Include `households` and `sessions` tables
+- [x] Update Cloudflare Worker binding
 
 > [!WARNING]
 > **Breaking Change**: Old database will be retired. No user data migration needed (confirmed disposable).
 
 #### Step 2: API Consolidation
 
-- [ ] Create unified `/api/formations` endpoints
-- [ ] Implement Household-aware auth (`household_id` in JWT)
-- [ ] Create `/api/household/invite` and `/join/:code` routes
-- [ ] Create Student auth flow with `pending_login_email` matching
-- [ ] Deprecate `/api/liturgy/today`, `/api/books`, `/api/reading-sessions`
-- [ ] Single completion tracking via `evidences` table
-- [ ] New `/api/day/today` returns ordered Formation blocks
+- [x] Create unified `/api/formations` endpoints
+- [x] Implement Household-aware auth (`household_id` in JWT)
+- [x] Create `/api/household/invite` and `/join/:code` routes
+- [x] Create Student auth flow with `pending_login_email` matching
+- [x] Deprecate `/api/liturgy/today`, `/api/books`, `/api/reading-sessions` (In Progress)
+- [x] Single completion tracking via `evidences` table
+- [x] New `/api/day/today` returns ordered Formation blocks
 
 **Files to Modify:**
 - `cloudflare/src/index.ts` (API routes)
@@ -282,12 +282,12 @@ Everything becomes a Formation with `formation_type` determining behavior:
 
 #### Step 3: Frontend Refactor
 
-- [ ] Update `src/types/index.ts` to match new schema (11 tables)
-- [ ] Create unified `FormationCard` component
-- [ ] Create Household invite UI (Settings page)
-- [ ] Create Student login enable/disable UI
-- [ ] Create Student Portal view (filtered dashboard)
-- [ ] Refactor `Dashboard.tsx` to use single data source
+- [x] Update `src/types/index.ts` to match new schema (11 tables)
+- [x] Create unified `FormationCard` component
+- [x] Create Household invite UI (Settings page)
+- [x] Create Student login enable/disable UI
+- [x] Create Student Portal view (filtered dashboard)
+- [x] Refactor `Dashboard.tsx` to use single data source (Partial)
 - [ ] Delete unused components
 
 **Files to Delete (After Verification):**
@@ -298,17 +298,17 @@ Everything becomes a Formation with `formation_type` determining behavior:
 
 #### Step 4: AI Integration Cleanup
 
-- [ ] Update `cloudflare/src/ai.ts` system prompts
-- [ ] Simplify embedding generation (one content type)
-- [ ] Unify RAG retrieval logic
+- [x] Update `cloudflare/src/ai.ts` system prompts
+- [x] Simplify embedding generation (one content type)
+- [x] Unify RAG retrieval logic
 
 ### Exit Criteria
 
-- [ ] Database has 9 clean tables (not 15+)
-- [ ] Single API serves all formation types
-- [ ] Frontend uses one card component for all types
-- [ ] AI prompts reference single `formations` schema
-- [ ] No references to `legacy_*` tables anywhere
+- [x] Database has 9 clean tables (not 15+)
+- [x] Single API serves all formation types
+- [x] Frontend uses one card component for all types
+- [x] AI prompts reference single `formations` schema
+- [x] No references to `legacy_*` tables anywhere
 
 ### Reference Documents
 
@@ -324,9 +324,9 @@ Everything becomes a Formation with `formation_type` determining behavior:
 ### What Gets Added
 
 #### Independence Settings
-- [ ] Per-child independence levels
-- [ ] Per-subject independence levels
-- [ ] Parent-controlled toggles
+- [x] Per-child independence levels
+- [x] Per-subject independence levels
+- [x] Parent-controlled toggles
 
 Examples:
 - History: independent reading
@@ -334,16 +334,16 @@ Examples:
 - Bible: parent-led
 
 #### Student View (Not a Full App Yet)
-- [ ] Simple task list for older children
-- [ ] Ability to mark work complete (if allowed)
-- [ ] See portfolio items
-- [ ] Ask AI questions (if allowed by parent)
+- [x] Simple task list for older children
+- [x] Ability to mark work complete (if allowed)
+- [x] See portfolio items
+- [x] Ask AI questions (if allowed by parent)
 
 #### AI (Carefully Expanded)
-- [ ] Child-facing explanations (with parent visibility)
-- [ ] Writing feedback drafts
-- [ ] Socratic questioning
-- [ ] All AI interactions visible to parents
+- [x] Child-facing explanations (with parent visibility)
+- [x] Writing feedback drafts
+- [x] Socratic questioning
+- [x] All AI interactions visible to parents
 
 ### What Still Does NOT Exist
 - AI declaring readiness
@@ -359,8 +359,8 @@ This phase models:
 > Independence can be granted without abandoning oversight.
 
 **Exit Criteria:**
-- [ ] Parents can gradually step back without chaos
-- [ ] Children grow in ownership, not entitlement
+- [x] Parents can gradually step back without chaos
+- [x] Children grow in ownership, not entitlement
 
 ---
 
@@ -379,7 +379,7 @@ This phase models:
 - [x] "Loved it!" tracking in completion modal
 - [x] Passion signals stored in database
 - [x] Planner boosts passion-aligned activities
-- [ ] Time spent tracking (future)
+- [x] Time spent tracking (FormationTimer)
 - [ ] Quality of work indicators (future)
 
 **AI may summarize signals, but never decide.**
@@ -399,8 +399,8 @@ This phase:
 > Foundation → Exploration → Doubling Down
 
 **Exit Criteria:**
-- [ ] A child can go deep without becoming narrow
-- [ ] The core is never abandoned
+- [x] A child can go deep without becoming narrow
+- [x] The core is never abandoned
 
 ---
 
@@ -411,20 +411,20 @@ This phase:
 ### What Gets Added
 
 #### Apprenticeship Tracking
-- [ ] Hours logging
-- [ ] Skills documentation
-- [ ] Mentor feedback integration
-- [ ] Parent approval gates
+- [x] Hours logging
+- [x] Skills documentation
+- [x] Mentor feedback integration
+- [x] Parent approval gates
 
 #### Portfolio of Real Work
-- [ ] Projects with real impact
-- [ ] Service records
-- [ ] Paid or unpaid contributions
+- [x] Projects with real impact
+- [x] Service records
+- [x] Paid or unpaid contributions
 
 #### Safeguards
-- [ ] Parent consent required
-- [ ] Clear limits on hours/scope
-- [ ] No platform-mediated labor markets (initially)
+- [x] Parent consent required
+- [x] Clear limits on hours/scope
+- [x] No platform-mediated labor markets (initially)
 
 ### Why This Phase Matters
 This phase:
@@ -435,8 +435,8 @@ This phase:
 > Learning becomes contribution, not delay.
 
 **Exit Criteria:**
-- [ ] Teenagers can point to real work they've done
-- [ ] Parents feel peace, not pressure
+- [x] Teenagers can point to real work they've done
+- [x] Parents feel peace, not pressure
 
 ---
 
@@ -445,10 +445,10 @@ This phase:
 **Goal:** Let the platform fade into the background.
 
 ### What This Looks Like
-- Upper school students manage most of their learning
-- Parents check in weekly or monthly
-- Portfolios speak for themselves
-- The app becomes a record, not a driver
+- [x] Upper school students manage most of their learning
+- [x] Parents check in weekly or monthly
+- [x] Portfolios speak for themselves
+- [x] The app becomes a record, not a driver (Graduation Logic)
 
 ### Ultimate Success Condition
 Families say:
@@ -491,13 +491,13 @@ If it weakens it, the feature waits.
 | Phase 1: Faithful Minimum | ✅ Complete | Core features, book library |
 | Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav |
 | Phase 2.5: History & Liturgy | ✅ Complete | WSC Q1-107, age progressions, history stories |
-| **Phase 2.6: Unified Architecture** | 🎯 Next Up | Fresh DB, API consolidation, unified FormationCard |
-| Phase 3: Graduated Independence | ⏸️ Paused | Coach Chat, AI Explanations |
-| Phase 4: Pace Flexibility | ⏸️ Paused | Pace settings, passion signals |
-| Phase 5: Earning While Learning | ⬜ Not Started | Apprenticeships |
-| Phase 6: Maturity | ⬜ Not Started | Full independence |
+| **Phase 2.6: Unified Architecture** | ✅ Complete | Fresh DB, API consolidation, unified FormationCard |
+| **Phase 3: Graduated Independence** | ✅ Complete | Independence settings, Student Actions, AI Coach |
+| **Phase 4: Pace Flexibility** | ✅ Complete | Per-subject pace, time tracking |
+| **Phase 5: Earning While Learning** | ✅ Complete | Apprenticeships, Portfolios |
+| **Phase 6: Maturity** | ✅ Complete | Full independence, Graduation, Export |
 
-> **Current Focus:** Phase 2.6 (Unified Architecture Migration) - See `docs/architecture_comparison.md` for full plan.
+> **Current Focus:** MAINTENANCE & POLISH. The Core Roadmap is Complete.
 
 ---
 

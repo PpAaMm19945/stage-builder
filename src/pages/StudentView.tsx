@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { studentView } from '@/lib/api';
@@ -14,10 +15,13 @@ import {
     Image,
     Star,
     Clock,
+    Briefcase
 } from '@phosphor-icons/react';
 import { ChildExplainButton } from '@/components/ai/ChildExplainButton';
 import { toast } from 'sonner';
 import type { StudentViewData, ApiActivity, PortfolioItem } from '@/types';
+import { WorkLogger } from '@/components/apprenticeships/WorkLogger';
+import { family } from '@/lib/api'; // Added missing import for family
 
 function TaskCard({
     activity,
@@ -133,6 +137,7 @@ function PortfolioPreview({ items }: { items: PortfolioItem[] }) {
 export default function StudentView() {
     const { studentId } = useParams<{ studentId: string }>();
     const navigate = useNavigate();
+    const [showLogger, setShowLogger] = useState(false);
 
     const { data, isLoading, error, refetch } = useQuery({
         queryKey: ['student-view', studentId],
@@ -156,6 +161,22 @@ export default function StudentView() {
                 toast.error("Something went wrong");
             }
         },
+    });
+
+    // Passion Signal Mutation
+    const loveMutation = useMutation({
+        mutationFn: ({ activityId, loved }: { activityId: string, loved: boolean }) =>
+            family.sendPassionSignal({
+                studentId: studentId!,
+                activityId,
+                domain: 'general', // Domain logic can be refined if needed
+                loved
+            }),
+        onSuccess: () => {
+            // Optimistic update handled by local state if we had it, but for now refetch or rely on toast
+            // Since feedback is subtle, maybe just a small toast or nothing if UI updates instantly
+            toast.success("Thanks for the feedback!");
+        }
     });
 
     if (isLoading) {
@@ -189,7 +210,7 @@ export default function StudentView() {
             .slice(0, 2);
 
     return (
-        <div className="max-w-2xl mx-auto pb-20 space-y-6">
+        <div className="max-w-2xl mx-auto pb-20 space-y-6 relative">
             {/* Header */}
             <div className="flex items-center gap-4">
                 <Button
@@ -218,6 +239,28 @@ export default function StudentView() {
                     </div>
                 </div>
             </div>
+
+            {/* Quick Actions */}
+            <div className="flex gap-2 justify-end">
+                <Button
+                    variant="outline"
+                    className="gap-2 border-amber-200 hover:bg-amber-50 text-amber-900"
+                    onClick={() => setShowLogger(true)}
+                >
+                    <Briefcase className="w-4 h-4 text-amber-600" />
+                    Log Work
+                </Button>
+            </div>
+
+            {/* Work Logger Modal */}
+            {showLogger && (
+                <div className="fixed inset-0 bg-black/50 z-50 flex items-center justify-center p-4">
+                    <WorkLogger
+                        studentId={studentId}
+                        onClose={() => setShowLogger(false)}
+                    />
+                </div>
+            )}
 
             {/* Tasks */}
             <section>

@@ -11,6 +11,7 @@ interface Student {
     id: string;
     name: string;
     age_in_months: number;
+    pace_overrides?: Record<string, string>; // Per-subject pace: { subject: pace_level }
 }
 
 interface Activity {
@@ -91,6 +92,31 @@ const BALANCE_WEIGHTS: Record<string, Record<string, number>> = {
         'leader': 0
     }
 };
+
+// PHASE 4: Pace modifiers for scoring
+// Affects content selection based on subject-specific pace
+const PACE_MODIFIERS: Record<string, { complexityBoost: number; repetitionBoost: number }> = {
+    'gentle': { complexityBoost: -15, repetitionBoost: 10 },    // Prefer simpler, more repetition
+    'standard': { complexityBoost: 0, repetitionBoost: 0 },      // No change
+    'accelerated': { complexityBoost: 15, repetitionBoost: -10 } // Prefer harder, less repetition
+};
+
+// Get subject-specific pace from children's pace overrides
+function getSubjectPace(children: Student[], clusterTag?: string): string {
+    if (!clusterTag) return 'standard';
+
+    // Collect pace preferences for this subject from all children
+    const paces = children
+        .map(c => c.pace_overrides?.[clusterTag])
+        .filter(Boolean) as string[];
+
+    if (paces.length === 0) return 'standard';
+
+    // Use the most conservative pace when multiple children
+    if (paces.includes('gentle')) return 'gentle';
+    if (paces.includes('standard')) return 'standard';
+    return 'accelerated';
+}
 
 // Parse constraints from JSON string
 function parseConstraints(json: string): any {
@@ -275,9 +301,14 @@ function scoreActivity(
     history: ActivityHistorySummary,
     balancePreference: string = 'mixed',
     passionDomains: Set<string> = new Set(),
-    learningFocus: string = 'balanced'
+    learningFocus: string = 'balanced',
+    subjectPace: string = 'standard' // PHASE 4: Per-subject pace
 ): number {
     let score = 50; // Base score
+
+    // PHASE 4: Apply pace modifier
+    const paceMod = PACE_MODIFIERS[subjectPace] || PACE_MODIFIERS['standard'];
+    score += paceMod.complexityBoost;
 
     // Domain balance: boost underrepresented domains
     const domainCount = domainCounts[activity.domain] || 0;
@@ -439,8 +470,11 @@ export async function generateWeeklyPlan(
                 // Get pre-calculated history
                 const history = historyMap.get(a.id) || { lastCompleted: null, masteryLevel: null, completionCount: 0 };
 
-                // Sync call now - include passion domains and learning focus
-                const score = scoreActivity(a, domainCounts, overrides, history, balancePreference, passionDomains, learningFocus);
+                // PHASE 4: Get subject-specific pace for this activity's cluster_tag
+                const subjectPace = getSubjectPace(children, a.cluster_tag);
+
+                // Sync call now - include passion domains, learning focus, and subject pace
+                const score = scoreActivity(a, domainCounts, overrides, history, balancePreference, passionDomains, learningFocus, subjectPace);
                 candidates.push({ activity: a, score });
             }
 

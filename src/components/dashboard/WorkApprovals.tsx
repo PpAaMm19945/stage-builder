@@ -1,0 +1,148 @@
+import React, { useState, useEffect } from 'react';
+import { api } from '@/lib/api';
+import { CheckCircle, XCircle, Clock, Briefcase, ChevronRight } from 'lucide-react';
+import { WorkEntry } from '@/types';
+
+// Extended type from API response
+interface PendingEntry extends WorkEntry {
+    apprenticeship_title: string;
+    student_name: string;
+    student_avatar?: string;
+}
+
+export function WorkApprovals() {
+    const [entries, setEntries] = useState<PendingEntry[]>([]);
+    const [loading, setLoading] = useState(true);
+    const [rejectId, setRejectId] = useState<string | null>(null);
+    const [rejectReason, setRejectReason] = useState('');
+
+    const loadData = async () => {
+        try {
+            const data = await api.work.getPending();
+            setEntries(data);
+        } catch (err) {
+            console.error('Failed to load pending approvals', err);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    useEffect(() => {
+        loadData();
+    }, []);
+
+    const handleApprove = async (id: string) => {
+        try {
+            await api.work.approve(id, 'approved');
+            setEntries(prev => prev.filter(e => e.id !== id));
+            // Could show toast success
+        } catch (err) {
+            alert('Failed to approve');
+        }
+    };
+
+    const handleReject = async (id: string) => {
+        if (!rejectReason) return;
+        try {
+            await api.work.approve(id, 'rejected', rejectReason);
+            setEntries(prev => prev.filter(e => e.id !== id));
+            setRejectId(null);
+            setRejectReason('');
+        } catch (err) {
+            alert('Failed to reject');
+        }
+    };
+
+    if (loading) return <div className="animate-pulse h-24 bg-white/50 rounded-xl" />;
+
+    if (entries.length === 0) return null; // Don't show if empty
+
+    return (
+        <div className="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
+            <div className="px-5 py-3 border-b border-amber-100 bg-amber-50/50 flex justify-between items-center">
+                <h3 className="font-semibold text-amber-900 flex items-center gap-2">
+                    <Briefcase className="w-4 h-4 text-amber-600" />
+                    Apprenticeship Approvals
+                </h3>
+                <span className="bg-amber-100 text-amber-800 text-xs font-bold px-2 py-0.5 rounded-full">
+                    {entries.length}
+                </span>
+            </div>
+
+            <div className="divide-y divide-amber-50">
+                {entries.map(entry => (
+                    <div key={entry.id} className="p-4 hover:bg-amber-50/30 transition-colors">
+                        <div className="flex justify-between items-start mb-2">
+                            <div className="flex items-center gap-3">
+                                {/* Avatar */}
+                                {entry.student_avatar ? (
+                                    <img src={entry.student_avatar} alt={entry.student_name} className="w-8 h-8 rounded-full border border-amber-200" />
+                                ) : (
+                                    <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 text-xs font-bold">
+                                        {entry.student_name.charAt(0)}
+                                    </div>
+                                )}
+                                <div>
+                                    <div className="text-sm font-medium text-amber-900">{entry.apprenticeship_title}</div>
+                                    <div className="text-xs text-amber-600 flex items-center gap-1">
+                                        {entry.student_name} &bull; {new Date(entry.date).toLocaleDateString()}
+                                    </div>
+                                </div>
+                            </div>
+                            <div className="flex items-center gap-1 text-sm font-bold text-amber-800 bg-amber-100 px-2 py-1 rounded">
+                                <Clock className="w-3 h-3" />
+                                {entry.hours}h
+                            </div>
+                        </div>
+
+                        <p className="text-sm text-gray-600 mb-3 bg-gray-50 p-2 rounded border border-gray-100 italic">
+                            "{entry.description}"
+                        </p>
+
+                        {/* Actions */}
+                        {rejectId === entry.id ? (
+                            <div className="bg-red-50 p-3 rounded-lg border border-red-100 animate-in fade-in slide-in-from-top-2">
+                                <label className="block text-xs font-medium text-red-800 mb-1">Reason for Rejection:</label>
+                                <input
+                                    type="text"
+                                    value={rejectReason}
+                                    onChange={(e) => setRejectReason(e.target.value)}
+                                    className="w-full text-sm border-red-200 rounded px-2 py-1 mb-2 focus:ring-red-500 focus:border-red-500"
+                                    placeholder="e.g. Needs more detail..."
+                                    autoFocus
+                                />
+                                <div className="flex gap-2 justify-end">
+                                    <button onClick={() => setRejectId(null)} className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1">Cancel</button>
+                                    <button
+                                        onClick={() => handleReject(entry.id)}
+                                        disabled={!rejectReason}
+                                        className="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                                    >
+                                        Confirm Reject
+                                    </button>
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="flex justify-end gap-2">
+                                <button
+                                    onClick={() => setRejectId(entry.id)}
+                                    className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg border border-transparent hover:bg-red-50 transition-colors"
+                                >
+                                    <XCircle className="w-4 h-4" />
+                                    Reject
+                                </button>
+                                <button
+                                    onClick={() => handleApprove(entry.id)}
+                                    className="flex items-center gap-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
+                                >
+                                    <CheckCircle className="w-4 h-4" />
+                                    Approve
+                                </button>
+                            </div>
+                        )}
+                    </div>
+                ))}
+            </div>
+        </div>
+    );
+}

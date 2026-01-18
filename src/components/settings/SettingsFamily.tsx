@@ -27,6 +27,8 @@ import {
     AlertDialogHeader,
     AlertDialogTitle,
 } from '@/components/ui/alert-dialog';
+import { DataArchive } from './DataArchive';
+import { AlumniBadge } from '@/components/common/AlumniBadge';
 import type { Student } from '@/types';
 
 export function SettingsFamily() {
@@ -123,7 +125,10 @@ export function SettingsFamily() {
                                             </AvatarFallback>
                                         </Avatar>
                                         <div>
-                                            <p className="font-medium text-foreground">{child.name}</p>
+                                            <div className="flex items-center gap-2">
+                                                <p className="font-medium text-foreground">{child.name}</p>
+                                                {child.is_graduated && <AlumniBadge />}
+                                            </div>
                                             <p className="text-xs text-muted-foreground">
                                                 {calculateAge(child.dateOfBirth)}
                                             </p>
@@ -180,6 +185,9 @@ export function SettingsFamily() {
                 </CardContent>
             </Card>
 
+            {/* Phase 6: Data Archive */}
+            <DataArchive />
+
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!deletingChild} onOpenChange={(open) => !open && setDeletingChild(null)}>
                 <AlertDialogContent>
@@ -210,16 +218,14 @@ export function SettingsFamily() {
             </AlertDialog>
 
             {/* Edit Child Dialog */}
-            {
-                editingChild && (
-                    <EditChildForm
-                        child={editingChild}
-                        open={!!editingChild}
-                        onOpenChange={(open) => !open && setEditingChild(null)}
-                        onSuccess={() => setEditingChild(null)}
-                    />
-                )
-            }
+            {editingChild && (
+                <EditChildForm
+                    child={editingChild}
+                    open={!!editingChild}
+                    onOpenChange={(open) => !open && setEditingChild(null)}
+                    onSuccess={() => setEditingChild(null)}
+                />
+            )}
         </div>
     );
 }

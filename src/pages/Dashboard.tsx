@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { UpNextCard } from '@/components/dashboard/UpNextCard';
 import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
 import { toast } from 'sonner';
-import { DailyLiturgy } from '@/components/liturgy/DailyLiturgy';
+import { FormationCard } from '@/components/formations/FormationCard';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
 import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
 import { MaterialItem, Book } from '@/types';
@@ -28,7 +28,9 @@ import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
 import { NotificationStack } from '@/components/dashboard/NotificationStack';
+import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { getRecommendedBooks } from '@/lib/recommendations';
+import { TimeSpentWidget } from '@/components/dashboard/TimeSpentWidget';
 import { BookReader } from '@/components/books/BookReader';
 import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { DailyPlanDocument } from '@/components/pdf/documents';
@@ -43,6 +45,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { UsersThree, Crown } from '@phosphor-icons/react';
+import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
 
 export default function Dashboard() {
   const { user } = useAuth();
@@ -87,16 +90,18 @@ export default function Dashboard() {
     queryFn: () => family.getWeekSummary(weekStartStr),
   });
 
-  // Fetch children for regenerate dialog
   const { data: childrenData } = useQuery({
     queryKey: ['students'],
     queryFn: () => family.getToday().then(d => d.children),
     enabled: isBalanceDialogOpen,
   });
 
-  const childAges = childrenData?.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
+  const activeChildren = dayData?.children?.filter((c: any) => !c.is_graduated) || [];
+  const childAges = activeChildren.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
 
-  const youngestChild = dayData?.children ? [...dayData.children].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0] : null;
+  const youngestChild = activeChildren.length > 0
+    ? [...activeChildren].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0]
+    : null;
 
   const { data: recommendedBooks } = useQuery({
     queryKey: ['todays-book', youngestChild?.ageInMonths],
@@ -152,11 +157,14 @@ export default function Dashboard() {
 
   // Complete activity mutation
   const completeActivityMutation = useMutation({
-    mutationFn: async (item: RhythmItem) => {
+    mutationFn: async (vars: { item: RhythmItem; duration?: number; lovedIt?: boolean }) => {
+      const { item, duration, lovedIt } = vars;
       if (item.type === 'activity' && item.data?.id) {
         await activityCompletions.create({
           activityId: item.data.id,
-          notes: 'Completed from Dashboard'
+          notes: 'Completed from Dashboard',
+          durationMinutes: duration,
+          lovedIt: lovedIt
         });
       }
     },
@@ -166,6 +174,8 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['family-today'] });
       queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
       queryClient.invalidateQueries({ queryKey: ['family-weekly-plan'] });
+      // Invalidate analytics
+      queryClient.invalidateQueries({ queryKey: ['time-spent-analytics'] });
     }
   });
 
@@ -175,9 +185,77 @@ export default function Dashboard() {
     regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
   };
 
+  // Liturgy Mutations
+  const completeLiturgyMutation = useMutation({
+    mutationFn: liturgy.complete,
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
+      const previousData = queryClient.getQueryData(['liturgy-today']);
+      queryClient.setQueryData(['liturgy-today'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((item: any) =>
+            item.id === itemId ? { ...item, completedToday: true } : item
+          ),
+        };
+      });
+      return { previousData };
+    },
+    onError: (err, itemId, context: any) => {
+      queryClient.setQueryData(['liturgy-today'], context.previousData);
+      toast.error('Failed to mark as complete');
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
+      toast.success('Marked as complete!');
+    },
+  });
+
+  const uncompleteLiturgyMutation = useMutation({
+    mutationFn: liturgy.uncomplete,
+    onMutate: async (itemId) => {
+      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
+      const previousData = queryClient.getQueryData(['liturgy-today']);
+      queryClient.setQueryData(['liturgy-today'], (old: any) => {
+        if (!old) return old;
+        return {
+          ...old,
+          items: old.items.map((item: any) =>
+            item.id === itemId ? { ...item, completedToday: false } : item
+          ),
+        };
+      });
+      return { previousData };
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
+    },
+  });
+
+  const advanceLiturgyMutation = useMutation({
+    mutationFn: liturgy.advance,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
+      toast.success('Advanced to next week!');
+    },
+  });
+
+  const handleLiturgyToggle = useCallback((id: string, completed: boolean) => {
+    if (completed) {
+      completeLiturgyMutation.mutate(id);
+    } else {
+      uncompleteLiturgyMutation.mutate(id);
+    }
+  }, [completeLiturgyMutation, uncompleteLiturgyMutation]);
+
+  const handleLiturgyAdvance = useCallback((type: string) => {
+    advanceLiturgyMutation.mutate(type);
+  }, [advanceLiturgyMutation]);
+
   // Memoized handlers
-  const handleRhythmComplete = useCallback((item: RhythmItem) => {
-    completeActivityMutation.mutate(item);
+  const handleRhythmComplete = useCallback((item: RhythmItem, duration?: number) => {
+    completeActivityMutation.mutate({ item, duration });
   }, [completeActivityMutation]);
 
   const handleBookClick = useCallback(() => {
@@ -198,14 +276,21 @@ export default function Dashboard() {
 
     // 1. Liturgy (Morning)
     if (isToday) {
+      const liturgyItems = liturgyData?.items || [];
+      const allLiturgyCompleted = liturgyItems.length > 0 && liturgyItems.every((i: any) => i.completedToday);
+
       rawItems.push({
         id: 'liturgy-morning',
         timeSlot: '08:00',
         title: 'Morning Liturgy',
         description: 'Scripture, hymnal, and catechism.',
         type: 'liturgy',
-        status: 'upcoming',
-        data: { context_anchor: 'Morning Circle' }
+        status: allLiturgyCompleted ? 'completed' : 'upcoming',
+        data: {
+          context_anchor: 'Morning Circle',
+          items: liturgyItems,
+          allCompleted: allLiturgyCompleted
+        }
       });
     }
 
@@ -350,8 +435,8 @@ export default function Dashboard() {
     );
   }
 
-  // No Children State
-  if (dayData.children.length === 0) {
+  // No Children State (using activeChildren to exclude graduates)
+  if (activeChildren.length === 0) {
     return (
       <div className="max-w-2xl mx-auto text-center py-12">
         <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
@@ -407,7 +492,38 @@ export default function Dashboard() {
   if (dayData.needsPlan) {
     return (
       <div className="max-w-4xl mx-auto py-12 px-4">
-        <DailyLiturgy />
+        <div className="space-y-4 mb-8">
+          <h2 className="text-xl font-bold text-center mb-4">Daily Liturgy</h2>
+          {(liturgyData?.items || []).map((item: any) => (
+            <FormationCard
+              key={item.id}
+              formation={{
+                id: item.id,
+                title: item.title,
+                description: item.reference || '',
+                formation_type: item.type, // types like 'catechism' work with FormationCard
+                primary_virtue: 'Wisdom',
+                context_anchor: 'Morning_Circle',
+                min_age_months: 0,
+                max_age_months: 0,
+                duration_minutes: 5,
+                guide_steps: [],
+                parent_posture: '',
+                materials: [],
+                liturgical_script: item.content,
+                is_active: 1,
+                content_source: 'liturgy'
+              }}
+              isCompleted={item.completedToday}
+              onComplete={handleLiturgyToggle}
+            />
+          ))}
+          {liturgyData?.items?.every((i: any) => i.completedToday) && (
+            <Button onClick={() => handleLiturgyAdvance('catechism')} variant="outline" className="w-full">
+              Advance Liturgy
+            </Button>
+          )}
+        </div>
         <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mt-8">
           <CardHeader className="text-center">
             <CardTitle className="text-2xl">Let's Plan Your Week!</CardTitle>
@@ -467,7 +583,7 @@ export default function Dashboard() {
                   activities: dayData.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [],
                   reading: todaysBook || undefined
                 }}
-                children={dayData.children}
+                children={activeChildren}
               />
             }
             fileName={`daily_plan_${selectedDateStr}.pdf`}
@@ -531,6 +647,8 @@ export default function Dashboard() {
               onComplete={handleRhythmComplete}
               onBookClick={handleBookClick}
               onSwap={isToday ? handleSwap : undefined}
+              onLiturgyToggle={handleLiturgyToggle}
+              onLiturgyAdvance={handleLiturgyAdvance}
             />
           </div>
         </CollapsibleContent>
@@ -548,6 +666,8 @@ export default function Dashboard() {
         }}
       />
 
+
+
       {/* Swap Activity Sheet */}
       <SwapActivitySheet
         open={!!swapActivity}
@@ -563,8 +683,25 @@ export default function Dashboard() {
         }}
       />
 
+      {/* Apprenticeship Approvals */}
+      <WorkApprovals />
+
+      {/* Time Spent Widget */}
+      <TimeSpentWidget />
+
       {/* Family Progress */}
       <FamilyProgressMini />
+
+      {/* AI Interaction Logs (Parent Visibility) */}
+      <Card className="mt-6">
+        <CardHeader className="pb-3">
+          <CardTitle className="text-lg">AI Safety Monitor</CardTitle>
+          <CardDescription>Review what your children are asking the AI</CardDescription>
+        </CardHeader>
+        <CardContent>
+          <AiLogViewer />
+        </CardContent>
+      </Card>
 
       {/* Regenerate Dialog */}
       <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>

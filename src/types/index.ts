@@ -43,6 +43,76 @@ export interface User {
   updatedAt: string;
 }
 
+// ============================================
+// PACE OVERRIDES (Phase 4: Pace Flexibility)
+// ============================================
+
+export type PaceLevel = 'gentle' | 'standard' | 'accelerated';
+
+export type PaceSubject =
+  | 'catechism' | 'hymn' | 'scripture' | 'history'
+  | 'math' | 'reading' | 'motor' | 'cognitive';
+
+export type PaceOverrides = Partial<Record<PaceSubject, PaceLevel>>;
+
+export const PACE_LEVEL_LABELS: Record<PaceLevel, string> = {
+  'gentle': 'Gentle',
+  'standard': 'Standard',
+  'accelerated': 'Accelerated'
+};
+
+export const PACE_LEVEL_DESCRIPTIONS: Record<PaceLevel, string> = {
+  'gentle': 'Slower pace with more repetition',
+  'standard': 'Default family pace',
+  'accelerated': 'Faster pace with more challenge'
+};
+
+export const PACE_SUBJECTS: { key: PaceSubject; label: string }[] = [
+  { key: 'catechism', label: 'Catechism' },
+  { key: 'history', label: 'History' },
+  { key: 'math', label: 'Math' },
+  { key: 'reading', label: 'Reading' },
+  { key: 'motor', label: 'Physical Skills' },
+  { key: 'cognitive', label: 'Thinking Skills' },
+];
+
+// ============================================
+// PHASE 5: EARNING WHILE LEARNING
+// ============================================
+
+export type ApprenticeshipType = 'apprenticeship' | 'service' | 'job';
+export type ApprenticeshipStatus = 'active' | 'completed' | 'dropped';
+
+export interface Apprenticeship {
+  id: string;
+  studentId: string;
+  type: ApprenticeshipType;
+  title: string;
+  organizationName?: string;
+  mentorName?: string;
+  description?: string;
+  startDate?: string;
+  endDate?: string;
+  totalHoursRequired?: number;
+  status: ApprenticeshipStatus;
+  skillsLearned?: string[]; // JSON array
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface WorkEntry {
+  id: string;
+  apprenticeshipId: string;
+  date: string;
+  hours: number;
+  description: string;
+  photoUrl?: string;
+  skillsApplied?: string[]; // JSON array
+  status: 'pending' | 'approved';
+  supervisorNote?: string;
+  createdAt: string;
+}
+
 export interface Student {
   id: string;
   householdId: string;
@@ -55,9 +125,24 @@ export interface Student {
   ageInMonths: number;
   currentStage: LearningStage;
 
+  // Settings
+  independence_settings?: {
+    canMarkComplete: boolean;
+    canAskAi: boolean;
+    canViewPortfolio: boolean;
+  };
+
+  // Per-subject pace overrides (Phase 4)
+  pace_overrides?: PaceOverrides;
+
+  // Graduation (Phase 6)
+  is_graduated?: boolean;
+  graduation_date?: string;
+
   createdAt: string;
   updatedAt: string;
 }
+
 
 export interface Household {
   id: string;
@@ -321,6 +406,7 @@ export interface PortfolioItem {
   // Extended fields for display
   publicUrl?: string;
   domain?: string;
+  apprenticeshipId?: string; // Phase 5
 }
 
 
@@ -628,6 +714,7 @@ export interface PortfolioItem {
   // Extended fields for display
   publicUrl?: string;
   domain?: string;
+  apprenticeshipId?: string;
 }
 
 // Liturgy response type
@@ -736,4 +823,33 @@ export interface AuthContextType {
   signOut?: () => void; // Alias for logout
   refreshAuth: () => Promise<void>;
   isLoading: boolean;
+}
+
+// ============================================
+// 10. TRANSCRIPTS & REPORTS
+// ============================================
+
+export interface TranscriptCourse {
+  subject: string;
+  title: string;
+  year: string; // e.g., "2024-2025"
+  credits: number;
+  grade: string; // "P" for Pass, or calculated
+}
+
+export interface TranscriptActivity {
+  role: string;
+  organization: string;
+  hours: number;
+  description: string;
+}
+
+export interface TranscriptData {
+  studentName: string;
+  dateOfBirth: string;
+  graduationDate?: string;
+  courses: TranscriptCourse[];
+  activities: TranscriptActivity[];
+  totalCredits: number;
+  gpa?: string; // Optional if we calculate it
 }

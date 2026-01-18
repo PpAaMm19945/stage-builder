@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { VIRTUE_LABELS, type PrimaryVirtue, type EarlyYearsDomain, DOMAIN_LABELS } from '@/types';
+import { FormationTimer, useFormationTimer } from '@/components/formations/FormationTimer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -87,7 +88,7 @@ export interface ActivityDetailsProps {
         assessment_prohibited?: number;
     };
     isCompleted?: boolean;
-    onComplete?: () => void;
+    onComplete?: (duration?: number) => void;
     onObservation?: () => void;
     showBack?: boolean;
     onBack?: () => void;
@@ -106,6 +107,20 @@ export function ActivityDetails({
     hideActions = false
 }: ActivityDetailsProps) {
     const navigate = useNavigate();
+
+    // Timer Logic
+    const {
+        isRunning,
+        start,
+        stop,
+        getElapsedMinutes,
+        elapsedSeconds
+    } = useFormationTimer();
+
+    // Auto-start if not completed and viewing? Maybe manual is better for details view.
+    // Let's stick to manual for details view unless it's a specific "Do It" mode.
+    // FormationCard auto-starts on expand. Here we are in a sheet. Let's auto-start if it's "upcoming" or "current"? 
+    // Actually, user might just be reading. Let's provide controls.
 
     // Normalize fields
     const duration = activity.estimatedMinutes || activity.duration_minutes || 15;
@@ -128,6 +143,15 @@ export function ActivityDetails({
 
     const virtueColor = virtueColors[virtue] || domainColors[virtue] || 'bg-primary/10 text-primary';
 
+    const handleComplete = () => {
+        stop();
+        if (onComplete) {
+            // If timer was running, use that. Otherwise undefined (or maybe 0?)
+            // If elapsed > 1 minute, use it.
+            const elapsed = getElapsedMinutes();
+            onComplete(elapsed > 0 ? elapsed : undefined);
+        }
+    };
 
     return (
         <div className="space-y-6 max-w-3xl pb-8">
@@ -196,221 +220,235 @@ export function ActivityDetails({
                     </div>
                 </div>
 
-                {/* Meta info */}
-                <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <div className="flex items-center gap-2">
-                        <Clock className="h-4 w-4" />
-                        <span>{duration} minutes</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <span>Difficulty:</span>
-                        <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((level) => (
-                                <div
-                                    key={level}
-                                    className={`h-2 w-4 rounded-full ${level <= difficulty ? 'bg-primary' : 'bg-muted'}`}
-                                />
-                            ))}
+                {/* Timer & Meta info */}
+                <div className="flex flex-col gap-3">
+                    {/* Active Timer Control */}
+                    {!isCompleted && (
+                        <div className="flex items-center gap-4 bg-slate-50 dark:bg-slate-900 p-3 rounded-lg border">
+                            <FormationTimer
+                                isRunning={isRunning}
+                                showControls={true}
+                                onToggle={(running) => running ? start() : stop()}
+                                className="text-2xl font-mono font-bold w-full justify-center" // Prominent
+                            />
                         </div>
-                    </div>
-                    <span>Ages {minAge}-{maxAge} months</span>
-                </div>
-            </div>
-
-            {/* Safety Note */}
-            {safety && (
-                <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
-                    <AlertTriangle className="h-4 w-4 stroke-red-600 dark:stroke-red-400" />
-                    <AlertTitle className="text-red-700 dark:text-red-300">Safety Warning</AlertTitle>
-                    <AlertDescription>{safety}</AlertDescription>
-                </Alert>
-            )}
-
-            {/* Cultural Context */}
-            {culture && (
-                <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
-                    <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-                    <AlertTitle className="text-blue-700 dark:text-blue-300">Cultural Context</AlertTitle>
-                    <AlertDescription className="text-blue-800 dark:text-blue-200">{culture}</AlertDescription>
-                </Alert>
-            )}
-
-            {/* Shepherd's Script */}
-            {script && (
-                <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
-                    <div className="flex items-start gap-3">
-                        <Book className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
-                        <div className="space-y-1">
-                            <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Shepherd's Script</p>
-                            <p className="text-amber-900 dark:text-amber-100 italic text-lg leading-relaxed">"{script}"</p>
-                            <p className="text-xs text-amber-700 dark:text-amber-300/80 pt-1">Read this to your child to connect this activity to God's truth.</p>
-                        </div>
-                    </div>
-                </div>
-            )}
-
-            {/* Materials */}
-            {activity.materials && activity.materials.length > 0 && (
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Package className="h-5 w-5 text-primary" />
-                            Materials Needed
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                            {activity.materials.map((material, idx) => (
-                                <li key={idx} className="flex items-center gap-2 text-foreground">
-                                    <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
-                                    {material}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Instructions / Guide Steps */}
-            {steps && steps.length > 0 && (
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <ListOrdered className="h-5 w-5 text-primary" />
-                            Formation Guide
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ol className="space-y-4">
-                            {steps.map((step, idx) => (
-                                <li key={idx} className="flex gap-4">
-                                    <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0">
-                                        {idx + 1}
-                                    </span>
-                                    <p className="text-foreground pt-0.5">{step}</p>
-                                </li>
-                            ))}
-                        </ol>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Success Indicators */}
-            {successIndicators.length > 0 && (
-                <Card>
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2">
-                            <Target className="h-5 w-5 text-primary" />
-                            What Success Looks Like
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-2">
-                            {successIndicators.map((indicator, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-foreground">
-                                    <CheckCircle2 className="h-4 w-4 text-mastery-secure mt-1 shrink-0" />
-                                    {indicator}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Tiered Expectations */}
-            {type === 'family_session' && tiers.length > 0 && (
-                <Card className="border-primary/30 bg-primary/5">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2 text-primary">
-                            <Users className="h-5 w-5" />
-                            Age-Appropriate Expectations
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <p className="text-sm text-muted-foreground mb-4">
-                            This is a family activity! Here's what to expect for different ages:
-                        </p>
-                        <div className="space-y-3">
-                            {tiers.map((tier, idx) => (
-                                <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background border">
-                                    <div className="shrink-0 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
-                                        {tier.tier}
-                                    </div>
-                                    <div className="flex-1">
-                                        <p className="text-xs text-muted-foreground mb-1">
-                                            Ages {tier.age_min}-{tier.age_max} months
-                                        </p>
-                                        <p className="text-sm text-foreground">{tier.expectation}</p>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
-                    </CardContent>
-                </Card>
-            )}
-
-            {/* Tips and Variations - Omitted for brevity in this refactor, can keep adding if needed */}
-            {tips.length > 0 && (
-                <Card className="border-accent/30 bg-accent/5">
-                    <CardHeader className="pb-3">
-                        <CardTitle className="text-lg flex items-center gap-2 text-accent">
-                            <Lightbulb className="h-5 w-5" />
-                            Tips for Parents
-                        </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                        <ul className="space-y-2">
-                            {tips.map((tip, idx) => (
-                                <li key={idx} className="flex items-start gap-2 text-foreground">
-                                    <Sparkles className="h-4 w-4 text-accent mt-1 shrink-0" />
-                                    {tip}
-                                </li>
-                            ))}
-                        </ul>
-                    </CardContent>
-                </Card>
-            )}
-
-
-            {/* Action Buttons */}
-            {!hideActions && (
-                <div className="flex flex-col sm:flex-row gap-3 pt-4">
-                    {noAssessment ? (
-                        <Button size="lg" variant="outline" onClick={onComplete} className="w-full sm:w-auto gap-2">
-                            <Smile className="h-4 w-4" />
-                            That was lovely
-                        </Button>
-                    ) : isCompleted ? (
-                        <>
-                            <Button size="lg" variant="outline" onClick={onObservation} className="flex-1">
-                                Update Observation
-                            </Button>
-                            <Button size="lg" onClick={() => navigate('/early-years/activities')} className="flex-1 gap-2">
-                                Browse Activities <ArrowRight className="h-4 w-4" />
-                            </Button>
-                        </>
-                    ) : (
-                        <Button size="lg" onClick={onComplete} className="w-full sm:w-auto gap-2">
-                            <CheckCircle2 className="h-4 w-4" />
-                            Complete Activity
-                        </Button>
                     )}
-                </div>
-            )}
 
-            {/* Previous Result Info */}
-            {previousResult && (
-                <Card className="bg-muted/30">
-                    <CardContent className="py-4">
-                        <p className="text-sm text-muted-foreground">
-                            Last completed on {new Date(previousResult.created_at).toLocaleDateString()}
-                            {previousResult.parent_notes && (
-                                <span> — "{previousResult.parent_notes}"</span>
-                            )}
-                        </p>
-                    </CardContent>
-                </Card>
-            )}
-        </div>
-    );
+                    <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
+                        <div className="flex items-center gap-2">
+                            <Clock className="h-4 w-4" />
+                            <span>Est. {duration} minutes</span>
+                        </div>
+                        {/* ... rest of existing meta ... */}
+                        <div className="flex items-center gap-2">
+                            <span>Difficulty:</span>
+                            <div className="flex gap-1">
+                                {[1, 2, 3, 4, 5].map((level) => (
+                                    <div
+                                        key={level}
+                                        className={`h-2 w-4 rounded-full ${level <= difficulty ? 'bg-primary' : 'bg-muted'}`}
+                                    />
+                                ))}
+                            </div>
+                        </div>
+                        <span>Ages {minAge}-{maxAge} months</span>
+                    </div>
+                </div>
+
+                {/* Safety Note */}
+                {safety && (
+                    <Alert variant="destructive" className="border-red-200 bg-red-50 dark:bg-red-900/20 text-red-800 dark:text-red-200">
+                        <AlertTriangle className="h-4 w-4 stroke-red-600 dark:stroke-red-400" />
+                        <AlertTitle className="text-red-700 dark:text-red-300">Safety Warning</AlertTitle>
+                        <AlertDescription>{safety}</AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Cultural Context */}
+                {culture && (
+                    <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20">
+                        <Globe className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+                        <AlertTitle className="text-blue-700 dark:text-blue-300">Cultural Context</AlertTitle>
+                        <AlertDescription className="text-blue-800 dark:text-blue-200">{culture}</AlertDescription>
+                    </Alert>
+                )}
+
+                {/* Shepherd's Script */}
+                {script && (
+                    <div className="bg-amber-50 dark:bg-amber-900/20 border-l-4 border-amber-400 p-4 rounded-r-lg shadow-sm">
+                        <div className="flex items-start gap-3">
+                            <Book className="h-5 w-5 text-amber-600 dark:text-amber-400 shrink-0 mt-0.5" />
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold text-amber-600 dark:text-amber-400 uppercase tracking-wider">Shepherd's Script</p>
+                                <p className="text-amber-900 dark:text-amber-100 italic text-lg leading-relaxed">"{script}"</p>
+                                <p className="text-xs text-amber-700 dark:text-amber-300/80 pt-1">Read this to your child to connect this activity to God's truth.</p>
+                            </div>
+                        </div>
+                    </div>
+                )}
+
+                {/* Materials */}
+                {activity.materials && activity.materials.length > 0 && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Package className="h-5 w-5 text-primary" />
+                                Materials Needed
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                                {activity.materials.map((material, idx) => (
+                                    <li key={idx} className="flex items-center gap-2 text-foreground">
+                                        <div className="h-1.5 w-1.5 rounded-full bg-primary shrink-0" />
+                                        {material}
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Instructions / Guide Steps */}
+                {steps && steps.length > 0 && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <ListOrdered className="h-5 w-5 text-primary" />
+                                Formation Guide
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ol className="space-y-4">
+                                {steps.map((step, idx) => (
+                                    <li key={idx} className="flex gap-4">
+                                        <span className="flex items-center justify-center h-7 w-7 rounded-full bg-primary/10 text-primary text-sm font-semibold shrink-0">
+                                            {idx + 1}
+                                        </span>
+                                        <p className="text-foreground pt-0.5">{step}</p>
+                                    </li>
+                                ))}
+                            </ol>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Success Indicators */}
+                {successIndicators.length > 0 && (
+                    <Card>
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2">
+                                <Target className="h-5 w-5 text-primary" />
+                                What Success Looks Like
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-2">
+                                {successIndicators.map((indicator, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-foreground">
+                                        <CheckCircle2 className="h-4 w-4 text-mastery-secure mt-1 shrink-0" />
+                                        {indicator}
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Tiered Expectations */}
+                {type === 'family_session' && tiers.length > 0 && (
+                    <Card className="border-primary/30 bg-primary/5">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2 text-primary">
+                                <Users className="h-5 w-5" />
+                                Age-Appropriate Expectations
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <p className="text-sm text-muted-foreground mb-4">
+                                This is a family activity! Here's what to expect for different ages:
+                            </p>
+                            <div className="space-y-3">
+                                {tiers.map((tier, idx) => (
+                                    <div key={idx} className="flex items-start gap-3 p-3 rounded-lg bg-background border">
+                                        <div className="shrink-0 px-2 py-1 rounded-md bg-primary/10 text-primary text-xs font-semibold">
+                                            {tier.tier}
+                                        </div>
+                                        <div className="flex-1">
+                                            <p className="text-xs text-muted-foreground mb-1">
+                                                Ages {tier.age_min}-{tier.age_max} months
+                                            </p>
+                                            <p className="text-sm text-foreground">{tier.expectation}</p>
+                                        </div>
+                                    </div>
+                                ))}
+                            </div>
+                        </CardContent>
+                    </Card>
+                )}
+
+                {/* Tips and Variations - Omitted for brevity in this refactor, can keep adding if needed */}
+                {tips.length > 0 && (
+                    <Card className="border-accent/30 bg-accent/5">
+                        <CardHeader className="pb-3">
+                            <CardTitle className="text-lg flex items-center gap-2 text-accent">
+                                <Lightbulb className="h-5 w-5" />
+                                Tips for Parents
+                            </CardTitle>
+                        </CardHeader>
+                        <CardContent>
+                            <ul className="space-y-2">
+                                {tips.map((tip, idx) => (
+                                    <li key={idx} className="flex items-start gap-2 text-foreground">
+                                        <Sparkles className="h-4 w-4 text-accent mt-1 shrink-0" />
+                                        {tip}
+                                    </li>
+                                ))}
+                            </ul>
+                        </CardContent>
+                    </Card>
+                )}
+
+
+                {/* Action Buttons */}
+                {!hideActions && (
+                    <div className="flex flex-col sm:flex-row gap-3 pt-4">
+                        {noAssessment ? (
+                            <Button size="lg" variant="outline" onClick={handleComplete} className="w-full sm:w-auto gap-2">
+                                <Smile className="h-4 w-4" />
+                                That was lovely
+                            </Button>
+                        ) : isCompleted ? (
+                            <>
+                                <Button size="lg" variant="outline" onClick={onObservation} className="flex-1">
+                                    Update Observation
+                                </Button>
+                                <Button size="lg" onClick={() => navigate('/early-years/activities')} className="flex-1 gap-2">
+                                    Browse Activities <ArrowRight className="h-4 w-4" />
+                                </Button>
+                            </>
+                        ) : (
+                            <Button size="lg" onClick={handleComplete} className="w-full sm:w-auto gap-2">
+                                <CheckCircle2 className="h-4 w-4" />
+                                Complete Activity
+                            </Button>
+                        )}
+                    </div>
+                )}
+
+                {/* Previous Result Info */}
+                {previousResult && (
+                    <Card className="bg-muted/30">
+                        <CardContent className="py-4">
+                            <p className="text-sm text-muted-foreground">
+                                Last completed on {new Date(previousResult.created_at).toLocaleDateString()}
+                                {previousResult.parent_notes && (
+                                    <span> — "{previousResult.parent_notes}"</span>
+                                )}
+                            </p>
+                        </CardContent>
+                    </Card>
+                )}
+            </div>
+            );
 }

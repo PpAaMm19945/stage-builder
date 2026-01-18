@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { useAuth } from '@/contexts/AuthContext';
-import { students } from '@/lib/api';
+import { students, API_URL } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -15,8 +15,10 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Pencil } from 'lucide-react';
-import type { Student } from '@/types';
+import { Loader2, Pencil, GraduationCap } from 'lucide-react';
+import type { Student, PaceOverrides, PaceLevel, PaceSubject } from '@/types';
+import { IndependenceSettings } from '../settings/IndependenceSettings';
+import { PaceOverrideSettings } from '../settings/PaceOverrideSettings';
 
 const editChildSchema = z.object({
     name: z.string().min(1, 'Name is required').max(50, 'Name is too long'),
@@ -25,8 +27,17 @@ const editChildSchema = z.object({
         const now = new Date();
         const ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
             (now.getMonth() - birthDate.getMonth());
-        return ageMonths >= 0 && ageMonths <= 72; // 0-6 years for early years
-    }, 'Child must be between 0 and 6 years old for early years stage'),
+        return ageMonths >= 0 && ageMonths <= 240; // Extended to 20 years to allow for graduates/older students
+    }, 'Child must be between 0 and 20 years old'),
+    independence_settings: z.object({
+        canMarkComplete: z.boolean(),
+        canAskAi: z.boolean(),
+        canViewPortfolio: z.boolean(),
+    }).optional(),
+    pace_overrides: z.record(z.string(), z.enum(['gentle', 'standard', 'accelerated'])).optional(),
+    // Graduation fields
+    is_graduated: z.boolean().optional(),
+    graduation_date: z.string().optional(),
 });
 
 type EditChildFormData = z.infer<typeof editChildSchema>;
@@ -47,24 +58,62 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
     const [isSubmitting, setIsSubmitting] = useState(false);
     const { refreshAuth } = useAuth();
 
-    const {
-        register,
-        handleSubmit,
-        reset,
-        formState: { errors },
-    } = useForm<EditChildFormData>({
+    const form = useForm<EditChildFormData>({
         resolver: zodResolver(editChildSchema),
         defaultValues: {
             name: child.name,
             dateOfBirth: formatDateForInput(child.dateOfBirth),
+            independence_settings: child.independence_settings || {
+                canMarkComplete: false,
+                canAskAi: false,
+                canViewPortfolio: false
+            },
+            pace_overrides: child.pace_overrides || {}
         },
     });
+
+    const {
+        register,
+        handleSubmit,
+        reset,
+        setValue,
+        watch,
+        getValues,
+        formState: { errors },
+    } = form;
+
+    // Handle settings update manually
+    const handleSettingsUpdate = (key: string, value: boolean) => {
+        const currentSettings = getValues('independence_settings') || {
+            canMarkComplete: false,
+            canAskAi: false,
+            canViewPortfolio: false
+        };
+        setValue('independence_settings', { ...currentSettings, [key]: value }, { shouldDirty: true });
+    };
+
+    // Handle pace override update
+    const handlePaceUpdate = (subject: PaceSubject, pace: PaceLevel | null) => {
+        const currentPace = getValues('pace_overrides') || {};
+        if (pace === null) {
+            const { [subject]: _, ...rest } = currentPace;
+            setValue('pace_overrides', rest, { shouldDirty: true });
+        } else {
+            setValue('pace_overrides', { ...currentPace, [subject]: pace }, { shouldDirty: true });
+        }
+    };
 
     // Reset form when child changes
     useEffect(() => {
         reset({
             name: child.name,
             dateOfBirth: formatDateForInput(child.dateOfBirth),
+            independence_settings: child.independence_settings || {
+                canMarkComplete: false,
+                canAskAi: false,
+                canViewPortfolio: false
+            },
+            pace_overrides: child.pace_overrides || {}
         });
     }, [child, reset]);
 
@@ -74,6 +123,10 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
             await students.update(child.id, {
                 name: data.name,
                 dateOfBirth: data.dateOfBirth,
+                independence_settings: data.independence_settings,
+                pace_overrides: data.pace_overrides,
+                is_graduated: data.is_graduated,
+                graduation_date: data.graduation_date
             });
 
             await refreshAuth();
@@ -99,6 +152,30 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
                         Update {child.name}'s details. Age will be recalculated based on date of birth.
                     </DialogDescription>
                 </DialogHeader>
+                <div className="flex gap-2 mb-2">
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            const token = localStorage.getItem('schoolos_token');
+                            const url = `${API_URL}/api/export/transcript/${child.id}?token=${token}`;
+                            window.open(url, '_blank');
+                        }}
+                    >
+                        📄 Export Transcript
+                    </Button>
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => {
+                            const token = localStorage.getItem('schoolos_token');
+                            const url = `${API_URL}/api/export/diploma/${child.id}?token=${token}`;
+                            window.open(url, '_blank');
+                        }}
+                    >
+                        🎓 Export Diploma
+                    </Button>
+                </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
                     <div className="space-y-2">
                         <Label htmlFor="edit-name">Child's Name</Label>
@@ -126,6 +203,53 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
                             <p className="text-sm text-destructive">{errors.dateOfBirth.message}</p>
                         )}
                     </div>
+
+                    <IndependenceSettings
+                        settings={form.watch('independence_settings') || {
+                            canMarkComplete: false,
+                            canAskAi: false,
+                            canViewPortfolio: false
+                        }}
+                        onUpdate={handleSettingsUpdate}
+                        disabled={isSubmitting}
+                    />
+
+                    <div className="border-t pt-4">
+                        <PaceOverrideSettings
+                            settings={form.watch('pace_overrides') || {}}
+                            onUpdate={handlePaceUpdate}
+                            disabled={isSubmitting}
+                        />
+                    </div>
+
+                    {!child.is_graduated && (
+                        <div className="border-t pt-4">
+                            <Label className="text-base font-medium mb-1 block">Milestones</Label>
+                            <p className="text-sm text-slate-500 mb-4">
+                                Mark major life transitions.
+                            </p>
+                            <Button
+                                type="button"
+                                variant="outline"
+                                className="w-full text-indigo-600 border-indigo-200 hover:bg-indigo-50 hover:text-indigo-700"
+                                onClick={() => {
+                                    if (confirm(`Are you sure you want to graduate ${child.name}? This will change their profile to Alumni status and remove them from the daily schedule.`)) {
+                                        setValue('is_graduated', true, { shouldDirty: true });
+                                        setValue('graduation_date', new Date().toISOString(), { shouldDirty: true });
+                                    }
+                                }}
+                                disabled={isSubmitting}
+                            >
+                                <GraduationCap className="mr-2 h-4 w-4" />
+                                Graduate Student
+                            </Button>
+                            {watch('is_graduated') && (
+                                <p className="text-xs text-indigo-600 mt-2 text-center font-medium">
+                                    🎓 Marked for Graduation upon save.
+                                </p>
+                            )}
+                        </div>
+                    )}
 
                     <div className="flex justify-end gap-3 pt-4">
                         <Button

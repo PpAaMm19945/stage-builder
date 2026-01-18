@@ -6,6 +6,8 @@ import { cors } from 'hono/cors';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 import { AiCoach } from './ai';
+import { PdfService } from './services/pdf-service';
+import { handleArchiveExport, handleSignedDownload } from './export';
 
 // Types
 export interface Env {
@@ -162,16 +164,16 @@ app.get('/', async (c) => {
     let aiToday, aiMonth, recentLogs: any[] = [], triageStats: any = { results: [] }, recentTriageLogs: any[] = [];
     try {
       aiToday = await c.env.DB.prepare(
-        "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE date(created_at) = ?"
+        "SELECT COUNT(*) as count FROM ai_logs WHERE date(created_at) = ?"
       ).bind(today).first<any>();
 
       aiMonth = await c.env.DB.prepare(
-        "SELECT COUNT(*) as count FROM ai_interaction_logs WHERE strftime('%Y-%m', created_at) = ?"
+        "SELECT COUNT(*) as count FROM ai_logs WHERE strftime('%Y-%m', created_at) = ?"
       ).bind(currentMonth).first<any>();
 
       // 3. Recent Activity (Expanded)
       const logsResult = await c.env.DB.prepare(
-        'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_interaction_logs ORDER BY created_at DESC LIMIT 20'
+        'SELECT id, interaction_type, question, answer, context_json, created_at FROM ai_logs ORDER BY created_at DESC LIMIT 20'
       ).all();
       recentLogs = logsResult.results;
 
@@ -552,7 +554,7 @@ app.use('/api/*', async (c, next) => {
   c.header('Cache-Control', 'no-store, max-age=0');
 
   const authHeader = c.req.header('Authorization');
-  const token = authHeader?.replace('Bearer ', '');
+  const token = authHeader?.replace('Bearer ', '') || c.req.query('token');
 
   if (token) {
     const payload = await verifyJWT(token, c.env.JWT_SECRET);
@@ -601,6 +603,112 @@ function requireHouseholdMember(c: any): User {
 function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
+
+
+// ============ EXPORT ROUTES ============
+
+app.get('/api/export/transcript/:studentId', async (c) => {
+  const studentId = c.req.param('studentId');
+  const user = requireHouseholdMember(c); // Ensure user has access
+
+  // 1. Get Student
+  const student = await c.env.DB.prepare('SELECT * FROM students WHERE id = ?').bind(studentId).first<any>();
+  if (!student) return c.text('Student not found', 404);
+
+  // Security check: User must be in same household as student
+  if (user.household_id !== student.household_id) return c.text('Unauthorized', 403);
+
+  // 2. Fetch Evidences (Formations)
+  const evidences = await c.env.DB.prepare(`
+    SELECT e.duration_minutes, f.title, f.primary_virtue, f.cluster_tag, f.formation_type, strftime('%Y', e.captured_at) as year
+    FROM evidences e
+    JOIN formations f ON e.formation_id = f.id
+    WHERE e.student_id = ?
+  `).bind(studentId).all<any>();
+
+  // 3. Fetch Apprenticeships (Work)
+  const workEntries = await c.env.DB.prepare(`
+    SELECT a.title, a.organization_name, a.type, SUM(w.hours) as total_hours
+    FROM apprenticeships a
+    JOIN work_entries w ON w.apprenticeship_id = a.id
+    WHERE a.student_id = ? AND w.status = 'approved'
+    GROUP BY a.id
+  `).bind(studentId).all<any>();
+
+  // 4. Aggregate Data
+  const courseMap = new Map<string, { title: string, year: string, minutes: number }>();
+
+  for (const ev of evidences.results) {
+    if (!ev.duration_minutes) continue;
+
+    // Grouping Strategy: Subject (Cluster) + Year
+    const subject = ev.cluster_tag || ev.primary_virtue || 'General';
+    const year = ev.year || 'Unknown';
+    const key = `${subject}-${year}`;
+
+    if (!courseMap.has(key)) {
+      courseMap.set(key, { title: subject, year, minutes: 0 });
+    }
+    const entry = courseMap.get(key)!;
+    entry.minutes += ev.duration_minutes;
+  }
+
+  const courses: any[] = [];
+  let totalCredits = 0;
+
+  for (const [key, data] of courseMap.entries()) {
+    const hours = data.minutes / 60;
+    const credits = hours / 120; // Carnegie Unit
+    if (credits < 0.1) continue; // Filter out tiny entries
+
+    totalCredits += credits;
+    courses.push({
+      subject: data.title,
+      title: `${data.title} Studies`, // Can refine this name
+      year: data.year,
+      credits: credits,
+      grade: 'Pass', // Defaulting to Pass for now
+    });
+  }
+
+  // Work to Activities
+  const activities = workEntries.results.map((w: any) => ({
+    role: w.title,
+    organization: w.organization_name || 'Self-Directed',
+    hours: w.total_hours,
+    description: `Type: ${w.type}`
+  }));
+
+  // 5. Generate PDF
+  const pdfBytes = await PdfService.generateTranscript({
+    studentName: student.name,
+    dateOfBirth: student.date_of_birth,
+    graduationDate: undefined, // Could add this to student schema later
+    courses,
+    activities,
+    totalCredits
+  });
+
+  c.header('Content-Type', 'application/pdf');
+  c.header('Content-Disposition', `attachment; filename="${student.name}_Transcript.pdf"`);
+  return c.body(pdfBytes);
+});
+
+app.get('/api/export/diploma/:studentId', async (c) => {
+  const studentId = c.req.param('studentId');
+  const user = requireHouseholdMember(c);
+
+  const student = await c.env.DB.prepare('SELECT * FROM students WHERE id = ?').bind(studentId).first<any>();
+  if (!student) return c.text('Student not found', 404);
+
+  if (user.household_id !== student.household_id) return c.text('Unauthorized', 403);
+
+  const pdfBytes = await PdfService.generateDiploma(student.name, new Date().toLocaleDateString());
+
+  c.header('Content-Type', 'application/pdf');
+  c.header('Content-Disposition', `attachment; filename="${student.name}_Diploma.pdf"`);
+  return c.body(pdfBytes);
+});
 
 // ============ DEV BYPASS AUTH (Development Only) ============
 // Access: GET /auth/dev-bypass?email=test@example.com&name=Test%20User
@@ -998,7 +1106,14 @@ app.get('/api/students', async (c) => {
       results = legacy.results;
     }
 
-    return c.json(results);
+    // Parse JSON fields
+    const parsedResults = results.map((student: any) => ({
+      ...student,
+      independence_settings: JSON.parse(student.independence_settings || '{}'),
+      pace_overrides: JSON.parse(student.pace_overrides || 'null')
+    }));
+
+    return c.json(parsedResults);
   } catch (error: any) {
     console.error('Students list error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
@@ -1221,15 +1336,21 @@ app.put('/api/students/:id', async (c) => {
       return c.json({ error: 'Child not found' }, 404);
     }
 
-    const { name, dateOfBirth, avatarUrl } = body;
+    const { name, dateOfBirth, avatarUrl, independence_settings, pace_overrides } = body;
 
     await c.env.DB.prepare(
-      'UPDATE students SET name = COALESCE(?, name), date_of_birth = COALESCE(?, date_of_birth), avatar_url = COALESCE(?, avatar_url), updated_at = datetime("now") WHERE id = ?'
-    ).bind(name || null, dateOfBirth || null, avatarUrl || null, studentId).run();
+      'UPDATE students SET name = COALESCE(?, name), date_of_birth = COALESCE(?, date_of_birth), avatar_url = COALESCE(?, avatar_url), independence_settings = COALESCE(?, independence_settings), pace_overrides = COALESCE(?, pace_overrides), updated_at = datetime("now") WHERE id = ?'
+    ).bind(name || null, dateOfBirth || null, avatarUrl || null, independence_settings ? JSON.stringify(independence_settings) : null, pace_overrides ? JSON.stringify(pace_overrides) : null, studentId).run();
 
     const student = await c.env.DB.prepare(
       'SELECT * FROM students WHERE id = ?'
     ).bind(studentId).first();
+
+    // Parse for response
+    if (student) {
+      (student as any).independence_settings = JSON.parse((student as any).independence_settings || '{}');
+      (student as any).pace_overrides = JSON.parse((student as any).pace_overrides || 'null');
+    }
 
     return c.json(student);
   } catch (error: any) {
@@ -1322,15 +1443,15 @@ app.get('/api/formations/:id', async (c) => {
 app.post('/api/evidences', async (c) => {
   try {
     const user = requireParent(c); // Only parents record evidence
-    const { studentId, formationId, stage, note, url, type } = await c.req.json();
+    const { studentId, formationId, stage, note, url, type, duration_minutes, loved_it } = await c.req.json();
 
     const id = crypto.randomUUID();
     const now = new Date().toISOString();
 
     await c.env.DB.prepare(`
-            INSERT INTO evidences (id, student_id, formation_id, stage, note, url, type, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, studentId, formationId, stage || 'seeding', note || null, url || null, type || 'observation', now, now).run();
+            INSERT INTO evidences (id, student_id, formation_id, stage, note, url, type, duration_minutes, loved_it, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).bind(id, studentId, formationId, stage || 'seeding', note || null, url || null, type || 'observation', duration_minutes || null, loved_it ? 1 : 0, now, now).run();
 
     return c.json({ success: true, id });
   } catch (error: any) {
@@ -1342,6 +1463,209 @@ app.post('/api/evidences', async (c) => {
 // Legacy adapter for 'activity-completions' if frontend still calls it briefly
 app.post('/api/activity-completions', async (c) => {
   return c.json({ error: "Endpoint deprecated. Use /api/evidences" }, 410);
+});
+
+// ============ WORK LOGS & APPRENTICESHIPS ROUTES ============
+
+// Log Work Entry
+app.post('/api/work/log', async (c) => {
+  try {
+    const user = requireAuth(c);
+    // User can be student or parent logging on behalf
+    const body = await c.req.json();
+    const { apprenticeshipId, date, hours, description, photoUrl, skillsApplied } = body;
+
+    if (!apprenticeshipId || !date || !hours || !description) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+
+    const id = generateId('work');
+    const now = new Date().toISOString();
+
+    // Verify apprenticeship exists and belongs to student (or student in household)
+    // For MVP, we trust the ID if it's valid, but ideally we check ownership.
+
+    await c.env.DB.prepare(`
+      INSERT INTO work_entries (id, apprenticeship_id, date, hours, description, photo_url, skills_applied, status, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, 'pending', ?, ?)
+    `).bind(
+      id,
+      apprenticeshipId,
+      date,
+      hours,
+      description,
+      photoUrl || null,
+      skillsApplied ? JSON.stringify(skillsApplied) : '[]',
+      now,
+      now
+    ).run();
+
+    return c.json({ success: true, id });
+  } catch (e: any) {
+    return c.json({ error: e.message || 'Failed to log work' }, 500);
+  }
+});
+
+// Get Active Apprenticeships (for Dropdown)
+app.get('/api/apprenticeships', async (c) => {
+  try {
+    const user = requireAuth(c);
+    let studentId = user.student_id;
+
+    let query = '';
+    let params: any[] = [];
+
+    if (user.role === 'student' && studentId) {
+      query = `SELECT * FROM apprenticeships WHERE student_id = ? AND status = 'active'`;
+      params = [studentId];
+    } else if (user.role === 'parent' && user.household_id) {
+      query = `
+                SELECT a.*, s.name as student_name 
+                FROM apprenticeships a
+                JOIN students s ON a.student_id = s.id
+                WHERE s.household_id = ? AND a.status = 'active'
+             `;
+      params = [user.household_id];
+    } else {
+      return c.json([]);
+    }
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    const parsed = results.map((r: any) => ({
+      ...r,
+      skills_learned: JSON.parse(r.skills_learned || '[]')
+    }));
+
+    return c.json(parsed);
+
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Get Pending Work Entries (For Parents)
+app.get('/api/work/pending', async (c) => {
+  try {
+    const user = requireParent(c);
+
+    // Get entries for all students in household
+    const query = `
+      SELECT 
+        w.*,
+        a.title as apprenticeship_title,
+        s.name as student_name,
+        s.avatar_url as student_avatar
+      FROM work_entries w
+      JOIN apprenticeships a ON w.apprenticeship_id = a.id
+      JOIN students s ON a.student_id = s.id
+      WHERE s.household_id = ? AND w.status = 'pending'
+      ORDER BY w.date DESC
+    `;
+
+    const { results } = await c.env.DB.prepare(query)
+      .bind(user.household_id)
+      .all();
+
+    const parsed = results.map((r: any) => ({
+      ...r,
+      skills_applied: JSON.parse(r.skills_applied || '[]')
+    }));
+
+    return c.json(parsed);
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Approve/Reject Work Entry
+app.put('/api/work/approve/:id', async (c) => {
+  try {
+    const user = requireParent(c);
+    const id = c.req.param('id');
+    const { status, supervisorNote } = await c.req.json();
+
+    if (!['approved', 'rejected'].includes(status)) {
+      return c.json({ error: 'Invalid status' }, 400);
+    }
+
+    // Verify entry belongs to household
+    const entry = await c.env.DB.prepare(`
+      SELECT w.id 
+      FROM work_entries w
+      JOIN apprenticeships a ON w.apprenticeship_id = a.id
+      JOIN students s ON a.student_id = s.id
+      WHERE w.id = ? AND s.household_id = ?
+    `).bind(id, user.household_id).first();
+
+    if (!entry) {
+      return c.json({ error: 'Entry not found or unauthorized' }, 404);
+    }
+
+    await c.env.DB.prepare(`
+      UPDATE work_entries 
+      SET status = ?, supervisor_note = ?, updated_at = datetime('now')
+      WHERE id = ?
+    `).bind(status, supervisorNote || null, id).run();
+
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// ============ ANALYTICS ROUTES ============
+
+// Get time spent this week aggregated by student
+app.get('/api/analytics/time-spent', async (c) => {
+  try {
+    const user = requireParent(c);
+
+    // Get all students for this household/parent
+    let studentIds: string[] = [];
+    if (user.household_id) {
+      const { results } = await c.env.DB.prepare(
+        'SELECT id FROM students WHERE household_id = ?'
+      ).bind(user.household_id).all();
+      studentIds = results.map((s: any) => s.id);
+    } else {
+      const { results } = await c.env.DB.prepare(
+        'SELECT id FROM students WHERE parent_id = ?'
+      ).bind(user.id).all();
+      studentIds = results.map((s: any) => s.id);
+    }
+
+    if (studentIds.length === 0) {
+      return c.json({ students: [], totalMinutes: 0 });
+    }
+
+    // Get time spent per student in the last 7 days
+    const placeholders = studentIds.map(() => '?').join(',');
+    const { results: timeData } = await c.env.DB.prepare(`
+      SELECT 
+        e.student_id,
+        s.name as student_name,
+        COALESCE(SUM(e.duration_minutes), 0) as total_minutes,
+        COUNT(*) as formations_completed
+      FROM evidences e
+      JOIN students s ON e.student_id = s.id
+      WHERE e.student_id IN (${placeholders})
+        AND e.captured_at > datetime('now', '-7 days')
+        AND e.duration_minutes IS NOT NULL
+      GROUP BY e.student_id
+    `).bind(...studentIds).all();
+
+    const totalMinutes = timeData.reduce((acc: number, row: any) => acc + (row.total_minutes || 0), 0);
+
+    return c.json({
+      students: timeData,
+      totalMinutes,
+      weekStart: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString().split('T')[0]
+    });
+  } catch (error: any) {
+    console.error("Time Spent Analytics Error:", error);
+    return c.json({ error: error.message || 'Failed to get analytics' }, 500);
+  }
 });
 
 // Helper: Get or generate daily recommendations for a student (using formations)
@@ -4806,7 +5130,7 @@ Output as JSON:
 app.post('/api/ai/chat', async (c) => {
   try {
     const user = requireAuth(c);
-    const { message, context } = await c.req.json();
+    const { message, context, mode } = await c.req.json();
 
     // Initialize coach with full context
     const coach = new AiCoach(c.env);
@@ -4820,15 +5144,19 @@ app.post('/api/ai/chat', async (c) => {
       'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
     ).bind(user.id).first();
 
-    // Add user to context
+    // Add user to context, include studentId for student mode logging
     const fullContext = {
       ...context,
       user: { id: user.id, name: user.name },
       activeOverrides: overrides,
-      liturgySettings: liturgySettings
+      liturgySettings: liturgySettings,
+      studentId: user.role === 'student' ? user.student_id : context?.studentId
     };
 
-    const stream = await coach.chat(message, fullContext);
+    // Determine mode: explicit param or inferred from user role
+    const chatMode = mode || (user.role === 'student' ? 'student' : 'parent');
+
+    const stream = await coach.chat(message, fullContext, chatMode);
 
     return new Response(stream as any, {
       headers: {
@@ -5180,7 +5508,17 @@ app.delete('/api/portfolio/:itemId', async (c) => {
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
+  return c.json({ error: error.message }, 500);
+}
 });
+
+// ============ PHASE 6: DATA ARCHIVE (The Long Goodbye) ============
+
+// Generate full data export
+app.get('/api/export/archive', handleArchiveExport);
+
+// Serve signed download
+app.get('/api/export/download', handleSignedDownload);
 
 // ============ PHASE 3: GRADUATED INDEPENDENCE ============
 
@@ -6051,6 +6389,145 @@ app.get('/api/hymns', async (c) => {
 app.get('/api/catechism', async (c) => {
   const { results } = await c.env.DB.prepare('SELECT * FROM formations WHERE id LIKE "wsc_q%" ORDER BY id').all();
   return c.json(results);
+});
+
+// ============ AI ENDPOINTS ============
+
+// Child Explain - Used by students, logs interaction for parent visibility
+app.post('/api/ai/child-explain', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { studentId, question, context } = await c.req.json();
+
+    // Verify student belongs to household (or user is the student)
+    if (user.role === 'student' && user.student_id !== studentId) {
+      return c.json({ error: 'Cannot explain for another student' }, 403);
+    }
+
+    // For parents, verify student is in their household
+    if (user.role === 'parent') {
+      const student = await c.env.DB.prepare(
+        'SELECT id FROM students WHERE id = ? AND household_id = ?'
+      ).bind(studentId, user.household_id).first();
+      if (!student) {
+        return c.json({ error: 'Student not found in household' }, 404);
+      }
+    }
+
+    // Generate AI response
+    const coach = new AiCoach(c.env);
+    const contextWithStudent = {
+      ...context,
+      studentId,
+      isChildFacing: true
+    };
+
+    // Use a simpler prompt for child-facing explanations
+    const systemPrompt = `You are a helpful, friendly teacher for children. 
+Explain things simply and encouragingly. Use age-appropriate language.
+Keep explanations brief (2-3 sentences max).
+Be warm and supportive.`;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: question }
+      ]
+    });
+
+    const answer = response.response || 'I had trouble understanding that. Can you try asking in a different way?';
+
+    // Log the interaction for parent visibility
+    const logId = generateId('ailog');
+    await c.env.DB.prepare(
+      `INSERT INTO ai_logs (id, parent_id, student_id, interaction_type, question, answer, context_json, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))`
+    ).bind(
+      logId,
+      user.role === 'parent' ? user.id : user.id, // parent_id is the recording user
+      studentId,
+      'explain',
+      question,
+      answer,
+      JSON.stringify(context || {})
+    ).run();
+
+    return c.json({ answer, sources: [] });
+  } catch (e: any) {
+    console.error('Child explain error:', e);
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Get AI interaction logs for parent visibility
+app.get('/api/ai/interactions', async (c) => {
+  try {
+    const user = requireParent(c);
+    const studentId = c.req.query('studentId');
+
+    let query: string;
+    let params: any[];
+
+    if (studentId) {
+      // Verify student belongs to household
+      const student = await c.env.DB.prepare(
+        'SELECT id FROM students WHERE id = ? AND household_id = ?'
+      ).bind(studentId, user.household_id).first();
+      if (!student) {
+        return c.json({ error: 'Student not found' }, 404);
+      }
+
+      query = `
+        SELECT 
+          al.id,
+          al.student_id as studentId,
+          s.name as studentName,
+          al.interaction_type as interactionType,
+          al.question,
+          al.answer,
+          al.context_json as context,
+          al.created_at as createdAt
+        FROM ai_logs al
+        LEFT JOIN students s ON al.student_id = s.id
+        WHERE s.household_id = ? AND al.student_id = ?
+        ORDER BY al.created_at DESC
+        LIMIT 100
+      `;
+      params = [user.household_id, studentId];
+    } else {
+      // Get all logs for household
+      query = `
+        SELECT 
+          al.id,
+          al.student_id as studentId,
+          s.name as studentName,
+          al.interaction_type as interactionType,
+          al.question,
+          al.answer,
+          al.context_json as context,
+          al.created_at as createdAt
+        FROM ai_logs al
+        LEFT JOIN students s ON al.student_id = s.id
+        WHERE s.household_id = ?
+        ORDER BY al.created_at DESC
+        LIMIT 100
+      `;
+      params = [user.household_id];
+    }
+
+    const { results } = await c.env.DB.prepare(query).bind(...params).all();
+
+    // Parse context JSON for each result
+    const logs = results.map((log: any) => ({
+      ...log,
+      context: log.context ? JSON.parse(log.context) : null
+    }));
+
+    return c.json(logs);
+  } catch (e: any) {
+    console.error('AI interactions error:', e);
+    return c.json({ error: e.message }, 500);
+  }
 });
 
 export default app;

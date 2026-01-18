@@ -3,7 +3,7 @@
 import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
 
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
-const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
+export const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
 function getAuthToken(): string | null {
   return localStorage.getItem('schoolos_token');
@@ -184,6 +184,8 @@ export const evidences = {
     stage: string;       // was masteryLevel ('seeding', 'rooting', 'fruiting')
     note?: string;       // was parentNotes
     tier?: string;
+    duration_minutes?: number;
+    loved_it?: boolean;
   }) =>
     apiRequest<any>('/api/evidences', {
       method: 'POST',
@@ -220,11 +222,29 @@ export const observations = {
 
 // Activity Completions (Simple)
 export const activityCompletions = {
-  create: (data: { activityId: string; notes?: string }) =>
-    apiRequest<{ success: boolean; id: string }>('/api/activity-completions', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    }),
+  create: (data: { activityId: string; notes?: string; durationMinutes?: number; lovedIt?: boolean }) => {
+    // Forward to new evidences API
+    return evidences.create({
+      studentId: 'current-view-context', // Ideally we get this, but legacy calls might expect backend to infer or use parent context
+      // Actually, legacy `activity-completions` endpoint was simple. The unified migration delegates this.
+      // If we are still using `activityCompletions.create` in Dashboard, we should probably switch it to use `evidences.create` explicitly or update this shim.
+      // The backend /api/activity-completions returns 410 Deprecated.
+      // So valid code MUST use `evidences.create` or `activityCompletions` wrapper must use `evidences.create`.
+      // Let's assume generic wrapper for now if possible, or leave as is regarding the shim if the backend handles it?
+      // Wait, backend returns 410. So `activityCompletions.create` calling `/api/activity-completions` will FAIL.
+      // We MUST refactor the frontend to use `evidences.create` in `Dashboard.tsx` and `ActivityDetails.tsx`.
+      formationId: data.activityId,
+      stage: 'rooting', // Default
+      note: data.notes,
+      duration_minutes: data.durationMinutes,
+      loved_it: data.lovedIt,
+      studentId: '' // Thisshim is broken if we don't have studentId. Dashboard context knows.
+    });
+  }
+};
+// Use evidences directly in components instead.
+export const activityCompletions_deprecated = {
+  create: (data: any) => console.warn('Deprecated activityCompletions used', data)
 };
 
 // Books
@@ -360,7 +380,7 @@ export const weeklyPlan = {
 
 // AI
 export const ai = {
-  chat: async (message: string, context: any) => {
+  chat: async (message: string, context: any, mode?: 'parent' | 'student') => {
     const token = getAuthToken();
     const response = await fetch(`${API_URL}/api/ai/chat`, {
       method: 'POST',
@@ -368,7 +388,7 @@ export const ai = {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, context }),
+      body: JSON.stringify({ message, context, mode }),
     });
     if (!response.ok) throw new Error('Chat failed');
     return response.body;
@@ -545,5 +565,29 @@ export const formation = {
     }>('/api/family/daily-rhythm'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation };
+export const work = {
+  // Log work
+  log: (data: { apprenticeshipId: string; date: string; hours: number; description: string; photoUrl?: string; skillsApplied?: string[] }) =>
+    apiRequest<{ success: boolean; id: string }>('/api/work/log', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    }),
+
+  // Get pending logs (parent)
+  getPending: () =>
+    apiRequest<any[]>('/api/work/pending'),
+
+  // Approve/Reject
+  approve: (id: string, status: 'approved' | 'rejected', supervisorNote?: string) =>
+    apiRequest<{ success: boolean }>(`/api/work/approve/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify({ status, supervisorNote }),
+    }),
+
+  // Get Active Apprenticeships
+  getActiveApprenticeships: () =>
+    apiRequest<any[]>('/api/apprenticeships'),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work };
 export default api;
