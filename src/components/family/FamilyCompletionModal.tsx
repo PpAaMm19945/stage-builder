@@ -7,7 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { observations, activityCompletions, family } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
 import { Loader2, CheckCircle2, ImagePlus } from 'lucide-react';
-import { FormationStage, getChildRole, STAGE_LABELS, STAGE_DESCRIPTIONS } from '@/types';
+import { HabitStage, getChildRole, HABIT_STAGE_LABELS, HABIT_STAGE_DESCRIPTIONS } from '@/types';
 import { SuccessStoryPrompt } from '@/components/feedback/SuccessStoryPrompt';
 import { PortfolioUploadModal } from '@/components/portfolio/PortfolioUploadModal';
 import { FamilySession } from '@/types';
@@ -19,10 +19,10 @@ interface FamilyCompletionModalProps {
     onSuccess: () => void;
 }
 
-const STAGE_OPTIONS: { value: FormationStage; label: string; description: string; color: string }[] = [
-    { value: 'seeding', label: 'Seeding', description: 'Hearing / Introduced', color: 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100' },
-    { value: 'rooting', label: 'Rooting', description: 'Doing / Practicing', color: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
-    { value: 'fruiting', label: 'Fruiting', description: 'Being / Second Nature', color: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' },
+const STAGE_OPTIONS: { value: HabitStage; label: string; description: string; color: string }[] = [
+    { value: 'Seeding', label: 'Seeding', description: 'Hearing / Introduced', color: 'bg-green-50 text-green-800 border-green-200 hover:bg-green-100' },
+    { value: 'Rooting', label: 'Rooting', description: 'Doing / Practicing', color: 'bg-amber-50 text-amber-800 border-amber-200 hover:bg-amber-100' },
+    { value: 'Fruiting', label: 'Fruiting', description: 'Being / Second Nature', color: 'bg-purple-50 text-purple-800 border-purple-200 hover:bg-purple-100' },
 ];
 
 export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: FamilyCompletionModalProps) {
@@ -31,7 +31,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     const [notes, setNotes] = useState('');
 
     // State for child stages: { [childId]: FormationStage }
-    const [stages, setStages] = useState<Record<string, FormationStage>>({});
+    const [stages, setStages] = useState<Record<string, HabitStage>>({});
     const [showStoryPrompt, setShowStoryPrompt] = useState(false);
 
     const [showPortfolioModal, setShowPortfolioModal] = useState(false);
@@ -43,9 +43,9 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
     // We'll handle this in the useEffect when session changes if needed, but better to let user click "Complete"
     // in Dashboard which opens this modal, and this modal decides what to show.
 
-    const isDailyPractice = session?.activity.activity_type === 'daily_practice';
+    const isDailyPractice = session?.activity.activity_type === 'daily_practice' || session?.activity.formation_type === 'habit';
 
-    const handleStageChange = (childId: string, stage: FormationStage) => {
+    const handleStageChange = (childId: string, stage: HabitStage) => {
         setStages(prev => ({
             ...prev,
             [childId]: stage
@@ -102,9 +102,9 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 // If no stage selected:
                 if (!stage) {
                     if (role === 'Observer') {
-                        stage = 'seeding';
+                        stage = 'Seeding';
                     } else {
-                        stage = 'rooting';
+                        stage = 'Rooting';
                     }
                 }
 
@@ -125,7 +125,7 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                 .map(child =>
                     family.sendPassionSignal({
                         studentId: child.childId,
-                        domain: session.activity.domain,
+                        domain: session.activity.domain || session.activity.primary_virtue,
                         activityId: session.activity.id
                     }).catch(err => console.error('Passion signal failed:', err))
                 );
