@@ -39,13 +39,15 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         name: response.user.name,
         avatarUrl: response.user.avatar_url,
         provider: 'google',
+        role: response.user.role || 'parent',
+        householdId: response.user.household_id || response.user.id, // Fallback to user id
         createdAt: response.user.created_at,
         updatedAt: response.user.updated_at,
       };
 
       const childrenData: Student[] = (response.children || []).map((child: any) => ({
         id: child.id,
-        parentId: child.parent_id,
+        householdId: child.household_id || response.user.household_id || response.user.id,
         name: child.name,
         dateOfBirth: child.date_of_birth,
         ageInMonths: child.age_in_months,
@@ -105,6 +107,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         setSelectedChild,
         isAuthenticated: !!user,
         logout,
+        signOut: logout,
         refreshAuth,
         isLoading,
       }}

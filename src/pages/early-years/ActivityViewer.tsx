@@ -3,7 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { activities as activitiesApi, evidences, students } from '@/lib/api';
-import { DOMAIN_LABELS, type EarlyYearsDomain, type FormationStage } from '@/types';
+import { DOMAIN_LABELS, type EarlyYearsDomain, type HabitStage, type FormationStage } from '@/types';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

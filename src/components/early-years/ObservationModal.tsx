@@ -8,7 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { FormationStage, STAGE_LABELS, STAGE_DESCRIPTIONS } from '@/types';
+import { HabitStage, HABIT_STAGE_LABELS, HABIT_STAGE_DESCRIPTIONS } from '@/types';
 import { Sparkles, Sprout, Grape, CheckCircle2 } from 'lucide-react'; // Updated icons
 import { cn } from '@/lib/utils';
 
@@ -16,23 +16,23 @@ interface ObservationModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   activityTitle: string;
-  onSubmit: (stage: FormationStage, notes?: string) => void;
+  onSubmit: (stage: HabitStage, notes?: string) => void;
   onAddToPortfolio?: () => void;
 }
 
-const stageOptions: { level: FormationStage; icon: typeof Sparkles; color: string }[] = [
+const stageOptions: { level: HabitStage; icon: typeof Sparkles; color: string }[] = [
   {
-    level: 'seeding',
+    level: 'Seeding',
     icon: Sparkles,
     color: 'border-green-200 text-green-700 bg-green-50 hover:bg-green-100'
   },
   {
-    level: 'rooting',
+    level: 'Rooting',
     icon: Sprout,
     color: 'border-amber-200 text-amber-700 bg-amber-50 hover:bg-amber-100'
   },
   {
-    level: 'fruiting',
+    level: 'Fruiting',
     icon: Grape,
     color: 'border-purple-200 text-purple-700 bg-purple-50 hover:bg-purple-100'
   },
@@ -45,7 +45,7 @@ export function ObservationModal({
   onSubmit,
   onAddToPortfolio
 }: ObservationModalProps) {
-  const [selectedStage, setSelectedStage] = useState<FormationStage | null>(null);
+  const [selectedStage, setSelectedStage] = useState<HabitStage | null>(null);
   const [notes, setNotes] = useState('');
 
   const handleSubmit = () => {
@@ -102,13 +102,13 @@ export function ObservationModal({
                       'font-medium',
                       selectedStage === level ? 'text-current' : 'text-foreground'
                     )}>
-                      {STAGE_LABELS[level]}
+                      {HABIT_STAGE_LABELS[level]}
                     </div>
                     <div className={cn(
                       'text-sm',
                       selectedStage === level ? 'text-current/80' : 'text-muted-foreground'
                     )}>
-                      {STAGE_DESCRIPTIONS[level]}
+                      {HABIT_STAGE_DESCRIPTIONS[level]}
                     </div>
                   </div>
                 </button>

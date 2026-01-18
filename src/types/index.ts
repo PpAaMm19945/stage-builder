@@ -2,6 +2,21 @@
 // SchoolOS Core Data Models (Unified v2 Schema)
 // ============================================
 
+// Re-export from overrides.ts for backward compatibility
+export type {
+  ParentOverride,
+  ParsedOverrideResponse,
+  OverrideType,
+  OverrideConstraints,
+  WeeklyTimeModel,
+  WeeklyPlan as OverridesWeeklyPlan,
+  PlanSlot,
+  DayOfWeek,
+  TimeOfDay,
+  ExplanationRequest,
+  ExplanationResponse
+} from './overrides';
+
 // Learning Stages (Legacy Support + Future)
 export type LearningStage =
   | 'early-years'      // Ages 2-5
@@ -134,6 +149,21 @@ export interface Formation {
   // Metadata
   is_active: number; // 1 or 0
   content_source: string;
+
+  // ============================================
+  // LEGACY COMPATIBILITY FIELDS
+  // These map to new fields for backward compat
+  // ============================================
+  /** @deprecated Use primary_virtue instead */
+  domain?: string;
+  /** @deprecated Use formation_type instead */
+  activity_type?: string;
+  /** @deprecated Use guide_steps instead */
+  instructions?: string[];
+  /** @deprecated Use parent_posture instead */
+  parent_script?: string;
+  /** @deprecated Derive from description */
+  learning_outcomes?: string[];
 }
 
 // ============================================
@@ -156,6 +186,44 @@ export interface FormationProgression {
 // ============================================
 
 export type HabitStage = 'Seeding' | 'Rooting' | 'Fruiting';
+
+// Labels for HabitStage (mastery levels)
+export const HABIT_STAGE_LABELS: Record<HabitStage, string> = {
+  'Seeding': 'Getting Started',
+  'Rooting': 'Growing',
+  'Fruiting': 'Well Practiced'
+};
+
+export const HABIT_STAGE_DESCRIPTIONS: Record<HabitStage, string> = {
+  'Seeding': 'Hearing / Being introduced',
+  'Rooting': 'Doing / Practicing',
+  'Fruiting': 'Being / Second nature'
+};
+
+// Alias for components using lowercase (seeding/rooting/fruiting)
+// Maps lowercase to proper HabitStage
+export const LOWERCASE_TO_HABIT_STAGE: Record<string, HabitStage> = {
+  'seeding': 'Seeding',
+  'rooting': 'Rooting',
+  'fruiting': 'Fruiting'
+};
+
+// STAGE_LABELS and STAGE_DESCRIPTIONS for FormationStage (age progression)
+export const STAGE_LABELS: Record<FormationStage, string> = {
+  'seedling': 'Seedling (0-18m)',
+  'sprout': 'Sprout (18m-3y)',
+  'sapling': 'Sapling (3-5y)',
+  'tree': 'Tree (5-8y)',
+  'oak': 'Oak (8+y)'
+};
+
+export const STAGE_DESCRIPTIONS: Record<FormationStage, string> = {
+  'seedling': 'Observer - watching and absorbing',
+  'sprout': 'Participant - joining in with help',
+  'sapling': 'Contributor - actively participating',
+  'tree': 'Practitioner - doing with guidance',
+  'oak': 'Leader - independent mastery'
+};
 
 export interface Evidence {
   id: string;
@@ -230,6 +298,8 @@ export interface AIInteractionLog {
   answer: string;
   context?: any;
   createdAt: string;
+  // Joined field for display
+  studentName?: string;
 }
 
 // ============================================
@@ -247,6 +317,9 @@ export interface PortfolioItem {
   formationId?: string;
   milestoneTag?: string;
   createdAt: string;
+  // Extended fields for display
+  publicUrl?: string;
+  domain?: string;
 }
 
 
@@ -277,10 +350,11 @@ export type ApiFormation = Formation;
 export type ApiActivity = Formation; // Alias
 export type Activity = Formation;    // Alias
 
-// Legacy Book Interface
+// Legacy Book Interface (expanded for component compatibility)
 export interface Book {
   id: string;
   series: string;
+  seriesTitle?: string;  // Display name for series
   title: string;
   author?: string;
   description: string;
@@ -291,6 +365,23 @@ export interface Book {
   contentPath?: string;
   // Mapped from Formation if loaded from DB
   formationId?: string;
+
+  // Extended fields for BookReader/BookCard/BookLibrary
+  renderFormat?: 'markdown' | 'image' | 'pdf' | 'hymnal' | 'catechism' | 'hybrid';
+  readingPrompts?: ReadingPrompt[] | string[];
+  styleProfile?: string;
+  pdfUrl?: string;
+  upvoteCount?: number;
+  learningStage?: LearningStage | 'all';
+  domain?: string;
+  topics?: string[];
+  protagonistGender?: 'male' | 'female' | 'neutral' | 'animal' | 'mixed';
+}
+
+// Reading prompt structure  
+export interface ReadingPrompt {
+  page: number;
+  prompt: string;
 }
 
 // Legacy Material Item
@@ -326,14 +417,19 @@ export interface TodaysLearningResponse {
   activities?: Formation[];
 }
 
+// Liturgy Type for daily liturgy components
+export type LiturgyType = 'catechism' | 'hymn' | 'scripture' | 'history';
+
 // Legacy Liturgy Items
 // These are often just Formations with type='liturgy' now
 export interface LiturgyItem {
   id: string;
-  type: string;
+  type: LiturgyType | string;
   title: string;
   content: string; // mapped from liturgical_script
   reference?: string;
+  // Extended for completion tracking
+  completedToday?: boolean;
 }
 
 // Legacy Reading
@@ -348,6 +444,10 @@ export interface ParentComment {
   userId: string;
   commentText: string;
   createdAt: string;
+  // Extended fields for display
+  userName?: string;
+  userAvatar?: string;
+  isSuccessStory?: boolean;
 }
 
 export interface StudentViewData {
@@ -359,4 +459,282 @@ export interface StudentViewData {
     canAskAi: boolean;
     canViewPortfolio: boolean;
   };
+}
+
+// ============================================
+// INDEPENDENCE SETTINGS (Student Portal)
+// ============================================
+
+// Extended to support legacy subjects used in components
+export type IndependenceLevel = 'parent-led' | 'guided' | 'independent' | 'parent_led';
+export type IndependenceSubject = 
+  | 'reading' | 'math' | 'science' | 'history' | 'writing' | 'all'
+  // Legacy subject names used in existing components
+  | 'bible' | 'motor' | 'language' | 'cognitive';
+
+export interface IndependenceSettings {
+  studentId: string;
+  subject: IndependenceSubject;
+  level: IndependenceLevel;
+  canMarkComplete: boolean;
+  canAskAi: boolean;
+  requiresParentApproval: boolean;
+  // Extended fields for components
+  canViewPortfolio?: boolean;
+}
+
+export const INDEPENDENCE_LEVEL_LABELS: Record<string, string> = {
+  'parent-led': 'Parent-Led',
+  'parent_led': 'Parent-Led',
+  'guided': 'Guided',
+  'independent': 'Independent'
+};
+
+export const INDEPENDENCE_LEVEL_DESCRIPTIONS: Record<string, string> = {
+  'parent-led': 'Parent teaches and supervises all work',
+  'parent_led': 'Parent teaches and supervises all work',
+  'guided': 'Student works with parent available for help',
+  'independent': 'Student works alone, parent reviews later'
+};
+
+export const SUBJECT_LABELS: Record<string, string> = {
+  'reading': 'Reading',
+  'math': 'Mathematics',
+  'science': 'Science',
+  'history': 'History',
+  'writing': 'Writing',
+  'all': 'All Subjects',
+  // Legacy subjects
+  'bible': 'Bible & Faith',
+  'motor': 'Physical Skills',
+  'language': 'Language',
+  'cognitive': 'Thinking Skills'
+};
+
+// ============================================
+// FAMILY LITURGY SETTINGS
+// ============================================
+
+export interface FamilyLiturgySettings {
+  id: string;
+  parentId: string;
+  catechismEnabled: boolean;
+  hymnEnabled: boolean;
+  scriptureEnabled: boolean;
+  historyEnabled: boolean;
+  currentCatechismWeek: number;
+  currentHymnWeek: number;
+  currentScriptureWeek: number;
+  currentHistoryWeek: number;
+  // Legacy snake_case aliases for API compatibility
+  catechism_enabled?: boolean;
+  hymnal_enabled?: boolean;
+  scripture_enabled?: boolean;
+  history_enabled?: boolean;
+}
+
+// ============================================
+// DOMAIN LABELS (Legacy + Virtue mapping)
+// ============================================
+
+export const DOMAIN_LABELS: Record<string, string> = {
+  // Legacy domains
+  'motor': 'Physical Development',
+  'language': 'Language & Communication',
+  'cognitive': 'Thinking & Problem Solving',
+  'social-emotional': 'Social & Emotional',
+  'pre-academic': 'Early Learning',
+  // New virtues
+  'Wisdom': 'Wisdom',
+  'Stewardship': 'Stewardship',
+  'Love': 'Love',
+  'Order': 'Order',
+  'Wonder': 'Wonder'
+};
+
+// ============================================
+// HELPER FUNCTIONS
+// ============================================
+
+/**
+ * Get the developmental role label based on age in months
+ * @param ageMonths - Child's age in months
+ * @returns Role label (Observer, Participant, or Leader)
+ */
+export function getChildRole(ageMonths: number): string {
+  if (ageMonths < 18) return 'Observer';
+  if (ageMonths < 48) return 'Participant';
+  return 'Leader';
+}
+
+/**
+ * Get FormationStage based on age in months
+ * @param ageMonths - Child's age in months
+ * @returns FormationStage
+ */
+export function getFormationStage(ageMonths: number): FormationStage {
+  if (ageMonths < 18) return 'seedling';
+  if (ageMonths < 36) return 'sprout';
+  if (ageMonths < 60) return 'sapling';
+  if (ageMonths < 96) return 'tree';
+  return 'oak';
+}
+
+/**
+ * Map legacy domain to primary virtue
+ * @param domain - Legacy domain string
+ * @returns PrimaryVirtue
+ */
+export function domainToVirtue(domain: string): PrimaryVirtue {
+  return DOMAIN_TO_VIRTUE[domain] || 'Wonder';
+}
+
+// ============================================
+// ADDITIONAL TYPE EXPORTS FOR COMPATIBILITY
+// ============================================
+
+// Portfolio types
+export type PortfolioItemType = 'image' | 'audio' | 'document' | 'text';
+
+export const MILESTONE_TAGS = [
+  'first-words',
+  'first-steps',
+  'potty-trained',
+  'reading-start',
+  'counting-10',
+  'writing-name',
+  'bike-riding',
+  'swimming',
+  'tying-shoes',
+  'catechism-complete',
+  'scripture-memorized',
+  'hymn-learned',
+  'custom'
+] as const;
+
+export type MilestoneTag = typeof MILESTONE_TAGS[number];
+
+// Extended PortfolioItem for components
+export interface PortfolioItem {
+  id: string;
+  studentId: string;
+  parentId: string;
+  title: string;
+  description?: string;
+  itemType: PortfolioItemType;
+  r2Key?: string;
+  formationId?: string;
+  milestoneTag?: string;
+  createdAt: string;
+  // Extended fields for display
+  publicUrl?: string;
+  domain?: string;
+}
+
+// Liturgy response type
+export interface LiturgyTodayResponse {
+  catechism: LiturgyItem | null;
+  hymn: LiturgyItem | null;
+  scripture: LiturgyItem | null;
+  history?: LiturgyItem | null;
+  settings: FamilyLiturgySettings;
+  // Extended for component compatibility
+  items?: LiturgyItem[];
+}
+
+export const LITURGY_TYPE_LABELS: Record<LiturgyType, string> = {
+  catechism: 'Catechism',
+  hymn: 'Hymn',
+  scripture: 'Scripture Memory',
+  history: 'History'
+};
+
+// Weekly Plan Response
+export interface WeeklyPlanResponse {
+  id: string;
+  weekStart: string;
+  plan: any;
+  balancePreference: string;
+  createdAt?: string;
+}
+
+// TodaysLearningResponse extended
+export interface TodaysLearningResponse {
+  student: Student;
+  formations: Formation[];
+  activities?: Formation[];
+  // Extended for family view
+  familyFormations?: Formation[];
+  familyActivities?: Formation[];
+}
+
+// Legacy Activity type for static data files
+export interface LegacyStaticActivity {
+  id: string;
+  title: string;
+  description: string;
+  domain: string;
+  minAgeMonths: number;
+  maxAgeMonths: number;
+  difficultyLevel: number;
+  estimatedMinutes: number;
+  materials: string[];
+  instructions: string[];
+  successIndicators: string[];
+  parentScript?: string;
+  variations?: string[];
+  learningOutcomes?: string[];
+  safetyNotes?: string;
+  culturalContext?: string;
+  // Extended fields used in actual data
+  easierVariation?: string;
+  harderVariation?: string;
+  godConnection?: string;
+  activityType?: string;
+  setting?: string;
+  messLevel?: number;
+  requiresAdultSupervision?: boolean;
+  tips?: string[];
+  tiers?: {
+    tier: number;
+    label: string;
+    expectations: string;
+  }[];
+}
+
+// LiturgyItem extended
+export interface LiturgyItem {
+  id: string;
+  type: LiturgyType | string;
+  title: string;
+  content: string;
+  reference?: string;
+  completedToday?: boolean;
+  audio_url?: string;
+}
+
+// Book protagonistGender extended
+export type ProtagonistGender = 'male' | 'female' | 'neutral' | 'animal' | 'mixed';
+
+// WeeklyPlanResponse extended
+export interface WeeklyPlanResponse {
+  id: string;
+  weekStart: string;
+  plan: any;
+  balancePreference: string;
+  createdAt?: string;
+  completions?: Record<string, boolean>;
+}
+
+// Auth context signOut support
+export interface AuthContextType {
+  user: User | null;
+  children: Student[];
+  selectedChild: Student | null;
+  setSelectedChild: (child: Student) => void;
+  isAuthenticated: boolean;
+  logout: () => void;
+  signOut?: () => void; // Alias for logout
+  refreshAuth: () => Promise<void>;
+  isLoading: boolean;
 }
