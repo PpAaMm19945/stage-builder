@@ -249,19 +249,29 @@ Everything becomes a Formation with `formation_type` determining behavior:
 
 ### Migration Roadmap
 
+#### Step 0: Architecture Finalization
+
+- [x] Complete architecture comparison document  
+- [x] Add Household model (multi-parent support)
+- [x] Add Student auth flow (Google OAuth with pre-approval)
+- [x] Define Authority Hierarchy
+
 #### Step 1: Fresh D1 Database (New Production DB)
 
 - [ ] Create `schoolos-v2` D1 database
-- [ ] Apply clean schema (9 tables, see `architecture_comparison.md`)
-- [ ] Seed with exported `formations` content from current DB
+- [ ] Apply clean schema (11 tables, see `architecture_comparison.md` Part 6-9)
+- [ ] Include `households` and `sessions` tables
 - [ ] Update Cloudflare Worker binding
 
 > [!WARNING]
-> **Breaking Change**: Old database will be retired. Export user data first.
+> **Breaking Change**: Old database will be retired. No user data migration needed (confirmed disposable).
 
 #### Step 2: API Consolidation
 
 - [ ] Create unified `/api/formations` endpoints
+- [ ] Implement Household-aware auth (`household_id` in JWT)
+- [ ] Create `/api/household/invite` and `/join/:code` routes
+- [ ] Create Student auth flow with `pending_login_email` matching
 - [ ] Deprecate `/api/liturgy/today`, `/api/books`, `/api/reading-sessions`
 - [ ] Single completion tracking via `evidences` table
 - [ ] New `/api/day/today` returns ordered Formation blocks
@@ -272,8 +282,11 @@ Everything becomes a Formation with `formation_type` determining behavior:
 
 #### Step 3: Frontend Refactor
 
-- [ ] Update `src/types/index.ts` to match new schema
+- [ ] Update `src/types/index.ts` to match new schema (11 tables)
 - [ ] Create unified `FormationCard` component
+- [ ] Create Household invite UI (Settings page)
+- [ ] Create Student login enable/disable UI
+- [ ] Create Student Portal view (filtered dashboard)
 - [ ] Refactor `Dashboard.tsx` to use single data source
 - [ ] Delete unused components
 

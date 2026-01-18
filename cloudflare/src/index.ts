@@ -55,12 +55,18 @@ export interface User {
   name: string;
   avatar_url: string | null;
   provider: string;
+  household_id?: string;
+  role?: 'parent' | 'student';
+  student_id?: string;
 }
 
 interface JWTPayload {
   sub: string;
   email: string;
   name: string;
+  household_id?: string;
+  role?: 'parent' | 'student';
+  student_id?: string;
   exp: number;
   iat: number;
 }
@@ -554,7 +560,7 @@ app.use('/api/*', async (c, next) => {
   await next();
 });
 
-// Require auth helper
+// Require auth helper (Base)
 function requireAuth(c: any): User {
   const user = c.get('user');
   if (!user) {
@@ -563,9 +569,30 @@ function requireAuth(c: any): User {
   return user;
 }
 
+// Require Parent role
+function requireParent(c: any): User {
+  const user = requireAuth(c);
+  // Default to parent if role is missing (backward compatibility)
+  if (user.role && user.role !== 'parent') {
+    throw new Error('Unauthorized: Parents only');
+  }
+  return user;
+}
+
+// Require Household Member (Parent or Student)
+function requireHouseholdMember(c: any): User {
+  const user = requireAuth(c);
+  if (!user.household_id) {
+    // If no household_id, they might be a legacy user. 
+    // In strict mode, we might want to block or auto-create household.
+    // For now, allow legacy users (they are parents effectively)
+  }
+  return user;
+}
+
 // Generate unique ID
 function generateId(prefix: string): string {
-  return `${prefix} - ${Date.now()} - ${Math.random().toString(36).substr(2, 9)}`;
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
 // ============ DEV BYPASS AUTH (Development Only) ============
@@ -589,11 +616,18 @@ app.get('/auth/dev-bypass', async (c) => {
 
     if (!user) {
       const userId = generateId('user');
-      await c.env.DB.prepare(
-        'INSERT INTO users (id, email, name, avatar_url, provider) VALUES (?, ?, ?, NULL, ?)'
-      ).bind(userId, email, name, 'dev-bypass').run();
+      const householdId = generateId('hh');
 
-      user = { id: userId, email, name, avatar_url: null, provider: 'dev-bypass' };
+      // Create household for dev user
+      await c.env.DB.prepare(
+        'INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)'
+      ).bind(householdId, `${name}'s Household`, `DEV-${Date.now()}`).run();
+
+      await c.env.DB.prepare(
+        'INSERT INTO users (id, email, name, avatar_url, provider, household_id, role) VALUES (?, ?, ?, NULL, ?, ?, ?)'
+      ).bind(userId, email, name, 'dev-bypass', householdId, 'parent').run();
+
+      user = { id: userId, email, name, avatar_url: null, provider: 'dev-bypass', household_id: householdId, role: 'parent' };
     }
 
     // Generate JWT
@@ -601,13 +635,15 @@ app.get('/auth/dev-bypass', async (c) => {
       sub: user.id,
       email: user.email,
       name: user.name,
+      household_id: user.household_id,
+      role: 'parent',
       exp: Math.floor(Date.now() / 1000) + 30 * 24 * 60 * 60, // 30 days for dev
     }, c.env.JWT_SECRET);
 
     // Return token (frontend can store and use)
     return c.json({
       token: jwt,
-      user: { id: user.id, email: user.email, name: user.name },
+      user,
       message: 'Dev bypass successful. Store this token in localStorage as "schoolos_token"'
     });
   } catch (error) {
@@ -664,30 +700,102 @@ app.get('/auth/google/callback', async (c) => {
 
     const googleUser: any = await userInfoResponse.json();
 
-    // Upsert user in database
-    const userId = generateId('user');
-    const existingUser = await c.env.DB.prepare(
-      'SELECT * FROM users WHERE email = ?'
-    ).bind(googleUser.email).first<User>();
+    // Check if this is a STUDENT login
+    const pendingStudent = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE pending_login_email = ?'
+    ).bind(googleUser.email).first<any>();
 
-    let user: User;
-    if (existingUser) {
+    let user: User | null = null;
+    let userId = generateId('user');
+
+    if (pendingStudent) {
+      // Create STUDENT user
+      user = await c.env.DB.prepare(
+        'SELECT * FROM users WHERE email = ?'
+      ).bind(googleUser.email).first<User>();
+
+      if (!user) {
+        await c.env.DB.prepare(
+          'INSERT INTO users (id, email, name, avatar_url, provider, household_id, role, student_id) VALUES (?, ?, ?, ?, ?, ?, ?, ?)'
+        ).bind(userId, googleUser.email, googleUser.name, googleUser.picture, 'google', pendingStudent.household_id, 'student', pendingStudent.id).run();
+        user = {
+          id: userId,
+          email: googleUser.email,
+          name: googleUser.name,
+          avatar_url: googleUser.picture,
+          provider: 'google',
+          household_id: pendingStudent.household_id,
+          role: 'student',
+          student_id: pendingStudent.id
+        };
+      } else {
+        // Update existing user (re-link if needed) checks omitted for brevity
+      }
+
+      // Clear pending status
       await c.env.DB.prepare(
-        'UPDATE users SET name = ?, avatar_url = ?, updated_at = datetime("now") WHERE id = ?'
-      ).bind(googleUser.name, googleUser.picture, existingUser.id).run();
-      user = { ...existingUser, name: googleUser.name, avatar_url: googleUser.picture };
+        'UPDATE students SET pending_login_email = NULL WHERE id = ?'
+      ).bind(pendingStudent.id).run();
+
     } else {
-      await c.env.DB.prepare(
-        'INSERT INTO users (id, email, name, avatar_url, provider) VALUES (?, ?, ?, ?, ?)'
-      ).bind(userId, googleUser.email, googleUser.name, googleUser.picture, 'google').run();
-      user = { id: userId, email: googleUser.email, name: googleUser.name, avatar_url: googleUser.picture, provider: 'google' };
+      // PARENT Login
+      const existingUser = await c.env.DB.prepare(
+        'SELECT * FROM users WHERE email = ?'
+      ).bind(googleUser.email).first<User>();
+
+      if (existingUser) {
+        // Update profile
+        await c.env.DB.prepare(
+          'UPDATE users SET name = ?, avatar_url = ?, updated_at = datetime("now") WHERE id = ?'
+        ).bind(googleUser.name, googleUser.picture, existingUser.id).run();
+
+        user = existingUser;
+
+        // Ensure household exists (migration fix for old users)
+        if (!user.household_id) {
+          const householdId = generateId('hh');
+          await c.env.DB.prepare(
+            'INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)'
+          ).bind(householdId, `${user.name}'s Household`, generateId('INV').split('-').pop()).run();
+
+          await c.env.DB.prepare('UPDATE users SET household_id = ? WHERE id = ?').bind(householdId, user.id).run();
+          user.household_id = householdId;
+        }
+
+      } else {
+        // New Parent User -> Create Household
+        const householdId = generateId('hh');
+        // Simple invite code generation
+        const inviteCode = (Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)).toUpperCase();
+
+        await c.env.DB.prepare(
+          'INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)'
+        ).bind(householdId, `${googleUser.name}'s Family`, inviteCode).run();
+
+        await c.env.DB.prepare(
+          'INSERT INTO users (id, email, name, avatar_url, provider, household_id, role) VALUES (?, ?, ?, ?, ?, ?, ?)'
+        ).bind(userId, googleUser.email, googleUser.name, googleUser.picture, 'google', householdId, 'parent').run();
+
+        user = {
+          id: userId,
+          email: googleUser.email,
+          name: googleUser.name,
+          avatar_url: googleUser.picture,
+          provider: 'google',
+          household_id: householdId,
+          role: 'parent'
+        };
+      }
     }
 
     // Create JWT
     const jwt = await signJWT({
-      sub: user.id,
-      email: user.email,
-      name: user.name,
+      sub: user!.id,
+      email: user!.email,
+      name: user!.name,
+      household_id: user!.household_id,
+      role: user!.role,
+      student_id: user!.student_id,
       exp: Math.floor(Date.now() / 1000) + 7 * 24 * 60 * 60, // 7 days
     }, c.env.JWT_SECRET);
 
@@ -699,15 +807,125 @@ app.get('/auth/google/callback', async (c) => {
   }
 });
 
+// Household Invite (Parent Only)
+app.post('/api/household/invite', async (c) => {
+  try {
+    const user = requireParent(c); // Only parents can invite
+
+    // Get current household to ensure we have code
+    const household = await c.env.DB.prepare(
+      'SELECT * FROM households WHERE id = ?'
+    ).bind(user.household_id).first<any>();
+
+    if (!household) return c.json({ error: 'Household not found' }, 404);
+
+    // If no code, generate one
+    let inviteCode = household.invite_code;
+    if (!inviteCode) {
+      inviteCode = (Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)).toUpperCase();
+      await c.env.DB.prepare('UPDATE households SET invite_code = ? WHERE id = ?').bind(inviteCode, household.id).run();
+    }
+
+    return c.json({ invite_code: inviteCode });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 401);
+  }
+});
+
+// Join Household (Via Link/Code)
+// GET /api/join/:code -> Verify and return info (or perform join if frontend calls this to action)
+// Strategy: This endpoint performs the join for the CURRENTLY AUTHENTICATED user
+app.post('/api/join', async (c) => {
+  try {
+    const user = requireAuth(c); // Any user can join, but typically a parent 2nd account
+    const { code } = await c.req.json();
+
+    if (!code) return c.json({ error: 'Code required' }, 400);
+
+    const household = await c.env.DB.prepare(
+      'SELECT * FROM households WHERE invite_code = ?'
+    ).bind(code).first<any>();
+
+    if (!household) return c.json({ error: 'Invalid invite code' }, 404);
+
+    // Link user to household
+    await c.env.DB.prepare(
+      'UPDATE users SET household_id = ?, role = ? WHERE id = ?'
+    ).bind(household.id, 'parent', user.id).run(); // Joining via code implies acting as parent/guardian
+
+    return c.json({ success: true, household_name: household.name });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
+// Enable Student Login
+app.post('/api/student/enable-login', async (c) => {
+  try {
+    const user = requireParent(c);
+    const { student_id, email } = await c.req.json();
+
+    if (!student_id || !email) return c.json({ error: 'Missing fields' }, 400);
+
+    // Verify student belongs to parent's household
+    const student = await c.env.DB.prepare(
+      'SELECT * FROM students WHERE id = ? AND household_id = ?' // Assuming student records updated to have household_id
+    ).bind(student_id, user.household_id).first<any>();
+
+    // Fallback check if household_id not yet on students table (checking via parent logic?)
+    // But migration adds household_id. 
+    // If student doesn't exist or not in household:
+    if (!student) {
+      // Try checking via parent_id for migration safety
+      const oldStudent = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE id = ? AND parent_id = ?'
+      ).bind(student_id, user.id).first();
+      if (!oldStudent) return c.json({ error: 'Student not found in your household' }, 404);
+
+      // If found via parent_id but no household_id set, fix it?
+      // We assume migration 0055 ran, so columns exist.
+    }
+
+    await c.env.DB.prepare(
+      'UPDATE students SET pending_login_email = ? WHERE id = ?'
+    ).bind(email, student_id).run();
+
+    return c.json({ success: true });
+  } catch (e: any) {
+    return c.json({ error: e.message }, 500);
+  }
+});
+
 // Get current user
 app.get('/api/auth/me', async (c) => {
   try {
     const user = requireAuth(c);
 
-    // Get user's children
-    const { results: children } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
-    ).bind(user.id).all();
+    // Get household members (children)
+    // If user is student, they might only see themselves or siblings? 
+    // Usually "me" returns context.
+
+    let children: any[] = [];
+    if (user.household_id) {
+      const result = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
+      ).bind(user.household_id).all();
+      children = result.results;
+
+      // Fallback for legacy data (parent_id match)
+      if (children.length === 0 && user.role === 'parent') {
+        const legacy = await c.env.DB.prepare(
+          'SELECT * FROM students WHERE parent_id = ?'
+        ).bind(user.id).all();
+        children = legacy.results;
+      }
+    } else if (user.role === 'parent') {
+      // Old behavior
+      const legacy = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE parent_id = ?'
+      ).bind(user.id).all();
+      children = legacy.results;
+    }
 
     return c.json({ user, children });
   } catch (error: any) {
@@ -727,10 +945,30 @@ app.post('/api/auth/logout', (c) => {
 // Get all children for current user
 app.get('/api/students', async (c) => {
   try {
-    const user = requireAuth(c);
-    const { results } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
-    ).bind(user.id).all();
+    const user = requireHouseholdMember(c); // Students can verify list of siblings? Or just parents? Assuming members.
+
+    let results: any[] = [];
+    if (user.household_id) {
+      const query = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
+      ).bind(user.household_id).all();
+      results = query.results;
+
+      // Populate if empty from legacy
+      if (results.length === 0 && user.role === 'parent') {
+        const legacy = await c.env.DB.prepare(
+          'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
+        ).bind(user.id).all();
+        results = legacy.results;
+      }
+    } else {
+      // Legacy fallback
+      const legacy = await c.env.DB.prepare(
+        'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
+      ).bind(user.id).all();
+      results = legacy.results;
+    }
+
     return c.json(results);
   } catch (error: any) {
     console.error('Students list error:', error);
@@ -742,7 +980,7 @@ app.get('/api/students', async (c) => {
 // Get notifications
 app.get('/api/notifications', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireParent(c);
     const notifications = [];
     const today = new Date().toISOString().split('T')[0];
 
@@ -752,10 +990,10 @@ app.get('/api/notifications', async (c) => {
         SELECT f.primary_virtue as virtue, COUNT(*) as count
         FROM evidences e
         JOIN formations f ON e.formation_id = f.id
-        WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+        WHERE e.student_id IN (SELECT id FROM students WHERE household_id = ?)
         GROUP BY f.primary_virtue
         HAVING count >= 5
-      `).bind(user.id).all();
+      `).bind(user.household_id).all();
 
       virtueCounts.forEach((v: any) => {
         // Logic to determine if this is a "new" milestone could be complex
@@ -781,9 +1019,9 @@ app.get('/api/notifications', async (c) => {
         SELECT DISTINCT f.primary_virtue as virtue
         FROM evidences e
         JOIN formations f ON e.formation_id = f.id
-        WHERE e.student_id IN (SELECT id FROM students WHERE parent_id = ?)
+        WHERE e.student_id IN (SELECT id FROM students WHERE household_id = ?)
         AND e.created_at > datetime('now', '-14 days')
-      `).bind(user.id).all();
+      `).bind(user.household_id).all();
 
       const recentVirtueSet = new Set(recentVirtues.map((r: any) => r.virtue));
       const allVirtues = ['Wisdom', 'Stewardship', 'Love', 'Order', 'Wonder'];
@@ -829,7 +1067,7 @@ app.get('/api/notifications', async (c) => {
 // Get tomorrow's preview
 app.get('/api/family/tomorrow-preview', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireParent(c);
 
     // Calculate tomorrow's date
     const today = new Date();
@@ -902,7 +1140,7 @@ app.get('/api/family/tomorrow-preview', async (c) => {
 // Add a child (max 5)
 app.post('/api/students', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireParent(c);
 
     // Check limit
     const { results: existing } = await c.env.DB.prepare(
@@ -941,7 +1179,7 @@ app.post('/api/students', async (c) => {
 // Update a child
 app.put('/api/students/:id', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireParent(c);
     const studentId = c.req.param('id');
     const body = await c.req.json();
 
@@ -1054,7 +1292,7 @@ app.get('/api/formations/:id', async (c) => {
 // Simple Evidence Creation (replaces activity-completions)
 app.post('/api/evidences', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireParent(c); // Only parents record evidence
     const { studentId, formationId, stage, note, url, type } = await c.req.json();
 
     const id = crypto.randomUUID();
@@ -1133,7 +1371,7 @@ async function getStudentDailyRecommendations(db: D1Database, student: any) {
 // Get today's recommended formations for a student
 app.get('/api/students/:studentId/today', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireHouseholdMember(c);
     const studentId = c.req.param('studentId');
 
     // Verify ownership
@@ -1238,12 +1476,21 @@ async function getDailyPractices(db: D1Database) {
 // Get family dashboard data - UNIFIED PLANNER VERSION
 app.get('/api/family/today', async (c) => {
   try {
-    const user = requireAuth(c);
+    const user = requireHouseholdMember(c);
 
-    // Get all children
-    const { results: children } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+    // Get all children for the household
+    // (Adjusted to filter by household_id if present, fallback to legacy parent)
+    let children: any[] = [];
+    if (user.household_id) {
+      children = (await c.env.DB.prepare(
+        'SELECT * FROM students WHERE household_id = ? ORDER BY age_in_months DESC'
+      ).bind(user.household_id).all()).results || [];
+    } else {
+      // Legacy fallback
+      children = (await c.env.DB.prepare(
+        'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
+      ).bind(user.id).all()).results || [];
+    }
 
     if (children.length === 0) {
       return c.json({

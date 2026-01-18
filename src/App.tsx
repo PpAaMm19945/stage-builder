@@ -37,7 +37,7 @@ import Reading from "./pages/early-years/Reading";
 import PortfolioPage from "./pages/early-years/Portfolio";
 import ScopeSequence from "./pages/early-years/ScopeSequence";
 import Settings from "./pages/Settings";
-import StudentView from "./pages/StudentView";
+import StudentPortal from "./pages/student/StudentPortal";
 import LockedStage from "./pages/stages/LockedStage";
 import NotFound from "./pages/NotFound";
 import PrivacyPolicy from "./pages/legal/PrivacyPolicy";
@@ -59,44 +59,44 @@ const App = () => (
               <BrowserRouter>
                 <Routes>
                   {/* Auth Callback - Must be outside PublicLayout */}
-                <Route path="/auth/callback" element={<AuthCallback />} />
+                  <Route path="/auth/callback" element={<AuthCallback />} />
 
-                {/* Public Routes */}
-                <Route element={<PublicLayout />}>
-                  <Route path="/login" element={<Login />} />
-                  <Route path="/privacy" element={<PrivacyPolicy />} />
-                  <Route path="/terms" element={<TermsOfService />} />
-                </Route>
+                  {/* Public Routes */}
+                  <Route element={<PublicLayout />}>
+                    <Route path="/login" element={<Login />} />
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsOfService />} />
+                  </Route>
 
-                {/* Protected Routes */}
-                <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                  <Route path="/" element={<Dashboard />} />
+                  {/* Protected Routes */}
+                  <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                    <Route path="/" element={<Dashboard />} />
 
-                  {/* Early Years */}
-                  <Route path="/early-years/planner" element={<Planner />} />
-                  <Route path="/early-years/daily-practices" element={<DailyPractices />} />
-                  <Route path="/early-years/today" element={<Navigate to="/" replace />} />
-                  <Route path="/early-years/activities" element={<Library />} />
-                  <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
-                  <Route path="/early-years/reading" element={<Reading />} />
-                  <Route path="/early-years/progress" element={<ProgressPage />} />
-                  <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
-                  <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
+                    {/* Early Years */}
+                    <Route path="/early-years/planner" element={<Planner />} />
+                    <Route path="/early-years/daily-practices" element={<DailyPractices />} />
+                    <Route path="/early-years/today" element={<Navigate to="/" replace />} />
+                    <Route path="/early-years/activities" element={<Library />} />
+                    <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
+                    <Route path="/early-years/reading" element={<Reading />} />
+                    <Route path="/early-years/progress" element={<ProgressPage />} />
+                    <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
+                    <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
 
-                  {/* Locked Stages */}
-                  <Route path="/lower-primary" element={<LockedStage />} />
-                  <Route path="/middle-school" element={<LockedStage />} />
-                  <Route path="/upper-school" element={<LockedStage />} />
+                    {/* Locked Stages */}
+                    <Route path="/lower-primary" element={<LockedStage />} />
+                    <Route path="/middle-school" element={<LockedStage />} />
+                    <Route path="/upper-school" element={<LockedStage />} />
 
-                  {/* Settings */}
-                  <Route path="/settings" element={<Settings />} />
+                    {/* Settings */}
+                    <Route path="/settings" element={<Settings />} />
 
-                  {/* Support */}
-                  <Route path="/support" element={<SupportPage />} />
+                    {/* Support */}
+                    <Route path="/support" element={<SupportPage />} />
 
-                  {/* Phase 3: Student View */}
-                  <Route path="/student/:studentId" element={<StudentView />} />
-                </Route>
+                    {/* Phase 3: Student Portal */}
+                    <Route path="/student" element={<StudentPortal />} />
+                  </Route>
 
                   {/* Catch-all */}
                   <Route path="*" element={<NotFound />} />
@@ -111,4 +111,3 @@ const App = () => (
 );
 
 export default App;
-

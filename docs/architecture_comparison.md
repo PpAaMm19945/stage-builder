@@ -889,12 +889,206 @@ If you just fix the bugs:
 
 ---
 
+## Part 8: Household & Authentication Model
+
+> [!IMPORTANT]
+> This section was added based on architectural review. The original schema assumed single-parent accounts. Real families need multi-parent access and student logins.
+
+### The Problem with Current Auth
+
+```
+Current: users (1) ──→ (many) students
+```
+- Mom logs in → sees her children
+- Dad logs in → has separate account, must re-add same children
+- No student logins possible
+
+### The Solution: Household Model
+
+```
+New: users (many) ──→ household (1) ──→ (many) students
+```
+
+### Updated Schema (10 Tables Total)
+
+```sql
+-- ============================================================================
+-- 0. HOUSEHOLDS (Family units - NEW TABLE)
+-- ============================================================================
+CREATE TABLE households (
+  id TEXT PRIMARY KEY,
+  name TEXT,
+  invite_code TEXT UNIQUE,  -- For joining: /join/KAY-2026
+  created_at TEXT NOT NULL DEFAULT (datetime('now'))
+);
+
+CREATE INDEX idx_households_invite ON households(invite_code);
+
+-- ============================================================================
+-- 1. USERS (Parents AND Students - UPDATED)
+-- ============================================================================
+CREATE TABLE users (
+  id TEXT PRIMARY KEY,
+  email TEXT NOT NULL UNIQUE,
+  name TEXT NOT NULL,
+  avatar_url TEXT,
+  household_id TEXT,
+  role TEXT NOT NULL DEFAULT 'parent' CHECK (role IN ('parent', 'student')),
+  student_id TEXT,  -- Only for role='student', links to their student record
+  provider TEXT NOT NULL DEFAULT 'google',
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (household_id) REFERENCES households(id),
+  FOREIGN KEY (student_id) REFERENCES students(id)
+);
+
+CREATE INDEX idx_users_email ON users(email);
+CREATE INDEX idx_users_household ON users(household_id);
+
+-- ============================================================================
+-- 2. STUDENTS (Link to household, not parent - UPDATED)
+-- ============================================================================
+CREATE TABLE students (
+  id TEXT PRIMARY KEY,
+  household_id TEXT NOT NULL,
+  name TEXT NOT NULL,
+  date_of_birth TEXT NOT NULL,
+  avatar_url TEXT,
+  pending_login_email TEXT,  -- Parent pre-approves this email for student login
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  updated_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (household_id) REFERENCES households(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_students_household ON students(household_id);
+CREATE INDEX idx_students_pending_email ON students(pending_login_email);
+
+-- ============================================================================
+-- 10. SESSIONS (Auth sessions - ADDED)
+-- ============================================================================
+CREATE TABLE sessions (
+  id TEXT PRIMARY KEY,
+  user_id TEXT NOT NULL,
+  expires_at TEXT NOT NULL,
+  created_at TEXT NOT NULL DEFAULT (datetime('now')),
+  FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+);
+
+CREATE INDEX idx_sessions_user ON sessions(user_id);
+CREATE INDEX idx_sessions_expires ON sessions(expires_at);
+```
+
+### Multi-Parent Join Flow
+
+1. **First parent signs up** → Creates new household automatically
+2. **First parent gets invite code** (e.g., `KAY-2026`)
+3. **Second parent visits `/join/KAY-2026`** → Signs in with Google → Links to same household
+4. **Both parents see same children, plans, evidence**
+
+### Student Authentication Flow
+
+```
+Parent: "Enable login for Sarah (age 12)"
+  ↓
+App: "Enter Sarah's Google email: sarah@gmail.com"
+  ↓
+DB: UPDATE students SET pending_login_email = 'sarah@gmail.com'
+  ↓
+Student: Signs in with Google (sarah@gmail.com)
+  ↓
+App: Finds student with pending_login_email match
+  ↓
+DB: Creates user (sarah@gmail.com, household_id, role=student, student_id)
+  ↓
+DB: Clears pending_login_email
+  ↓
+Student: Sees Student Portal view
+```
+
+### Authority Hierarchy
+
+```
+HOUSEHOLD (Family unit)
+├── Parent (role='parent') - FULL AUTHORITY
+│   ├── View all data
+│   ├── Modify plans
+│   ├── Record evidence
+│   ├── Manage settings
+│   ├── Invite other parents
+│   └── Enable/disable student logins
+│
+├── Parent (role='parent') - EQUAL AUTHORITY
+│   └── (Same permissions as above)
+│
+└── Student (role='student') - DELEGATED AUTHORITY
+    ├── View own assigned tasks
+    ├── Mark complete (if independence_settings.can_mark_complete = true)
+    ├── Ask AI (if independence_settings.can_ask_ai = true)
+    ├── View own portfolio (if independence_settings.can_view_portfolio = true)
+    └── CANNOT:
+        ├── ❌ View other students' data
+        ├── ❌ Modify family settings
+        ├── ❌ Change plans
+        └── ❌ Record evidence on other students
+```
+
+### JWT Payload Structure
+
+```typescript
+interface JWTPayload {
+  sub: string;          // user.id
+  email: string;
+  name: string;
+  household_id: string;
+  role: 'parent' | 'student';
+  student_id?: string;  // Only if role='student'
+  exp: number;
+}
+```
+
+### API Route Protection
+
+| Route | Protection | Who Can Access |
+|-------|------------|----------------|
+| `GET /api/family/today` | `requireHouseholdMember` | Parents + Students |
+| `POST /api/family/evidence` | `requireParent` | Parents only |
+| `PUT /api/settings/*` | `requireParent` | Parents only |
+| `POST /api/household/invite` | `requireParent` | Parents only |
+| `GET /api/student-view/:id` | `requireStudent + checkOwnRecord` | That student only |
+| `POST /api/student/mark-complete` | `requireStudent + checkPermission` | If `can_mark_complete` |
+
+---
+
+## Part 9: Complete Table Summary
+
+| # | Table | Purpose |
+|---|-------|---------|
+| 0 | `households` | Family units (NEW) |
+| 1 | `users` | Parents AND students (UPDATED) |
+| 2 | `students` | Children linked to household (UPDATED) |
+| 3 | `formations` | All content: skills, liturgy, books |
+| 4 | `formation_progressions` | Age-stage variants |
+| 5 | `evidences` | Unified completion tracking |
+| 6 | `family_preferences` | Settings, pace, overrides |
+| 7 | `weekly_plans` | Cached weekly plans |
+| 8 | `ai_logs` | AI interaction history |
+| 9 | `portfolio_items` | Child work samples |
+| 10 | `sessions` | Auth sessions (NEW) |
+
+**Total: 11 Tables** (was 15+ with legacy cruft)
+
+---
+
 ## Next Steps
 
 With this architecture approved:
-1. **Create fresh D1 database schema SQL file**
-2. **Write data export/transform scripts**
-3. **Update Cloudflare worker binding**
-4. **Refactor frontend types and API calls**
+1. **Create fresh D1 database** (`schoolos-v2`)
+2. **Apply clean schema** (11 tables from this document)
+3. **Seed formations content** (export from current DB)
+4. **Update Cloudflare worker binding**
+5. **Refactor frontend types and API calls**
+6. **Implement Household invite flow**
+7. **Implement Student auth flow**
 
 **This document serves as the architectural foundation for SchoolOS v2.**
+
