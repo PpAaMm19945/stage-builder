@@ -237,8 +237,7 @@ export const activityCompletions = {
       stage: 'rooting', // Default
       note: data.notes,
       duration_minutes: data.durationMinutes,
-      loved_it: data.lovedIt,
-      studentId: '' // Thisshim is broken if we don't have studentId. Dashboard context knows.
+      loved_it: data.lovedIt
     });
   }
 };
