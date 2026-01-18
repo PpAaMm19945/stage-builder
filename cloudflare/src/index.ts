@@ -3,6 +3,7 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 import { AiCoach } from './ai';
 
@@ -82,16 +83,22 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
-// Security helper: Constant-time comparison to prevent timing attacks
-function safeCompare(a: string | undefined | null, b: string | undefined | null): boolean {
-  if (!a || !b || a.length !== b.length) {
+// Security helper: Constant-time comparison using Web Crypto to prevent timing attacks
+async function safeCompare(a: string | undefined | null, b: string | undefined | null): Promise<boolean> {
+  if (!a || !b) {
     return false;
   }
-  let result = 0;
-  for (let i = 0; i < a.length; i++) {
-    result |= a.charCodeAt(i) ^ b.charCodeAt(i);
-  }
-  return result === 0;
+
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a);
+  const bBuf = encoder.encode(b);
+
+  // Use SHA-256 to hash inputs to fixed length, preventing length leaks
+  const aHash = await crypto.subtle.digest('SHA-256', aBuf);
+  const bHash = await crypto.subtle.digest('SHA-256', bBuf);
+
+  // Compare hashes in constant time
+  return crypto.subtle.timingSafeEqual(aHash, bHash);
 }
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
@@ -118,7 +125,7 @@ app.get('/', async (c) => {
   }
 
   // Use constant-time comparison
-  if (!safeCompare(key, secret)) {
+  if (!(await safeCompare(key, secret))) {
     return c.html(`
       <html>
         <head><title>Unauthorized</title><style>body{background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}</style></head>
@@ -656,12 +663,23 @@ app.get('/auth/dev-bypass', async (c) => {
 
 // Start Google OAuth flow
 app.get('/auth/google', (c) => {
+  // Security: Prevent CSRF with state parameter
+  const state = crypto.randomUUID();
+  setCookie(c, 'oauth_state', state, {
+    httpOnly: true,
+    secure: c.env.ENVIRONMENT !== 'development', // Secure in prod
+    sameSite: 'Lax',
+    maxAge: 60 * 10, // 10 minutes
+    path: '/'
+  });
+
   const scope = encodeURIComponent('openid email profile');
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
     `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
     `&response_type=code` +
     `&scope=${scope}` +
+    `&state=${state}` +
     `&access_type=offline`;
 
   return c.redirect(authUrl);
@@ -670,6 +688,17 @@ app.get('/auth/google', (c) => {
 // Google OAuth callback
 app.get('/auth/google/callback', async (c) => {
   const code = c.req.query('code');
+  const state = c.req.query('state');
+  const storedState = getCookie(c, 'oauth_state');
+
+  // Verify state to prevent CSRF
+  if (!state || !storedState || state !== storedState) {
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=csrf_mismatch`);
+  }
+
+  // Clean up state cookie
+  deleteCookie(c, 'oauth_state');
+
   if (!code) {
     return c.redirect(`${c.env.FRONTEND_URL}/login?error=no_code`);
   }
@@ -3427,7 +3456,7 @@ app.put('/api/books/upload', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3448,7 +3477,7 @@ app.get('/api/debug/r2', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
@@ -3477,7 +3506,7 @@ app.get('/api/debug/books/audit', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
 
-  if (!secret || !safeCompare(key, secret)) {
+  if (!secret || !(await safeCompare(key, secret))) {
     return c.json({ error: 'Unauthorized' }, 401);
   }
 
