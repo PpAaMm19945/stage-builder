@@ -93,6 +93,7 @@ export function HymnAudioPlayer({ src, title, autoPlay = false }: HymnAudioPlaye
                     size="icon"
                     className="h-10 w-10 rounded-full shrink-0"
                     onClick={togglePlay}
+                    aria-label={isPlaying ? "Pause" : "Play"}
                 >
                     {isPlaying ? (
                         <Pause className="h-5 w-5 fill-primary text-primary" weight="fill" />
@@ -121,6 +122,7 @@ export function HymnAudioPlayer({ src, title, autoPlay = false }: HymnAudioPlaye
                     size="icon"
                     className="h-8 w-8 text-muted-foreground hover:text-foreground shrink-0"
                     onClick={toggleMute}
+                    aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                     {isMuted ? (
                         <SpeakerX className="h-5 w-5" />

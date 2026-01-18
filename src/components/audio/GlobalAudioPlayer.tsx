@@ -94,6 +94,7 @@ export function GlobalAudioPlayer() {
                   size="icon"
                   className="h-7 w-7 text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/50"
                   onClick={() => setIsExpanded(false)}
+                  aria-label="Minimize player"
                 >
                   <ArrowsInSimple className="h-4 w-4" />
                 </Button>
@@ -102,6 +103,7 @@ export function GlobalAudioPlayer() {
                   size="icon"
                   className="h-7 w-7 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
                   onClick={closePlayer}
+                  aria-label="Close player"
                 >
                   <X className="h-4 w-4" />
                 </Button>
@@ -132,6 +134,7 @@ export function GlobalAudioPlayer() {
                   size="icon"
                   className="text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
                   onClick={toggleMute}
+                  aria-label={isMuted ? "Unmute" : "Mute"}
                 >
                   {isMuted ? <SpeakerX className="h-5 w-5" /> : <SpeakerHigh className="h-5 w-5" />}
                 </Button>
@@ -143,6 +146,7 @@ export function GlobalAudioPlayer() {
                     onClick={playPrevious}
                     disabled={currentTime < 5} // Logic depends on playlist
                     className="hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                    aria-label="Previous track"
                   >
                     <SkipBack weight="fill" className="h-5 w-5 text-amber-900 dark:text-amber-100" />
                   </Button>
@@ -151,6 +155,7 @@ export function GlobalAudioPlayer() {
                     size="icon"
                     className="h-10 w-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white shadow-md"
                     onClick={togglePlay}
+                    aria-label={isPlaying ? "Pause" : "Play"}
                   >
                     {isPlaying ? (
                       <Pause weight="fill" className="h-5 w-5" />
@@ -164,6 +169,7 @@ export function GlobalAudioPlayer() {
                     size="icon"
                     onClick={playNext}
                     className="hover:bg-amber-50 dark:hover:bg-amber-900/20"
+                    aria-label="Next track"
                   >
                     <SkipForward weight="fill" className="h-5 w-5 text-amber-900 dark:text-amber-100" />
                   </Button>
