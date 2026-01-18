@@ -87,6 +87,7 @@ export function WeekStrip({
                 isPastDay,
                 status,
                 data,
+                fullDate: format(date, 'EEEE, MMMM do'),
             };
         });
     }, [weekStart, selectedDay, today, dayData]);
@@ -114,18 +115,30 @@ export function WeekStrip({
 
             {/* Day Circles */}
             <div className="flex justify-between gap-1">
-                {days.map((day) => (
-                    <button
-                        key={day.dateStr}
-                        onClick={() => onDaySelect(day.date)}
-                        className={cn(
-                            'flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all cursor-pointer',
-                            'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30',
-                            day.isSelected && 'bg-primary/10 ring-1 ring-primary/20',
-                            day.isPastDay && 'opacity-80'
-                        )}
-                    >
-                        {/* Day name */}
+                {days.map((day) => {
+                    const statusLabels: Record<string, string> = {
+                        completed: 'All activities completed',
+                        today: 'Today',
+                        partial: 'Partially completed',
+                        none: 'No activities completed',
+                        future: 'Upcoming',
+                    };
+                    const label = `${day.fullDate}. ${day.data.total} activities. Status: ${statusLabels[day.status] || ''}.`;
+
+                    return (
+                        <button
+                            key={day.dateStr}
+                            onClick={() => onDaySelect(day.date)}
+                            aria-label={label}
+                            aria-current={day.isSelected ? 'date' : undefined}
+                            className={cn(
+                                'flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all cursor-pointer',
+                                'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30',
+                                day.isSelected && 'bg-primary/10 ring-1 ring-primary/20',
+                                day.isPastDay && 'opacity-80'
+                            )}
+                        >
+                            {/* Day name */}
                         <span
                             className={cn(
                                 'text-[10px] font-medium uppercase tracking-wide',
@@ -170,22 +183,23 @@ export function WeekStrip({
                             {day.data.total > 0 ? day.data.total : '—'}
                         </span>
 
-                        {/* Domain color bar */}
-                        {day.data.domains.length > 0 && (
-                            <div className="flex gap-0.5 mt-1 h-1 w-full max-w-[32px]">
-                                {day.data.domains.slice(0, 4).map((domain, i) => (
-                                    <div
-                                        key={`${domain}-${i}`}
-                                        className={cn(
-                                            'flex-1 rounded-full',
-                                            DOMAIN_COLORS[domain] || 'bg-gray-400'
-                                        )}
-                                    />
-                                ))}
-                            </div>
-                        )}
-                    </button>
-                ))}
+                            {/* Domain color bar */}
+                            {day.data.domains.length > 0 && (
+                                <div className="flex gap-0.5 mt-1 h-1 w-full max-w-[32px]">
+                                    {day.data.domains.slice(0, 4).map((domain, i) => (
+                                        <div
+                                            key={`${domain}-${i}`}
+                                            className={cn(
+                                                'flex-1 rounded-full',
+                                                DOMAIN_COLORS[domain] || 'bg-gray-400'
+                                            )}
+                                        />
+                                    ))}
+                                </div>
+                            )}
+                        </button>
+                    );
+                })}
             </div>
         </div>
     );
