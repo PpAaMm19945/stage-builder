@@ -3,6 +3,7 @@
 
 import { Hono } from 'hono';
 import { cors } from 'hono/cors';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 import { AiCoach } from './ai';
 
@@ -656,12 +657,23 @@ app.get('/auth/dev-bypass', async (c) => {
 
 // Start Google OAuth flow
 app.get('/auth/google', (c) => {
+  // Security: Prevent CSRF with state parameter
+  const state = crypto.randomUUID();
+  setCookie(c, 'oauth_state', state, {
+    httpOnly: true,
+    secure: c.env.ENVIRONMENT !== 'development', // Secure in prod
+    sameSite: 'Lax',
+    maxAge: 60 * 10, // 10 minutes
+    path: '/'
+  });
+
   const scope = encodeURIComponent('openid email profile');
   const authUrl = `https://accounts.google.com/o/oauth2/v2/auth?` +
     `client_id=${encodeURIComponent(c.env.GOOGLE_CLIENT_ID)}` +
     `&redirect_uri=${encodeURIComponent(c.env.GOOGLE_REDIRECT_URI)}` +
     `&response_type=code` +
     `&scope=${scope}` +
+    `&state=${state}` +
     `&access_type=offline`;
 
   return c.redirect(authUrl);
@@ -670,6 +682,17 @@ app.get('/auth/google', (c) => {
 // Google OAuth callback
 app.get('/auth/google/callback', async (c) => {
   const code = c.req.query('code');
+  const state = c.req.query('state');
+  const storedState = getCookie(c, 'oauth_state');
+
+  // Verify state to prevent CSRF
+  if (!state || !storedState || state !== storedState) {
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=csrf_mismatch`);
+  }
+
+  // Clean up state cookie
+  deleteCookie(c, 'oauth_state');
+
   if (!code) {
     return c.redirect(`${c.env.FRONTEND_URL}/login?error=no_code`);
   }
