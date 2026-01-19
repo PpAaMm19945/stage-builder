@@ -81,9 +81,9 @@ export const students = {
     dateOfBirth?: string;
     avatarUrl?: string;
     independence_settings?: {
-      canMarkComplete: boolean;
-      canAskAi: boolean;
-      canViewPortfolio: boolean;
+      canMarkComplete?: boolean;
+      canAskAi?: boolean;
+      canViewPortfolio?: boolean;
     };
     pace_overrides?: Record<string, string>;
     is_graduated?: boolean;
