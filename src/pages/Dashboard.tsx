@@ -23,7 +23,7 @@ import { toast } from 'sonner';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
 import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
-import { MaterialItem, Book } from '@/types';
+import { MaterialItem, Book, LiturgyType } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
