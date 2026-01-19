@@ -1,6 +1,60 @@
+
+import { useState, useEffect } from 'react';
+import { Formation } from '@/types';
+import { cn } from '@/lib/utils';
+import { Card, CardHeader } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Button } from '@/components/ui/button';
+import { Checkbox } from '@/components/ui/checkbox';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
+import {
+    Lightning,
+    Heart,
+    LockKey,
+    CaretUp,
+    CaretDown,
+    Clock,
+    Pause,
+    Play,
+    BookOpen,
+    HandsPraying, // Added for liturgy
+    Leaf,         // Added for habit/growth
+    HandHeart,    // Added for service
+    Moon          // Added for rest
+} from '@phosphor-icons/react';
+import confetti from 'canvas-confetti';
 import { FormationTimer, useFormationTimer } from './FormationTimer';
 
-// ... (keep existing imports)
+// ... (keep existing imports) - I'm replacing the file so I don't need this comment, I am adding them.
+
+type ExtendedFormationType = Formation['formation_type'];
+
+const TYPE_ICONS: Record<ExtendedFormationType, any> = {
+    skill: Lightning,
+    habit: Leaf,
+    liturgy: HandsPraying,
+    reading: BookOpen,
+    service: HandHeart,
+    rest: Moon
+};
+
+const TYPE_COLORS: Record<ExtendedFormationType, string> = {
+    skill: 'text-amber-600',
+    habit: 'text-emerald-600',
+    liturgy: 'text-violet-600',
+    reading: 'text-sky-600',
+    service: 'text-rose-600',
+    rest: 'text-slate-600'
+};
+
+const CARD_BORDERS: Record<ExtendedFormationType, string> = {
+    skill: 'border-amber-200',
+    habit: 'border-emerald-200',
+    liturgy: 'border-violet-200',
+    reading: 'border-sky-200',
+    service: 'border-rose-200',
+    rest: 'border-slate-200'
+};
 
 interface FormationCardProps {
     formation: Formation;
@@ -18,8 +72,6 @@ interface FormationCardProps {
     onLove?: (id: string, loved: boolean) => void;
     isLoved?: boolean;
 }
-
-// ... (keep existing constants)
 
 export function FormationCard({
     formation,

@@ -4,11 +4,11 @@ import { useAuth } from '../../contexts/AuthContext';
 import { Archive, Download, CircleNotch, LockKey } from '@phosphor-icons/react';
 
 export const DataArchive: React.FC = () => {
-    const { token } = useAuth();
     const [loading, setLoading] = useState(false);
     const [error, setError] = useState<string | null>(null);
 
     const handleDownload = async () => {
+        const token = localStorage.getItem('schoolos_token');
         if (!token || loading) return;
 
         setLoading(true);

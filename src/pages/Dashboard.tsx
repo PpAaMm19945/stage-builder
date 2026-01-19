@@ -250,7 +250,7 @@ export default function Dashboard() {
   }, [completeLiturgyMutation, uncompleteLiturgyMutation]);
 
   const handleLiturgyAdvance = useCallback((type: string) => {
-    advanceLiturgyMutation.mutate(type);
+    advanceLiturgyMutation.mutate(type as LiturgyType);
   }, [advanceLiturgyMutation]);
 
   // Memoized handlers
