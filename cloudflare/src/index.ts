@@ -1013,22 +1013,10 @@ app.post('/api/student/enable-login', async (c) => {
 
     // Verify student belongs to parent's household
     const student = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE id = ? AND household_id = ?' // Assuming student records updated to have household_id
+      'SELECT * FROM students WHERE id = ? AND household_id = ?'
     ).bind(student_id, user.household_id).first<any>();
 
-    // Fallback check if household_id not yet on students table (checking via parent logic?)
-    // But migration adds household_id. 
-    // If student doesn't exist or not in household:
-    if (!student) {
-      // Try checking via parent_id for migration safety
-      const oldStudent = await c.env.DB.prepare(
-        'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-      ).bind(student_id, user.id).first();
-      if (!oldStudent) return c.json({ error: 'Student not found in your household' }, 404);
-
-      // If found via parent_id but no household_id set, fix it?
-      // We assume migration 0055 ran, so columns exist.
-    }
+    if (!student) return c.json({ error: 'Student not found in your household' }, 404);
 
     await c.env.DB.prepare(
       'UPDATE students SET pending_login_email = ? WHERE id = ?'
@@ -1049,26 +1037,13 @@ app.get('/api/auth/me', async (c) => {
     // If user is student, they might only see themselves or siblings? 
     // Usually "me" returns context.
 
+    // Get household members (children)
     let children: any[] = [];
     if (user.household_id) {
       const result = await c.env.DB.prepare(
         'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
       ).bind(user.household_id).all();
       children = result.results;
-
-      // Fallback for legacy data (parent_id match)
-      if (children.length === 0 && user.role === 'parent') {
-        const legacy = await c.env.DB.prepare(
-          'SELECT * FROM students WHERE parent_id = ?'
-        ).bind(user.id).all();
-        children = legacy.results;
-      }
-    } else if (user.role === 'parent') {
-      // Old behavior
-      const legacy = await c.env.DB.prepare(
-        'SELECT * FROM students WHERE parent_id = ?'
-      ).bind(user.id).all();
-      children = legacy.results;
     }
 
     return c.json({ user, children });
@@ -1097,20 +1072,6 @@ app.get('/api/students', async (c) => {
         'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
       ).bind(user.household_id).all();
       results = query.results;
-
-      // Populate if empty from legacy
-      if (results.length === 0 && user.role === 'parent') {
-        const legacy = await c.env.DB.prepare(
-          'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
-        ).bind(user.id).all();
-        results = legacy.results;
-      }
-    } else {
-      // Legacy fallback
-      const legacy = await c.env.DB.prepare(
-        'SELECT * FROM students WHERE parent_id = ? ORDER BY created_at'
-      ).bind(user.id).all();
-      results = legacy.results;
     }
 
     // Parse JSON fields
