@@ -689,9 +689,12 @@ app.get('/api/export/transcript/:studentId', async (c) => {
     totalCredits
   });
 
-  c.header('Content-Type', 'application/pdf');
-  c.header('Content-Disposition', `attachment; filename="${student.name}_Transcript.pdf"`);
-  return c.body(pdfBytes);
+  return new Response(pdfBytes, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${student.name}_Transcript.pdf"`
+    }
+  });
 });
 
 app.get('/api/export/diploma/:studentId', async (c) => {
@@ -705,9 +708,12 @@ app.get('/api/export/diploma/:studentId', async (c) => {
 
   const pdfBytes = await PdfService.generateDiploma(student.name, new Date().toLocaleDateString());
 
-  c.header('Content-Type', 'application/pdf');
-  c.header('Content-Disposition', `attachment; filename="${student.name}_Diploma.pdf"`);
-  return c.body(pdfBytes);
+  return new Response(pdfBytes, {
+    headers: {
+      'Content-Type': 'application/pdf',
+      'Content-Disposition': `attachment; filename="${student.name}_Diploma.pdf"`
+    }
+  });
 });
 
 // ============ DEV BYPASS AUTH (Development Only) ============

@@ -9,9 +9,9 @@ import {
 } from "@/components/ui/tooltip";
 
 interface IndependenceSettingsData {
-    canMarkComplete: boolean;
-    canAskAi: boolean;
-    canViewPortfolio: boolean;
+    canMarkComplete?: boolean;
+    canAskAi?: boolean;
+    canViewPortfolio?: boolean;
 }
 
 interface IndependenceSettingsProps {
@@ -45,7 +45,7 @@ export function IndependenceSettings({ settings, onUpdate, disabled }: Independe
                     </Label>
                     <Switch
                         id="can-mark-complete"
-                        checked={settings.canMarkComplete}
+                        checked={settings.canMarkComplete ?? false}
                         onCheckedChange={(checked: boolean) => onUpdate('canMarkComplete', checked)}
                         disabled={disabled}
                     />
@@ -58,7 +58,7 @@ export function IndependenceSettings({ settings, onUpdate, disabled }: Independe
                     </Label>
                     <Switch
                         id="can-ask-ai"
-                        checked={settings.canAskAi}
+                        checked={settings.canAskAi ?? false}
                         onCheckedChange={(checked: boolean) => onUpdate('canAskAi', checked)}
                         disabled={disabled}
                     />
@@ -71,7 +71,7 @@ export function IndependenceSettings({ settings, onUpdate, disabled }: Independe
                     </Label>
                     <Switch
                         id="can-view-portfolio"
-                        checked={settings.canViewPortfolio}
+                        checked={settings.canViewPortfolio ?? false}
                         onCheckedChange={(checked: boolean) => onUpdate('canViewPortfolio', checked)}
                         disabled={disabled}
                     />
