@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query';
+import DOMPurify from 'dompurify';
 import { fetchAllHymns } from '@/lib/book-content';
 
 // Reusing the logic from book-content.ts but optimizing for single search if possible,
@@ -44,7 +45,10 @@ async function fetchHymnContent(title: string): Promise<string | null> {
                 const normalizedSectionTitle = sectionTitle.toLowerCase().replace(/[^\w\s]/g, '');
 
                 if (normalizedSectionTitle === normalizedTargetTitle) {
-                    return section.substring(firstLineEnd).trim();
+                    // Security: Sanitize content before returning to prevent XSS
+                    // The content is rendered using dangerouslySetInnerHTML in consumers
+                    const rawContent = section.substring(firstLineEnd).trim();
+                    return DOMPurify.sanitize(rawContent);
                 }
             }
         }
