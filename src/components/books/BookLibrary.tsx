@@ -5,6 +5,12 @@ import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Accordion,
+  AccordionContent,
+  AccordionItem,
+  AccordionTrigger,
+} from "@/components/ui/accordion";
 import { useAuth } from '@/contexts/AuthContext';
 import { Book as BookIcon } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
@@ -127,36 +133,42 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             )}
 
             {/* Books by Series */}
-            {!isLoading && seriesNames.map(series => (
-                <div key={series} className="space-y-3">
-                    <div className="flex items-center justify-between px-1">
-                        <h2 className="text-xl font-semibold flex items-center gap-2">
-                            {series}
-                            <span className="text-sm font-normal text-muted-foreground">
-                                ({booksBySeries[series].length})
-                            </span>
-                        </h2>
-                    </div>
-
-                    {series.startsWith('Bible') && (
-                         <p className="text-xs text-muted-foreground ml-1 -mt-2 mb-2">
-                            Audio provided by SermonAudio
-                        </p>
-                    )}
-
-                    {/* Horizontal Scroll Container */}
-                    <div className="flex overflow-x-auto gap-4 pb-4 px-1 snap-x scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                        {booksBySeries[series].map(book => (
-                            <div key={`${book.series}-${book.id}`} className="flex-shrink-0 w-[200px] snap-start">
-                                <BookCard
-                                    book={book}
-                                    onClick={handleBookClick}
-                                />
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            ))}
+            {!isLoading && (
+                <Accordion type="multiple" defaultValue={seriesNames} className="space-y-4">
+                    {seriesNames.map(series => (
+                        <AccordionItem key={series} value={series} className="border-none">
+                            <AccordionTrigger className="hover:no-underline py-2">
+                                <div className="flex flex-col items-start gap-1">
+                                    <span className="text-xl font-semibold flex items-center gap-2">
+                                        {series}
+                                        <span className="text-sm font-normal text-muted-foreground">
+                                            ({booksBySeries[series].length})
+                                        </span>
+                                    </span>
+                                    {series.startsWith('Bible') && (
+                                        <span className="text-xs text-muted-foreground font-normal">
+                                            Audio provided by SermonAudio
+                                        </span>
+                                    )}
+                                </div>
+                            </AccordionTrigger>
+                            <AccordionContent>
+                                {/* Horizontal Scroll Container */}
+                                <div className="flex overflow-x-auto gap-4 pb-4 px-1 snap-x scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                                    {booksBySeries[series].map(book => (
+                                        <div key={`${book.series}-${book.id}`} className="flex-shrink-0 w-[200px] snap-start">
+                                            <BookCard
+                                                book={book}
+                                                onClick={handleBookClick}
+                                            />
+                                        </div>
+                                    ))}
+                                </div>
+                            </AccordionContent>
+                        </AccordionItem>
+                    ))}
+                </Accordion>
+            )}
 
             {/* Book Reader Modal */}
             <BookReader
