@@ -313,8 +313,8 @@ export default function Dashboard() {
         rawItems.push({
           id: `session-${index}`,
           timeSlot: time,
-          title: activity.title,
-          description: activity.description,
+          title: activity.title || 'Untitled Activity',
+          description: activity.description || '',
           type: 'activity',
           status: isCompleted ? 'completed' : 'upcoming',
           data: { ...activity, context_anchor: context }
@@ -328,7 +328,7 @@ export default function Dashboard() {
         id: 'book-reading',
         timeSlot: '11:00',
         title: 'Read Aloud Time',
-        description: todaysBook.title,
+        description: todaysBook.title || 'Book',
         type: 'book',
         status: 'upcoming',
         data: { ...todaysBook, context_anchor: 'Morning Circle' }
@@ -341,8 +341,8 @@ export default function Dashboard() {
         rawItems.push({
           id: `practice-${index}`,
           timeSlot: '18:00',
-          title: practice.title,
-          description: practice.description,
+          title: practice.title || 'Daily Practice',
+          description: practice.description || '',
           type: 'activity',
           status: 'upcoming',
           data: { ...practice, context_anchor: 'Walk By The Way' }
@@ -499,7 +499,7 @@ export default function Dashboard() {
               key={item.id}
               formation={{
                 id: item.id,
-                title: item.title,
+                title: item.title || 'Liturgy Item',
                 description: item.reference || '',
                 formation_type: item.type, // types like 'catechism' work with FormationCard
                 primary_virtue: 'Wisdom',
