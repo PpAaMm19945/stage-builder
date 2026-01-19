@@ -1596,11 +1596,6 @@ app.get('/api/analytics/time-spent', async (c) => {
         'SELECT id FROM students WHERE household_id = ?'
       ).bind(user.household_id).all();
       studentIds = results.map((s: any) => s.id);
-    } else {
-      const { results } = await c.env.DB.prepare(
-        'SELECT id FROM students WHERE parent_id = ?'
-      ).bind(user.id).all();
-      studentIds = results.map((s: any) => s.id);
     }
 
     if (studentIds.length === 0) {
@@ -1697,8 +1692,8 @@ app.get('/api/students/:studentId/today', async (c) => {
 
     // Verify ownership
     const student = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-    ).bind(studentId, user.id).first();
+      'SELECT * FROM students WHERE id = ? AND household_id = ?'
+    ).bind(studentId, user.household_id).first();
 
     if (!student) {
       return c.json({ error: 'Student not found' }, 404);
@@ -1719,8 +1714,8 @@ app.get('/api/students/:studentId/today', async (c) => {
     // ========== SIBLING-AWARE RECOMMENDATIONS ==========
     // Get all siblings for this parent
     const { results: allChildren } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+      'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC' // using dob or created_at
+    ).bind(user.household_id).all();
 
     let familyActivities: any[] = [];
 
@@ -1800,17 +1795,11 @@ app.get('/api/family/today', async (c) => {
     const user = requireHouseholdMember(c);
 
     // Get all children for the household
-    // (Adjusted to filter by household_id if present, fallback to legacy parent)
     let children: any[] = [];
     if (user.household_id) {
       children = (await c.env.DB.prepare(
-        'SELECT * FROM students WHERE household_id = ? ORDER BY age_in_months DESC'
+        'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
       ).bind(user.household_id).all()).results || [];
-    } else {
-      // Legacy fallback
-      children = (await c.env.DB.prepare(
-        'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-      ).bind(user.id).all()).results || [];
     }
 
     if (children.length === 0) {
@@ -1990,8 +1979,8 @@ app.get('/api/family/day/:date', async (c) => {
 
     // Get all children
     const { results: children } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+      'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+    ).bind(user.household_id).all();
 
     if (children.length === 0) {
       return c.json({
@@ -2098,9 +2087,9 @@ app.get('/api/family/day/:date', async (c) => {
     // Get completions for this day (Using evidences table)
     const { results: completions } = await c.env.DB.prepare(`
       SELECT formation_id FROM evidences 
-      WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) 
+      WHERE student_id IN (SELECT id FROM students WHERE household_id = ?) 
       AND date(created_at) = ?
-    `).bind(user.id, dateParam).all();
+    `).bind(user.household_id, dateParam).all();
 
     const completedIds = new Set(completions.map((c: any) => c.formation_id));
 
@@ -2174,9 +2163,9 @@ app.get('/api/family/week-summary', async (c) => {
       const result = await c.env.DB.prepare(`
           SELECT formation_id, date(created_at) as completed_date
           FROM evidences
-          WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?)
+          WHERE student_id IN (SELECT id FROM students WHERE household_id = ?)
           AND date(created_at) >= ? AND date(created_at) <= ?
-        `).bind(user.id, weekStartParam, weekEndStr).all();
+        `).bind(user.household_id, weekStartParam, weekEndStr).all();
       completions = result.results || [];
     } catch (dbError) {
       console.error('Failed to fetch completions', dbError);
@@ -2394,8 +2383,8 @@ app.get('/api/family/pace/:studentId', async (c) => {
 
     // Verify ownership
     const student = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-    ).bind(studentId, user.id).first();
+      'SELECT * FROM students WHERE id = ? AND household_id = ?'
+    ).bind(studentId, user.household_id).first();
 
     if (!student) {
       return c.json({ error: 'Student not found' }, 404);
@@ -2425,8 +2414,8 @@ app.post('/api/family/pace', async (c) => {
 
     // Verify ownership
     const student = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-    ).bind(studentId, user.id).first();
+      'SELECT * FROM students WHERE id = ? AND household_id = ?'
+    ).bind(studentId, user.household_id).first();
 
     if (!student) {
       return c.json({ error: 'Student not found' }, 404);
@@ -2473,8 +2462,8 @@ app.post('/api/passion-signals', async (c) => {
 
     // Verify ownership
     const student = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE id = ? AND parent_id = ?'
-    ).bind(studentId, user.id).first();
+      'SELECT * FROM students WHERE id = ? AND household_id = ?'
+    ).bind(studentId, user.household_id).first();
 
     if (!student) {
       return c.json({ error: 'Student not found' }, 404);
@@ -2543,8 +2532,8 @@ app.get('/api/family/daily-rhythm', async (c) => {
 
     // Get children
     const { results: children } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+      'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+    ).bind(user.household_id).all();
 
     const items: any[] = [];
     const completions: Record<string, boolean> = {};
@@ -2821,8 +2810,8 @@ app.post('/api/family/swap', async (c) => {
 
     // Get children for age range
     const { results: children } = await c.env.DB.prepare(
-      'SELECT * FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+      'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+    ).bind(user.household_id).all();
 
     if (children.length === 0) {
       return c.json({ error: 'No children registered' }, 400);
@@ -3876,104 +3865,103 @@ app.get('/api/liturgy/today', async (c) => {
   const user = requireAuth(c);
   const today = new Date().toISOString().split('T')[0];
 
-  // Get or create family settings
-  let settings = await c.env.DB.prepare(
-    'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
+  // 1. Get preferences
+  const prefs = await c.env.DB.prepare(
+    'SELECT * FROM formation_preferences WHERE parent_id = ?'
   ).bind(user.id).first();
 
-  if (!settings) {
-    const settingsId = generateId('fls');
-    await c.env.DB.prepare(`
-      INSERT INTO family_liturgy_settings (id, parent_id) VALUES (?, ?)
-    `).bind(settingsId, user.id).run();
-    settings = {
-      id: settingsId,
-      parent_id: user.id,
-      catechism_enabled: 1,
-      catechism_source: 'westminster_shorter',
-      hymnal_enabled: 1,
-      hymnal_source: 'classic_hymns',
-      scripture_enabled: 1,
-      bible_translation: 'esv',
-      current_catechism_week: 1,
-      current_hymn_week: 1,
-      current_scripture_week: 1
-    };
+  const liturgyEnabled = prefs ? !!(prefs as any).liturgy_enabled : true;
+
+  // Hardcoded defaults for now
+  const settings = {
+    catechism_source: 'westminster_shorter',
+    hymnal_source: 'classic_hymns',
+    bible_translation: 'esv',
+    current_catechism_week: (prefs as any)?.current_catechism_week || 1,
+    current_hymn_week: (prefs as any)?.current_hymn_week || 1,
+    current_scripture_week: (prefs as any)?.current_scripture_week || 1,
+    liturgy_enabled: liturgyEnabled
+  };
+
+  if (!liturgyEnabled) {
+    return c.json({ date: today, items: [], completedIds: [], settings });
   }
 
-  // Fetch current items based on week positions
-  const items = [];
+  // 2. Fetch items from `formations`
+  const items: any[] = [];
 
-  if ((settings as any).catechism_enabled) {
-    const catechism = await c.env.DB.prepare(`
-      SELECT * FROM legacy_liturgy_items
-      WHERE type = 'catechism' AND source = ? AND sequence_number = ? AND is_active = 1
-    `).bind((settings as any).catechism_source, (settings as any).current_catechism_week).first();
-    if (catechism) items.push({ ...catechism, itemType: 'catechism' });
+  // Catechism
+  const catechism = await c.env.DB.prepare(`
+    SELECT * FROM formations 
+    WHERE formation_type = 'liturgy' AND cluster_tag = 'catechism' 
+    AND source = ? AND sequence_number = ? AND is_active = 1
+  `).bind(settings.catechism_source, settings.current_catechism_week).first();
+  if (catechism) items.push({ ...catechism, itemType: 'catechism' });
+
+  // Hymn
+  const hymn = await c.env.DB.prepare(`
+    SELECT * FROM formations 
+    WHERE formation_type = 'liturgy' AND cluster_tag = 'hymn'
+    AND source = ? AND sequence_number = ? AND is_active = 1
+  `).bind(settings.hymnal_source, settings.current_hymn_week).first();
+  if (hymn) items.push({ ...hymn, itemType: 'hymn' });
+
+  // Scripture
+  const scripture = await c.env.DB.prepare(`
+    SELECT * FROM formations 
+    WHERE formation_type = 'liturgy' AND cluster_tag = 'scripture'
+    AND source = ? AND sequence_number = ? AND is_active = 1
+  `).bind(settings.bible_translation, settings.current_scripture_week).first();
+  if (scripture) items.push({ ...scripture, itemType: 'scripture' });
+
+  // 3. Completions from `evidences`
+  let completedIds: string[] = [];
+  const itemIds = items.map((i: any) => i.id);
+
+  if (itemIds.length > 0) {
+    const placeholders = itemIds.map(() => '?').join(',');
+    const completions = await c.env.DB.prepare(`
+      SELECT formation_id FROM evidences
+      WHERE parent_id = ? AND formation_id IN (${placeholders}) AND date(captured_at) = ?
+    `).bind(user.id, ...itemIds, today).all();
+
+    completedIds = completions.results.map((r: any) => r.formation_id as string);
   }
 
-  if ((settings as any).hymnal_enabled) {
-    const hymn = await c.env.DB.prepare(`
-      SELECT * FROM legacy_liturgy_items
-      WHERE type = 'hymn' AND source = ? AND sequence_number = ? AND is_active = 1
-    `).bind((settings as any).hymnal_source, (settings as any).current_hymn_week).first();
-    if (hymn) items.push({ ...hymn, itemType: 'hymn' });
-  }
-
-  if ((settings as any).scripture_enabled) {
-    const scripture = await c.env.DB.prepare(`
-      SELECT * FROM legacy_liturgy_items
-      WHERE type = 'scripture' AND source = ? AND sequence_number = ? AND is_active = 1
-    `).bind((settings as any).bible_translation, (settings as any).current_scripture_week).first();
-    if (scripture) items.push({ ...scripture, itemType: 'scripture' });
-  }
-
-  // Get today's completions
-  const completions = await c.env.DB.prepare(`
-    SELECT liturgy_item_id FROM liturgy_completions
-    WHERE parent_id = ? AND completed_date = ?
-  `).bind(user.id, today).all();
-
-  const completedIds = new Set(completions.results?.map((r: any) => r.liturgy_item_id) || []);
-
-  // Convert settings integers to booleans
-  let safeSettings = null;
-  if (settings) {
-    safeSettings = {
-      ...settings,
-      catechism_enabled: !!(settings as any).catechism_enabled,
-      hymnal_enabled: !!(settings as any).hymnal_enabled,
-      scripture_enabled: !!(settings as any).scripture_enabled,
-    };
-  }
+  // Pass parsed JSON fields
+  const parsedItems = items.map((i: any) => ({
+    ...i,
+    materials: JSON.parse(i.materials || '[]'),
+    guide_steps: JSON.parse(i.guide_steps || '[]'),
+    tips: JSON.parse(i.tips || '[]'),
+    completedToday: completedIds.includes(i.id)
+  }));
 
   return c.json({
     date: today,
-    settings: safeSettings,
-    items: items.map((item: any) => ({
-      ...item,
-      completedToday: completedIds.has(item.id)
-    }))
+    items: parsedItems,
+    completedIds,
+    settings
   });
 });
-
 // POST /api/liturgy/complete - Mark item as completed for today
 app.post('/api/liturgy/complete', async (c) => {
   const user = requireAuth(c);
   const { itemId } = await c.req.json();
   const today = new Date().toISOString().split('T')[0];
 
-  const completionId = generateId('lc');
+  const completionId = generateId('ev'); // Evidence ID
 
   try {
+    // Insert into evidences (unified tracking)
+    // Providing parent_id and formation_id. student_id is NULL for family items.
     await c.env.DB.prepare(`
-      INSERT INTO liturgy_completions (id, parent_id, liturgy_item_id, completed_date)
-      VALUES (?, ?, ?, ?)
-    `).bind(completionId, user.id, itemId, today).run();
+      INSERT INTO evidences (id, parent_id, formation_id, captured_at, student_id)
+      VALUES (?, ?, ?, datetime('now'), NULL)
+    `).bind(completionId, user.id, itemId).run();
 
     return c.json({ success: true, completionId });
   } catch (e: any) {
-    // Already completed today (unique constraint)
     if (e.message?.includes('UNIQUE constraint')) {
       return c.json({ success: true, alreadyCompleted: true });
     }
@@ -3988,8 +3976,8 @@ app.post('/api/liturgy/uncomplete', async (c) => {
   const today = new Date().toISOString().split('T')[0];
 
   await c.env.DB.prepare(`
-    DELETE FROM liturgy_completions
-    WHERE parent_id = ? AND liturgy_item_id = ? AND completed_date = ?
+    DELETE FROM evidences
+    WHERE parent_id = ? AND formation_id = ? AND date(captured_at) = ?
   `).bind(user.id, itemId, today).run();
 
   return c.json({ success: true });
@@ -4011,8 +3999,9 @@ app.post('/api/liturgy/advance', async (c) => {
     return c.json({ error: 'Invalid type' }, 400);
   }
 
+  // Update formation_preferences (unified settings)
   await c.env.DB.prepare(`
-    UPDATE family_liturgy_settings
+    UPDATE formation_preferences
     SET ${column} = ${column} + 1, updated_at = datetime('now')
     WHERE parent_id = ?
   `).bind(user.id).run();
@@ -4473,9 +4462,16 @@ app.get('/api/family/weekly-plan', async (c) => {
     const weekStart = c.req.query('weekStart') || getSmartWeekStart();
 
     // Get children
-    const { results: children } = await c.env.DB.prepare(
-      'SELECT id, name, age_in_months FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+    const { results: rawChildren } = await c.env.DB.prepare(
+      'SELECT id, name, date_of_birth FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+    ).bind(user.household_id).all();
+
+    const children = rawChildren.map((child: any) => {
+      const dob = new Date(child.date_of_birth);
+      const now = new Date();
+      const months = (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
+      return { ...child, age_in_months: months };
+    });
 
     if (children.length === 0) {
       return c.json({ error: 'No children found. Add a child first.' }, 400);
@@ -4491,8 +4487,8 @@ app.get('/api/family/weekly-plan', async (c) => {
         WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
         UNION
         SELECT activity_id, completed_at, 'observation' as type FROM observations
-        WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
-    `).bind(user.id, weekStart, weekEnd, user.id, weekStart, weekEnd).all();
+        WHERE student_id IN (SELECT id FROM students WHERE household_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
+    `).bind(user.id, weekStart, weekEnd, user.household_id, weekStart, weekEnd).all();
 
     const completions: Record<string, any> = {};
     if (completionsResult.results) {
@@ -4628,9 +4624,16 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     // Ideally, we just delete the old plan and call the generation logic directly.
 
     // Get children
-    const { results: children } = await c.env.DB.prepare(
-      'SELECT id, name, age_in_months FROM students WHERE parent_id = ? ORDER BY age_in_months DESC'
-    ).bind(user.id).all();
+    const { results: rawChildren } = await c.env.DB.prepare(
+      'SELECT id, name, date_of_birth FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+    ).bind(user.household_id).all();
+
+    const children = rawChildren.map((child: any) => {
+      const dob = new Date(child.date_of_birth);
+      const now = new Date();
+      const months = (now.getFullYear() - dob.getFullYear()) * 12 + (now.getMonth() - dob.getMonth());
+      return { ...child, age_in_months: months };
+    });
 
     if (children.length === 0) {
       return c.json({ error: 'No children found. Add a child first.' }, 400);
@@ -4715,7 +4718,7 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
         WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
         UNION
         SELECT activity_id, completed_at, 'observation' as type FROM observations
-        WHERE student_id IN (SELECT id FROM students WHERE parent_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
+        WHERE student_id IN (SELECT id FROM students WHERE household_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
     `).bind(user.id, targetWeek, weekEnd, user.id, targetWeek, weekEnd).all();
 
     const completions: Record<string, any> = {};
