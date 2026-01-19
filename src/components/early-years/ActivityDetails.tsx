@@ -228,7 +228,7 @@ export function ActivityDetails({
                             <FormationTimer
                                 isRunning={isRunning}
                                 showControls={true}
-                                onToggle={(running) => running ? start() : stop()}
+                                onToggle={() => isRunning ? stop() : start()}
                                 className="text-2xl font-mono font-bold w-full justify-center" // Prominent
                             />
                         </div>

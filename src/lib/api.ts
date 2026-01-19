@@ -76,7 +76,19 @@ export const students = {
       body: JSON.stringify(data),
     }),
 
-  update: (id: string, data: { name?: string; dateOfBirth?: string; avatarUrl?: string }) =>
+  update: (id: string, data: {
+    name?: string;
+    dateOfBirth?: string;
+    avatarUrl?: string;
+    independence_settings?: {
+      canMarkComplete: boolean;
+      canAskAi: boolean;
+      canViewPortfolio: boolean;
+    };
+    pace_overrides?: Record<string, string>;
+    is_graduated?: boolean;
+    graduation_date?: string;
+  }) =>
     apiRequest<any>(`/api/students/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
