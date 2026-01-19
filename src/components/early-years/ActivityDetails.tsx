@@ -450,5 +450,6 @@ export function ActivityDetails({
                     </Card>
                 )}
             </div>
-            );
+        </div>
+    );
 }
