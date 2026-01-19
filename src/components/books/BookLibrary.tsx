@@ -5,64 +5,41 @@ import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-    Select,
-    SelectContent,
-    SelectItem,
-    SelectTrigger,
-    SelectValue,
-} from '@/components/ui/select';
-import {
-    Accordion,
-    AccordionContent,
-    AccordionItem,
-    AccordionTrigger,
-} from '@/components/ui/accordion';
 import { useAuth } from '@/contexts/AuthContext';
-import { Books as BooksIcon, Book as BookIcon } from '@phosphor-icons/react';
+import { Book as BookIcon } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 
 interface BookLibraryProps {
     initialStage?: string;
 }
 
-const BOOK_CATEGORIES = [
-    { value: 'all', label: 'All Books' },
-    { value: 'picture-books', label: 'Picture Books' },
-    { value: 'bible', label: 'The Paperback Bible' },
-];
-
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-    const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
-    const [categoryFilter, setCategoryFilter] = useState('picture-books');
 
-    // Fetch ALL books without age filtering (user chose "Show all by default")
+    // Fetch ALL books without age filtering
     const { data: allBooks = [], isLoading, error } = useQuery({
-        queryKey: ['books', stageFilter],
-        queryFn: () => booksApi.list({
-            stage: stageFilter !== 'all' ? stageFilter : undefined,
-            // No ageMonths filter - show all books
-        }),
+        queryKey: ['books', 'all'],
+        queryFn: () => booksApi.list({}),
     });
 
-    // Filter books
+    // Combine API books and Local Bible books
     const displayBooks = useMemo(() => {
+        // We only want Paperback Bible books for now based on the prompt "For the entire library, let's keep the accordian thing... no wait... take out the book filters. Let's show books but this way."
+        // Actually the prompt implies refactoring the whole library view.
+        // "For the entire library... show books but this way."
+        // So we keep all books, but group them.
+
+        // Filter out hymnals/catechisms if they are in 'allBooks' but typically they are separate.
+        // The previous code filtered: !b.renderFormat !== 'hymnal' ...
+
         let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS];
-
-        if (categoryFilter === 'picture-books') {
-            // Exclude Bible and Worship (if any leaked in)
-            books = books.filter(b => !b.series?.startsWith('Bible') &&
-                b.renderFormat !== 'hymnal' &&
-                b.renderFormat !== 'catechism');
-        } else if (categoryFilter === 'bible') {
-            books = books.filter(b => b.series?.startsWith('Bible'));
-        }
-        // Removed 'worship' category as it's no longer in this view
-
+        books = books.filter(b =>
+            b.renderFormat !== 'hymnal' &&
+            b.renderFormat !== 'catechism'
+        );
         return books;
-    }, [allBooks, categoryFilter]);
+    }, [allBooks]);
 
     // Group books by series
     const booksBySeries = useMemo(() => {
@@ -74,15 +51,39 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }, {} as Record<string, Book[]>);
     }, [displayBooks]);
 
-    const seriesNames = useMemo(
-        () => Object.keys(booksBySeries).sort(),
-        [booksBySeries]
-    );
+    // Define a custom sort order for known series
+    const seriesOrder = [
+        // Bible Categories
+        'Bible - Pentateuch',
+        'Bible - Historical Books',
+        'Bible - Poetry',
+        'Bible - Major Prophets',
+        'Bible - Minor Prophets',
+        'Bible - Gospels',
+        'Bible - History (NT)',
+        'Bible - Pauline Epistles',
+        'Bible - General Epistles',
+        'Bible - Prophecy',
+        // Other potential series could go here or fallback to alphabetical
+    ];
 
-    // Compute default open series (everything except Bible to prevent flood)
-    const defaultOpenSeries = useMemo(() => {
-        return seriesNames.filter(s => !s.startsWith('Bible'));
-    }, [seriesNames]);
+    const seriesNames = useMemo(() => {
+        const keys = Object.keys(booksBySeries);
+        return keys.sort((a, b) => {
+            const indexA = seriesOrder.indexOf(a);
+            const indexB = seriesOrder.indexOf(b);
+
+            // If both are in the known list, sort by index
+            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
+            // If only A is in list, A comes first
+            if (indexA !== -1) return -1;
+            // If only B is in list, B comes first
+            if (indexB !== -1) return 1;
+
+            // Otherwise alphabetical
+            return a.localeCompare(b);
+        });
+    }, [booksBySeries]);
 
     const handleBookClick = useCallback((book: Book) => {
         setSelectedBook(book);
@@ -97,42 +98,18 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }
 
     return (
-        <div className="space-y-6">
-            {/* Filters */}
-            <div className="flex flex-wrap items-center gap-4">
-                <Select value={stageFilter} onValueChange={setStageFilter}>
-                    <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Filter by stage" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Stages</SelectItem>
-                        <SelectItem value="early-years">Early Years</SelectItem>
-                        <SelectItem value="lower-primary">Lower Primary</SelectItem>
-                    </SelectContent>
-                </Select>
-
-                <Select value={categoryFilter} onValueChange={setCategoryFilter}>
-                    <SelectTrigger className="w-48">
-                        <SelectValue placeholder="Category" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        {BOOK_CATEGORIES.map(cat => (
-                            <SelectItem key={cat.value} value={cat.value}>
-                                {cat.label}
-                            </SelectItem>
-                        ))}
-                    </SelectContent>
-                </Select>
-            </div>
-
+        <div className="space-y-8 pb-12">
             {/* Loading State */}
             {isLoading && (
-                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
-                    {Array.from({ length: 8 }).map((_, i) => (
-                        <div key={i} className="space-y-2">
-                            <Skeleton className="aspect-[4/3] rounded-lg" />
-                            <Skeleton className="h-4 w-3/4" />
-                            <Skeleton className="h-3 w-1/2" />
+                <div className="space-y-8">
+                    {Array.from({ length: 3 }).map((_, i) => (
+                        <div key={i} className="space-y-4">
+                            <Skeleton className="h-8 w-48" />
+                            <div className="flex gap-4 overflow-x-hidden">
+                                {Array.from({ length: 4 }).map((_, j) => (
+                                    <Skeleton key={j} className="h-64 w-48 flex-shrink-0" />
+                                ))}
+                            </div>
                         </div>
                     ))}
                 </div>
@@ -141,50 +118,45 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             {/* Empty State */}
             {!isLoading && displayBooks.length === 0 && (
                 <div className="text-center py-12">
-                    <BooksIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
+                    <BookIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
                     <h3 className="text-lg font-medium mb-2">No Books Found</h3>
                     <p className="text-muted-foreground">
-                        {stageFilter !== 'all' || categoryFilter !== 'all'
-                            ? 'Try changing the filters to see available books.'
-                            : 'Books are being added. Check back soon!'}
+                        Books are being added. Check back soon!
                     </p>
                 </div>
             )}
 
-            {/* Book Grid by Series - Using Accordion */}
-            {!isLoading && (
-                <Accordion type="multiple" defaultValue={defaultOpenSeries} className="space-y-4">
-                    {seriesNames.map(series => (
-                        <AccordionItem key={series} value={series} className="border-none">
-                            <AccordionTrigger className="hover:no-underline py-2">
-                                <h2 className="text-lg font-semibold flex items-center gap-2">
-                                    <BookIcon className="h-5 w-5 text-primary" weight="duotone" />
-                                    {series}
-                                    <span className="text-sm font-normal text-muted-foreground">
-                                        ({booksBySeries[series].length} {booksBySeries[series].length === 1 ? 'book' : 'books'})
-                                    </span>
-                                </h2>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                {series.startsWith('Bible') && (
-                                    <p className="text-sm text-muted-foreground mb-4 ml-1">
-                                        Audio kindly provided by <a href="https://www.sermonaudio.com" target="_blank" rel="noreferrer" className="underline decoration-dotted hover:text-primary">SermonAudio</a>
-                                    </p>
-                                )}
-                                <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4 pt-2">
-                                    {booksBySeries[series].map(book => (
-                                        <BookCard
-                                            key={`${book.series}-${book.id}`}
-                                            book={book}
-                                            onClick={handleBookClick}
-                                        />
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            )}
+            {/* Books by Series */}
+            {!isLoading && seriesNames.map(series => (
+                <div key={series} className="space-y-3">
+                    <div className="flex items-center justify-between px-1">
+                        <h2 className="text-xl font-semibold flex items-center gap-2">
+                            {series}
+                            <span className="text-sm font-normal text-muted-foreground">
+                                ({booksBySeries[series].length})
+                            </span>
+                        </h2>
+                    </div>
+
+                    {series.startsWith('Bible') && (
+                         <p className="text-xs text-muted-foreground ml-1 -mt-2 mb-2">
+                            Audio provided by SermonAudio
+                        </p>
+                    )}
+
+                    {/* Horizontal Scroll Container */}
+                    <div className="flex overflow-x-auto gap-4 pb-4 px-1 snap-x scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
+                        {booksBySeries[series].map(book => (
+                            <div key={`${book.series}-${book.id}`} className="flex-shrink-0 w-[200px] snap-start">
+                                <BookCard
+                                    book={book}
+                                    onClick={handleBookClick}
+                                />
+                            </div>
+                        ))}
+                    </div>
+                </div>
+            ))}
 
             {/* Book Reader Modal */}
             <BookReader
