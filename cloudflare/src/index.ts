@@ -944,9 +944,10 @@ app.get('/auth/google/callback', async (c) => {
 
     // Redirect to frontend with token
     return c.redirect(`${c.env.FRONTEND_URL}/auth/callback?token=${jwt}`);
-  } catch (error) {
+  } catch (error: any) {
     console.error('OAuth error:', error);
-    return c.redirect(`${c.env.FRONTEND_URL}/login?error=oauth_failed`);
+    const errorMessage = encodeURIComponent(error.message || 'Unknown error');
+    return c.redirect(`${c.env.FRONTEND_URL}/login?error=oauth_failed&error_description=${errorMessage}`);
   }
 });
 
