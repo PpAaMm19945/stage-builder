@@ -67,7 +67,7 @@ export function DownloadPrintButton({
                     return (
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant={variant} size="icon" className={className}>
+                                <Button variant={variant} size="icon" className={className} aria-label={label}>
                                     <FilePdf className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -98,7 +98,7 @@ export function DownloadPrintButton({
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20">
+                                <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" aria-label="More options">
                                     <CaretDown className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>

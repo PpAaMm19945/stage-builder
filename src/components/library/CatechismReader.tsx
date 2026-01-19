@@ -78,7 +78,7 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
                                 return { question, answer, week: item.week };
                             })}
                         />
-                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full">
+                        <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full" aria-label="Close catechism reader">
                             <X className="w-6 h-6" />
                         </Button>
                     </div>
