@@ -143,10 +143,38 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
-    // Generate page URLs based on folder convention (for Image books)
-    const imagePages = (book && (!book.renderFormat || book.renderFormat === 'image')) ? Array.from({ length: book.pageCount }, (_, i) => {
-        return books.getPageUrl(book.series, book.id, i + 1);
-    }) : [];
+    // Fetch manifest for 'images' format
+    const { data: manifestPages } = useQuery({
+        queryKey: ['book-manifest', book?.id],
+        queryFn: async () => {
+            if (!book?.contentPath || (book.renderFormat !== 'image' && book.renderFormat !== 'images')) return null;
+
+            // If contentPath is a URL, use it directly (it's the manifest)
+            // If it's a relative path, construct the R2 URL
+            const url = book.contentPath.startsWith('http')
+                ? book.contentPath
+                : `https://r2.schoolos.io/books/${book.series}/${book.id}/manifest.json`;
+
+            const res = await fetch(url);
+            if (!res.ok) {
+                // Fallback: If manifest fails, maybe it's legacy indexed images?
+                // Return null to fall through to legacy array generation
+                return null;
+            }
+            const data = await res.json();
+            return data.pages as string[]; // Expecting { pages: ["url1", "url2"] }
+        },
+        enabled: !!book && (book.renderFormat === 'image' || book.renderFormat === 'images')
+    });
+
+    // Generate page URLs:
+    // 1. Use manifest if available
+    // 2. Use legacy indexed generation if no manifest
+    const imagePages = (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat))
+        ? (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
+            return books.getPageUrl(book.series, book.id, i + 1);
+        }))
+        : [];
 
     // Filter out failed images from display
     const validImagePages = imagePages.filter((_, i) => !failedImages.has(i));
@@ -170,7 +198,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     if (!book) return null;
 
     const isMarkdown = book.renderFormat === 'markdown' || book.renderFormat === 'hybrid';
-    const isPdf = book.renderFormat === 'pdf';
+    const isImages = book.renderFormat === 'image' || book.renderFormat === 'images';
+    const isPdf = book.renderFormat === 'pdf' || (!isMarkdown && !isImages); // Default to PDF/Custom if not explicitly images/markdown, though usually we want safe defaults.
+    // Actually, safer default:
+    // const isPdf = book.renderFormat === 'pdf'; 
+    // But let's stick to explicit checks to control the render flow.
+
+    // Total pages calculation
     const totalPages = isMarkdown ? parsedPages.length : imagePages.length;
 
     // Use external cover if available
@@ -178,8 +212,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         ? book.coverUrl
         : books.getCoverUrl(book.series, book.id);
 
-    // Determine if PDF download should be shown (only for pdf, hymnal, catechism formats)
-    const showPdfButton = book.renderFormat === 'pdf' ||
+    const showPdfButton = !!book.downloadUrl || book.renderFormat === 'pdf' ||
         book.renderFormat === 'hymnal' ||
         book.renderFormat === 'catechism' ||
         book.series === 'reformed-hymns' ||

@@ -4,8 +4,6 @@ import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
-import { HymnalReader } from '../library/HymnalReader';
-import { CatechismReader } from '../library/CatechismReader';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
     Select,
@@ -28,52 +26,15 @@ interface BookLibraryProps {
     initialStage?: string;
 }
 
-const HYMNAL_BOOK: Book = {
-    id: 'schoolos-hymnal',
-    title: 'Hymns of Grace & Glory',
-    author: 'Various Authors',
-    series: 'Reformed Hymns',
-    minAgeMonths: 0,
-    maxAgeMonths: 120,
-    learningStage: 'early-years',
-    domain: 'language',
-    pageCount: 50,
-    renderFormat: 'hymnal',
-    coverUrl: 'https://placehold.co/600x800/5e2129/eecfa1?text=HYMNS', // Fallback
-    description: 'A collection of classic hymns for family worship.',
-    topics: ['hymn', 'music', 'worship'],
-    readingPrompts: []
-};
-
-const CATECHISM_BOOK: Book = {
-    id: 'schoolos-catechism',
-    title: 'Westminster Shorter Catechism',
-    author: 'Westminster Assembly',
-    series: 'Theology',
-    minAgeMonths: 48,
-    maxAgeMonths: 120,
-    learningStage: 'early-years',
-    domain: 'language',
-    pageCount: 107,
-    renderFormat: 'catechism',
-    coverUrl: 'https://placehold.co/600x800/1e293b/e2e8f0?text=CATECHISM',
-    description: 'The standard catechism for family instruction in the reformed faith.',
-    topics: ['theology', 'catechism'],
-    readingPrompts: []
-};
-
 const BOOK_CATEGORIES = [
     { value: 'all', label: 'All Books' },
     { value: 'picture-books', label: 'Picture Books' },
     { value: 'bible', label: 'The Paperback Bible' },
-    { value: 'worship', label: 'Worship Resources' },
 ];
 
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-    const [showHymnal, setShowHymnal] = useState(false);
-    const [showCatechism, setShowCatechism] = useState(false);
     const [stageFilter, setStageFilter] = useState<string>(initialStage || 'all');
     const [categoryFilter, setCategoryFilter] = useState('picture-books');
 
@@ -86,20 +47,19 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }),
     });
 
-    // Inject Hymnal and Catechism and Filter
+    // Filter books
     const displayBooks = useMemo(() => {
-        let books = [...allBooks, HYMNAL_BOOK, CATECHISM_BOOK, ...PAPERBACK_BIBLE_BOOKS];
+        let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS];
 
         if (categoryFilter === 'picture-books') {
-             // Exclude Bible and Worship
-             books = books.filter(b => !b.series?.startsWith('Bible') &&
-                                  b.renderFormat !== 'hymnal' &&
-                                  b.renderFormat !== 'catechism');
+            // Exclude Bible and Worship (if any leaked in)
+            books = books.filter(b => !b.series?.startsWith('Bible') &&
+                b.renderFormat !== 'hymnal' &&
+                b.renderFormat !== 'catechism');
         } else if (categoryFilter === 'bible') {
-             books = books.filter(b => b.series?.startsWith('Bible'));
-        } else if (categoryFilter === 'worship') {
-             books = books.filter(b => b.renderFormat === 'hymnal' || b.renderFormat === 'catechism');
+            books = books.filter(b => b.series?.startsWith('Bible'));
         }
+        // Removed 'worship' category as it's no longer in this view
 
         return books;
     }, [allBooks, categoryFilter]);
@@ -125,13 +85,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }, [seriesNames]);
 
     const handleBookClick = useCallback((book: Book) => {
-        if (book.id === 'schoolos-hymnal') {
-            setShowHymnal(true);
-        } else if (book.id === 'schoolos-catechism') {
-            setShowCatechism(true);
-        } else {
-            setSelectedBook(book);
-        }
+        setSelectedBook(book);
     }, []);
 
     if (error) {
@@ -238,18 +192,6 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                 open={!!selectedBook}
                 onOpenChange={(open) => !open && setSelectedBook(null)}
                 childrenIds={children.map(c => c.id)}
-            />
-
-            {/* Hymnal Reader Modal */}
-            <HymnalReader
-                open={showHymnal}
-                onOpenChange={setShowHymnal}
-            />
-
-            {/* Catechism Reader Modal */}
-            <CatechismReader
-                open={showCatechism}
-                onOpenChange={setShowCatechism}
             />
         </div>
     );

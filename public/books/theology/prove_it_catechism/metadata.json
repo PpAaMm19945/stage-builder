@@ -1,0 +1,16 @@
+{
+    "id": "prove_it_catechism",
+    "title": "Children's Prove It Catechism",
+    "author": "Unknown",
+    "series": "Theology",
+    "description": "The standard catechism for family instruction in the reformed faith, simplified for children.",
+    "minAgeMonths": 48,
+    "maxAgeMonths": 120,
+    "pageCount": 50,
+    "domain": "Wisdom",
+    "learningStage": "early-years",
+    "renderFormat": "pdf",
+    "downloadUrl": "https://pub-r2.schoolos.dev/books/theology/prove_it_catechism/content.pdf",
+    "pdfUrl": "https://pub-r2.schoolos.dev/books/theology/prove_it_catechism/content.pdf",
+    "readingPrompts": []
+}

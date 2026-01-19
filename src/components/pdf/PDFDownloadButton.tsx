@@ -187,12 +187,13 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
     };
 
     // Direct PDF download support
-    if (book.renderFormat === 'pdf' && book.pdfUrl) {
+    if (book.downloadUrl || (book.renderFormat === 'pdf' && book.pdfUrl)) {
+        const url = book.downloadUrl || book.pdfUrl;
         return (
             <Button
                 variant="ghost"
                 size="default" // Changed from 'icon' to 'default' to allow text
-                onClick={() => window.open(book.pdfUrl, '_blank')}
+                onClick={() => window.open(url, '_blank')}
                 className="text-white hover:bg-white/20 rounded-full px-4"
                 title="Open PDF"
             >

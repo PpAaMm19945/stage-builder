@@ -226,7 +226,8 @@ export interface Formation {
   content_path?: string;
   cover_image_url?: string;
   page_count?: number;
-  render_format?: 'markdown' | 'image' | 'pdf' | 'hymnal' | 'catechism';
+  render_format?: 'markdown' | 'image' | 'images' | 'pdf' | 'hymnal' | 'catechism';
+  download_url?: string;
 
   // Content - Legacy/Compat
   imageUrl?: string;
@@ -454,10 +455,11 @@ export interface Book {
   formationId?: string;
 
   // Extended fields for BookReader/BookCard/BookLibrary
-  renderFormat?: 'markdown' | 'image' | 'pdf' | 'hymnal' | 'catechism' | 'hybrid';
+  renderFormat?: 'markdown' | 'image' | 'images' | 'pdf' | 'hymnal' | 'catechism' | 'hybrid';
   readingPrompts?: ReadingPrompt[] | string[];
   styleProfile?: string;
   pdfUrl?: string;
+  downloadUrl?: string; // URL for downloading the print-ready PDF
   upvoteCount?: number;
   learningStage?: LearningStage | 'all';
   domain?: string;
