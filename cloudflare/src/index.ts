@@ -604,6 +604,33 @@ function generateId(prefix: string): string {
   return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
 }
 
+// Security helper: Generate cryptographically secure invite code
+function generateInviteCode(): string {
+  // Format: XXXX-XXXX (Base36ish)
+  // We want uppercase alphanumeric.
+  const charset = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let result = '';
+  const values = new Uint8Array(8);
+  crypto.getRandomValues(values);
+
+  for (let i = 0; i < 8; i++) {
+    // Rejection sampling to avoid bias
+    // 36 (charset length) * 7 = 252.
+    // Bytes are 0-255.
+    // If we get 252, 253, 254, 255, we retry.
+    let val = values[i];
+    while (val >= 252) {
+      const replacement = new Uint8Array(1);
+      crypto.getRandomValues(replacement);
+      val = replacement[0];
+    }
+
+    result += charset[val % 36];
+    if (i === 3) result += '-';
+  }
+  return result;
+}
+
 
 // ============ EXPORT ROUTES ============
 
@@ -908,8 +935,8 @@ app.get('/auth/google/callback', async (c) => {
       } else {
         // New Parent User -> Create Household
         const householdId = generateId('hh');
-        // Simple invite code generation
-        const inviteCode = (Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)).toUpperCase();
+        // Secure invite code generation
+        const inviteCode = generateInviteCode();
 
         await c.env.DB.prepare(
           'INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)'
@@ -966,7 +993,7 @@ app.post('/api/household/invite', async (c) => {
     // If no code, generate one
     let inviteCode = household.invite_code;
     if (!inviteCode) {
-      inviteCode = (Math.random().toString(36).substring(2, 6) + '-' + Math.random().toString(36).substring(2, 6)).toUpperCase();
+      inviteCode = generateInviteCode();
       await c.env.DB.prepare('UPDATE households SET invite_code = ? WHERE id = ?').bind(inviteCode, household.id).run();
     }
 
