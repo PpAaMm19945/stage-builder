@@ -57,38 +57,10 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }, {} as Record<string, Book[]>);
     }, [displayBooks]);
 
-    // Define a custom sort order for known series
-    const seriesOrder = [
-        // Bible Categories
-        'Bible - Pentateuch',
-        'Bible - Historical Books',
-        'Bible - Poetry',
-        'Bible - Major Prophets',
-        'Bible - Minor Prophets',
-        'Bible - Gospels',
-        'Bible - History (NT)',
-        'Bible - Pauline Epistles',
-        'Bible - General Epistles',
-        'Bible - Prophecy',
-        // Other potential series could go here or fallback to alphabetical
-    ];
-
     const seriesNames = useMemo(() => {
         const keys = Object.keys(booksBySeries);
-        return keys.sort((a, b) => {
-            const indexA = seriesOrder.indexOf(a);
-            const indexB = seriesOrder.indexOf(b);
-
-            // If both are in the known list, sort by index
-            if (indexA !== -1 && indexB !== -1) return indexA - indexB;
-            // If only A is in list, A comes first
-            if (indexA !== -1) return -1;
-            // If only B is in list, B comes first
-            if (indexB !== -1) return 1;
-
-            // Otherwise alphabetical
-            return a.localeCompare(b);
-        });
+        // Simple alphabetical sort for series
+        return keys.sort((a, b) => a.localeCompare(b));
     }, [booksBySeries]);
 
     const handleBookClick = useCallback((book: Book) => {
