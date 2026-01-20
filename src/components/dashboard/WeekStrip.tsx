@@ -1,4 +1,4 @@
-import { useMemo } from 'react';
+import { useMemo, memo } from 'react';
 import { format, addDays, isSameDay, isPast, startOfDay } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import { ArrowsClockwise, Check } from '@phosphor-icons/react';
@@ -42,7 +42,7 @@ function getWeekStart(date = new Date()): Date {
     return startOfDay(d);
 }
 
-export function WeekStrip({
+export const WeekStrip = memo(function WeekStrip({
     weekStart,
     selectedDay,
     onDaySelect,
@@ -189,6 +189,6 @@ export function WeekStrip({
             </div>
         </div>
     );
-}
+});
 
 export { getWeekStart };
