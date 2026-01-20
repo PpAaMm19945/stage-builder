@@ -2295,7 +2295,7 @@ app.get('/api/family/preferences', async (c) => {
     const user = requireAuth(c);
 
     let prefs = await c.env.DB.prepare(
-      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+      'SELECT * FROM family_preferences WHERE parent_id = ?'
     ).bind(user.id).first();
 
     if (!prefs) {
@@ -2336,7 +2336,7 @@ app.post('/api/family/preferences', async (c) => {
     // Defaulting to 1 in the bind params overwrites existing preferences during partial updates.
 
     // Check if record exists first to determine defaults for NEW records
-    const existing = await c.env.DB.prepare('SELECT 1 FROM formation_preferences WHERE parent_id = ?').bind(user.id).first();
+    const existing = await c.env.DB.prepare('SELECT 1 FROM family_preferences WHERE parent_id = ?').bind(user.id).first();
     const isNew = !existing;
 
     // Defaults only apply if it's a NEW record and the field is missing
@@ -2346,7 +2346,7 @@ app.post('/api/family/preferences', async (c) => {
     };
 
     await c.env.DB.prepare(`
-      INSERT INTO formation_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, learning_focus, focus_domains, updated_at)
+      INSERT INTO family_preferences (id, parent_id, activities_enabled, reading_enabled, liturgy_enabled, learning_focus, focus_domains, updated_at)
       VALUES (?, ?, ?, ?, ?, ?, ?, datetime('now'))
       ON CONFLICT(parent_id) DO UPDATE SET 
         activities_enabled = COALESCE(excluded.activities_enabled, activities_enabled),
@@ -2523,7 +2523,7 @@ app.get('/api/family/daily-rhythm', async (c) => {
 
     // Get formation preferences
     let prefs = await c.env.DB.prepare(
-      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+      'SELECT * FROM family_preferences WHERE parent_id = ?'
     ).bind(user.id).first() as any;
 
     const activitiesEnabled = prefs ? !!prefs.activities_enabled : true;
@@ -3141,7 +3141,7 @@ app.get('/api/students/:studentId/progress', async (c) => {
 
     // Get formation preferences to know which streams are enabled
     const prefs = await c.env.DB.prepare(
-      'SELECT * FROM formation_preferences WHERE parent_id = ?'
+      'SELECT * FROM family_preferences WHERE parent_id = ?'
     ).bind(user.id).first() as any;
 
     const enabledStreams: string[] = [];
@@ -3867,7 +3867,7 @@ app.get('/api/liturgy/today', async (c) => {
 
   // 1. Get preferences
   const prefs = await c.env.DB.prepare(
-    'SELECT * FROM formation_preferences WHERE parent_id = ?'
+    'SELECT * FROM family_preferences WHERE parent_id = ?'
   ).bind(user.id).first();
 
   const liturgyEnabled = prefs ? !!(prefs as any).liturgy_enabled : true;
@@ -3999,9 +3999,9 @@ app.post('/api/liturgy/advance', async (c) => {
     return c.json({ error: 'Invalid type' }, 400);
   }
 
-  // Update formation_preferences (unified settings)
+  // Update family_preferences (unified settings)
   await c.env.DB.prepare(`
-    UPDATE formation_preferences
+    UPDATE family_preferences
     SET ${column} = ${column} + 1, updated_at = datetime('now')
     WHERE parent_id = ?
   `).bind(user.id).run();
