@@ -47,6 +47,8 @@ import { Label } from '@/components/ui/label';
 import { UsersThree, Crown } from '@phosphor-icons/react';
 import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
 
+const EMPTY_WEEK_DATA = {};
+
 export default function Dashboard() {
   const { user } = useAuth();
   const navigate = useNavigate();
@@ -179,7 +181,7 @@ export default function Dashboard() {
     }
   });
 
-  const handleRegenerate = () => setIsBalanceDialogOpen(true);
+  const handleRegenerate = useCallback(() => setIsBalanceDialogOpen(true), []);
 
   const confirmRegenerate = () => {
     regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
@@ -404,7 +406,7 @@ export default function Dashboard() {
     });
 
     return flattenedItems;
-  }, [isToday, dayData, weeklyPlanData, todaysBook]);
+  }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed').length, [timelineItems]);
@@ -541,7 +543,7 @@ export default function Dashboard() {
   }
 
   // Build day data for week strip
-  const weekDayData = weekSummary?.days || {};
+  const weekDayData = weekSummary?.days || EMPTY_WEEK_DATA;
 
   // Get day name for swap
   const selectedDayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDate.getDay()];
