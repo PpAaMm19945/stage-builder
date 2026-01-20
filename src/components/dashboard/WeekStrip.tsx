@@ -77,6 +77,15 @@ export const WeekStrip = memo(function WeekStrip({
                 }
             }
 
+            // Construct accessible label
+            let statusText = '';
+            if (isToday) statusText = 'Today';
+            else if (status === 'completed') statusText = 'All completed';
+            else if (status === 'partial') statusText = 'Partially completed';
+
+            const activityText = data.total === 1 ? '1 activity' : `${data.total || 0} activities`;
+            const label = `${format(date, 'EEEE, MMMM do')}. ${statusText ? statusText + '. ' : ''}${activityText}`;
+
             return {
                 date,
                 dateStr,
@@ -87,6 +96,7 @@ export const WeekStrip = memo(function WeekStrip({
                 isPastDay,
                 status,
                 data,
+                ariaLabel: label,
             };
         });
     }, [weekStart, selectedDay, today, dayData]);
@@ -118,6 +128,8 @@ export const WeekStrip = memo(function WeekStrip({
                     <button
                         key={day.dateStr}
                         onClick={() => onDaySelect(day.date)}
+                        aria-label={day.ariaLabel}
+                        aria-current={day.isSelected ? 'date' : undefined}
                         className={cn(
                             'flex-1 flex flex-col items-center py-2 px-1 rounded-lg transition-all cursor-pointer',
                             'hover:bg-muted/50 focus:outline-none focus:ring-2 focus:ring-primary/30',
