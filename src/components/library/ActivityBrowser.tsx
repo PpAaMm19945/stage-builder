@@ -67,6 +67,7 @@ interface ApiActivity {
     description: string;
     domain?: EarlyYearsDomain;
     primary_virtue?: PrimaryVirtue;
+    formation_type?: string;
     duration_minutes: number;
     difficulty: number;
     materials: string[];
@@ -90,8 +91,14 @@ export function ActivityBrowser() {
         </div>;
     }
 
+    // Filter out liturgy and reading items - only show skill/habit activities
+    const activityItems = activities.filter((activity: ApiActivity) => {
+        const formationType = activity.formation_type || 'skill';
+        return formationType === 'skill' || formationType === 'habit';
+    });
+
     // Group activities by virtue (mapping legacy domains if needed)
-    const groupedActivities = activities.reduce((acc, activity: ApiActivity) => {
+    const groupedActivities = activityItems.reduce((acc, activity: ApiActivity) => {
         // Determine virtue: explicit or mapped from legacy domain
         const virtue: PrimaryVirtue =
             activity.primary_virtue ||
