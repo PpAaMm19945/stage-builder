@@ -5,15 +5,10 @@ import { books as booksApi } from '@/lib/api';
 import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
-import {
-  Accordion,
-  AccordionContent,
-  AccordionItem,
-  AccordionTrigger,
-} from "@/components/ui/accordion";
 import { useAuth } from '@/contexts/AuthContext';
-import { Book as BookIcon } from '@phosphor-icons/react';
+import { Book as BookIcon, ArrowSquareOut } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
+import { Button } from '@/components/ui/button';
 
 interface BookLibraryProps {
     initialStage?: string;
@@ -31,14 +26,6 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     // Combine API books and Local Bible books
     const displayBooks = useMemo(() => {
-        // We only want Paperback Bible books for now based on the prompt "For the entire library, let's keep the accordian thing... no wait... take out the book filters. Let's show books but this way."
-        // Actually the prompt implies refactoring the whole library view.
-        // "For the entire library... show books but this way."
-        // So we keep all books, but group them.
-
-        // Filter out hymnals/catechisms if they are in 'allBooks' but typically they are separate.
-        // The previous code filtered: !b.renderFormat !== 'hymnal' ...
-
         let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS];
         books = books.filter(b =>
             b.renderFormat !== 'hymnal' &&
@@ -59,8 +46,13 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     const seriesNames = useMemo(() => {
         const keys = Object.keys(booksBySeries);
-        // Simple alphabetical sort for series
-        return keys.sort((a, b) => a.localeCompare(b));
+        // Ensure Paperback Bible comes first or has specific order if desired
+        // For now, simple sort, but Paperback Bible usually starts with 'The' -> T
+        return keys.sort((a, b) => {
+            if (a === 'The Paperback Bible') return -1;
+            if (b === 'The Paperback Bible') return 1;
+            return a.localeCompare(b);
+        });
     }, [booksBySeries]);
 
     const handleBookClick = useCallback((book: Book) => {
@@ -76,16 +68,16 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }
 
     return (
-        <div className="space-y-8 pb-12">
+        <div className="space-y-12 pb-12">
             {/* Loading State */}
             {isLoading && (
                 <div className="space-y-8">
-                    {Array.from({ length: 3 }).map((_, i) => (
+                    {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i} className="space-y-4">
                             <Skeleton className="h-8 w-48" />
-                            <div className="flex gap-4 overflow-x-hidden">
-                                {Array.from({ length: 4 }).map((_, j) => (
-                                    <Skeleton key={j} className="h-64 w-48 flex-shrink-0" />
+                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                                {Array.from({ length: 6 }).map((_, j) => (
+                                    <Skeleton key={j} className="aspect-[3/4] w-full" />
                                 ))}
                             </div>
                         </div>
@@ -105,42 +97,44 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             )}
 
             {/* Books by Series */}
-            {!isLoading && (
-                <Accordion type="multiple" defaultValue={seriesNames} className="space-y-4">
-                    {seriesNames.map(series => (
-                        <AccordionItem key={series} value={series} className="border-none">
-                            <AccordionTrigger className="hover:no-underline py-2">
-                                <div className="flex flex-col items-start gap-1">
-                                    <span className="text-xl font-semibold flex items-center gap-2">
-                                        {series}
-                                        <span className="text-sm font-normal text-muted-foreground">
-                                            ({booksBySeries[series].length})
-                                        </span>
-                                    </span>
-                                    {series.startsWith('Bible') && (
-                                        <span className="text-xs text-muted-foreground font-normal">
-                                            Audio provided by SermonAudio
-                                        </span>
-                                    )}
-                                </div>
-                            </AccordionTrigger>
-                            <AccordionContent>
-                                {/* Horizontal Scroll Container */}
-                                <div className="flex overflow-x-auto gap-4 pb-4 px-1 snap-x scrollbar-thin scrollbar-thumb-muted scrollbar-track-transparent">
-                                    {booksBySeries[series].map(book => (
-                                        <div key={`${book.series}-${book.id}`} className="flex-shrink-0 w-[200px] snap-start">
-                                            <BookCard
-                                                book={book}
-                                                onClick={handleBookClick}
-                                            />
-                                        </div>
-                                    ))}
-                                </div>
-                            </AccordionContent>
-                        </AccordionItem>
-                    ))}
-                </Accordion>
-            )}
+            {!isLoading && seriesNames.map(series => (
+                <div key={series} className="space-y-4">
+                    <div className="flex items-end justify-between border-b pb-2">
+                        <div>
+                            <h2 className="text-xl font-semibold flex items-center gap-2">
+                                {series}
+                                <span className="text-sm font-normal text-muted-foreground">
+                                    ({booksBySeries[series].length})
+                                </span>
+                            </h2>
+                            {series === 'The Paperback Bible' && (
+                                <p className="text-sm text-muted-foreground mt-1">
+                                    Audio provided by SermonAudio
+                                </p>
+                            )}
+                        </div>
+
+                        {series === 'The Paperback Bible' && (
+                             <Button variant="outline" size="sm" asChild className="gap-2 h-8">
+                                <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
+                                    Visit Store
+                                    <ArrowSquareOut className="h-4 w-4" />
+                                </a>
+                             </Button>
+                        )}
+                    </div>
+
+                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
+                        {booksBySeries[series].map(book => (
+                            <BookCard
+                                key={`${book.series}-${book.id}`}
+                                book={book}
+                                onClick={handleBookClick}
+                            />
+                        ))}
+                    </div>
+                </div>
+            ))}
 
             {/* Book Reader Modal */}
             <BookReader
