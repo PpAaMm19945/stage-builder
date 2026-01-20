@@ -140,52 +140,21 @@ function isSuitableForChildren(activity: Activity, children: Student[]): boolean
 async function prefetchActivityHistory(db: D1Database, parentId: string): Promise<Map<string, ActivityHistorySummary>> {
     const historyMap = new Map<string, ActivityHistorySummary>();
 
-    // 1. Fetch Evidences (New)
+    // 1. Fetch Evidences (Unified Table)
     let evidences: any[] = [];
     try {
         const result = await db.prepare(`
-            SELECT e.formation_id as activity_id, e.created_at as completed_at, e.stage as mastery_level
-            FROM evidences e
-            JOIN students s ON e.student_id = s.id
-            WHERE s.parent_id = ?
-            ORDER BY e.created_at DESC
+            SELECT formation_id as activity_id, captured_at as completed_at, habit_stage as mastery_level
+            FROM evidences
+            WHERE parent_id = ?
+            ORDER BY captured_at DESC
         `).bind(parentId).all();
         evidences = result.results || [];
     } catch (e) {
         console.warn('Failed to fetch evidences', e);
     }
 
-    // 2. Fetch Legacy Observations (Old)
-    let observations: any[] = [];
-    try {
-        const result = await db.prepare(`
-            SELECT o.activity_id, o.completed_at, o.mastery_level
-            FROM legacy_observations o
-            JOIN students s ON o.student_id = s.id
-            WHERE s.parent_id = ?
-            ORDER BY o.completed_at DESC
-        `).bind(parentId).all();
-        observations = result.results || [];
-    } catch (e) {
-        // Fallback for missing table
-        console.warn('Failed to fetch legacy_observations', e);
-    }
-
-    // 3. Fetch Completions (Legacy)
-    let completions: any[] = [];
-    try {
-        const result = await db.prepare(`
-            SELECT activity_id, completed_at
-            FROM activity_completions
-            WHERE parent_id = ?
-            ORDER BY completed_at DESC
-        `).bind(parentId).all();
-        completions = result.results || [];
-    } catch (e) {
-        console.warn('Failed to fetch activity_completions', e);
-    }
-
-    // 4. Process and Merge
+    // 2. Process Events
     // We want a list of events per activity, sorted by date DESC
     const eventsByActivity = new Map<string, Array<{ date: string, mastery?: string }>>();
 
@@ -199,14 +168,8 @@ async function prefetchActivityHistory(db: D1Database, parentId: string): Promis
     if (evidences) {
         evidences.forEach((e: any) => addEvent(e.activity_id, e.completed_at, e.mastery_level));
     }
-    if (observations) {
-        observations.forEach((o: any) => addEvent(o.activity_id, o.completed_at, o.mastery_level));
-    }
-    if (completions) {
-        completions.forEach((c: any) => addEvent(c.activity_id, c.completed_at));
-    }
 
-    // 4. Compute Summary for each activity
+    // 3. Compute Summary for each activity
     for (const [activityId, events] of eventsByActivity.entries()) {
         // Sort DESC
         events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
@@ -447,7 +410,7 @@ export async function generateWeeklyPlan(
 
     // PHASE 4: Get learning focus preference
     const prefs = await db.prepare(
-        'SELECT learning_focus FROM formation_preferences WHERE parent_id = ?'
+        'SELECT learning_focus FROM family_preferences WHERE parent_id = ?'
     ).bind(parentId).first() as any;
     const learningFocus = prefs?.learning_focus || 'balanced';
 

@@ -1818,9 +1818,12 @@ app.get('/api/family/today', async (c) => {
     const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][today.getDay()];
 
     // 2. Check if today is an available day
-    const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+    // 2. Check if today is an available day
+    // Get available days from family_preferences.overrides_json or use defaults
+    const prefs = await c.env.DB.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?')
       .bind(user.id).first();
-    const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+    const overrides = prefs ? JSON.parse((prefs as any).overrides_json || '{}') : {};
+    const availableDays = overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
     // 3. If not an available day, return REST DAY response
     if (!availableDays.includes(dayOfWeek)) {
@@ -1927,19 +1930,12 @@ app.get('/api/family/today', async (c) => {
       });
 
       if (neededMaterials.size > 0) {
-        const marks = Array(neededMaterials.size).fill('?').join(',');
-        const { results: existing } = await c.env.DB.prepare(`
-                 SELECT material_name, status FROM family_materials
-                 WHERE parent_id = ? AND material_name IN (${Array.from(neededMaterials).map(() => '?').join(',')})
-             `).bind(user.id, ...Array.from(neededMaterials)).all();
-
-        const statusMap = new Map();
-        existing.forEach((r: any) => statusMap.set(r.material_name, r.status));
-
+        // family_materials table is deprecated/removed in v2 schema
+        // Returning 'unknown' status for all materials for now
         neededMaterials.forEach(m => {
           materialsList.push({
             name: m,
-            status: statusMap.get(m) || 'unknown'
+            status: 'unknown'
           });
         });
       }
@@ -2493,7 +2489,7 @@ app.get('/api/hymns', async (c) => {
   try {
     c.header('Cache-Control', 'public, max-age=3600');
     const { results } = await c.env.DB.prepare(
-      "SELECT * FROM legacy_liturgy_items WHERE type = 'hymn' AND is_active = 1 ORDER BY sequence_number"
+      "SELECT * FROM formations WHERE cluster_tag = 'hymn' AND formation_type = 'liturgy' AND is_active = 1 ORDER BY sequence_number"
     ).all();
     return c.json(results);
   } catch (error: any) {
@@ -2506,7 +2502,7 @@ app.get('/api/catechism', async (c) => {
   try {
     c.header('Cache-Control', 'public, max-age=3600');
     const { results } = await c.env.DB.prepare(
-      "SELECT * FROM legacy_liturgy_items WHERE type = 'catechism' AND is_active = 1 ORDER BY sequence_number"
+      "SELECT * FROM formations WHERE cluster_tag = 'catechism' AND formation_type = 'liturgy' AND is_active = 1 ORDER BY sequence_number"
     ).all();
     return c.json(results);
   } catch (error: any) {
@@ -2554,12 +2550,13 @@ app.get('/api/family/daily-rhythm', async (c) => {
         const completedLiturgyIds = new Set(liturgyCompletions.map((lc: any) => lc.liturgy_item_id));
 
         // Get today's liturgy items based on current weeks
+        // Get today's liturgy items based on current weeks (using unified formations table)
         const { results: liturgyItems } = await c.env.DB.prepare(`
-          SELECT * FROM legacy_liturgy_items 
-          WHERE (
-            (type = 'catechism' AND source = ? AND sequence_number = ?) OR
-            (type = 'hymn' AND source = ? AND sequence_number = ?) OR
-            (type = 'scripture' AND sequence_number = ?)
+          SELECT * FROM formations 
+          WHERE formation_type = 'liturgy' AND (
+            (cluster_tag = 'catechism' AND source = ? AND sequence_number = ?) OR
+            (cluster_tag = 'hymn' AND source = ? AND sequence_number = ?) OR
+            (cluster_tag = 'scripture' AND sequence_number = ?)
           ) AND is_active = 1
         `).bind(
           settings.catechism_source || 'westminster_shorter',
@@ -2600,9 +2597,11 @@ app.get('/api/family/daily-rhythm', async (c) => {
     // 2. ACTIVITIES (if enabled)
     if (activitiesEnabled && children.length > 0) {
       // Check time model for rest days
-      const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+      // Check time model for rest days
+      const prefs = await c.env.DB.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?')
         .bind(user.id).first();
-      const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+      const overrides = prefs ? JSON.parse((prefs as any).overrides_json || '{}') : {};
+      const availableDays = overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
       if (availableDays.includes(dayOfWeek)) {
         // Get weekly plan
@@ -2614,10 +2613,10 @@ app.get('/api/family/daily-rhythm', async (c) => {
           const planData = JSON.parse((plan as any).plan_json);
           const todaysSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
 
-          // Get activity completions for today
+          // Get activity completions for today (using unified evidences)
           const { results: activityCompletions } = await c.env.DB.prepare(`
-            SELECT activity_id FROM activity_completions 
-            WHERE parent_id = ? AND date(completed_at) = ?
+            SELECT formation_id as activity_id FROM evidences 
+            WHERE parent_id = ? AND date(captured_at) = ?
           `).bind(user.id, today).all();
 
           const completedActivityIds = new Set(activityCompletions.map((ac: any) => ac.activity_id));
@@ -2725,9 +2724,13 @@ app.get('/api/family/daily-rhythm', async (c) => {
 app.get('/api/family/materials', async (c) => {
   try {
     const user = requireAuth(c);
+    // family_materials is deprecated, returning empty array
+    const results: any[] = [];
+    /*
     const { results } = await c.env.DB.prepare(
       'SELECT * FROM family_materials WHERE parent_id = ? ORDER BY material_name'
     ).bind(user.id).all();
+    */
 
     // Normalize field names: material_name → name for frontend consistency
     const normalized = results.map((row: any) => ({
@@ -4449,13 +4452,12 @@ app.get('/api/family/weekly-plan', async (c) => {
     weekEndDate.setDate(weekEndDate.getDate() + 6);
     const weekEnd = weekEndDate.toISOString().split('T')[0];
 
+    // Fetch completions for this week (unified evidences)
     const completionsResult = await c.env.DB.prepare(`
-        SELECT activity_id, completed_at, 'completion' as type FROM activity_completions
-        WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
-        UNION
-        SELECT activity_id, completed_at, 'observation' as type FROM observations
-        WHERE student_id IN (SELECT id FROM students WHERE household_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
-    `).bind(user.id, weekStart, weekEnd, user.household_id, weekStart, weekEnd).all();
+        SELECT formation_id as activity_id, captured_at as completed_at, 'evidence' as type 
+        FROM evidences
+        WHERE parent_id = ? AND date(captured_at) >= ? AND date(captured_at) <= ?
+    `).bind(user.id, weekStart, weekEnd).all();
 
     const completions: Record<string, any> = {};
     if (completionsResult.results) {
@@ -4481,18 +4483,8 @@ app.get('/api/family/weekly-plan', async (c) => {
       });
     }
 
-    // Get time model
-    const timeModelRow = await c.env.DB.prepare(
-      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
-    ).bind(user.id).first();
-
-    const timeModel = timeModelRow ? {
-      available_days: JSON.parse((timeModelRow as any).available_days),
-      minutes_per_day: (timeModelRow as any).minutes_per_day,
-      preferred_times: JSON.parse((timeModelRow as any).preferred_times),
-      max_sessions_per_day: (timeModelRow as any).max_sessions_per_day,
-      field_trip_days: JSON.parse((timeModelRow as any).field_trip_days || '[]')
-    } : {
+    // Get time model (using defaults as weekly_time_model is deprecated)
+    const timeModel = {
       available_days: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
       minutes_per_day: 45,
       preferred_times: ['morning'],
@@ -4501,9 +4493,8 @@ app.get('/api/family/weekly-plan', async (c) => {
     };
 
     // Get overrides
-    const { results: overrideRows } = await c.env.DB.prepare(
-      'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1'
-    ).bind(user.id).all();
+    // Get overrides (parent_overrides deprecated)
+    const overrideRows: any[] = [];
 
     // Get activities
     const ages = children.map((c: any) => c.age_in_months);
