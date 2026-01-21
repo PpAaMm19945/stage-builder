@@ -13,6 +13,7 @@ interface AuthContextType {
   signOut: () => void;  // Alias for logout
   refreshAuth: () => Promise<void>;
   isLoading: boolean;
+  error: Error | null;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -22,8 +23,10 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
   const [studentChildren, setStudentChildren] = useState<Student[]>([]);
   const [selectedChild, setSelectedChild] = useState<Student | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<Error | null>(null);
 
   const refreshAuth = useCallback(async () => {
+    // If no token exists, we are definitely not authenticated
     if (!auth.isAuthenticated()) {
       setUser(null);
       setStudentChildren([]);
@@ -32,58 +35,94 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       return;
     }
 
-    try {
-      const response = await auth.getMe();
-      const userData: User = {
-        id: response.user.id,
-        email: response.user.email,
-        name: response.user.name,
-        avatarUrl: response.user.avatar_url,
-        provider: 'google',
-        role: response.user.role || 'parent',
-        householdId: response.user.household_id || response.user.id, // Fallback to user id
-        createdAt: response.user.created_at,
-        updatedAt: response.user.updated_at,
-      };
+    setError(null);
 
-      const childrenData: Student[] = (response.children || []).map((child: any) => ({
-        id: child.id,
-        householdId: child.household_id || response.user.household_id || response.user.id,
-        name: child.name,
-        dateOfBirth: child.date_of_birth,
-        ageInMonths: child.age_in_months,
-        currentStage: child.current_stage || 'early-years',
-        avatarUrl: child.avatar_url,
-        createdAt: child.created_at,
-        updatedAt: child.updated_at,
-      }));
+    let retries = 3;
+    let lastError: any = null;
 
-      setUser(userData);
-      setStudentChildren(childrenData);
-      setSelectedChild(childrenData[0] || null);
-    } catch (error: any) {
-      // Enhanced logging to diagnose refresh issues
-      console.error('Failed to fetch user data:', error);
-      console.log('Auth error details:', {
-        isAuthError: error?.isAuthError,
-        message: error?.message,
-        status: error?.status,
+    while (retries > 0) {
+      try {
+        const response = await auth.getMe();
+        const userData: User = {
+          id: response.user.id,
+          email: response.user.email,
+          name: response.user.name,
+          avatarUrl: response.user.avatar_url,
+          provider: 'google',
+          role: response.user.role || 'parent',
+          householdId: response.user.household_id || response.user.id, // Fallback to user id
+          createdAt: response.user.created_at,
+          updatedAt: response.user.updated_at,
+        };
+
+        const childrenData: Student[] = (response.children || []).map((child: any) => ({
+          id: child.id,
+          householdId: child.household_id || response.user.household_id || response.user.id,
+          name: child.name,
+          dateOfBirth: child.date_of_birth,
+          ageInMonths: child.age_in_months,
+          currentStage: child.current_stage || 'early-years',
+          avatarUrl: child.avatar_url,
+          createdAt: child.created_at,
+          updatedAt: child.updated_at,
+        }));
+
+        setUser(userData);
+        setStudentChildren(childrenData);
+        setSelectedChild(childrenData[0] || null);
+        setError(null);
+        setIsLoading(false);
+        return; // Success!
+      } catch (err: any) {
+        lastError = err;
+
+        // Immediate failure for auth errors
+        if (err?.isAuthError || err?.status === 401 || err?.message?.includes('Unauthorized')) {
+           break; // Exit retry loop to handle auth failure
+        }
+
+        console.warn(`Auth refresh attempt failed (${retries} retries left):`, err);
+        retries--;
+        if (retries > 0) {
+          await new Promise(resolve => setTimeout(resolve, 1000)); // Wait 1s
+        }
+      }
+    }
+
+    // If we get here, we failed after retries OR had a fatal auth error
+    const fatalError = lastError;
+
+    // Enhanced logging to diagnose refresh issues
+    console.error('Failed to fetch user data:', fatalError);
+    console.log('Auth error details:', {
+      isAuthError: fatalError?.isAuthError,
+      message: fatalError?.message,
+      status: fatalError?.status,
+    });
+
+    const isAuthError = fatalError?.isAuthError ||
+                        fatalError?.status === 401 ||
+                        fatalError?.message?.includes('Session expired') ||
+                        fatalError?.message?.includes('Unauthorized');
+
+    if (isAuthError) {
+      // Show informative message for auth errors
+      toast.error('Session Expired', {
+        description: 'Please sign in again to continue.',
+        duration: 5000,
       });
 
-      // Show informative message for auth errors
-      if (error?.isAuthError || error?.message?.includes('Session expired')) {
-        toast.error('Session Expired', {
-          description: 'Please sign in again to continue.',
-          duration: 5000,
-        });
-      }
-
-      // Token might be invalid, clear it
+      // Token IS invalid, clear it
       auth.logout();
       setUser(null);
       setStudentChildren([]);
       setSelectedChild(null);
-    } finally {
+      setIsLoading(false);
+    } else {
+      // Non-auth error (Network, 500, etc)
+      // Do NOT clear token. Do NOT logout.
+      // Set error state so UI can show "Retry"
+      setError(fatalError || new Error('Unknown error'));
       setIsLoading(false);
     }
   }, []);
@@ -97,6 +136,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
     setUser(null);
     setStudentChildren([]);
     setSelectedChild(null);
+    setError(null);
   }, []);
 
   return (
@@ -111,6 +151,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         signOut: logout,
         refreshAuth,
         isLoading,
+        error,
       }}
     >
       {childrenProp}
