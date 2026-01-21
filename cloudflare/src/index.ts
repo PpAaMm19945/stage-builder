@@ -117,7 +117,43 @@ app.use('*', async (c, next) => {
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 });
 
-// Monitor Dashboard
+// ============ PUBLIC R2 PROXY ============
+// Public access to books bucket (bypassing auth for static assets)
+// Route: /books/* -> R2 bucket
+app.get('/books/*', async (c) => {
+  const key = c.req.path.replace('/books/', '');
+
+  if (!key) {
+    return c.text('Missing file key', 400);
+  }
+
+  // Security: Prevent directory traversal
+  if (key.includes('..')) {
+    return c.text('Invalid key', 400);
+  }
+
+  try {
+    const object = await c.env.BOOKS_BUCKET.get(key);
+
+    if (!object) {
+      return c.text('File not found', 404);
+    }
+
+    const headers = new Headers();
+    object.writeHttpMetadata(headers);
+    headers.set('etag', object.httpEtag);
+
+    // Set cache control for static assets
+    headers.set('Cache-Control', 'public, max-age=31536000');
+
+    return new Response(object.body, {
+      headers,
+    });
+  } catch (e: any) {
+    return c.text(`Error fetching file: ${e.message}`, 500);
+  }
+});
+
 app.get('/', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
@@ -3095,7 +3131,7 @@ app.post('/api/observations', async (c) => {
     // Daily practices check (optional, depending on if assessment_prohibited is in formations)
     // Assuming formations has formation_type, we can check that.
     if ((activity as any).formation_type === 'daily_practice' && (activity as any).assessment_prohibited === 1) {
-       return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
+      return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
     }
 
     const observationId = generateId('ev'); // Use 'ev' for evidence
@@ -3105,14 +3141,14 @@ app.post('/api/observations', async (c) => {
     // Input masteryLevel might be arbitrary string.
     let habitStage = 'Seeding';
     if (masteryLevel) {
-       const lower = masteryLevel.toLowerCase();
-       if (lower.includes('fruit') || lower.includes('mastered')) habitStage = 'Fruiting';
-       else if (lower.includes('root') || lower.includes('growing')) habitStage = 'Rooting';
-       else if (lower.includes('seed') || lower.includes('started')) habitStage = 'Seeding';
-       // Fallback: if masteryLevel is one of the valid ones, use it (case insensitive)
-       const valid = ['Seeding', 'Rooting', 'Fruiting'];
-       const exact = valid.find(v => v.toLowerCase() === lower);
-       if (exact) habitStage = exact;
+      const lower = masteryLevel.toLowerCase();
+      if (lower.includes('fruit') || lower.includes('mastered')) habitStage = 'Fruiting';
+      else if (lower.includes('root') || lower.includes('growing')) habitStage = 'Rooting';
+      else if (lower.includes('seed') || lower.includes('started')) habitStage = 'Seeding';
+      // Fallback: if masteryLevel is one of the valid ones, use it (case insensitive)
+      const valid = ['Seeding', 'Rooting', 'Fruiting'];
+      const exact = valid.find(v => v.toLowerCase() === lower);
+      if (exact) habitStage = exact;
     }
 
     await c.env.DB.prepare(
@@ -5007,13 +5043,13 @@ app.post('/api/ai/weekly-summary', async (c) => {
 
     // Build context for AI
     const evidenceContext = evidences.map((e: any) => {
-       const who = e.child_name || 'Family';
-       const what = e.title || 'Activity';
-       const when = e.captured_at;
-       const details = [];
-       if (e.habit_stage) details.push(`Stage: ${e.habit_stage}`);
-       if (e.notes) details.push(`Notes: ${e.notes}`);
-       return `- ${who} completed "${what}" (${e.domain}) on ${when}. ${details.join('. ')}`;
+      const who = e.child_name || 'Family';
+      const what = e.title || 'Activity';
+      const when = e.captured_at;
+      const details = [];
+      if (e.habit_stage) details.push(`Stage: ${e.habit_stage}`);
+      if (e.notes) details.push(`Notes: ${e.notes}`);
+      return `- ${who} completed "${what}" (${e.domain}) on ${when}. ${details.join('. ')}`;
     }).join('\n');
 
     const systemPrompt = `You are SchoolOS, a Christian homeschool assistant. Generate a warm, encouraging weekly summary for parents.

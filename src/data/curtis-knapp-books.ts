@@ -1,6 +1,6 @@
 import { Book } from '@/types';
 
-const R2_BASE = 'https://r2.schoolos.io/books/pastor_curtis_knapp';
+const R2_BASE = 'https://stage-builder.antmwes104-1.workers.dev/books/pastor_curtis_knapp';
 const SERIES_SLUG = 'pastor_curtis_knapp';
 const SERIES_TITLE = 'Selected Works: Booklets on Doctrine, Family, and the Christian Walk';
 
