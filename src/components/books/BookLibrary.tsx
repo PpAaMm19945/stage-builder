@@ -9,6 +9,13 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Book as BookIcon, ArrowSquareOut } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 import { Button } from '@/components/ui/button';
+import {
+    Carousel,
+    CarouselContent,
+    CarouselItem,
+    CarouselNext,
+    CarouselPrevious,
+} from "@/components/ui/carousel";
 
 interface BookLibraryProps {
     initialStage?: string;
@@ -124,16 +131,26 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                         )}
                     </div>
 
-                    {/* Grid Container */}
-                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
-                        {booksBySeries[series].map(book => (
-                            <BookCard
-                                key={`${book.series}-${book.id}`}
-                                book={book}
-                                onClick={handleBookClick}
-                            />
-                        ))}
-                    </div>
+                    {/* Carousel Container */}
+                    <Carousel
+                        opts={{
+                            align: "start",
+                        }}
+                        className="w-full group relative"
+                    >
+                        <CarouselContent>
+                            {booksBySeries[series].map(book => (
+                                <CarouselItem key={`${book.series}-${book.id}`} className="basis-1/2 xs:basis-1/3 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
+                                    <BookCard
+                                        book={book}
+                                        onClick={handleBookClick}
+                                    />
+                                </CarouselItem>
+                            ))}
+                        </CarouselContent>
+                        <CarouselPrevious className="left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0" />
+                        <CarouselNext className="right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0" />
+                    </Carousel>
                 </div>
             ))}
 
