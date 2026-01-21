@@ -8,6 +8,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
 import { Book as BookIcon, ArrowSquareOut } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
+import { CURTIS_KNAPP_BOOKS } from '@/data/curtis-knapp-books';
 import { Button } from '@/components/ui/button';
 import {
     Carousel,
@@ -33,7 +34,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     // Combine API books and Local Bible books
     const displayBooks = useMemo(() => {
-        let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS];
+        let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS, ...CURTIS_KNAPP_BOOKS];
         books = books.filter(b =>
             b.renderFormat !== 'hymnal' &&
             b.renderFormat !== 'catechism'
