@@ -32,7 +32,11 @@ export function GlobalAudioPlayer() {
     toggleMute
   } = useAudioPlayer();
 
-  const [isExpanded, setIsExpanded] = useState(true);
+  const [isExpanded, setIsExpanded] = useState(false);
+
+  // Auto-expand on new track, but collapse after a while? No, let's keep it simple.
+  // Actually, better UX: When a track starts, show a toast or mini-bar. Let user expand if needed.
+  // We'll stick to the mini-bar -> expanded drawer model.
 
   if (!currentTrack) return null;
 
@@ -43,144 +47,180 @@ export function GlobalAudioPlayer() {
     return `${minutes}:${seconds.toString().padStart(2, '0')}`;
   };
 
+  const progress = duration ? (currentTime / duration) * 100 : 0;
+
   return (
-    <div className="fixed bottom-4 right-4 z-50 flex flex-col items-end gap-2">
-      <AnimatePresence mode="wait">
-        {!isExpanded ? (
+    <>
+      {/* 
+         Top Fixed Player Container 
+         Z-index needs to be higher than header (usually 50)
+      */}
+      <div className="fixed top-0 left-0 right-0 z-[100] flex flex-col items-center pointer-events-none">
+
+        {/* COLLAPSED STATE (Mini Player / Loading Bar) */}
+        {!isExpanded && (
           <motion.div
-            initial={{ scale: 0, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            exit={{ scale: 0, opacity: 0 }}
-            key="collapsed"
+            initial={{ y: -50, opacity: 0 }}
+            animate={{ y: 0, opacity: 1 }}
+            exit={{ y: -50, opacity: 0 }}
+            className="w-full pointer-events-auto"
           >
-            <Button
-              size="icon"
-              className={cn(
-                "h-14 w-14 rounded-full shadow-lg border-2 border-white dark:border-amber-900",
-                isPlaying ? "bg-amber-500 hover:bg-amber-600 text-white animate-pulse-slow" : "bg-amber-100 text-amber-900 hover:bg-amber-200"
-              )}
+            {/* The "Loading Bar" visuals */}
+            <div
+              className="group relative h-1.5 w-full bg-border/20 cursor-pointer overflow-hidden hover:h-4 transition-all duration-300"
               onClick={() => setIsExpanded(true)}
             >
-              <MusicNotes weight="fill" className={cn("h-7 w-7", isPlaying && "animate-spin-slow")} />
-              <span className="sr-only">Open Player</span>
-            </Button>
-          </motion.div>
-        ) : (
-          <motion.div
-            initial={{ y: 20, opacity: 0 }}
-            animate={{ y: 0, opacity: 1 }}
-            exit={{ y: 20, opacity: 0 }}
-            key="expanded"
-            className="w-80 sm:w-96 bg-white dark:bg-slate-900 border border-amber-200 dark:border-amber-800 rounded-xl shadow-2xl overflow-hidden"
-          >
-            {/* Header / Title Area */}
-            <div className="bg-amber-50 dark:bg-amber-950/30 p-3 flex items-center justify-between border-b border-amber-100 dark:border-amber-900/50">
-              <div className="flex items-center gap-2 overflow-hidden">
-                <div className="h-8 w-8 rounded bg-amber-200 dark:bg-amber-800 flex items-center justify-center shrink-0">
-                  <MusicNotes className="h-4 w-4 text-amber-700 dark:text-amber-300" weight="duotone" />
-                </div>
-                <div className="flex-1 min-w-0">
-                  <p className="text-sm font-semibold truncate text-amber-900 dark:text-amber-100">
-                    {currentTrack.title}
-                  </p>
-                  {currentTrack.artist && (
-                    <p className="text-xs text-muted-foreground truncate">{currentTrack.artist}</p>
-                  )}
-                </div>
-              </div>
-              <div className="flex items-center gap-1">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-amber-700 hover:bg-amber-100 dark:text-amber-400 dark:hover:bg-amber-900/50"
-                  onClick={() => setIsExpanded(false)}
-                  aria-label="Minimize player"
-                >
-                  <ArrowsInSimple className="h-4 w-4" />
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="h-7 w-7 text-muted-foreground hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-900/20"
-                  onClick={closePlayer}
-                  aria-label="Close player"
-                >
-                  <X className="h-4 w-4" />
-                </Button>
+              {/* Progress Indicator */}
+              <div
+                className="h-full bg-primary/80 group-hover:bg-primary transition-colors"
+                style={{ width: `${progress}%` }}
+              />
+
+              {/* Hover info (only visible on hover/larger screens) */}
+              <div className="absolute inset-0 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+                <span className="text-[10px] font-medium text-foreground bg-background/80 px-2 rounded-full shadow-sm">
+                  {currentTrack.title} • {formatTime(currentTime)}
+                </span>
               </div>
             </div>
 
-            {/* Controls */}
-            <div className="p-4 space-y-4">
-              {/* Progress */}
-              <div className="space-y-1.5">
-                <Slider
-                  value={[currentTime]}
-                  max={duration || 100}
-                  step={1}
-                  onValueChange={(val) => seek(val[0])}
-                  className="cursor-pointer"
-                />
-                <div className="flex justify-between text-[10px] font-medium text-muted-foreground">
-                  <span>{formatTime(currentTime)}</span>
-                  <span>{formatTime(duration)}</span>
-                </div>
-              </div>
-
-              {/* Main Buttons */}
-              <div className="flex items-center justify-between">
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                  onClick={toggleMute}
-                  aria-label={isMuted ? "Unmute" : "Mute"}
-                >
-                  {isMuted ? <SpeakerX className="h-5 w-5" /> : <SpeakerHigh className="h-5 w-5" />}
-                </Button>
-
-                <div className="flex items-center gap-4">
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={playPrevious}
-                    disabled={currentTime < 5} // Logic depends on playlist
-                    className="hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                    aria-label="Previous track"
-                  >
-                    <SkipBack weight="fill" className="h-5 w-5 text-amber-900 dark:text-amber-100" />
-                  </Button>
-
-                  <Button
-                    size="icon"
-                    className="h-10 w-10 rounded-full bg-amber-600 hover:bg-amber-700 text-white shadow-md"
-                    onClick={togglePlay}
-                    aria-label={isPlaying ? "Pause" : "Play"}
-                  >
-                    {isPlaying ? (
-                      <Pause weight="fill" className="h-5 w-5" />
-                    ) : (
-                      <Play weight="fill" className="h-5 w-5 ml-0.5" />
-                    )}
-                  </Button>
-
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={playNext}
-                    className="hover:bg-amber-50 dark:hover:bg-amber-900/20"
-                    aria-label="Next track"
-                  >
-                    <SkipForward weight="fill" className="h-5 w-5 text-amber-900 dark:text-amber-100" />
-                  </Button>
-                </div>
-
-                <div className="w-9" /> {/* Spacer for balance */}
-              </div>
+            {/* Optional: Small "Now Playing"pill hanging down? 
+                  Maybe too cluttery. Let's stick to the bar for "Slick & Modern"
+                  But mobile users might miss it. Let's add a small 'handle' or pill.
+              */}
+            <div className="flex justify-center -mt-px">
+              <button
+                onClick={() => setIsExpanded(true)}
+                className="bg-background/95 backdrop-blur border border-t-0 border-border/40 rounded-b-lg px-4 py-1 flex items-center gap-2 shadow-sm hover:bg-muted/50 transition-colors text-xs font-medium"
+              >
+                <span className={cn("inline-block h-2 w-2 rounded-full", isPlaying ? "bg-green-500 animate-pulse" : "bg-amber-500")} />
+                <span className="max-w-[150px] truncate">{currentTrack.title}</span>
+                <ArrowsOutSimple className="h-3 w-3 text-muted-foreground ml-1" />
+              </button>
             </div>
           </motion.div>
         )}
-      </AnimatePresence>
-    </div>
+
+        {/* EXPANDED STATE (Top Drawer) */}
+        <AnimatePresence>
+          {isExpanded && (
+            <motion.div
+              initial={{ y: "-100%" }}
+              animate={{ y: "0%" }}
+              exit={{ y: "-100%" }}
+              transition={{ type: "spring", damping: 25, stiffness: 200 }}
+              className="w-full bg-background/95 backdrop-blur-xl border-b border-border shadow-2xl pointer-events-auto"
+            >
+              <div className="max-w-5xl mx-auto p-4 sm:p-6">
+                {/* Top Actions */}
+                <div className="flex items-center justify-between mb-6">
+                  <div className="flex items-center gap-3">
+                    <div className="h-10 w-10 sm:h-12 sm:w-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
+                      <MusicNotes weight="duotone" className="h-6 w-6" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg leading-tight">{currentTrack.title}</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {currentTrack.artist || "SchoolOS Library"}
+                      </p>
+                    </div>
+                  </div>
+
+                  <div className="flex items-center gap-2">
+                    <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
+                      <ArrowsInSimple className="h-5 w-5" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={closePlayer} className="text-muted-foreground hover:text-red-500">
+                      <X className="h-5 w-5" />
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Progress & Controls */}
+                <div className="flex flex-col gap-6">
+
+                  {/* Progress Bar */}
+                  <div className="space-y-2">
+                    <Slider
+                      value={[currentTime]}
+                      max={duration || 100}
+                      step={1}
+                      onValueChange={(val) => seek(val[0])}
+                      className="cursor-pointer py-1"
+                    />
+                    <div className="flex justify-between text-xs font-medium text-muted-foreground">
+                      <span>{formatTime(currentTime)}</span>
+                      <span>{formatTime(duration)}</span>
+                    </div>
+                  </div>
+
+                  {/* Playback Controls */}
+                  <div className="flex items-center justify-between sm:justify-center gap-6 sm:gap-10">
+                    {/* Mute (Left on desktop) */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleMute}
+                      className={cn("hidden sm:flex", isMuted && "text-red-500")}
+                    >
+                      {isMuted ? <SpeakerX weight="fill" className="h-5 w-5" /> : <SpeakerHigh weight="fill" className="h-5 w-5" />}
+                    </Button>
+
+                    <div className="flex items-center gap-6">
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 rounded-full border-2"
+                        onClick={playPrevious}
+                      >
+                        <SkipBack weight="fill" className="h-5 w-5" />
+                      </Button>
+
+                      <Button
+                        size="icon"
+                        className="h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform"
+                        onClick={togglePlay}
+                      >
+                        {isPlaying ? (
+                          <Pause weight="fill" className="h-7 w-7" />
+                        ) : (
+                          <Play weight="fill" className="h-7 w-7 ml-1" />
+                        )}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        size="icon"
+                        className="h-10 w-10 rounded-full border-2"
+                        onClick={playNext}
+                      >
+                        <SkipForward weight="fill" className="h-5 w-5" />
+                      </Button>
+                    </div>
+
+                    {/* Mobile Mute Toggle */}
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={toggleMute}
+                      className={cn("sm:hidden", isMuted && "text-red-500")}
+                    >
+                      {isMuted ? <SpeakerX weight="fill" className="h-5 w-5" /> : <SpeakerHigh weight="fill" className="h-5 w-5" />}
+                    </Button>
+                  </div>
+                </div>
+
+                {/* Footer Credit */}
+                <div className="mt-6 pt-4 border-t border-border/40 text-center">
+                  <p className="text-xs text-muted-foreground">
+                    Audio provided by <span className="font-semibold text-foreground">Sermon Audio</span>
+                  </p>
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   );
 }

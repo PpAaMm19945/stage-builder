@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { HymnAudioPlayer } from './HymnAudioPlayer';
 import { HymnContent } from '@/components/liturgy/HymnContent';
 import { Hymn, HymnCard } from './HymnCard';
+import { PlayHymnButton } from './PlayHymnButton';
 
 export function HymnBrowser() {
     const [selectedHymn, setSelectedHymn] = useState<Hymn | null>(null);
@@ -63,13 +64,21 @@ export function HymnBrowser() {
                                     <SheetTitle className="text-2xl font-display">{selectedHymn.title}</SheetTitle>
                                 </div>
 
-                                {/* Audio Player */}
+                                {/* Audio Player Control */}
                                 {selectedHymn.audio_url ? (
-                                    <HymnAudioPlayer
-                                        src={selectedHymn.audio_url}
-                                        title={selectedHymn.title}
-                                        autoPlay={false} // Don't autoplay to avoid sudden noise
-                                    />
+                                    <div className="bg-muted/50 rounded-xl p-4 border border-border shadow-sm space-y-4">
+                                        <div className="flex items-center justify-between gap-4">
+                                            <PlayHymnButton
+                                                hymn={selectedHymn}
+                                            />
+                                            <div className="flex-1 text-sm text-muted-foreground">
+                                                Play this hymn in the background while you read along.
+                                            </div>
+                                        </div>
+                                        <div className="text-[10px] text-center text-muted-foreground/60 border-t border-border/50 pt-2">
+                                            Audio provided by <span className="font-semibold text-muted-foreground/80">Sermon Audio</span>
+                                        </div>
+                                    </div>
                                 ) : (
                                     <div className="p-4 bg-muted/30 rounded-lg text-center text-sm text-muted-foreground italic border border-dashed border-border">
                                         Audio recording coming soon.

@@ -59,17 +59,17 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
     };
 
     return (
-        <Card
-            className="group cursor-pointer overflow-hidden transition-all hover:shadow-lg hover:scale-[1.02] active:scale-[0.98] focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 outline-none"
+        <div
+            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] focus-visible:outline-none"
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}
             aria-label={`Open ${book.title}`}
             onKeyDown={handleKeyDown}
         >
-            {/* Landscape aspect ratio for picture book covers */}
-            <div className="aspect-[4/3] relative overflow-hidden bg-muted">
-                {/* Skeleton loader shown while image is loading */}
+            {/* Main Image Container - Aspect 2:3 for standard book feel */}
+            <div className="aspect-[2/3] w-full relative overflow-hidden rounded-md shadow-sm border border-border/40 bg-muted group-hover:shadow-xl transition-shadow">
+                {/* Skeleton loader */}
                 {!imageLoaded && !imageError && (
                     <div className="absolute inset-0 animate-pulse">
                         <Skeleton className="h-full w-full" />
@@ -82,18 +82,19 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
                         className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"
                         style={{ backgroundColor: seriesColor }}
                     >
-                        <BooksIcon className="h-12 w-12 text-white/80 mb-2" weight="duotone" />
-                        <span className="text-white font-bold text-sm leading-tight line-clamp-3">
+                        <BooksIcon className="h-8 w-8 text-white/80 mb-2" weight="duotone" />
+                        <span className="text-white font-bold text-xs leading-tight line-clamp-3">
                             {book.title}
                         </span>
                     </div>
                 )}
 
+                {/* Image - Object Cover for slick uniform look */}
                 <img
                     src={coverUrl}
-                    alt=""
+                    alt={book.title}
                     loading="lazy"
-                    className={`h-full w-full object-cover transition-all duration-300 group-hover:scale-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+                    className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
                         }`}
                     onLoad={() => setImageLoaded(true)}
                     onError={() => {
@@ -101,37 +102,21 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
                         setImageLoaded(true);
                     }}
                 />
-                <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity" />
+
+                {/* Hover Gradient Overlay */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
+                    <p className="text-white text-xs font-medium line-clamp-2 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
+                        {book.seriesTitle || book.series}
+                    </p>
+                </div>
             </div>
 
-            <CardContent className="p-3">
-                <h3 className="font-semibold text-sm line-clamp-2 mb-1">
+            {/* Minimal Content Below */}
+            <div>
+                <h3 className="font-medium text-sm leading-tight line-clamp-1 text-foreground/90 group-hover:text-primary transition-colors">
                     {book.title}
                 </h3>
-
-                <div className="flex flex-wrap gap-1 mt-2">
-                    <Badge variant="secondary" className="text-[10px] px-1.5">
-                        {formatAgeRange(book.minAgeMonths, book.maxAgeMonths)}
-                    </Badge>
-                    {book.series && (
-                        <Badge variant="outline" className="text-[10px] px-1.5 truncate max-w-[100px]">
-                            {shortenedSeries}
-                        </Badge>
-                    )}
-                    {(book.upvoteCount || 0) > 0 && (
-                        <Badge variant="secondary" className="text-[10px] px-1.5 gap-1 bg-red-50 text-red-600 border-red-100">
-                            <Heart weight="fill" className="h-3 w-3" />
-                            {book.upvoteCount}
-                        </Badge>
-                    )}
-                </div>
-
-                {book.author && (
-                    <p className="text-xs text-muted-foreground mt-1 truncate">
-                        by {book.author}
-                    </p>
-                )}
-            </CardContent>
-        </Card >
+            </div>
+        </div>
     );
 });

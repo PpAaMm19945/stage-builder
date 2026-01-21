@@ -99,7 +99,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             {/* Books by Series */}
             {!isLoading && seriesNames.map(series => (
                 <div key={series} className="space-y-4">
-                    <div className="flex items-end justify-between border-b pb-2">
+                    <div className="flex items-end justify-between px-1">
                         <div>
                             <h2 className="text-xl font-semibold flex items-center gap-2">
                                 {series}
@@ -109,29 +109,33 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             </h2>
                             {series === 'The Paperback Bible' && (
                                 <p className="text-sm text-muted-foreground mt-1">
-                                    Audio provided by SermonAudio
+                                    PDFs provided by SermonAudio
                                 </p>
                             )}
                         </div>
 
                         {series === 'The Paperback Bible' && (
-                             <Button variant="outline" size="sm" asChild className="gap-2 h-8">
+                            <Button variant="outline" size="sm" asChild className="gap-2 h-8">
                                 <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
                                     Visit Store
                                     <ArrowSquareOut className="h-4 w-4" />
                                 </a>
-                             </Button>
+                            </Button>
                         )}
                     </div>
 
-                    <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 sm:gap-6">
-                        {booksBySeries[series].map(book => (
-                            <BookCard
-                                key={`${book.series}-${book.id}`}
-                                book={book}
-                                onClick={handleBookClick}
-                            />
-                        ))}
+                    {/* Horizontal Scroll Container */}
+                    <div className="relative group/section">
+                        <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-hide">
+                            {booksBySeries[series].map(book => (
+                                <div key={`${book.series}-${book.id}`} className="snap-start shrink-0 w-[160px] sm:w-[200px]">
+                                    <BookCard
+                                        book={book}
+                                        onClick={handleBookClick}
+                                    />
+                                </div>
+                            ))}
+                        </div>
                     </div>
                 </div>
             ))}
