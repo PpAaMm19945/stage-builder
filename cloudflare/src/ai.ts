@@ -211,7 +211,8 @@ Remember: Guide them TO the answer, never GIVE them the answer.`;
      * Log student AI interactions for parent visibility
      */
     private async logStudentInteraction(studentId: string, question: string, subject: string): Promise<void> {
-        const logId = `slog-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+        // Use crypto.randomUUID for secure randomness (matching generateId pattern)
+        const logId = `slog-${Date.now()}-${crypto.randomUUID().substring(24)}`;
         try {
             await this.env.DB.prepare(`
                 INSERT INTO ai_interaction_logs (id, student_id, interaction_type, question, context_json, created_at)

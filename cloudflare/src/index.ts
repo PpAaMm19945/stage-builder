@@ -601,7 +601,12 @@ function requireHouseholdMember(c: any): User {
 
 // Generate unique ID
 function generateId(prefix: string): string {
-  return `${prefix}-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+  // Use crypto.randomUUID for secure randomness
+  // UUID format: xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx
+  // We take the last segment (12 hex chars) to replace the 9 base36 chars
+  // This increases entropy from ~46 bits to 48 bits and is cryptographically secure.
+  const randomPart = crypto.randomUUID().substring(24);
+  return `${prefix}-${Date.now()}-${randomPart}`;
 }
 
 // Security helper: Generate cryptographically secure invite code
