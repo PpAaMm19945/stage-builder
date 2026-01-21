@@ -124,18 +124,15 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                         )}
                     </div>
 
-                    {/* Horizontal Scroll Container */}
-                    <div className="relative group/section">
-                        <div className="flex gap-4 overflow-x-auto pb-4 px-1 snap-x snap-mandatory scrollbar-hide">
-                            {booksBySeries[series].map(book => (
-                                <div key={`${book.series}-${book.id}`} className="snap-start shrink-0 w-[160px] sm:w-[200px]">
-                                    <BookCard
-                                        book={book}
-                                        onClick={handleBookClick}
-                                    />
-                                </div>
-                            ))}
-                        </div>
+                    {/* Grid Container */}
+                    <div className="grid grid-cols-2 xs:grid-cols-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4 px-1">
+                        {booksBySeries[series].map(book => (
+                            <BookCard
+                                key={`${book.series}-${book.id}`}
+                                book={book}
+                                onClick={handleBookClick}
+                            />
+                        ))}
                     </div>
                 </div>
             ))}
