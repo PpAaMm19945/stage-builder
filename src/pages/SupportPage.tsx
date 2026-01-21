@@ -37,10 +37,9 @@ const SupportPage = () => {
     <div className="min-h-screen bg-slate-900 text-slate-100 p-6 flex flex-col items-center">
       {/* Header Section */}
       <div className="max-w-2xl text-center mb-12">
-        <h1 className="text-4xl font-bold mb-4 tracking-tight">SchoolOS: Education for the Kingdom</h1>
+        <h1 className="text-4xl font-bold mb-4 tracking-tight">FamilyPath: Learning Together</h1>
         <p className="text-slate-400 text-lg">
-          I’ve built SchoolOS to be free, ensuring educational sovereignty for every family.
-          If this mission resonates with you, I invite you to partner with us through prayer and support.
+          FamilyPath helps families do one simple thing each day—a hymn, a verse, a book, an activity. If this mission resonates with you, I invite you to partner with us.
         </p>
       </div>
 

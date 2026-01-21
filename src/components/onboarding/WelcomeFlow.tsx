@@ -114,10 +114,10 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
 
                     <div className="space-y-2">
                         <DialogTitle className="text-2xl font-display">
-                            Welcome to SchoolOS
+                            Welcome to FamilyPath
                         </DialogTitle>
                         <DialogDescription className="text-base">
-                            Personalized early learning for your child
+                            A simple daily rhythm for your family
                         </DialogDescription>
                     </div>
 
@@ -125,19 +125,19 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                         <li className="flex items-start gap-3">
                             <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                             <span className="text-foreground">
-                                Daily activities tailored to your child's age and development
+                                Start each day with a hymn, verse, and prayer
                             </span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                             <span className="text-foreground">
-                                Track progress across 5 key learning domains
+                                Read stories that form hearts and minds
                             </span>
                         </li>
                         <li className="flex items-start gap-3">
                             <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
                             <span className="text-foreground">
-                                Record observations to personalize recommendations
+                                Simple activities that fit your family's pace
                             </span>
                         </li>
                     </ul>
@@ -352,7 +352,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                             Quick Tour
                         </DialogTitle>
                         <DialogDescription>
-                            Here's what you can do with SchoolOS
+                            Here's what you can do with FamilyPath
                         </DialogDescription>
                     </div>
 

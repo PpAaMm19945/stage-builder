@@ -27,7 +27,6 @@ import { MaterialItem, Book, LiturgyType } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
-import { NotificationStack } from '@/components/dashboard/NotificationStack';
 import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { TimeSpentWidget } from '@/components/dashboard/TimeSpentWidget';
@@ -559,8 +558,6 @@ export default function Dashboard() {
           {isToday ? "Ready for today's rhythms?" : `Viewing ${format(selectedDate, 'EEEE, MMM d')}`}
         </p>
       </div>
-
-      <NotificationStack />
 
       {/* Week Strip */}
       <WeekStrip

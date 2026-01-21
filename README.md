@@ -1,8 +1,8 @@
-# HomeLine Academy (SchoolOS)
+# FamilyPath
 
-> **Reformed Christian education for African families—from birth to high school.**
+> A simple daily rhythm for Christian families—hymn, verse, book, activity.
 
-HomeLine Academy is a family formation platform that helps parents teach their children at home through daily liturgy, history narratives, and age-appropriate activities. It replaces expensive curriculum with AI-assisted formation, grounded in Scripture and the Reformed confessions.
+FamilyPath is a simple daily rhythm for families learning together. It helps parents teach their children at home through daily liturgy, history narratives, and age-appropriate activities. It replaces expensive curriculum with AI-assisted formation, grounded in Scripture and the Reformed confessions.
 
 ## Quick Context for AI Assistants
 
