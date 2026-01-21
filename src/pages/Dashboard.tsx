@@ -97,12 +97,20 @@ export default function Dashboard() {
     enabled: isBalanceDialogOpen,
   });
 
-  const activeChildren = dayData?.children?.filter((c: any) => !c.is_graduated) || [];
-  const childAges = activeChildren.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
+  // Memoize active children to prevent downstream re-renders (especially PDF generation)
+  const activeChildren = useMemo(() => {
+    return dayData?.children?.filter((c: any) => !c.is_graduated) || [];
+  }, [dayData?.children]);
 
-  const youngestChild = activeChildren.length > 0
-    ? [...activeChildren].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0]
-    : null;
+  const childAges = useMemo(() => {
+    return activeChildren.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
+  }, [activeChildren]);
+
+  const youngestChild = useMemo(() => {
+    return activeChildren.length > 0
+      ? [...activeChildren].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0]
+      : null;
+  }, [activeChildren]);
 
   const { data: recommendedBooks } = useQuery({
     queryKey: ['todays-book', youngestChild?.ageInMonths],
@@ -132,6 +140,26 @@ export default function Dashboard() {
     const seed = todayStr.split('-').reduce((acc, n) => acc + parseInt(n), 0);
     return pool[seed % pool.length];
   }, [recommendedBooks, readingHistory, youngestChild]);
+
+  // Memoize PDF document to prevent expensive regeneration on every render
+  // This must be declared here to avoid hook ordering issues with early returns
+  const pdfDocument = useMemo(() => {
+    // Return null if data isn't ready, similar to how we hide the button
+    if (!isToday || !dayData) return <></>; // Return empty fragment or handle appropriately
+
+    return (
+      <DailyPlanDocument
+        day={{
+          date: new Date().toLocaleDateString(),
+          dayName: format(new Date(), 'EEEE'),
+          liturgy: liturgyData?.items || [],
+          activities: dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [],
+          reading: todaysBook || undefined
+        }}
+        children={activeChildren}
+      />
+    );
+  }, [isToday, dayData, liturgyData?.items, todaysBook, activeChildren]);
 
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
@@ -573,18 +601,7 @@ export default function Dashboard() {
       {isToday && dayData && (
         <div className="flex justify-end px-2">
           <DownloadPrintButton
-            document={
-              <DailyPlanDocument
-                day={{
-                  date: new Date().toLocaleDateString(),
-                  dayName: format(new Date(), 'EEEE'),
-                  liturgy: liturgyData?.items || [],
-                  activities: dayData.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [],
-                  reading: todaysBook || undefined
-                }}
-                children={activeChildren}
-              />
-            }
+            document={pdfDocument}
             fileName={`daily_plan_${selectedDateStr}.pdf`}
             label="Print Plan"
             size="sm"
