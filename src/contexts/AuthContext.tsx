@@ -26,8 +26,12 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
   const [error, setError] = useState<Error | null>(null);
 
   const refreshAuth = useCallback(async () => {
+    const isAuth = auth.isAuthenticated();
+    console.log('[AuthContext] refreshAuth called. isAuthenticated:', isAuth);
+
     // If no token exists, we are definitely not authenticated
-    if (!auth.isAuthenticated()) {
+    if (!isAuth) {
+      console.log('[AuthContext] No token found. Resetting state.');
       setUser(null);
       setStudentChildren([]);
       setSelectedChild(null);
@@ -42,7 +46,9 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
 
     while (retries > 0) {
       try {
+        console.log(`[AuthContext] Calling auth.getMe(). Attempt ${4 - retries}`);
         const response = await auth.getMe();
+        console.log('[AuthContext] auth.getMe() success:', response);
         const userData: User = {
           id: response.user.id,
           email: response.user.email,
@@ -74,10 +80,12 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         setIsLoading(false);
         return; // Success!
       } catch (err: any) {
+        console.error('[AuthContext] auth.getMe() failed:', err);
         lastError = err;
 
         // Immediate failure for auth errors
         if (err?.isAuthError || err?.status === 401 || err?.message?.includes('Unauthorized')) {
+           console.log('[AuthContext] Auth error detected. Breaking retry loop.');
            break; // Exit retry loop to handle auth failure
         }
 
@@ -106,6 +114,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
                         fatalError?.message?.includes('Unauthorized');
 
     if (isAuthError) {
+      console.log('[AuthContext] Handling fatal auth error. Logging out.');
       // Show informative message for auth errors
       toast.error('Session Expired', {
         description: 'Please sign in again to continue.',
@@ -119,6 +128,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       setSelectedChild(null);
       setIsLoading(false);
     } else {
+      console.log('[AuthContext] Handling non-auth error.');
       // Non-auth error (Network, 500, etc)
       // Do NOT clear token. Do NOT logout.
       // Set error state so UI can show "Retry"
@@ -132,6 +142,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
   }, [refreshAuth]);
 
   const logout = useCallback(() => {
+    console.log('[AuthContext] logout called.');
     auth.logout();
     setUser(null);
     setStudentChildren([]);

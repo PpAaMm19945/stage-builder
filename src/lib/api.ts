@@ -6,14 +6,18 @@ import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, Readin
 export const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
 function getAuthToken(): string | null {
-  return localStorage.getItem('schoolos_token');
+  const token = localStorage.getItem('schoolos_token');
+  console.log('[API] getAuthToken called. Token exists:', !!token);
+  return token;
 }
 
 function setAuthToken(token: string): void {
+  console.log('[API] setAuthToken called.');
   localStorage.setItem('schoolos_token', token);
 }
 
 function clearAuthToken(): void {
+  console.log('[API] clearAuthToken called.');
   localStorage.removeItem('schoolos_token');
 }
 
@@ -35,7 +39,9 @@ async function apiRequest<T>(
   if (!response.ok) {
     // Handle 401 specifically
     if (response.status === 401) {
-      clearAuthToken();
+      console.warn('[API] 401 Unauthorized encountered.');
+      // Do NOT clear token here. Let AuthContext decide how to handle it (e.g. logout).
+      // clearAuthToken();
       const error = new Error('Session expired');
       (error as any).isAuthError = true;
       throw error;
@@ -63,7 +69,11 @@ export const auth = {
     // Don't await the API call, just clear locally
   },
 
-  isAuthenticated: () => !!getAuthToken(),
+  isAuthenticated: () => {
+    const isAuth = !!getAuthToken();
+    console.log('[API] isAuthenticated called. Result:', isAuth);
+    return isAuth;
+  },
 };
 
 // Students
