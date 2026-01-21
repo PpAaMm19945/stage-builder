@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { CheckCircle, XCircle, Clock, Briefcase, ChevronRight } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Briefcase, AlertCircle } from 'lucide-react';
 import { WorkEntry } from '@/types';
 
 // Extended type from API response
@@ -13,6 +13,7 @@ interface PendingEntry extends WorkEntry {
 export function WorkApprovals() {
     const [entries, setEntries] = useState<PendingEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [error, setError] = useState<string | null>(null);
     const [rejectId, setRejectId] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
 
@@ -20,8 +21,10 @@ export function WorkApprovals() {
         try {
             const data = await api.work.getPending();
             setEntries(data);
+            setError(null);
         } catch (err) {
             console.error('Failed to load pending approvals', err);
+            // Silent error for dashboard widget, but log it
         } finally {
             setLoading(false);
         }
@@ -33,29 +36,43 @@ export function WorkApprovals() {
 
     const handleApprove = async (id: string) => {
         try {
+            setError(null);
             await api.work.approve(id, 'approved');
             setEntries(prev => prev.filter(e => e.id !== id));
-            // Could show toast success
         } catch (err) {
-            alert('Failed to approve');
+            setError('Failed to approve entry. Please try again.');
         }
     };
 
     const handleReject = async (id: string) => {
         if (!rejectReason) return;
         try {
+            setError(null);
             await api.work.approve(id, 'rejected', rejectReason);
             setEntries(prev => prev.filter(e => e.id !== id));
             setRejectId(null);
             setRejectReason('');
         } catch (err) {
-            alert('Failed to reject');
+            setError('Failed to reject entry. Please try again.');
         }
     };
 
-    if (loading) return <div className="animate-pulse h-24 bg-white/50 rounded-xl" />;
+    if (loading) {
+        return (
+            <div className="bg-white rounded-xl shadow-sm border border-amber-100 p-4 space-y-3">
+                <div className="flex gap-3">
+                    <div className="w-8 h-8 rounded-full bg-amber-50 animate-pulse" />
+                    <div className="space-y-2 flex-1">
+                        <div className="h-4 bg-amber-50 rounded w-3/4 animate-pulse" />
+                        <div className="h-3 bg-amber-50 rounded w-1/2 animate-pulse" />
+                    </div>
+                </div>
+                <div className="h-16 bg-amber-50/50 rounded animate-pulse" />
+            </div>
+        );
+    }
 
-    if (entries.length === 0) return null; // Don't show if empty
+    if (entries.length === 0) return null;
 
     return (
         <div className="bg-white rounded-xl shadow-sm border border-amber-100 overflow-hidden">
@@ -69,6 +86,13 @@ export function WorkApprovals() {
                 </span>
             </div>
 
+            {error && (
+                <div className="bg-red-50 px-4 py-2 text-xs text-red-600 flex items-center gap-2 border-b border-red-100">
+                    <AlertCircle className="w-3 h-3" />
+                    {error}
+                </div>
+            )}
+
             <div className="divide-y divide-amber-50">
                 {entries.map(entry => (
                     <div key={entry.id} className="p-4 hover:bg-amber-50/30 transition-colors">
@@ -76,9 +100,16 @@ export function WorkApprovals() {
                             <div className="flex items-center gap-3">
                                 {/* Avatar */}
                                 {entry.student_avatar ? (
-                                    <img src={entry.student_avatar} alt={entry.student_name} className="w-8 h-8 rounded-full border border-amber-200" />
+                                    <img
+                                        src={entry.student_avatar}
+                                        alt={`${entry.student_name}'s avatar`}
+                                        className="w-8 h-8 rounded-full border border-amber-200"
+                                    />
                                 ) : (
-                                    <div className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 text-xs font-bold">
+                                    <div
+                                        className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 text-xs font-bold"
+                                        aria-label={`${entry.student_name}'s initials`}
+                                    >
                                         {entry.student_name.charAt(0)}
                                     </div>
                                 )}
@@ -89,7 +120,10 @@ export function WorkApprovals() {
                                     </div>
                                 </div>
                             </div>
-                            <div className="flex items-center gap-1 text-sm font-bold text-amber-800 bg-amber-100 px-2 py-1 rounded">
+                            <div
+                                className="flex items-center gap-1 text-sm font-bold text-amber-800 bg-amber-100 px-2 py-1 rounded"
+                                aria-label={`${entry.hours} hours logged`}
+                            >
                                 <Clock className="w-3 h-3" />
                                 {entry.hours}h
                             </div>
@@ -102,8 +136,14 @@ export function WorkApprovals() {
                         {/* Actions */}
                         {rejectId === entry.id ? (
                             <div className="bg-red-50 p-3 rounded-lg border border-red-100 animate-in fade-in slide-in-from-top-2">
-                                <label className="block text-xs font-medium text-red-800 mb-1">Reason for Rejection:</label>
+                                <label
+                                    htmlFor={`reject-reason-${entry.id}`}
+                                    className="block text-xs font-medium text-red-800 mb-1"
+                                >
+                                    Reason for Rejection:
+                                </label>
                                 <input
+                                    id={`reject-reason-${entry.id}`}
                                     type="text"
                                     value={rejectReason}
                                     onChange={(e) => setRejectReason(e.target.value)}
@@ -112,11 +152,17 @@ export function WorkApprovals() {
                                     autoFocus
                                 />
                                 <div className="flex gap-2 justify-end">
-                                    <button onClick={() => setRejectId(null)} className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1">Cancel</button>
+                                    <button
+                                        onClick={() => setRejectId(null)}
+                                        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+                                    >
+                                        Cancel
+                                    </button>
                                     <button
                                         onClick={() => handleReject(entry.id)}
                                         disabled={!rejectReason}
                                         className="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                                        aria-label={`Confirm rejection for ${entry.student_name}'s entry`}
                                     >
                                         Confirm Reject
                                     </button>
@@ -127,6 +173,8 @@ export function WorkApprovals() {
                                 <button
                                     onClick={() => setRejectId(entry.id)}
                                     className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg border border-transparent hover:bg-red-50 transition-colors"
+                                    aria-expanded={false}
+                                    aria-label={`Reject entry from ${entry.student_name}`}
                                 >
                                     <XCircle className="w-4 h-4" />
                                     Reject
@@ -134,6 +182,7 @@ export function WorkApprovals() {
                                 <button
                                     onClick={() => handleApprove(entry.id)}
                                     className="flex items-center gap-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
+                                    aria-label={`Approve entry from ${entry.student_name}`}
                                 >
                                     <CheckCircle className="w-4 h-4" />
                                     Approve
