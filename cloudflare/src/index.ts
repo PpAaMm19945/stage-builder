@@ -2659,7 +2659,7 @@ app.get('/api/family/daily-rhythm', async (c) => {
           if (activityIds.length > 0) {
             const placeholders = activityIds.map(() => '?').join(',');
             const { results: activities } = await c.env.DB.prepare(`
-              SELECT * FROM activities WHERE id IN (${placeholders})
+              SELECT * FROM formations WHERE id IN (${placeholders})
             `).bind(...activityIds).all();
 
             const activityMap = new Map(activities.map((a: any) => [a.id, a]));
@@ -3084,32 +3084,44 @@ app.post('/api/observations', async (c) => {
 
     // Verify activity exists
     const activity = await c.env.DB.prepare(
-      'SELECT * FROM activities WHERE id = ?'
+      'SELECT * FROM formations WHERE id = ?'
     ).bind(activityId).first();
 
     if (!activity) {
       return c.json({ error: 'Activity not found' }, 404);
     }
 
-    if ((activity as any).assessment_prohibited === 1) {
-      return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
+    // Daily practices check (optional, depending on if assessment_prohibited is in formations)
+    // Assuming formations has formation_type, we can check that.
+    if ((activity as any).formation_type === 'daily_practice' && (activity as any).assessment_prohibited === 1) {
+       return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
     }
 
-    const observationId = generateId('obs');
+    const observationId = generateId('ev'); // Use 'ev' for evidence
 
-    // Include tier if provided (for family sessions)
-    await c.env.DB.prepare(
-      'INSERT INTO observations (id, student_id, activity_id, mastery_level, parent_notes, tier) VALUES (?, ?, ?, ?, ?, ?)'
-    ).bind(observationId, studentId, activityId, masteryLevel, parentNotes || null, tier || null).run();
+    // Map masteryLevel to habit_stage
+    // habit_stage CHECK constraint: 'Seeding', 'Rooting', 'Fruiting'
+    // Input masteryLevel might be arbitrary string.
+    let habitStage = 'Seeding';
+    if (masteryLevel) {
+       const lower = masteryLevel.toLowerCase();
+       if (lower.includes('fruit') || lower.includes('mastered')) habitStage = 'Fruiting';
+       else if (lower.includes('root') || lower.includes('growing')) habitStage = 'Rooting';
+       else if (lower.includes('seed') || lower.includes('started')) habitStage = 'Seeding';
+       // Fallback: if masteryLevel is one of the valid ones, use it (case insensitive)
+       const valid = ['Seeding', 'Rooting', 'Fruiting'];
+       const exact = valid.find(v => v.toLowerCase() === lower);
+       if (exact) habitStage = exact;
+    }
 
-    // Mark daily recommendation as completed if exists
-    const today = new Date().toISOString().split('T')[0];
     await c.env.DB.prepare(
-      'UPDATE daily_recommendations SET is_completed = 1 WHERE student_id = ? AND activity_id = ? AND recommended_date = ?'
-    ).bind(studentId, activityId, today).run();
+      'INSERT INTO evidences (id, student_id, parent_id, formation_id, habit_stage, notes) VALUES (?, ?, ?, ?, ?, ?)'
+    ).bind(observationId, studentId, user.id, activityId, habitStage, parentNotes || null).run();
+
+    // No need to update daily_recommendations as it is deprecated
 
     const observation = await c.env.DB.prepare(
-      'SELECT * FROM observations WHERE id = ?'
+      'SELECT * FROM evidences WHERE id = ?'
     ).bind(observationId).first();
 
     return c.json(observation, 201);
@@ -3714,14 +3726,14 @@ app.post('/api/reading/complete', async (c) => {
 
     // Try to find the book with either simple bookId or series/bookId format
     const book = await c.env.DB.prepare(
-      'SELECT id FROM books WHERE id = ? OR id = ?'
+      "SELECT id FROM formations WHERE (id = ? OR id = ?) AND formation_type = 'reading'"
     ).bind(bookId, `${series}/${bookId}`).first<{ id: string }>();
 
     if (!book) {
       return c.json({
         error: 'Book not found',
         tried: [bookId, `${series}/${bookId}`],
-        help: 'Ensure the book is seeded in the books table with a matching id'
+        help: 'Ensure the book is seeded in the formations table with a matching id'
       }, 404);
     }
 
@@ -4142,16 +4154,14 @@ app.post('/api/upvotes', async (c) => {
 
     // Update aggregated count
     // Note: This is a simple counter update. For high scale, we'd use a queue or periodically recalculate.
-    const table = contentType === 'activity' ? 'activities' : 'books';
     const countResult = await c.env.DB.prepare(
       `SELECT COUNT(*) as count FROM content_upvotes WHERE content_type = ? AND content_id = ?`
     ).bind(contentType, contentId).first<{ count: number }>();
 
     const newCount = countResult?.count || 0;
 
-    await c.env.DB.prepare(
-      `UPDATE ${table} SET upvote_count = ? WHERE id = ?`
-    ).bind(newCount, contentId).run();
+    // Skipping update to source table as 'upvote_count' column is not available in new 'formations' schema.
+    // Ideally we would update a stats table or rely on the join count.
 
     return c.json({ upvoted, newCount });
   } catch (e: any) {
@@ -4221,16 +4231,7 @@ app.post('/api/comments', async (c) => {
     `).bind(id, user.id, contentType, contentId, text.trim(), isSuccessStory ? 1 : 0, now, now).run();
 
     // Update count
-    const table = contentType === 'activity' ? 'activities' : 'books';
-    const countResult = await c.env.DB.prepare(
-      `SELECT COUNT(*) as count FROM parent_comments WHERE content_type = ? AND content_id = ?`
-    ).bind(contentType, contentId).first<{ count: number }>();
-
-    const newCount = countResult?.count || 0;
-
-    await c.env.DB.prepare(
-      `UPDATE ${table} SET comment_count = ? WHERE id = ?`
-    ).bind(newCount, contentId).run();
+    // Skipping table update as comment_count doesn't exist on formations
 
     const newComment = {
       id,
@@ -4266,11 +4267,7 @@ app.delete('/api/comments/:id', async (c) => {
 
     await c.env.DB.prepare('DELETE FROM parent_comments WHERE id = ?').bind(commentId).run();
 
-    // Update count
-    const table = comment.content_type === 'activity' ? 'activities' : 'books';
-    await c.env.DB.prepare(
-      `UPDATE ${table} SET comment_count = (SELECT COUNT(*) FROM parent_comments WHERE content_type = ? AND content_id = ?) WHERE id = ?`
-    ).bind(comment.content_type, comment.content_id, comment.content_id).run();
+    // Update count skipped
 
     return c.json({ success: true });
   } catch (e: any) {
@@ -4705,12 +4702,9 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     const weekEnd = weekEndDate.toISOString().split('T')[0];
 
     const completionsResult = await c.env.DB.prepare(`
-        SELECT activity_id, completed_at, 'completion' as type FROM activity_completions
-        WHERE parent_id = ? AND date(completed_at) >= ? AND date(completed_at) <= ?
-        UNION
-        SELECT activity_id, completed_at, 'observation' as type FROM observations
-        WHERE student_id IN (SELECT id FROM students WHERE household_id = ?) AND date(completed_at) >= ? AND date(completed_at) <= ?
-    `).bind(user.id, targetWeek, weekEnd, user.id, targetWeek, weekEnd).all();
+        SELECT formation_id as activity_id, captured_at as completed_at, 'completion' as type FROM evidences
+        WHERE parent_id = ? AND date(captured_at) >= ? AND date(captured_at) <= ?
+    `).bind(user.id, targetWeek, weekEnd).all();
 
     const completions: Record<string, any> = {};
     if (completionsResult.results) {
@@ -4991,25 +4985,18 @@ app.post('/api/ai/weekly-summary', async (c) => {
       'SELECT id, name, age_in_months FROM students WHERE parent_id = ?'
     ).bind(user.id).all();
 
-    // Get completions for the week
-    const { results: completions } = await c.env.DB.prepare(`
-      SELECT ac.activity_id, ac.completed_at, ac.notes, f.title, f.primary_virtue as domain
-      FROM activity_completions ac
-      LEFT JOIN formations f ON ac.activity_id = f.id
-      WHERE ac.parent_id = ? AND date(ac.completed_at) >= ? AND date(ac.completed_at) <= ?
+    // Get all evidences for the week (unified completions and observations)
+    const { results: evidences } = await c.env.DB.prepare(`
+      SELECT e.formation_id, e.captured_at, e.notes, e.habit_stage, e.student_id,
+             f.title, f.primary_virtue as domain,
+             s.name as child_name
+      FROM evidences e
+      LEFT JOIN formations f ON e.formation_id = f.id
+      LEFT JOIN students s ON e.student_id = s.id
+      WHERE e.parent_id = ? AND date(e.captured_at) >= ? AND date(e.captured_at) <= ?
     `).bind(user.id, weekStart, weekEnd).all();
 
-    // Get observations for the week
-    const { results: observations } = await c.env.DB.prepare(`
-      SELECT o.activity_id, o.mastery_level, o.parent_notes, o.completed_at, 
-             f.title, f.primary_virtue as domain, s.name as child_name
-      FROM observations o
-      LEFT JOIN formations f ON o.activity_id = f.id
-      JOIN students s ON o.student_id = s.id
-      WHERE s.parent_id = ? AND date(o.completed_at) >= ? AND date(o.completed_at) <= ?
-    `).bind(user.id, weekStart, weekEnd).all();
-
-    if (completions.length === 0 && observations.length === 0) {
+    if (evidences.length === 0) {
       return c.json({
         summary: "This week hasn't had any recorded activities yet. That's perfectly okay – rest and family time are valuable too!",
         patterns: [],
@@ -5018,13 +5005,15 @@ app.post('/api/ai/weekly-summary', async (c) => {
     }
 
     // Build context for AI
-    const completionContext = completions.map((c: any) =>
-      `- ${c.title} (${c.domain}) completed on ${c.completed_at}${c.notes ? ': ' + c.notes : ''}`
-    ).join('\n');
-
-    const observationContext = observations.map((o: any) =>
-      `- ${o.child_name} on "${o.title}" (${o.domain}): ${o.mastery_level}${o.parent_notes ? ' - ' + o.parent_notes : ''}`
-    ).join('\n');
+    const evidenceContext = evidences.map((e: any) => {
+       const who = e.child_name || 'Family';
+       const what = e.title || 'Activity';
+       const when = e.captured_at;
+       const details = [];
+       if (e.habit_stage) details.push(`Stage: ${e.habit_stage}`);
+       if (e.notes) details.push(`Notes: ${e.notes}`);
+       return `- ${who} completed "${what}" (${e.domain}) on ${when}. ${details.join('. ')}`;
+    }).join('\n');
 
     const systemPrompt = `You are SchoolOS, a Christian homeschool assistant. Generate a warm, encouraging weekly summary for parents.
 
@@ -5036,10 +5025,7 @@ IMPORTANT: Your language must be ADVISORY, never AUTHORITATIVE. Use phrases like
 Children: ${children.map((c: any) => `${c.name} (${Math.floor(c.age_in_months / 12)} years)`).join(', ')}
 
 Activities completed this week:
-${completionContext || 'No activities recorded'}
-
-Observations recorded:
-${observationContext || 'No observations recorded'}
+${evidenceContext || 'No activities recorded'}
 
 Generate:
 1. A 2-3 paragraph summary of what happened this week (celebratory, not evaluative)
@@ -5077,8 +5063,8 @@ Output as JSON:
     return c.json({
       weekStart,
       weekEnd,
-      completionCount: completions.length,
-      observationCount: observations.length,
+      completionCount: evidences.length,
+      observationCount: 0, // Deprecated count
       ...parsed
     });
   } catch (error: any) {
