@@ -4,7 +4,7 @@
 -- 1. Add column if it doesn't exist. 
 -- Note: SQLite does not support IF NOT EXISTS in ADD COLUMN. 
 -- We assume it's missing based on previous schema state.
-ALTER TABLE formations ADD COLUMN audio_url TEXT;
+-- ALTER TABLE formations ADD COLUMN audio_url TEXT;
 
 -- 2. Update Formations with Audio URLs
 -- Source: Legacy Migration 0030
