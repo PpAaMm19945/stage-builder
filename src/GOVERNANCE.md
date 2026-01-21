@@ -1,4 +1,4 @@
-# SchoolOS Governance Rules
+# FamilyPath Governance Rules
 
 > This document defines the code organization rules for this project. All agents and contributors must follow these rules.
 

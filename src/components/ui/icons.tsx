@@ -62,6 +62,7 @@ export {
   UserPlus,
   ArrowsClockwise,
   CircleNotch,
+  Path,
 } from "@phosphor-icons/react";
 
 // Re-export types

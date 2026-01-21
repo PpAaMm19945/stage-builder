@@ -2,13 +2,13 @@
 
 > **Read this first before making any code changes.**
 
-This document provides quick context for AI coding assistants (Claude, Gemini, Copilot, etc.) working on HomeLine Academy.
+This document provides quick context for AI coding assistants (Claude, Gemini, Copilot, etc.) working on FamilyPath.
 
 ---
 
 ## What This App Is
 
-HomeLine Academy is a **family formation platform** for home education. Parents add their children, and the app generates daily learning activities scaled to each child's age. The content is grounded in Reformed Christian theology.
+FamilyPath is a **family formation platform** for home education. Parents add their children, and the app generates daily learning activities scaled to each child's age. The content is grounded in Reformed Christian theology.
 
 **Core insight:** We don't teach "subjects"—we form souls. Activities are called "formations."
 

@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
-import { Target, ChartLineUp, Lightbulb, Student } from '@phosphor-icons/react';
+import { Target, ChartLineUp, Lightbulb, Path } from '@phosphor-icons/react';
 
 export default function Login() {
   const handleLogin = () => {
@@ -14,10 +14,10 @@ export default function Login() {
       <header className="p-4 md:p-6">
         <div className="flex items-center gap-2">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <Student className="h-6 w-6 text-primary-foreground" />
+            <Path className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
-            SchoolOS
+            FamilyPath
           </span>
         </div>
       </header>
@@ -28,10 +28,10 @@ export default function Login() {
           {/* Hero */}
           <div className="space-y-4">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-              Welcome to SchoolOS
+              Welcome to FamilyPath
             </h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              A personalized learning journey for your child, guided by you.
+              A simple daily rhythm for your family. Hymn, verse, book, activity.
             </p>
           </div>
 
@@ -101,7 +101,7 @@ export default function Login() {
       {/* Footer */}
       <footer className="p-4 md:p-6 text-center">
         <p className="text-sm text-muted-foreground">
-          © 2024 SchoolOS. Designed for parents who care.
+          © 2024 FamilyPath. Made with love for families.
         </p>
       </footer>
     </div>

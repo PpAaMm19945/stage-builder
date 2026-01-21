@@ -1,4 +1,4 @@
-// SchoolOS Cloudflare Worker API
+// FamilyPath Cloudflare Worker API
 // Uses Hono for routing, D1 for database, JWT for auth
 
 import { Hono } from 'hono';

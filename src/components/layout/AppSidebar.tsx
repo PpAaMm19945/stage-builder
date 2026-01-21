@@ -5,7 +5,7 @@ import {
   Books,
   TrendUp,
   SlidersHorizontal,
-  GraduationCap,
+  Path,
   Heart,
   SignOut,
   Baby,
@@ -76,10 +76,10 @@ export function AppSidebar() {
             className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
           >
             <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <GraduationCap className="h-5 w-5 text-primary-foreground" weight="duotone" />
+              <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
             </div>
             <span className="font-display text-lg font-bold text-foreground">
-              SchoolOS
+              FamilyPath
             </span>
           </button>
         </SidebarHeader>
@@ -134,7 +134,7 @@ export function AppSidebar() {
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-green-600 dark:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 w-full"
                   >
                     <Heart className="h-4 w-4" weight="fill" />
-                    <span className="font-medium">Support SchoolOS</span>
+                    <span className="font-medium">Support FamilyPath</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>
