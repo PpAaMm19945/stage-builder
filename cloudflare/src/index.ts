@@ -466,6 +466,7 @@ app.use('*', cors({
       'https://stage-builder-9hh.pages.dev',
       'http://localhost:5173',
       'http://localhost:3000',
+      'http://localhost:8080',
     ];
     // Also allow any lovable.app subdomain
     if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.lovable.app'))) {
