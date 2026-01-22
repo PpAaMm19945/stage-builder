@@ -98,14 +98,14 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                             {/* Render Content Based on Type */}
                             {activeItem?.type === 'liturgy' && activeItem.data?.items && (
                                 <div className="space-y-4">
-                                    {activeItem.data.items.map((item: any) => (
+                                    {(activeItem.data.items || []).filter((item: any) => item && item.id).map((item: any) => (
                                         <FormationCard
                                             key={item.id}
                                             formation={{
                                                 id: item.id,
-                                                title: item.title,
+                                                title: item.title || 'Liturgy Item',
                                                 description: item.reference || '',
-                                                formation_type: item.type, // types like 'catechism' work with FormationCard
+                                                formation_type: item.type || 'catechism',
                                                 primary_virtue: 'Wisdom',
                                                 context_anchor: 'Morning_Circle',
                                                 min_age_months: 0,
@@ -114,7 +114,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                                 guide_steps: [],
                                                 parent_posture: '',
                                                 materials: [],
-                                                liturgical_script: item.content,
+                                                liturgical_script: item.content || '',
                                                 is_active: 1,
                                                 content_source: 'liturgy'
                                             }}
