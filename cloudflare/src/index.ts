@@ -3706,25 +3706,55 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       // Inside images/ subfolder within book
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
+      `books/${series}/${bookId}/images/cover.jpeg`,
+
+      // Some series store per-book cover images at series/images/{bookId}.png
+      // (e.g., books/pastor_curtis_knapp/images/before_you_tie_the_knot.png)
+      `books/${series}/images/${bookId}.png`,
+      `books/${series}/images/${bookId}.jpg`,
+      `books/${series}/images/${bookId}.jpeg`,
+
+      // Some books store the cover as images/{bookId}.png inside the book folder
+      `books/${series}/${bookId}/images/${bookId}.png`,
+      `books/${series}/${bookId}/images/${bookId}.jpg`,
+      `books/${series}/${bookId}/images/${bookId}.jpeg`,
+
       // Shared series images folder (e.g., pastor_curtis_knapp/images/cover.png)
       `books/${series}/images/cover.png`,
       `books/${series}/images/cover.jpg`,
+      `books/${series}/images/cover.jpeg`,
       // Without books/ prefix variants
       `${series}/${bookId}/cover.png`,
       `${series}/${bookId}/cover.jpg`,
       `${series}/${bookId}/images/cover.png`,
       `${series}/${bookId}/images/cover.jpg`,
+      `${series}/${bookId}/images/cover.jpeg`,
+      `${series}/images/${bookId}.png`,
+      `${series}/images/${bookId}.jpg`,
+      `${series}/images/${bookId}.jpeg`,
+      `${series}/${bookId}/images/${bookId}.png`,
+      `${series}/${bookId}/images/${bookId}.jpg`,
+      `${series}/${bookId}/images/${bookId}.jpeg`,
       `${series}/images/cover.png`,
       `${series}/images/cover.jpg`,
+      `${series}/images/cover.jpeg`,
       // Fallback: use page-01 as cover (per R2_BUCKET_GUIDE.md convention)
       `books/${series}/${bookId}/images/page-01.png`,
       `books/${series}/${bookId}/images/page-01.jpg`,
+      `books/${series}/${bookId}/images/page_01.png`,
+      `books/${series}/${bookId}/images/page_01.jpg`,
       `books/${series}/${bookId}/page-01.png`,
       `books/${series}/${bookId}/page-01.jpg`,
+      `books/${series}/${bookId}/page_01.png`,
+      `books/${series}/${bookId}/page_01.jpg`,
       `${series}/${bookId}/images/page-01.png`,
       `${series}/${bookId}/images/page-01.jpg`,
+      `${series}/${bookId}/images/page_01.png`,
+      `${series}/${bookId}/images/page_01.jpg`,
       `${series}/${bookId}/page-01.png`,
       `${series}/${bookId}/page-01.jpg`,
+      `${series}/${bookId}/page_01.png`,
+      `${series}/${bookId}/page_01.jpg`,
     ];
 
     for (const key of pathsToTry) {
@@ -3768,13 +3798,21 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
       // With books/ prefix
       `books/${series}/${bookId}/images/page-${paddedNum}.png`,
       `books/${series}/${bookId}/images/page-${paddedNum}.jpg`,
+      `books/${series}/${bookId}/images/page_${paddedNum}.png`,
+      `books/${series}/${bookId}/images/page_${paddedNum}.jpg`,
       `books/${series}/${bookId}/page-${paddedNum}.png`,
       `books/${series}/${bookId}/page-${paddedNum}.jpg`,
+      `books/${series}/${bookId}/page_${paddedNum}.png`,
+      `books/${series}/${bookId}/page_${paddedNum}.jpg`,
       // Without books/ prefix
       `${series}/${bookId}/images/page-${paddedNum}.png`,
       `${series}/${bookId}/images/page-${paddedNum}.jpg`,
+      `${series}/${bookId}/images/page_${paddedNum}.png`,
+      `${series}/${bookId}/images/page_${paddedNum}.jpg`,
       `${series}/${bookId}/page-${paddedNum}.png`,
       `${series}/${bookId}/page-${paddedNum}.jpg`,
+      `${series}/${bookId}/page_${paddedNum}.png`,
+      `${series}/${bookId}/page_${paddedNum}.jpg`,
     ];
 
     for (const key of pathsToTry) {

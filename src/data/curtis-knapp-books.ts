@@ -1,12 +1,12 @@
 import { Book } from '@/types';
-
-const R2_BASE = 'https://stage-builder.antmwes104-1.workers.dev/books/pastor_curtis_knapp';
 const SERIES_SLUG = 'pastor_curtis_knapp';
 const SERIES_TITLE = 'Selected Works: Booklets on Doctrine, Family, and the Christian Walk';
 
 export const CURTIS_KNAPP_BOOKS: Book[] = [
     {
-        id: 'ck-before-you-tie-the-knot',
+        // IMPORTANT: id must match the filename/key in R2 so the API proxy can resolve PDFs/covers.
+        // R2: books/pastor_curtis_knapp/before_you_tie_the_knot.pdf
+        id: 'before_you_tie_the_knot',
         title: 'Before You Tie The Knot',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -16,14 +16,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/before_you_tie_the_knot.pdf`,
-        coverUrl: `${R2_BASE}/images/before_you_tie_the_knot.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['counseling', 'marriage', 'christian living']
     },
     {
-        id: 'ck-jesus-man-of-sorrows',
+        id: 'jesus_man_of_sorrows',
         title: 'Jesus: Man of Sorrows',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -33,14 +31,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/jesus_man_of_sorrows.pdf`,
-        coverUrl: `${R2_BASE}/images/jesus_man_of_sorrows.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['christology', 'gospel']
     },
     {
-        id: 'ck-john-three-sixteen',
+        id: 'john_three_sixteen',
         title: 'John 3:16',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -50,14 +46,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/john_three_sixteen.pdf`,
-        coverUrl: `${R2_BASE}/images/john_three_sixteen.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['gospel', 'salvation']
     },
     {
-        id: 'ck-mad-at-god',
+        id: 'mad_at_god',
         title: 'Mad at God?',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -67,14 +61,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/mad_at_god.pdf`,
-        coverUrl: `${R2_BASE}/images/mad_at_god.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['counseling', 'suffering']
     },
     {
-        id: 'ck-no-more-fig-leaves',
+        id: 'no_more_fig_leaves',
         title: 'No More Fig Leaves',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -84,14 +76,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/no_more_fig_leaves.pdf`,
-        coverUrl: `${R2_BASE}/images/no_more_fig_leaves.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['sin', 'salvation']
     },
     {
-        id: 'ck-pharisees-and-sadducees',
+        id: 'pharisees_and_sadducees',
         title: 'Pharisees and Sadducees',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -101,14 +91,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/pharisees_and_sadducees.pdf`,
-        coverUrl: `${R2_BASE}/images/pharisees_and_sadducees.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['theology', 'history']
     },
     {
-        id: 'ck-spiritual-counsel-for-seekers',
+        id: 'spiritual_counsel_for_seekers',
         title: 'Spiritual Counsel for Seekers',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -118,14 +106,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/spiritual_counsel_for_seekers.pdf`,
-        coverUrl: `${R2_BASE}/images/spiritual_counsel_for_seekers.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['evangelism', 'salvation']
     },
     {
-        id: 'ck-the-homeschooling-mom',
+        id: 'the_homeschooling_mom',
         title: 'The Homeschooling Mom',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -135,14 +121,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/the_homeschooling_mom.pdf`,
-        coverUrl: `${R2_BASE}/images/the_homeschooling_mom.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['family', 'education']
     },
     {
-        id: 'ck-to-eat-or-not-to-eat',
+        id: 'to_eat_or_not_to_eat_print',
         title: 'To Eat or Not to Eat',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -152,14 +136,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/to_eat_or_not_to_eat_print.pdf`,
-        coverUrl: `${R2_BASE}/images/to_eat_or_not_to_eat_print.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['theology', 'christian liberty']
     },
     {
-        id: 'ck-total-depravity',
+        id: 'total_depravity_booklet',
         title: 'Total Depravity',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -169,14 +151,12 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/total_depravity_booklet.pdf`,
-        coverUrl: `${R2_BASE}/images/total_depravity_booklet.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['theology', 'calvinism']
     },
     {
-        id: 'ck-unity-without-compromise',
+        id: 'unity_without_compromise',
         title: 'Unity Without Compromise',
         author: 'Pastor Curtis Knapp',
         series: SERIES_SLUG,
@@ -186,8 +166,6 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         maxAgeMonths: 1200,
         pageCount: 50,
         renderFormat: 'pdf',
-        pdfUrl: `${R2_BASE}/unity_without_compromise.pdf`,
-        coverUrl: `${R2_BASE}/images/unity_without_compromise.png`,
         learningStage: 'upper-school',
         domain: 'wisdom',
         topics: ['church', 'unity']
