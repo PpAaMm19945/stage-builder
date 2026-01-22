@@ -3699,15 +3699,33 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
     // Covers can be at: book folder level, images/ subfolder, or shared series images/ folder
     // IMPORTANT: Your R2 structure is primarily: books/{series}/{bookId}/images/cover.png
-    // So we try that first, then fall back to shared series covers and finally page-01.
+    // But African Men of Faith uses Title Case folders and "Cover Photo.png" filename.
+    
+    // Helper to convert snake_case to Title Case With Spaces
+    const toTitleCase = (str: string) => str
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    const seriesTitleCase = toTitleCase(series);
+    const bookIdTitleCase = toTitleCase(bookId);
+    
     const pathsToTry = [
-      // Primary (per-book) cover location - picture books
+      // Primary (per-book) cover location - picture books (snake_case)
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
       `books/${series}/${bookId}/images/cover.jpeg`,
-
+      
+      // Title Case folders (African Men of Faith pattern)
+      `books/${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/cover.png`,
+      
+      // Mixed: Title Case series, lowercase book
+      `books/${seriesTitleCase}/${bookId}/images/cover.png`,
+      `books/${seriesTitleCase}/${bookId}/Cover Photo.png`,
+      
       // Series-level images folder with bookId as filename (Pastor Curtis pattern)
-      // e.g. books/pastor_curtis_knapp/images/the_call_to_the_ministry.png
       `books/${series}/images/${bookId}.png`,
       `books/${series}/images/${bookId}.jpg`,
       `books/${series}/images/${bookId}.jpeg`,
@@ -3716,17 +3734,24 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `books/${series}/${bookId}/cover.png`,
       `books/${series}/${bookId}/cover.jpg`,
       `books/${series}/${bookId}/cover.jpeg`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/cover.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/cover.jpg`,
 
       // Shared series-level cover (some collections)
       `books/${series}/images/cover.png`,
       `books/${series}/images/cover.jpg`,
       `books/${series}/images/cover.jpeg`,
 
-      // Fallback: page-01 as cover (with hyphen and underscore variants)
+      // Fallback: page-01 as cover (snake_case)
       `books/${series}/${bookId}/images/page-01.png`,
       `books/${series}/${bookId}/images/page-01.jpg`,
       `books/${series}/${bookId}/images/page_01.png`,
       `books/${series}/${bookId}/images/page_01.jpg`,
+      
+      // Fallback: Page 1.png (Title Case with spaces - African Men of Faith)
+      `books/${seriesTitleCase}/${bookIdTitleCase}/images/Page 1.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/Page 1.png`,
+      
       `books/${series}/${bookId}/page-01.png`,
       `books/${series}/${bookId}/page-01.jpg`,
       `books/${series}/${bookId}/page_01.png`,
@@ -3736,6 +3761,8 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `${series}/${bookId}/images/cover.png`,
       `${series}/${bookId}/images/cover.jpg`,
       `${series}/${bookId}/images/cover.jpeg`,
+      `${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
+      `${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
       `${series}/images/${bookId}.png`,
       `${series}/images/${bookId}.jpg`,
       `${series}/images/${bookId}.jpeg`,
