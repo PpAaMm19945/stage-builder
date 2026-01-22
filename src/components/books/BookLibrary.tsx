@@ -200,15 +200,16 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             <Carousel
                                 opts={{
                                     align: "start",
-                                    dragFree: true,
+                                    dragFree: false, // Snap scrolling for Netflix feel
+                                    containScroll: "trimSnaps", // Prevent overscroll
                                 }}
                                 className="w-full group relative"
                             >
-                                <CarouselContent className="-ml-1">
+                                <CarouselContent className="-ml-3 md:-ml-4">
                                     {booksBySeries[series].map(book => (
                                         <CarouselItem 
                                             key={`${book.series}-${book.id}`} 
-                                            className="pl-1 shrink-0 grow-0 w-auto"
+                                            className="pl-3 md:pl-4 shrink-0 grow-0 w-auto"
                                         >
                                             <BookCard
                                                 book={book}
