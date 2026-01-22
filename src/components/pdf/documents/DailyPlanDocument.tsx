@@ -121,7 +121,7 @@ export const DailyPlanDocument = ({ day, children }: DailyPlanDocumentProps) => 
                             <View style={styles.checkbox} />
                             <View style={styles.content}>
                                 <Text style={styles.itemTitle}>{item.title}</Text>
-                                <Text style={styles.itemDesc}>{item.content.substring(0, 100)}{item.content.length > 100 ? '...' : ''}</Text>
+                                <Text style={styles.itemDesc}>{(item.content || '').substring(0, 100)}{(item.content || '').length > 100 ? '...' : ''}</Text>
                             </View>
                         </View>
                     ))}
@@ -143,7 +143,7 @@ export const DailyPlanDocument = ({ day, children }: DailyPlanDocumentProps) => 
                                 <Text style={styles.itemTitle}>{act.title}</Text>
                                 <Text style={styles.itemDesc}>{act.description}</Text>
                                 <Text style={styles.itemMeta}>
-                                    {act.duration_minutes} min • {domain} • Materials: {act.materials.join(', ')}
+                                    {act.duration_minutes} min • {domain} • Materials: {(act.materials || []).join(', ')}
                                 </Text>
                             </View>
                         </View>

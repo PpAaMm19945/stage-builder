@@ -370,14 +370,16 @@ export default function Dashboard() {
       });
 
       // Add Path Items (Hymns, Catechism from active paths)
-      if (pathsToday?.items) {
-        pathsToday.items.forEach((pathItem: TodayPathItem, index: number) => {
-          rawItems.push({
-            id: `path-${pathItem.path_id}-${index}`,
-            timeSlot: pathItem.item_type === 'hymn' ? '08:15' : '08:30',
-            title: pathItem.item_title || pathItem.path_type,
-            description: pathItem.path_title || '',
-            type: 'path_item',
+      if (pathsToday?.items && Array.isArray(pathsToday.items)) {
+        pathsToday.items
+          .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
+          .forEach((pathItem: TodayPathItem, index: number) => {
+            rawItems.push({
+              id: `path-${pathItem.path_id}-${index}`,
+              timeSlot: pathItem.item_type === 'hymn' ? '08:15' : '08:30',
+              title: pathItem.item_title || pathItem.path_type || 'Path Item',
+              description: pathItem.path_title || '',
+              type: 'path_item',
             status: 'upcoming',
             data: {
               ...pathItem,
@@ -617,7 +619,7 @@ export default function Dashboard() {
               onComplete={handleLiturgyToggle}
             />
           ))}
-          {liturgyData?.items?.every((i: any) => i.completedToday) && (
+          {liturgyData?.items?.length > 0 && liturgyData.items.every((i: any) => i && i.completedToday) && (
             <Button onClick={() => handleLiturgyAdvance('catechism')} variant="outline" className="w-full">
               Advance Liturgy
             </Button>
@@ -696,7 +698,7 @@ export default function Dashboard() {
             <div key={path.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded-lg">
               <span className="font-medium flex items-center gap-2">
                 <Compass className="w-4 h-4 text-primary" />
-                {path.title}
+                {path.title || path.path_type || 'Learning Path'}
               </span>
               <span className="text-muted-foreground text-xs">
                 {path.subscription?.current_position}/{path.total_items}
