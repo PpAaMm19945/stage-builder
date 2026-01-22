@@ -145,6 +145,8 @@ app.get('/books/*', async (c) => {
 
     // Set cache control for static assets
     headers.set('Cache-Control', 'public, max-age=31536000');
+    headers.set('Access-Control-Allow-Origin', '*');
+    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
 
     return new Response(object.body, {
       headers,
