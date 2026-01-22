@@ -6161,8 +6161,110 @@ app.get('/api/paths/today', async (c) => {
             total,
           };
         }
+      } else if (pathType === 'toddler_dev') {
+        // Get toddler formation at current position
+        const formation = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('toddler', position - 1).first();
+        if (formation) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'activity',
+            item_id: (formation as any).id,
+            item_title: (formation as any).title,
+            item_data: formation,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'early_reading') {
+        // Get reading formation at current position
+        const formation = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('reading', position - 1).first();
+        if (formation) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'activity',
+            item_id: (formation as any).id,
+            item_title: (formation as any).title,
+            item_data: formation,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'history_young') {
+        // Get young history story at current position
+        const story = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? AND formation_type = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('african_history_young', 'story', position - 1).first();
+        if (story) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'story',
+            item_id: (story as any).id,
+            item_title: (story as any).title,
+            item_data: story,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'history_full') {
+        // Get full history story at current position
+        const story = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('african_history', position - 1).first();
+        if (story) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'story',
+            item_id: (story as any).id,
+            item_title: (story as any).title,
+            item_data: story,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'pastor_curtis') {
+        // Get Pastor Curtis book at current position
+        const book = await c.env.DB.prepare(
+          'SELECT * FROM books WHERE series = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('pastor_curtis_knapp', position - 1).first();
+        if (book) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'book',
+            item_id: (book as any).id,
+            item_title: (book as any).title,
+            item_data: book,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'liturgy') {
+        // Combine weekly liturgy items
+        item = {
+          path_id: (sub as any).path_id,
+          path_title: (sub as any).path_title,
+          path_type: pathType,
+          item_type: 'liturgy',
+          item_id: `liturgy-week-${position}`,
+          item_title: `Week ${position} Liturgy`,
+          item_data: { week: position },
+          position,
+          total,
+        };
       }
-      // Add more path types as needed...
 
       if (item) {
         items.push(item);

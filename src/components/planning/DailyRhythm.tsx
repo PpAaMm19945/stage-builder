@@ -97,17 +97,135 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
 
                             {/* Render Content Based on Type */}
                             {activeItem?.type === 'path_item' && (
-                                <div className="space-y-6 text-center py-4">
-                                    <div className="space-y-2">
-                                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                <div className="space-y-6 py-4">
+                                    {/* Path context badge */}
+                                    <div className="text-center">
+                                        <span className="inline-block text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted/50 px-3 py-1 rounded-full">
                                             From: {activeItem.data.pathName}
-                                        </p>
-                                        <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
-                                        <div
-                                            className="prose prose-sm dark:prose-invert mx-auto text-muted-foreground"
-                                            dangerouslySetInnerHTML={{ __html: activeItem.data.content?.content || activeItem.data.content?.description || activeItem.description || '' }}
-                                        />
+                                        </span>
                                     </div>
+
+                                    {/* Hymn rendering */}
+                                    {activeItem.data.item_type === 'hymn' && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                            {activeItem.data.content?.composer && (
+                                                <p className="text-sm text-muted-foreground italic">
+                                                    by {activeItem.data.content.composer}
+                                                </p>
+                                            )}
+                                            <div
+                                                className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: activeItem.data.content?.lyrics || 
+                                                            activeItem.data.content?.content || 
+                                                            activeItem.data.content?.liturgical_script ||
+                                                            activeItem.description || '' 
+                                                }}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                🎵 Sing together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Catechism rendering */}
+                                    {activeItem.data.item_type === 'catechism' && (
+                                        <div className="space-y-4">
+                                            <div className="bg-primary/5 border border-primary/10 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Question</p>
+                                                <p className="text-lg font-semibold">{activeItem.title}</p>
+                                            </div>
+                                            <div className="bg-muted/30 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert"
+                                                    dangerouslySetInnerHTML={{ 
+                                                        __html: activeItem.data.content?.content || 
+                                                                activeItem.data.content?.liturgical_script ||
+                                                                activeItem.description || '' 
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground text-center">
+                                                📖 Recite together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Story/History rendering */}
+                                    {activeItem.data.item_type === 'story' && (
+                                        <div className="space-y-4 text-center">
+                                            <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                            <div
+                                                className="prose prose-sm dark:prose-invert mx-auto text-left"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: activeItem.data.content?.content || 
+                                                            activeItem.data.content?.description ||
+                                                            activeItem.description || '' 
+                                                }}
+                                            />
+                                            <p className="text-sm text-muted-foreground">
+                                                📚 Read aloud together
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Book rendering */}
+                                    {activeItem.data.item_type === 'book' && (
+                                        <div className="space-y-4 text-center">
+                                            <div className="mx-auto w-32 h-44 bg-muted rounded shadow-sm flex items-center justify-center">
+                                                <BookOpen className="h-12 w-12 text-muted-foreground" />
+                                            </div>
+                                            <h3 className="text-xl font-display font-bold">{activeItem.title}</h3>
+                                            {activeItem.data.content?.author && (
+                                                <p className="text-sm text-muted-foreground">
+                                                    by {activeItem.data.content.author}
+                                                </p>
+                                            )}
+                                            <p className="text-muted-foreground">
+                                                {activeItem.data.content?.description || 'Grab the book and read together!'}
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Activity rendering */}
+                                    {activeItem.data.item_type === 'activity' && (
+                                        <div className="space-y-4">
+                                            <h3 className="text-xl font-display font-bold text-center">{activeItem.title}</h3>
+                                            <div
+                                                className="prose prose-sm dark:prose-invert"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: activeItem.data.content?.description || 
+                                                            activeItem.data.content?.content ||
+                                                            activeItem.description || '' 
+                                                }}
+                                            />
+                                            {activeItem.data.content?.materials && (
+                                                <div className="bg-muted/30 rounded-lg p-4">
+                                                    <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-2">Materials Needed</p>
+                                                    <p className="text-sm">{activeItem.data.content.materials}</p>
+                                                </div>
+                                            )}
+                                        </div>
+                                    )}
+
+                                    {/* Fallback for unknown item types */}
+                                    {!['hymn', 'catechism', 'story', 'book', 'activity'].includes(activeItem.data.item_type) && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                            <div
+                                                className="prose prose-sm dark:prose-invert mx-auto"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: activeItem.data.content?.content || 
+                                                            activeItem.data.content?.description || 
+                                                            activeItem.description || '' 
+                                                }}
+                                            />
+                                        </div>
+                                    )}
+
+                                    {/* Complete button */}
                                     <div className="pt-4">
                                         <Button onClick={() => handleSheetComplete()} size="lg" className="w-full">
                                             Mark Complete
