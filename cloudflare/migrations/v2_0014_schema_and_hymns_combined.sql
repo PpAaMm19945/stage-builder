@@ -168,7 +168,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_abide_with_me', 'Abide with Me', 'liturgy', 'Worship', 'Affection',
+  'hymn_abide_with_me', 'Abide with Me', 'liturgy', 'Wonder', 'Affection',
   '1. Abide with me: fast falls the eventide;
 The darkness deepens; Lord, with me abide!
 (Full hymn available)',
@@ -189,7 +189,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_the_old_rugged_cross', 'The Old Rugged Cross', 'liturgy', 'Worship', 'Affection',
+  'hymn_the_old_rugged_cross', 'The Old Rugged Cross', 'liturgy', 'Wonder', 'Affection',
   '1. On a hill far away stood an old rugged cross,
 The emblem of suff''ring and shame;
 (Full hymn available)',
@@ -210,7 +210,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_this_is_my_fathers_world', 'This Is My Father''s World', 'liturgy', 'Worship', 'Affection',
+  'hymn_this_is_my_fathers_world', 'This Is My Father''s World', 'liturgy', 'Wonder', 'Affection',
   '1. This is my Father''s world,
 And to my list''ning ears,
 All nature sings, and round me rings
@@ -234,7 +234,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_and_can_it_be', 'And Can It Be?', 'liturgy', 'Worship', 'Affection',
+  'hymn_and_can_it_be', 'And Can It Be?', 'liturgy', 'Wonder', 'Affection',
   '1. And can it be that I should gain
 An int''rest in the Saviour''s blood?
 Died He for me, who caused His pain?
@@ -257,7 +257,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_arise_my_soul_arise', 'Arise, My Soul, Arise', 'liturgy', 'Worship', 'Affection',
+  'hymn_arise_my_soul_arise', 'Arise, My Soul, Arise', 'liturgy', 'Wonder', 'Affection',
   '1. Arise, my soul, arise;
 Shake off thy guilty fears;
 The bleeding Sacrifice
@@ -280,7 +280,7 @@ INSERT INTO formations (
   id, title, formation_type, primary_virtue, biblical_faculty,
   description, liturgical_script, context_anchor, min_age_months, max_age_months, audio_url
 ) VALUES (
-  'hymn_christ_arose', 'Christ Arose', 'liturgy', 'Worship', 'Affection',
+  'hymn_christ_arose', 'Christ Arose', 'liturgy', 'Wonder', 'Affection',
   '1. Low in the grave He lay,
 Jesus my Saviour!
 Waiting the coming day,

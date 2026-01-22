@@ -17,7 +17,7 @@ INSERT INTO formations (
     'hymn_abide_with_me',
     'Abide with Me',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. Abide with me: fast falls the eventide;
 
@@ -89,7 +89,7 @@ INSERT INTO formations (
     'hymn_the_old_rugged_cross',
     'The Old Rugged Cross',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. On a hill far away stood an old rugged cross,
 
@@ -166,7 +166,7 @@ INSERT INTO formations (
     'hymn_this_is_my_fathers_world',
     'This Is My Father''s World',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. This is my Father''s world,
 
@@ -249,7 +249,7 @@ INSERT INTO formations (
     'hymn_and_can_it_be',
     'And Can It Be?',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. And can it be that I should gain
 
@@ -341,7 +341,7 @@ INSERT INTO formations (
     'hymn_arise_my_soul_arise',
     'Arise, My Soul, Arise',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. Arise, my soul, arise;
 
@@ -432,7 +432,7 @@ INSERT INTO formations (
     'hymn_christ_arose',
     'Christ Arose',
     'liturgy',
-    'Worship',
+    'Wonder',
     'Affection',
     '1. Low in the grave He lay,
 
