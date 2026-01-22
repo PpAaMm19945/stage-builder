@@ -64,11 +64,12 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         }
     };
 
-    // Clamp-based sizing: min, preferred (viewport-relative), max
-    // This ensures cards are ALWAYS smaller on mobile than desktop
+    // Clamp-based sizing for Netflix-style horizontal scroll
+    // On mobile (~375px): landscape ~140px (2.5 visible), portrait ~110px (3+ visible)
+    // On desktop: larger cards with max constraints
     const sizeClass = isLandscape 
-        ? 'w-[clamp(160px,50vw,280px)]'  // Landscape: 160px min, ~50% viewport, 280px max
-        : 'w-[clamp(100px,35vw,180px)]'; // Portrait: 100px min, ~35% viewport, 180px max
+        ? 'w-[clamp(140px,38vw,240px)]'  // Landscape: 140px min, 38vw, 240px max
+        : 'w-[clamp(110px,28vw,160px)]'; // Portrait: 110px min, 28vw, 160px max
     
     // Debug logging for cover URLs
     useEffect(() => {
