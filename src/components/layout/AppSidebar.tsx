@@ -39,9 +39,9 @@ import {
 
 // Simplified primary navigation (stage-agnostic)
 const primaryLinks = [
-  { title: 'Home', url: '/', icon: House },
-  { title: 'Library', url: '/early-years/activities', icon: Books }, // Combined Books + Activities
-  { title: 'Progress', url: '/early-years/progress', icon: TrendUp },
+  { title: 'Home', url: '/dashboard', icon: House },
+  { title: 'Library', url: '/library', icon: Books },
+  { title: 'Progress', url: '/progress', icon: TrendUp },
 ];
 
 export function AppSidebar() {
@@ -92,9 +92,9 @@ export function AppSidebar() {
                 {primaryLinks.map((link) => (
                   <SidebarMenuItem key={link.url}>
                     <SidebarMenuButton
-                      isActive={
+                    isActive={
                         location.pathname === link.url ||
-                        (link.url !== '/' && location.pathname.startsWith(link.url))
+                        (link.url !== '/dashboard' && location.pathname.startsWith(link.url))
                       }
                       onClick={() => handleNavigation(link.url)}
                       className="flex items-center gap-3"

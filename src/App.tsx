@@ -21,15 +21,17 @@ import { PageLoader } from "@/components/ui/PageLoader";
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
+import { PublicLibraryLayout } from "@/components/layout/PublicLibraryLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Pages - Lazy Loaded
+const Landing = lazy(() => import("./pages/Landing"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
 const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Planner = lazy(() => import("./pages/early-years/Planner"));
 const DailyPractices = lazy(() => import("./pages/early-years/DailyPractices"));
-const Library = lazy(() => import("./pages/early-years/Library"));
+const LibraryPage = lazy(() => import("./pages/library/index"));
 const ActivityViewer = lazy(() => import("./pages/early-years/ActivityViewer"));
 const ProgressPage = lazy(() => import("./pages/early-years/Progress"));
 const Reading = lazy(() => import("./pages/early-years/Reading"));
@@ -56,28 +58,42 @@ const App = () => (
               <BrowserRouter>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    {/* Auth Callback - Must be outside PublicLayout */}
+                    {/* Landing Page - Public */}
+                    <Route path="/" element={<Landing />} />
+
+                    {/* Auth Callback - Must be outside layouts */}
                     <Route path="/auth/callback" element={<AuthCallback />} />
 
-                    {/* Public Routes */}
+                    {/* Public Auth Routes */}
                     <Route element={<PublicLayout />}>
                       <Route path="/login" element={<Login />} />
-                      <Route path="/privacy" element={<PrivacyPolicy />} />
-                      <Route path="/terms" element={<TermsOfService />} />
                     </Route>
 
-                    {/* Protected Routes */}
-                    <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                      <Route path="/" element={<Dashboard />} />
+                    {/* Public Library Routes - Accessible without login */}
+                    <Route element={<PublicLibraryLayout />}>
+                      <Route path="/library" element={<LibraryPage />} />
+                      <Route path="/library/activities" element={<LibraryPage />} />
+                      <Route path="/library/books" element={<LibraryPage />} />
+                      <Route path="/library/hymns" element={<LibraryPage />} />
+                      <Route path="/library/activities/:id" element={<ActivityViewer />} />
+                      <Route path="/privacy" element={<PrivacyPolicy />} />
+                      <Route path="/terms" element={<TermsOfService />} />
+                      <Route path="/support" element={<SupportPage />} />
+                    </Route>
 
-                      {/* Early Years */}
-                      <Route path="/early-years/planner" element={<Planner />} />
+                    {/* Protected Routes - Requires Auth */}
+                    <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
+                      <Route path="/dashboard" element={<Dashboard />} />
+                      <Route path="/planner" element={<Planner />} />
+                      <Route path="/progress" element={<ProgressPage />} />
+                      <Route path="/settings" element={<Settings />} />
+
+                      {/* Early Years - Legacy routes that still need auth */}
+                      <Route path="/early-years/planner" element={<Navigate to="/planner" replace />} />
                       <Route path="/early-years/daily-practices" element={<DailyPractices />} />
-                      <Route path="/early-years/today" element={<Navigate to="/" replace />} />
-                      <Route path="/early-years/activities" element={<Library />} />
-                      <Route path="/early-years/activities/:id" element={<ActivityViewer />} />
+                      <Route path="/early-years/today" element={<Navigate to="/dashboard" replace />} />
                       <Route path="/early-years/reading" element={<Reading />} />
-                      <Route path="/early-years/progress" element={<ProgressPage />} />
+                      <Route path="/early-years/progress" element={<Navigate to="/progress" replace />} />
                       <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
                       <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
 
@@ -86,15 +102,13 @@ const App = () => (
                       <Route path="/middle-school" element={<LockedStage />} />
                       <Route path="/upper-school" element={<LockedStage />} />
 
-                      {/* Settings */}
-                      <Route path="/settings" element={<Settings />} />
-
-                      {/* Support */}
-                      <Route path="/support" element={<SupportPage />} />
-
                       {/* Phase 3: Student Portal */}
                       <Route path="/student" element={<StudentPortal />} />
                     </Route>
+
+                    {/* Backward Compatibility Redirects */}
+                    <Route path="/early-years/activities" element={<Navigate to="/library" replace />} />
+                    <Route path="/early-years/activities/:id" element={<Navigate to="/library/activities/:id" replace />} />
 
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
