@@ -1386,7 +1386,7 @@ app.get('/api/formations', async (c) => {
   const context = c.req.query('context');
   const limit = c.req.query('limit') || '50';
 
-  let query = "SELECT * FROM formations WHERE is_active = 1 AND (is_archived = 0 OR is_archived IS NULL) AND (content_status != 'blacklisted' OR content_status IS NULL)";
+  let query = "SELECT * FROM formations WHERE is_active = 1";
   const params: any[] = [];
 
   if (virtue) {
@@ -1416,15 +1416,25 @@ app.get('/api/formations', async (c) => {
   const stmt = c.env.DB.prepare(query);
   const { results } = await stmt.bind(...params).all();
 
+  // Safe JSON parse helper
+  const safeParseJson = (value: any, fallback: any[] = []) => {
+    if (!value) return fallback;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
   // Parse JSON fields
   const formations = results.map((f: any) => ({
     ...f,
-    materials: JSON.parse(f.materials || '[]'),
-    guide_steps: JSON.parse(f.guide_steps || '[]'),
-    learning_outcomes: JSON.parse(f.learning_outcomes || '[]'),
-    success_indicators: JSON.parse(f.success_indicators || '[]'),
-    tips: JSON.parse(f.tips || '[]'),
-    tiered_expectations: JSON.parse(f.tiered_expectations || '[]')
+    materials: safeParseJson(f.materials, []),
+    guide_steps: safeParseJson(f.guide_steps, []),
+    learning_outcomes: safeParseJson(f.learning_outcomes, []),
+    success_indicators: safeParseJson(f.success_indicators, []),
+    tips: safeParseJson(f.tips, []),
+    tiered_expectations: safeParseJson(f.tiered_expectations, [])
   }));
 
   return c.json(formations);
@@ -1441,14 +1451,24 @@ app.get('/api/formations/:id', async (c) => {
     return c.json({ error: 'Formation not found' }, 404);
   }
 
+  // Safe JSON parse helper
+  const safeParseJson = (value: any, fallback: any[] = []) => {
+    if (!value) return fallback;
+    try {
+      return JSON.parse(value);
+    } catch {
+      return fallback;
+    }
+  };
+
   return c.json({
     ...formation,
-    materials: JSON.parse((formation as any).materials || '[]'),
-    guide_steps: JSON.parse((formation as any).guide_steps || '[]'),
-    learning_outcomes: JSON.parse((formation as any).learning_outcomes || '[]'),
-    success_indicators: JSON.parse((formation as any).success_indicators || '[]'),
-    tips: JSON.parse((formation as any).tips || '[]'),
-    tiered_expectations: JSON.parse((formation as any).tiered_expectations || '[]')
+    materials: safeParseJson((formation as any).materials, []),
+    guide_steps: safeParseJson((formation as any).guide_steps, []),
+    learning_outcomes: safeParseJson((formation as any).learning_outcomes, []),
+    success_indicators: safeParseJson((formation as any).success_indicators, []),
+    tips: safeParseJson((formation as any).tips, []),
+    tiered_expectations: safeParseJson((formation as any).tiered_expectations, [])
   });
 });
 
