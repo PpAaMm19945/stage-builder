@@ -20,7 +20,7 @@ export interface RhythmItem {
     timeSlot: string; // "08:00", "Morning", etc.
     title: string;
     description?: string;
-    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header';
+    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item';
     status: 'upcoming' | 'current' | 'completed';
     data?: any; // The full object (Activity, Book, etc.)
 }
@@ -96,6 +96,26 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                             )}
 
                             {/* Render Content Based on Type */}
+                            {activeItem?.type === 'path_item' && (
+                                <div className="space-y-6 text-center py-4">
+                                    <div className="space-y-2">
+                                        <p className="text-sm font-medium text-muted-foreground uppercase tracking-wider">
+                                            From: {activeItem.data.pathName}
+                                        </p>
+                                        <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                        <div
+                                            className="prose prose-sm dark:prose-invert mx-auto text-muted-foreground"
+                                            dangerouslySetInnerHTML={{ __html: activeItem.data.content?.content || activeItem.data.content?.description || activeItem.description || '' }}
+                                        />
+                                    </div>
+                                    <div className="pt-4">
+                                        <Button onClick={() => handleSheetComplete()} size="lg" className="w-full">
+                                            Mark Complete
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
                             {activeItem?.type === 'liturgy' && activeItem.data?.items && (
                                 <div className="space-y-4">
                                     {(activeItem.data.items || []).filter((item: any) => item && item.id).map((item: any) => (
@@ -179,7 +199,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                             )}
 
                             {/* Fallback */}
-                            {!['liturgy', 'activity', 'book'].includes(activeItem?.type || '') && (
+                            {!['liturgy', 'activity', 'book', 'path_item'].includes(activeItem?.type || '') && (
                                 <div className="py-12 text-center space-y-4">
                                     <p>Details for this item are simple.</p>
                                     <Button onClick={() => handleSheetComplete()}>Mark Complete</Button>

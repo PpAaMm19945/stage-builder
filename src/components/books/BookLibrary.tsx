@@ -10,6 +10,7 @@ import { Book as BookIcon, ArrowSquareOut } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 import { CURTIS_KNAPP_BOOKS } from '@/data/curtis-knapp-books';
 import { Button } from '@/components/ui/button';
+import { GuestBanner, useGuestViewTracker } from '@/components/library/GuestBanner';
 import {
     Carousel,
     CarouselContent,
@@ -117,9 +118,12 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         });
     }, [booksBySeries]);
 
+    const { trackView } = useGuestViewTracker();
+
     const handleBookClick = useCallback((book: Book) => {
+        trackView();
         setSelectedBook(book);
-    }, []);
+    }, [trackView]);
 
     if (error) {
         return (
@@ -235,6 +239,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                 onOpenChange={(open) => !open && setSelectedBook(null)}
                 childrenIds={children.map(c => c.id)}
             />
+
+            <GuestBanner />
         </div>
     );
 }
