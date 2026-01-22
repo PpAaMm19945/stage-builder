@@ -64,12 +64,12 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         }
     };
 
-    // Clamp-based sizing for Netflix-style horizontal scroll
-    // On mobile (~375px): landscape ~140px (2.5 visible), portrait ~110px (3+ visible)
-    // On desktop: larger cards with max constraints
-    const sizeClass = isLandscape 
-        ? 'w-[clamp(140px,38vw,240px)]'  // Landscape: 140px min, 38vw, 240px max
-        : 'w-[clamp(110px,28vw,160px)]'; // Portrait: 110px min, 28vw, 160px max
+    // Netflix-style fixed-height rows with variable width cards
+    // Height is fixed per row type; width derives naturally from aspect ratio
+    // This prevents horizontal overflow issues while maintaining clean alignment
+    const heightClass = isLandscape 
+        ? 'h-[120px] sm:h-[150px] md:h-[180px]'  // Picture books: shorter on mobile
+        : 'h-[150px] sm:h-[190px] md:h-[240px]'; // Portrait books: taller for visibility
     
     // Debug logging for cover URLs
     useEffect(() => {
@@ -82,15 +82,15 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
 
     return (
         <div
-            className={`group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg ${sizeClass}`}
+            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] md:hover:scale-[1.1] hover:z-10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}
             aria-label={`Open ${displayTitle}`}
             onKeyDown={handleKeyDown}
         >
-            {/* Cover Image Container */}
-            <div className={`${aspectClass} w-full relative overflow-hidden rounded-lg shadow-md border border-border/30 bg-muted group-hover:shadow-xl transition-all duration-300`}>
+            {/* Cover Image Container - Fixed height, width derives from aspect ratio */}
+            <div className={`${aspectClass} ${heightClass} w-auto relative overflow-hidden rounded-lg shadow-md border border-border/30 bg-muted group-hover:shadow-xl transition-all duration-300`}>
                 {/* Skeleton loader */}
                 {!imageLoaded && !imageError && (
                     <div className="absolute inset-0">
