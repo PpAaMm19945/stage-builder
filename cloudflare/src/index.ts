@@ -1493,15 +1493,36 @@ app.get('/api/formations/:id', async (c) => {
 app.post('/api/evidences', async (c) => {
   try {
     const user = requireParent(c); // Only parents record evidence
-    const { studentId, formationId, stage, note, url, type, duration_minutes, loved_it } = await c.req.json();
+    const { studentId, formationId, stage, note, duration_minutes, loved_it } = await c.req.json();
 
     const id = crypto.randomUUID();
-    const now = new Date().toISOString();
 
+    // Normalize stage to match V2 schema CHECK constraint (Seeding, Rooting, Fruiting)
+    // Accept lowercase from frontend and capitalize first letter
+    let habitStage: string | null = null;
+    if (stage) {
+      const stageMap: Record<string, string> = {
+        'seeding': 'Seeding',
+        'rooting': 'Rooting',
+        'fruiting': 'Fruiting'
+      };
+      habitStage = stageMap[stage.toLowerCase()] || null;
+    }
+
+    // V2 schema: evidences(id, student_id, parent_id, formation_id, habit_stage, notes, duration_minutes, loved_it, captured_at)
     await c.env.DB.prepare(`
-            INSERT INTO evidences (id, student_id, formation_id, stage, note, url, type, duration_minutes, loved_it, created_at, updated_at)
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
-        `).bind(id, studentId, formationId, stage || 'seeding', note || null, url || null, type || 'observation', duration_minutes || null, loved_it ? 1 : 0, now, now).run();
+      INSERT INTO evidences (id, student_id, parent_id, formation_id, habit_stage, notes, duration_minutes, loved_it, captured_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, datetime('now'))
+    `).bind(
+      id,
+      studentId || null,
+      user.id,
+      formationId,
+      habitStage,
+      note || null,
+      duration_minutes || null,
+      loved_it ? 1 : 0
+    ).run();
 
     return c.json({ success: true, id });
   } catch (error: any) {
@@ -5118,6 +5139,79 @@ Output as JSON:
     });
   } catch (error: any) {
     console.error('Weekly summary error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+// Get AI interaction logs for parent visibility (Phase 3)
+app.get('/api/ai/interactions', async (c) => {
+  try {
+    const user = requireParent(c);
+    const studentId = c.req.query('studentId');
+
+    // Query ai_interaction_logs (or ai_logs depending on which table exists)
+    // Try ai_interaction_logs first (legacy), fall back to ai_logs (V2)
+    let logs: any[] = [];
+    
+    try {
+      // Try legacy table first
+      let query = `
+        SELECT l.id, l.parent_id, l.student_id, l.interaction_type, l.question, l.answer, l.context_json, l.created_at,
+               s.name as student_name
+        FROM ai_interaction_logs l
+        LEFT JOIN students s ON l.student_id = s.id
+        WHERE l.parent_id = ?
+      `;
+      const params: any[] = [user.id];
+      
+      if (studentId) {
+        query += ' AND l.student_id = ?';
+        params.push(studentId);
+      }
+      
+      query += ' ORDER BY l.created_at DESC LIMIT 50';
+      
+      const result = await c.env.DB.prepare(query).bind(...params).all();
+      logs = result.results || [];
+    } catch (legacyErr) {
+      // Fall back to V2 ai_logs table
+      console.log('Falling back to ai_logs table:', legacyErr);
+      let query = `
+        SELECT l.id, l.parent_id, l.student_id, l.interaction_type, l.question, l.answer, l.context_json, l.created_at,
+               s.name as student_name
+        FROM ai_logs l
+        LEFT JOIN students s ON l.student_id = s.id
+        WHERE l.parent_id = ?
+      `;
+      const params: any[] = [user.id];
+      
+      if (studentId) {
+        query += ' AND l.student_id = ?';
+        params.push(studentId);
+      }
+      
+      query += ' ORDER BY l.created_at DESC LIMIT 50';
+      
+      const result = await c.env.DB.prepare(query).bind(...params).all();
+      logs = result.results || [];
+    }
+
+    // Transform to frontend format
+    const formattedLogs = logs.map((log: any) => ({
+      id: log.id,
+      studentId: log.student_id,
+      studentName: log.student_name,
+      interactionType: log.interaction_type,
+      question: log.question,
+      answer: log.answer,
+      context: log.context_json ? JSON.parse(log.context_json) : null,
+      createdAt: log.created_at
+    }));
+
+    return c.json(formattedLogs);
+  } catch (error: any) {
+    console.error('AI interactions error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
   }

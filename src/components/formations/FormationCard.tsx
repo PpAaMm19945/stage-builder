@@ -279,8 +279,8 @@ export function FormationCard({
 
                     {/* LITURGY VIEW */}
                     {type === 'liturgy' && formation.liturgical_script && (
-                        <div className="pl-4 border-l-2 border-amber-200 dark:border-amber-800 italic text-muted-foreground my-3">
-                            "{formation.liturgical_script}"
+                        <div className="pl-4 border-l-2 border-amber-200 dark:border-amber-800 italic text-muted-foreground my-3 whitespace-pre-wrap">
+                            {formation.liturgical_script.replace(/\\n/g, '\n')}
                         </div>
                     )}
 

@@ -209,15 +209,36 @@ Remember: Guide them TO the answer, never GIVE them the answer.`;
 
     /**
      * Log student AI interactions for parent visibility
+     * Uses 'socratic' interaction_type to match schema constraint
      */
     private async logStudentInteraction(studentId: string, question: string, subject: string): Promise<void> {
-        // Use crypto.randomUUID for secure randomness (matching generateId pattern)
         const logId = `slog-${Date.now()}-${crypto.randomUUID().substring(24)}`;
         try {
+            // Schema requires: id, parent_id, student_id, interaction_type (CHECK: explain/socratic/feedback), question, answer, context_json
+            // We use 'socratic' since that matches the tutoring approach
+            // For parent_id, we need to look up the student's parent (or household)
+            const student = await this.env.DB.prepare(
+                'SELECT household_id FROM students WHERE id = ?'
+            ).bind(studentId).first();
+            
+            // Get parent from household
+            const parent = student ? await this.env.DB.prepare(
+                'SELECT id FROM users WHERE household_id = ? AND role = ? LIMIT 1'
+            ).bind((student as any).household_id, 'parent').first() : null;
+            
+            const parentId = parent ? (parent as any).id : 'unknown';
+            
             await this.env.DB.prepare(`
-                INSERT INTO ai_interaction_logs (id, student_id, interaction_type, question, context_json, created_at)
-                VALUES (?, ?, 'student_chat', ?, ?, datetime('now'))
-            `).bind(logId, studentId, question, JSON.stringify({ subject })).run();
+                INSERT INTO ai_interaction_logs (id, parent_id, student_id, interaction_type, question, answer, context_json, created_at)
+                VALUES (?, ?, ?, 'socratic', ?, ?, ?, datetime('now'))
+            `).bind(
+                logId,
+                parentId,
+                studentId,
+                question,
+                '(Socratic response - see chat history)',
+                JSON.stringify({ subject })
+            ).run();
         } catch (e) {
             console.error('Failed to log student interaction:', e);
         }
