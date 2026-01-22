@@ -3697,24 +3697,34 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     const bucket = c.env.BOOKS_BUCKET;
 
     // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
+    // Covers can be at: book folder level, images/ subfolder, or shared series images/ folder
     const pathsToTry = [
-      // Standard cover locations with books/ prefix
+      // Book folder level (most common for African Men of Faith)
       `books/${series}/${bookId}/cover.png`,
       `books/${series}/${bookId}/cover.jpg`,
       `books/${series}/${bookId}/cover.jpeg`,
+      // Inside images/ subfolder within book
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
-      // Without books/ prefix
+      // Shared series images folder (e.g., pastor_curtis_knapp/images/cover.png)
+      `books/${series}/images/cover.png`,
+      `books/${series}/images/cover.jpg`,
+      // Without books/ prefix variants
       `${series}/${bookId}/cover.png`,
       `${series}/${bookId}/cover.jpg`,
-      `${series}/${bookId}/cover.jpeg`,
       `${series}/${bookId}/images/cover.png`,
       `${series}/${bookId}/images/cover.jpg`,
+      `${series}/images/cover.png`,
+      `${series}/images/cover.jpg`,
       // Fallback: use page-01 as cover (per R2_BUCKET_GUIDE.md convention)
       `books/${series}/${bookId}/images/page-01.png`,
       `books/${series}/${bookId}/images/page-01.jpg`,
+      `books/${series}/${bookId}/page-01.png`,
+      `books/${series}/${bookId}/page-01.jpg`,
       `${series}/${bookId}/images/page-01.png`,
       `${series}/${bookId}/images/page-01.jpg`,
+      `${series}/${bookId}/page-01.png`,
+      `${series}/${bookId}/page-01.jpg`,
     ];
 
     for (const key of pathsToTry) {
@@ -3800,10 +3810,16 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
     const bucket = c.env.BOOKS_BUCKET;
 
     // Try multiple path patterns for PDF files
+    // PDFs can be: at series level (pastor_curtis_knapp/book.pdf), or in book subfolder
     const pathsToTry = [
+      // PDF directly in series folder (e.g., pastor_curtis_knapp/before_you_tie_the_knot.pdf)
+      `books/${series}/${bookId}.pdf`,
+      `${series}/${bookId}.pdf`,
+      // PDF in book subfolder with same name
       `books/${series}/${bookId}/${bookId}.pdf`,
-      `books/${series}/${bookId}/book.pdf`,
       `${series}/${bookId}/${bookId}.pdf`,
+      // Generic book.pdf in book subfolder
+      `books/${series}/${bookId}/book.pdf`,
       `${series}/${bookId}/book.pdf`,
     ];
 
