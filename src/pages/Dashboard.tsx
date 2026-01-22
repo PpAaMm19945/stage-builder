@@ -121,14 +121,19 @@ export default function Dashboard() {
 
   const youngestChild = useMemo(() => {
     return activeChildren.length > 0
-      ? [...activeChildren].sort((a: any, b: any) => a.ageInMonths - b.ageInMonths)[0]
+      ? [...activeChildren].sort((a: any, b: any) => 
+          (a.age_in_months ?? a.ageInMonths ?? 0) - (b.age_in_months ?? b.ageInMonths ?? 0)
+        )[0]
       : null;
   }, [activeChildren]);
 
+  // Normalize youngest child's age (API returns snake_case, some code expects camelCase)
+  const youngestChildAge = (youngestChild as any)?.age_in_months ?? youngestChild?.ageInMonths ?? 0;
+
   const { data: recommendedBooks } = useQuery({
-    queryKey: ['todays-book', youngestChild?.ageInMonths],
-    queryFn: () => books.list({ ageMonths: youngestChild?.ageInMonths }),
-    enabled: !!youngestChild,
+    queryKey: ['todays-book', youngestChildAge],
+    queryFn: () => books.list({ ageMonths: youngestChildAge }),
+    enabled: !!youngestChild && youngestChildAge > 0,
   });
 
   const { data: readingHistory } = useQuery({
@@ -146,7 +151,12 @@ export default function Dashboard() {
     );
     const pool = unreadBooks.length > 0 ? unreadBooks : recommendedBooks;
     if (youngestChild) {
-      const ranked = getRecommendedBooks(pool, youngestChild);
+      // Normalize child data for recommendation engine (expects camelCase)
+      const normalizedChild = {
+        ...youngestChild,
+        ageInMonths: (youngestChild as any).age_in_months ?? youngestChild.ageInMonths ?? 0
+      };
+      const ranked = getRecommendedBooks(pool, normalizedChild);
       return ranked[0];
     }
     const todayStr = new Date().toISOString().split('T')[0];

@@ -130,7 +130,7 @@ export function SettingsFamily() {
                                                 {child.is_graduated && <AlumniBadge />}
                                             </div>
                                             <p className="text-xs text-muted-foreground">
-                                                {calculateAge(child.dateOfBirth)}
+                                                {child.dateOfBirth ? calculateAge(child.dateOfBirth) : 'Age not set'}
                                             </p>
                                         </div>
                                     </div>
