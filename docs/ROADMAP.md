@@ -1,509 +1,317 @@
 ---
-version: "1.0"
-last_updated: "2025-01-03"
-derived_from: "PRODUCT_VISION.md, PEDAGOGICAL_PHILOSOPHY.md"
+version: "2.0"
+last_updated: "2025-01-22"
+derived_from: "PRODUCT_VISION.md"
 ---
 
 # Development Roadmap
 
 ## Table of Contents
-1. [Guiding Rule](#1-guiding-rule)
-2. [Phase 0: Constitutional (Current)](#2-phase-0-constitutional-current)
-3. [Phase 1: Faithful Minimum](#3-phase-1-faithful-minimum)
-4. [Phase 2: Order and Visibility](#4-phase-2-order-and-visibility)
-5. [Phase 3: Graduated Independence](#5-phase-3-graduated-independence)
-6. [Phase 4: Pace Flexibility](#6-phase-4-pace-flexibility)
-7. [Phase 5: Earning While Learning](#7-phase-5-earning-while-learning)
-8. [Phase 6: Maturity and Irrelevance](#8-phase-6-maturity-and-irrelevance)
-9. [How to Use This Roadmap](#9-how-to-use-this-roadmap)
+1. [The Vision: A Vintage Car with a Beast Engine](#1-the-vision)
+2. [Guiding Rule](#2-guiding-rule)
+3. [Phase 1: The Library (Current Focus)](#3-phase-1-the-library)
+4. [Phase 2: Learning Paths](#4-phase-2-learning-paths)
+5. [Phase 3: The Beast Awakens](#5-phase-3-the-beast-awakens)
+6. [Phase 4: Child Independence](#6-phase-4-child-independence)
+7. [Future: The Full School](#7-future-the-full-school)
+8. [Decision Framework](#8-decision-framework)
 
 ---
 
-## 1. Guiding Rule
+## 1. The Vision
 
-> **Every phase must be usable, honest, and faithful on its own.**
-> No phase may require future features to justify its existence.
+> **A vintage car with a beast of an engine.**
 
-If development stopped at any phase, the platform should still:
-- Help families
-- Not mislead users
-- Not contradict Scripture
-- Not train dependency
+The exterior is simple, warm, and inviting. A parent opens the app and sees a library. Books. Hymns. Activities. History. They can browse freely, play hymns continuously, or read bedtime stories.
 
----
+But under the hood is a powerful engine—capable of:
+- Generating smart, age-specific daily suggestions
+- Tracking growth across 100+ books, 100+ hymns, catechism, and activities
+- Building child profiles that understand strengths and interests
+- Creating graceful learning plans that span months or years
 
-## 2. Phase 0: Constitutional (Current)
+The engine is kept at bay until the occasion demands it.
 
-**Goal:** Lock theology, authority, and language before more software.
+### The Two Modes
 
-### ✅ Completed Outcomes
-- [x] `PEDAGOGICAL_PHILOSOPHY.md` finalized and committed
-- [x] `AI_GOVERNANCE_AND_ETHICS.md` written
-- [x] Authority hierarchy codified (Parent > Curriculum > AI)
-- [x] `SCOPE_AND_SEQUENCE.md` defined
-- [x] `ASSESSMENT_AND_RECORDS.md` established
-- [x] `CATECHISM_AND_LITURGY_GUIDE.md` created
-- [x] Legal documents updated with covenantal language
-- [x] `PROMPT_MASTER_PEDAGOGY.md` for AI agents
+| Mode | Experience | Who It's For |
+|------|------------|--------------|
+| **Passive** | Browse the library. Play hymns. Read books. Mark things done. | Working fathers wanting 15 minutes. Families who just want stories. |
+| **Active** | Subscribe to Learning Paths. Get daily suggestions. Track completion toward goals. | Families wanting structured formation. Parents teaching toddlers systematically. |
 
-### Why This Phase Matters
-This phase prevents:
-- Feature drift
-- Secular defaults creeping in
-- "Just add X" pressure later
-
-> Nothing else gets built without passing through this filter.
-
-**Exit Criteria:** ✅ COMPLETE
-You can point to a document and say, "If a feature contradicts this, the feature is wrong."
+Both modes use the same library. The difference is whether the engine is engaged.
 
 ---
 
-## 3. Phase 1: Faithful Minimum
+## 2. Guiding Rule
 
-**Goal:** Make the app genuinely useful to real families with minimal surface area.
+> **The Library is the source of truth. Everything else serves it.**
 
-### What Exists at the End of Phase 1
+- Learning Paths are curated journeys through the library
+- Daily suggestions are drawn from active paths
+- Completion means finishing parts of the library
+- Growth profiles are built from library interactions
 
-#### Core Experience
-- [x] Parent account (Google OAuth)
-- [x] Ability to add children
-- [x] Early Years content and activities
-- [x] Family dashboard
-- [x] Parent-led workflow
-- [x] Family Sessions architecture
-- [x] Unified Plan System (deterministic, mastery-aware)
-
-#### Content
-- [x] Scripture/Bible stories (liturgy system)
-- [x] African History as narrative
-- [x] Simple activities with tiered expectations
-- [x] Daily Practices for infancy mode
-- [x] Complete book library with fallback UI for missing assets
-
-#### Assessment
-- [x] Manual completion tracking
-- [x] Parent observation modals
-- [x] Family Completion flow with per-child mastery (Emerging/Developing/Secure)
-- [x] Portfolio storage (basic) - upload, view, delete
-
-#### AI (Limited, Parent-Only)
-- [x] Explain Button (parent-facing)
-- [x] "Help me plan tomorrow" feature (Tomorrow Preview)
-- [x] No grading
-- [x] No child-facing AI
-
-### What Is Explicitly NOT Built Yet
-- Student portals
-- Independence toggles
-- Advanced analytics
-- Acceleration logic
-- Apprenticeships
-
-### Why This Phase Matters
-This phase proves:
-- Families will actually use this
-- The pedagogy works without AI "magic"
-- The platform does not require complexity to be helpful
-
-> If Phase 1 is good, the project is already a success.
-
-**Exit Criteria:**
-- [x] A family can run daily learning using only this app
-- [x] No confusion about authority
-- [x] No dependency on automation
-
-**Phase 1 Status:** COMPLETE (January 2025)
+If development stopped today, the library would still help families.
 
 ---
 
-## 4. Phase 2: Order and Visibility
+## 3. Phase 1: The Library (Current Focus)
 
-**Goal:** Help parents see formation without turning it into measurement.
+**Goal:** Make the library genuinely useful—for browsing, playing, and completing.
 
-### What Gets Added
+### The Library Contains
 
-#### Structure
-- [ ] Clear daily/weekly rhythms visualization
-- [ ] Family time vs individual time separation (enhanced UI)
-- [ ] Simple scope & sequence views (read-only parent dashboard)
-- [x] Week navigation and history view
+| Content Type | Description | Status |
+|--------------|-------------|--------|
+| **Books** | 100+ picture books, history narratives, Pastor Curtis series | Building |
+| **Hymns** | 100+ hymns for listening and memorization | Building |
+| **Catechism** | Westminster Shorter Catechism (Q1-107) with age progressions | ✅ Complete |
+| **Memory Verses** | 52+ verses organized by theme | ✅ Complete |
+| **Activities** | Age-appropriate developmental activities for toddlers through age 6 | ✅ Complete |
+| **History Course** | Young Historians (picture books) + Full Course (teens/adults) | Building |
 
-#### Assessment Expansion
-- [x] Portfolios organized by:
-  - Subject
-  - Time
-  - Type (writing, activity, project)
-- [x] Milestone tags (not scores)
-- [ ] Long-term progress visualization (growth over time)
+### Library Features
 
-#### AI (Still Parent-Only)
-- [x] Weekly summaries: "Here's what happened" / "Here are patterns I noticed"
-- [x] Draft discussion questions
-- [x] Draft feedback text for parents to edit
+- [x] Browse all content freely
+- [x] Filter by age range, type, domain
+- [x] Mark items as complete
+- [x] Continuous playback for hymns
+- [x] Full-screen book reader
+- [ ] Search across library
+- [ ] "Favorites" collection
+- [ ] Progress: "42/100 hymns learned"
 
-### What Still Does NOT Exist
-- Auto-advancement
-- Mastery labels visible to children
-- Grade equivalents
-- Rankings
-- Recommendations that feel like commands
+### Family Setup
 
-### Why This Phase Matters
-This phase prevents:
-- Parental anxiety ("Are we doing enough?")
-- Loss of long-term perspective
-- Overreaction to daily fluctuations
-
-> Growth is seen over time, not demanded on schedule.
-
-**Exit Criteria:**
-- [ ] Parents can articulate their child's growth without citing metrics
-- [ ] AI language always feels advisory, never authoritative
-
----
-
-## 4.5. Phase 2.5: History & Liturgy Foundation
-
-**Goal:** Establish the two pillars (History, Liturgy) that anchor all learning across all ages.
-
-> [!IMPORTANT]
-> This phase is foundational. Everything else builds on a child knowing their story (History) and practicing daily discipline (Liturgy).
-
-### Age Stages Model
-
-Instead of grades, we use Formation Stages:
-
-| Stage | Age Range | Description |
-|-------|-----------|-------------|
-| Seedling | 0-3 | Picture stories, simple phrases, sung catechism |
-| Sprout | 4-6 | Simple narrative, paraphrased Q&A, short verses |
-| Sapling | 7-10 | Story-rich chapters, full catechism begins |
-| Tree | 11-14 | Full content, critical thinking, WSC complete |
-| Oak | 15-18 | Source documents, Larger Catechism, apologetics |
-
-### Liturgy Outcomes
-
-- [x] `liturgy_progressions` table for age-scaled content (Migration 0039)
-- [ ] Complete WSC Q1-107 in database
-- [ ] Add age-stage paraphrases for Q1-107 (Seedling through Oak)
-- [ ] Expand hymns to 50+ (from reformed-hymns folder + additions)
-- [ ] Expand memory verses to 52 (one per week, systematic selection)
-
-### History Outcomes
-
-- [ ] Finalize all 10 chapters of African History (Tree/Oak level)
-- [ ] Create "story summaries" for Sprout/Sapling levels (10 stories)
-- [ ] Create picture book companion series for Seedling (long-term goal)
-- [ ] Design 2-3 activities per chapter, per age stage
-
-### Integration Outcomes
-
-- [ ] Weekly rhythm templates linking History + Liturgy
-- [ ] Dashboard shows "This Week's Liturgy" summary
-- [ ] History reader mode in app
-
-### Why This Phase Matters
-
-This phase ensures:
-- Parents don't need expensive curriculum—History tells them what to teach
-- Daily liturgy builds habit and memory without requiring parent preparation
-- Content scales with age without requiring separate "grade-level" products
-
-> The two pillars (History + Liturgy) replace the need for a $500 boxed curriculum.
-
-**Exit Criteria:**
-- [ ] A family can run a year of liturgy without running out of content
-- [ ] History content exists for at least 2 age stages (Sapling + Tree)
-- [ ] Weekly rhythm flows naturally between History story and Liturgy practice
-
----
-
-## 4.6. Phase 2.6: Unified Architecture Migration
-
-**Goal:** Consolidate the fragmented data model (Activities, Liturgy, Books) into a single Unified Formation System for cleaner AI integration and parent experience.
-
-> [!IMPORTANT]
-> This is the most significant architectural change in the project. Review `docs/architecture_comparison.md` for full rationale.
-
-### Why This Phase Exists
-
-The current system has accumulated technical debt:
-- **15+ tables** with legacy prefixes and redundant tracking
-- **3 separate completion systems** (evidences, liturgy_completions, reading_sessions)
-- **Bug**: Catechism questions appearing in Activity feed under "Wisdom"
-- **Orphaned Books**: Books don't participate in the formation engine
-
-### The Unified Model
-
-Everything becomes a Formation with `formation_type` determining behavior:
-
-| Type | Examples | How It's Suggested |
-|------|----------|-------------------|
-| `skill` | Motor, History, Math | Weekly Planner |
-| `habit` | Chores, Greetings | Daily Rhythm |
-| `liturgy` | Catechism, Hymn, Verse | Rotation (Week #) |
-| `reading` | Books | Daily Suggestion |
-| `service` | Acts of Service | Weekly Planner |
-| `rest` | Sabbath, Quiet Time | Context-aware |
-
-### Migration Roadmap
-
-#### Step 0: Architecture Finalization
-
-- [x] Complete architecture comparison document  
-- [x] Add Household model (multi-parent support)
-- [x] Add Student auth flow (Google OAuth with pre-approval)
-- [x] Define Authority Hierarchy
-
-#### Step 1: Fresh D1 Database (New Production DB)
-
-- [x] Create `schoolos-v2` D1 database
-- [x] Apply clean schema (11 tables, see `architecture_comparison.md` Part 6-9)
-- [x] Include `households` and `sessions` tables
-- [x] Update Cloudflare Worker binding
-
-> [!WARNING]
-> **Breaking Change**: Old database will be retired. No user data migration needed (confirmed disposable).
-
-#### Step 2: API Consolidation
-
-- [x] Create unified `/api/formations` endpoints
-- [x] Implement Household-aware auth (`household_id` in JWT)
-- [x] Create `/api/household/invite` and `/join/:code` routes
-- [x] Create Student auth flow with `pending_login_email` matching
-- [x] Deprecate `/api/liturgy/today`, `/api/books`, `/api/reading-sessions` (In Progress)
-- [x] Single completion tracking via `evidences` table
-- [x] New `/api/day/today` returns ordered Formation blocks
-
-**Files to Modify:**
-- `cloudflare/src/index.ts` (API routes)
-- `cloudflare/src/planner.ts` (Planner logic)
-
-#### Step 3: Frontend Refactor
-
-- [x] Update `src/types/index.ts` to match new schema (11 tables)
-- [x] Create unified `FormationCard` component
-- [x] Create Household invite UI (Settings page)
-- [x] Create Student login enable/disable UI
-- [x] Create Student Portal view (filtered dashboard)
-- [x] Refactor `Dashboard.tsx` to use single data source (Partial)
-- [ ] Delete unused components
-
-**Files to Delete (After Verification):**
-- `src/components/liturgy/DailyLiturgy.tsx` (merge into FormationCard)
-- `src/components/reading/BookReader.tsx` (merge into FormationCard)
-- `src/components/activities/ActivityCard.tsx` (merge into FormationCard)
-- Legacy API call modules
-
-#### Step 4: AI Integration Cleanup
-
-- [x] Update `cloudflare/src/ai.ts` system prompts
-- [x] Simplify embedding generation (one content type)
-- [x] Unify RAG retrieval logic
+- [x] Add children with ages
+- [x] Automatic age-based content filtering
+- [ ] Child profiles (strengths, interests, notes)
+- [ ] Family preferences (liturgy sources, history tracks)
 
 ### Exit Criteria
 
-- [x] Database has 9 clean tables (not 15+)
-- [x] Single API serves all formation types
-- [x] Frontend uses one card component for all types
-- [x] AI prompts reference single `formations` schema
-- [x] No references to `legacy_*` tables anywhere
-
-### Reference Documents
-
-- **Architecture Comparison**: [architecture_comparison.md](file:///c:/Users/Anthony%20Mwesigwa/Documents/Home%20Line%20Shop/stage-builder/docs/architecture_comparison.md)
-- **Clean Schema SQL**: See Part 6 in architecture_comparison.md
+- A family can browse and use the library without subscribing to any path
+- Library completion is visible: "We've read 23 of 100 books"
+- Hymns can be played continuously like a music app
 
 ---
 
-## 5. Phase 3: Graduated Independence
+## 4. Phase 2: Learning Paths
 
-**Goal:** Transition responsibility from parent to child in a visible, controlled way.
+**Goal:** Allow families to opt into structured journeys through the library.
 
-### What Gets Added
+### What Are Learning Paths?
 
-#### Independence Settings
-- [x] Per-child independence levels
-- [x] Per-subject independence levels
-- [x] Parent-controlled toggles
+A Learning Path is a curated sequence through library content with:
+- A defined order (or rotation)
+- Suggested pace (daily, weekly)
+- Completion tracking
+- Growth outcomes when finished
 
-Examples:
-- History: independent reading
-- Math: guided
-- Bible: parent-led
+### Available Paths (Planned)
 
-#### Student View (Not a Full App Yet)
-- [x] Simple task list for older children
-- [x] Ability to mark work complete (if allowed)
-- [x] See portfolio items
-- [x] Ask AI questions (if allowed by parent)
+| Path | Content | Pace | For |
+|------|---------|------|-----|
+| **Hymn Journey** | 100+ hymns in rotation | 1 new hymn/week | Families |
+| **Catechism Path** | WSC Q1-107 | 1 question/week | Families |
+| **Family Liturgy** | Hymn + Verse + Catechism | Daily | Families |
+| **African History (Young)** | Picture book series | 1 book/week | Ages 3-8 |
+| **African History (Full)** | Textbook chapters | 1 chapter/week | Ages 11+ |
+| **Pastor Curtis Series** | His books in order | Self-paced | Teens/Adults |
+| **Toddler Development** | Activities by domain | 3-4/day | Ages 0-5 |
+| **Early Reading** | Pre-literacy activities + books | Daily | Ages 3-6 |
 
-#### AI (Carefully Expanded)
-- [x] Child-facing explanations (with parent visibility)
-- [x] Writing feedback drafts
-- [x] Socratic questioning
-- [x] All AI interactions visible to parents
+### Path Subscription
 
-### What Still Does NOT Exist
-- AI declaring readiness
-- AI suggesting stage advancement
-- Child-controlled scope changes
+- Families can subscribe to **multiple paths** simultaneously
+- Paths combine into a **unified daily view**
+- Each path shows its own progress and completion %
+- Paths can be paused or switched
 
-### Why This Phase Matters
-This phase models:
-- Biblical discipleship
-- Responsibility before freedom
-- Trust built through faithfulness
+### The Daily View
 
-> Independence can be granted without abandoning oversight.
+When paths are active, the home screen shows:
 
-**Exit Criteria:**
-- [x] Parents can gradually step back without chaos
-- [x] Children grow in ownership, not entitlement
+```
+Today's Rhythm
+─────────────────
+☐ Hymn: "A Mighty Fortress"
+☐ Verse: Romans 8:28
+☐ Catechism: Q23 - Who is the Redeemer?
+☐ Activity: Ball Rolling (Motor - Tier 1)
+☐ Book: "The Brave Lion" (African History)
+```
 
----
+This is generated by the **beast engine** from active paths + child ages.
 
-## 6. Phase 4: Pace Flexibility
+### Exit Criteria
 
-**Goal:** Allow divergence without fragmentation.
-
-### What Gets Added
-
-#### Pace Controls
-- [x] Parent-gated access to higher stages (PaceSettings component)
-- [x] Subject-specific advancement (per-domain stage overrides)
-- [x] Clear record of why access was granted (reason field in pace_settings)
-
-#### Passion Signals
-- [x] "Loved it!" tracking in completion modal
-- [x] Passion signals stored in database
-- [x] Planner boosts passion-aligned activities
-- [x] Time spent tracking (FormationTimer)
-- [ ] Quality of work indicators (future)
-
-**AI may summarize signals, but never decide.**
-
-#### Curriculum Compression
-- [x] Learning Focus setting (Balanced vs Follow Interests)
-- [ ] Core remains intact
-- [ ] Non-core adapts to passion
-- [ ] History, writing, and math reframed through interests
-
-### Why This Phase Matters
-This phase:
-- Honors God's varied gifts
-- Avoids wasting time
-- Avoids premature specialization
-
-> Foundation → Exploration → Doubling Down
-
-**Exit Criteria:**
-- [x] A child can go deep without becoming narrow
-- [x] The core is never abandoned
+- A family can subscribe to 3+ paths and see a combined daily rhythm
+- Path completion shows: "Hymn Journey: 23/100 complete"
+- Suggestions are smart: age-appropriate, balanced, not repetitive
 
 ---
 
-## 7. Phase 5: Earning While Learning
+## 5. Phase 3: The Beast Awakens
 
-**Goal:** Reunite education and work without exploitation.
+**Goal:** Unleash the smart engine for families who want deep, granular formation.
 
-### What Gets Added
+### The Engine's Capabilities
 
-#### Apprenticeship Tracking
-- [x] Hours logging
-- [x] Skills documentation
-- [x] Mentor feedback integration
-- [x] Parent approval gates
+The engine (`cloudflare/src/planner.ts` and AI integration) can:
 
-#### Portfolio of Real Work
-- [x] Projects with real impact
-- [x] Service records
-- [x] Paid or unpaid contributions
+1. **Age-Specific Suggestions**
+   - 5-month-old + 2-year-old in same family? Different suggestions for each.
+   - Tiered expectations per activity (Tier 1, 2, 3 by age)
 
-#### Safeguards
-- [x] Parent consent required
-- [x] Clear limits on hours/scope
-- [x] No platform-mediated labor markets (initially)
+2. **Domain Balancing**
+   - Ensure motor, cognitive, language, social-emotional get coverage
+   - Virtue weighting (wisdom, stature, favor with God, favor with man)
 
-### Why This Phase Matters
-This phase:
-- Restores dignity to work
-- Produces capable young adults
-- Bridges childhood and adulthood naturally
+3. **Child Profiles**
+   - Track what each child has done
+   - Note strengths, interests, areas to grow
+   - AI summarizes: "Noah has grown in fine motor skills through 15 activities"
 
-> Learning becomes contribution, not delay.
+4. **Smart Pacing**
+   - Parent sets time budget: 15 min, 30 min, 1 hour
+   - Engine fills time with highest-priority items from active paths
+   - Respects "not today" overrides
 
-**Exit Criteria:**
-- [x] Teenagers can point to real work they've done
-- [x] Parents feel peace, not pressure
+5. **Completion Insights**
+   - "You've finished 100 picture books—here's the growth we've seen"
+   - "After 52 hymns, your family has learned the great truths of..."
 
----
+### When the Engine Activates
 
-## 8. Phase 6: Maturity and Irrelevance
+The engine is **dormant by default**. It activates when:
+- Family subscribes to paths that need scheduling (e.g., Toddler Development)
+- Family enables "Smart Suggestions" in settings
+- Family adds multiple children with age gaps
 
-**Goal:** Let the platform fade into the background.
+### Exit Criteria
 
-### What This Looks Like
-- [x] Upper school students manage most of their learning
-- [x] Parents check in weekly or monthly
-- [x] Portfolios speak for themselves
-- [x] The app becomes a record, not a driver (Graduation Logic)
-
-### Ultimate Success Condition
-Families say:
-> "We don't need this like we used to—and that's a good thing."
+- A family with a 5-month-old and 3-year-old gets appropriate, distinct suggestions
+- Daily rhythm respects time budget
+- Growth profiles accumulate and can be reviewed
 
 ---
 
-## 9. How to Use This Roadmap
+## 6. Phase 4: Child Independence
 
-This roadmap is not a checklist. **It is a moral sequence.**
+**Goal:** Let older children use the family account to do their own work.
 
-If ever you are tempted to:
-- Jump ahead
-- Add features "because others have them"
-- Automate discernment
+### How It Works
 
-You return to this question:
+- **Not a separate Student Portal**—same app, same account
+- Parent enables "Child Mode" for specific children
+- Child can:
+  - View their assigned History reading
+  - Mark Catechism/Verse study complete
+  - See their own progress
+  - (If enabled) Ask AI questions with parent visibility
 
-> **"Does this phase strengthen or weaken the parent's role as steward?"**
+### What Parents Control
 
-If it weakens it, the feature waits.
+- Which paths a child can see
+- Whether child can mark things complete
+- Whether child can use AI features
+- Full visibility into everything child does
 
-### Decision Framework
+### Content for Older Children
+
+| Content | Independence Level |
+|---------|-------------------|
+| **History Course (Full)** | Child reads independently, discusses with parent |
+| **Catechism → Apologetics** | Teen studies answers, prepares to defend faith |
+| **Pastor Curtis Books** | Teen/adult reads on own schedule |
+| **Memory Verses** | Child recites to parent for completion |
+
+### Exit Criteria
+
+- A 12-year-old can log in, see their History assignment, read it, and mark complete
+- Parent sees everything the child did
+- No separate account needed—just a mode toggle
+
+---
+
+## 7. Future: The Full School
+
+> **This is NOT the current focus. It is documented here as the long-term possibility.**
+
+If FamilyPath succeeds as a library-first formation tool, it could eventually become a full homeschool solution:
+
+### What "Full School" Would Add
+
+| Feature | Description |
+|---------|-------------|
+| **Math Curriculum** | Charlotte Mason-style, living math |
+| **Science Curriculum** | Nature study, experiments, observation |
+| **Language Arts** | Grammar, composition, copywork |
+| **Foreign Language** | Latin foundations |
+| **Apprenticeships** | Real work tracking for teens |
+| **Graduation Tracking** | Portfolio-based completion |
+| **Transcripts** | For college applications |
+
+### Why Not Now?
+
+1. **Focus:** The library must be excellent before we add subjects
+2. **Content:** We need 100+ books, 100+ hymns, complete History first
+3. **Trust:** Families must love the simple version before we add complexity
+4. **Engine:** The beast must prove itself with formation before academics
+
+### The Promise
+
+> When the library is complete, and families are faithfully using Learning Paths, and the engine is battle-tested—then we consider the full school.
+
+Until then: **Library. Paths. Daily Rhythm. That's it.**
+
+---
+
+## 8. Decision Framework
+
+Before adding any feature, ask:
 
 | Question | If Yes | If No |
-| :--- | :--- | :--- |
-| Does this feature require parent approval? | Consider it | Add approval gate |
-| Does this feature judge the child? | Reject it | Consider it |
-| Does this feature increase anxiety? | Reject it | Consider it |
-| Does this feature replace discernment? | Reject it | Consider it |
-| Can a family use this faithfully alone? | Proceed | Wait for dependencies |
+|----------|--------|-------|
+| Does this enrich the library? | Proceed | Pause |
+| Does this help families complete library content? | Proceed | Pause |
+| Does this require the beast engine? | Keep dormant until needed | Keep dormant |
+| Does this replace parental authority? | Reject | Consider |
+| Can a family use this without subscribing to paths? | Good design | Reconsider |
+
+### The Litmus Test
+
+> "Can a working father with 15 minutes just play some hymns and read a story?"
+
+If yes, we're on track. If no, we've over-complicated.
 
 ---
 
-## Current Status Summary
+## Current Status
 
-| Phase | Status | Key Deliverables |
-| :--- | :--- | :--- |
-| Phase 0: Constitutional | ✅ Complete | All governance docs |
-| Phase 1: Faithful Minimum | ✅ Complete | Core features, book library |
-| Phase 2: Order & Visibility | ✅ Complete | Portfolios, summaries, week nav |
-| Phase 2.5: History & Liturgy | ✅ Complete | WSC Q1-107, age progressions, history stories |
-| **Phase 2.6: Unified Architecture** | ✅ Complete | Fresh DB, API consolidation, unified FormationCard |
-| **Phase 3: Graduated Independence** | ✅ Complete | Independence settings, Student Actions, AI Coach |
-| **Phase 4: Pace Flexibility** | ✅ Complete | Per-subject pace, time tracking |
-| **Phase 5: Earning While Learning** | ✅ Complete | Apprenticeships, Portfolios |
-| **Phase 6: Maturity** | ✅ Complete | Full independence, Graduation, Export |
-
-> **Current Focus:** MAINTENANCE & POLISH. The Core Roadmap is Complete.
+| Phase | Status | Focus |
+|-------|--------|-------|
+| **Phase 1: The Library** | 🔨 In Progress | Complete book/hymn library, browsing UX |
+| Phase 2: Learning Paths | ⏳ Next | Path subscriptions, combined daily view |
+| Phase 3: Beast Engine | ⏳ Later | Smart suggestions, child profiles |
+| Phase 4: Child Independence | ⏳ Later | Child mode, history assignments |
+| Future: Full School | 🔒 Not Now | Documented for later |
 
 ---
 
-## Cross-Reference
-- See `PRODUCT_VISION.md` for the desired end state
-- See `PEDAGOGICAL_PHILOSOPHY.md` for the theological filter
-- See `AI_GOVERNANCE_AND_ETHICS.md` for AI boundaries
-- See `AI_CONTEXT.md` for AI coding assistant quick reference
+## What We're NOT Doing (Yet)
 
+To maintain focus, these are explicitly deferred:
+
+- ❌ Math, Science, Language Arts curricula
+- ❌ Apprenticeship tracking
+- ❌ Graduation logic
+- ❌ Transcripts and credentials
+- ❌ Complex independence settings
+- ❌ AI tutoring for children
+- ❌ Gamification (streaks, points, badges)
+- ❌ Multi-family collaboration features
+
+These may come in "The Full School" phase. For now: **Library. Paths. Rhythm.**
