@@ -409,10 +409,18 @@ export async function generateWeeklyPlan(
     }
 
     // PHASE 4: Get learning focus preference
-    const prefs = await db.prepare(
-        'SELECT learning_focus FROM family_preferences WHERE parent_id = ?'
-    ).bind(parentId).first() as any;
-    const learningFocus = prefs?.learning_focus || 'balanced';
+    // NOTE: schema has evolved; some deployments may not have learning_focus column.
+    // Planner should not hard-fail (500) if preferences table/column is missing.
+    let learningFocus = 'balanced';
+    try {
+        const prefs = await db.prepare(
+            'SELECT learning_focus FROM family_preferences WHERE parent_id = ?'
+        ).bind(parentId).first() as any;
+        learningFocus = prefs?.learning_focus || 'balanced';
+    } catch (e) {
+        console.warn('Failed to fetch family_preferences.learning_focus; using default', e);
+        learningFocus = 'balanced';
+    }
 
     // For each available day
     for (const day of planningDays) {

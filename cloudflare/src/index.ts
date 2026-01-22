@@ -4616,8 +4616,11 @@ app.get('/api/family/weekly-plan', async (c) => {
     // Cache the plan
     const planId = generateId('plan');
     await c.env.DB.prepare(`
-      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, override_version)
-      VALUES (?, ?, ?, ?, 1)
+      -- NOTE: keep this insert compatible across schema variants.
+      -- Some environments have legacy columns (override_version, generated_at, tier_distribution)
+      -- while V2 minimal schema only has (id, parent_id, week_start, plan_json, balance_preference, created_at).
+      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json)
+      VALUES (?, ?, ?, ?)
     `).bind(planId, user.id, weekStart, JSON.stringify(plan)).run();
 
     return c.json({
@@ -4732,17 +4735,13 @@ app.post('/api/family/weekly-plan/regenerate', async (c) => {
     );
 
     const planId = generateId('plan');
-    const tierDistJson = '{}'; // Placeholder, actual distribution calculation logic needed if we want to store it
 
+    // Keep regenerate write-path compatible with both legacy + V2 schemas.
+    // We already deleted cached plan above; do a simple insert without ON CONFLICT.
     await c.env.DB.prepare(`
-      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, balance_preference, tier_distribution)
-      VALUES (?, ?, ?, ?, ?, ?)
-      ON CONFLICT(parent_id, week_start) DO UPDATE SET
-        plan_json = excluded.plan_json,
-        balance_preference = excluded.balance_preference,
-        tier_distribution = excluded.tier_distribution,
-        generated_at = datetime('now')
-    `).bind(planId, user.id, targetWeek, JSON.stringify(plan), balancePreference, tierDistJson).run();
+      INSERT INTO weekly_plans (id, parent_id, week_start, plan_json)
+      VALUES (?, ?, ?, ?)
+    `).bind(planId, user.id, targetWeek, JSON.stringify(plan)).run();
 
     // Fetch completions for this week
     const weekEndDate = new Date(targetWeek);
