@@ -121,7 +121,7 @@ app.use('*', async (c, next) => {
 // Public access to books bucket (bypassing auth for static assets)
 // Route: /books/* -> R2 bucket
 app.get('/books/*', async (c) => {
-  const key = c.req.path.replace('/books/', '');
+  const key = c.req.path.slice(1); // Remove leading slash, keep 'books/...' to match bucket structure
 
   if (!key) {
     return c.text('Missing file key', 400);
