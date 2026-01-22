@@ -195,8 +195,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             )}
                         </div>
 
-                        {/* Carousel wrapper - no negative margins to prevent overflow */}
-                        <div className="w-full overflow-hidden">
+                        {/* Carousel wrapper with overflow clip */}
+                        <div className="w-full overflow-hidden -mx-4 px-4">
                             <Carousel
                                 opts={{
                                     align: "start",
@@ -204,22 +204,11 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                 }}
                                 className="w-full group relative"
                             >
-                                {/* 
-                                  Use gap-3 for consistent spacing between cards.
-                                  No negative margins - just clean gap-based spacing.
-                                */}
-                                <CarouselContent className="ml-0 gap-3">
+                                <CarouselContent className="-ml-3">
                                     {booksBySeries[series].map(book => (
                                         <CarouselItem 
                                             key={`${book.series}-${book.id}`} 
-                                            className={`pl-0 shrink-0 ${
-                                                // Mobile: smaller cards that fit properly
-                                                // Landscape: ~70% width (1 card + peek)
-                                                // Portrait: ~38% width (2+ cards visible)
-                                                isLandscape 
-                                                    ? 'basis-[70%] sm:basis-[40%] md:basis-[28%] lg:basis-[22%] xl:basis-[17%]'
-                                                    : 'basis-[36%] sm:basis-[26%] md:basis-[20%] lg:basis-[16%] xl:basis-[12%]'
-                                            }`}
+                                            className="pl-3 shrink-0 grow-0 w-auto"
                                         >
                                             <BookCard
                                                 book={book}
@@ -230,8 +219,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                     ))}
                                 </CarouselContent>
                                 {/* Nav buttons - hidden on mobile, positioned inside on larger screens */}
-                                <CarouselPrevious className="hidden sm:flex !left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
-                                <CarouselNext className="hidden sm:flex !right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
+                                <CarouselPrevious className="hidden sm:flex left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
+                                <CarouselNext className="hidden sm:flex right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
                             </Carousel>
                         </div>
                     </section>
