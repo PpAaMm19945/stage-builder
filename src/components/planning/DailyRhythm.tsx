@@ -101,7 +101,7 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                     {/* Path context badge */}
                                     <div className="text-center">
                                         <span className="inline-block text-xs font-medium text-muted-foreground uppercase tracking-wider bg-muted/50 px-3 py-1 rounded-full">
-                                            From: {activeItem.data.pathName}
+                                            From: {activeItem.data.pathName || activeItem.data.path_title || 'Learning Path'}
                                         </span>
                                     </div>
 

@@ -6274,7 +6274,7 @@ app.get('/api/paths/today', async (c) => {
     // Build active_paths response
     const active_paths = subscriptions.map((sub: any) => ({
       id: sub.path_id,
-      title: sub.path_title,
+      title: sub.path_title || sub.path_type || 'Untitled Path',
       path_type: sub.path_type,
       total_items: sub.total_items,
       subscription: {
