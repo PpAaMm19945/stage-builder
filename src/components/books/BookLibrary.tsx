@@ -126,7 +126,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }
 
     return (
-        <div className="space-y-10 pb-12">
+        <div className="space-y-10 pb-12 overflow-x-hidden">
             {/* Loading State */}
             {isLoading && (
                 <div className="space-y-8">
@@ -191,22 +191,22 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             )}
                         </div>
 
-                        {/* Carousel for horizontal scrolling */}
+                        {/* Carousel for horizontal scrolling - contained within parent */}
                         <Carousel
                             opts={{
                                 align: "start",
                                 dragFree: true,
                             }}
-                            className="w-full group relative -mx-1 px-1"
+                            className="w-full group relative"
                         >
-                            <CarouselContent className="-ml-3">
+                            <CarouselContent className="-ml-2 md:-ml-3">
                                 {booksBySeries[series].map(book => (
                                     <CarouselItem 
                                         key={`${book.series}-${book.id}`} 
-                                        className={`pl-3 ${
+                                        className={`pl-2 md:pl-3 ${
                                             isLandscape 
-                                                ? 'basis-[65%] xs:basis-1/2 sm:basis-[45%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
-                                                : 'basis-[45%] xs:basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-1/6 xl:basis-[14%]'
+                                                ? 'basis-[55%] sm:basis-[40%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
+                                                : 'basis-[40%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-[14%]'
                                         }`}
                                     >
                                         <BookCard
