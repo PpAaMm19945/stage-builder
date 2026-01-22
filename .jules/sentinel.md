@@ -12,3 +12,8 @@
 **Vulnerability:** Admin endpoints (`/api/books/upload`, etc.) were comparing the `ADMIN_SECRET` using strict equality (`!==`). This allows attackers to perform timing attacks to deduce the secret character-by-character by measuring the response time differences.
 **Learning:** Never use standard string comparison for security secrets. The V8 engine (and most runtimes) optimizes string comparison to return `false` as soon as the first character mismatch is found, leaking information about how much of the secret was correct.
 **Prevention:** Always use a constant-time comparison function (like `crypto.subtle` or a manual XOR loop) for validating secrets and tokens.
+
+## 2026-01-10 - Content Security Policy (CSP) Retrofit
+**Vulnerability:** The Admin Dashboard used `script-src 'unsafe-inline'` and inline event handlers (`onclick`), making it vulnerable to XSS if any injection point was missed by `escapeHtml`.
+**Learning:** Retrofitting strict CSP (`nonce-based`) into an existing app with inline handlers requires converting `onclick` attributes to event listeners. Event delegation (attaching one listener to `document` or a container) is a clean way to handle this for dynamic content without complex rewrites.
+**Prevention:** Start projects with strict CSP (`nonce` or `hash`) and avoid inline event handlers (`onclick`, `onload`, etc.) from day one.

@@ -103,15 +103,20 @@ async function safeCompare(a: string | undefined | null, b: string | undefined |
   return crypto.subtle.timingSafeEqual(aHash, bHash);
 }
 
-const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
 // Security Headers
 app.use('*', async (c, next) => {
+  // Generate a random nonce for CSP to prevent XSS
+  const nonce = crypto.randomUUID();
+  c.set('nonce', nonce);
+
   await next();
   c.header('X-Content-Type-Options', 'nosniff');
   c.header('X-Frame-Options', 'DENY');
   c.header('Referrer-Policy', 'strict-origin-when-cross-origin');
-  c.header('Content-Security-Policy', "default-src 'self'; script-src 'self' 'unsafe-inline'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';");
+  // Security: Use nonce for scripts, disallow unsafe-inline
+  c.header('Content-Security-Policy', `default-src 'self'; script-src 'self' 'nonce-${nonce}'; style-src 'self' 'unsafe-inline'; img-src 'self' data: https:; font-src 'self' data:; connect-src 'self'; frame-ancestors 'none';`);
   c.header('Permissions-Policy', 'camera=(), microphone=(), geolocation=()');
   // Security: Force HTTPS
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
@@ -135,6 +140,7 @@ app.get('/api/r2-debug', async (c) => {
 app.get('/', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
+  const nonce = c.get('nonce');
 
   if (!secret) {
     return c.text('Admin secret not configured', 500);
@@ -266,8 +272,8 @@ app.get('/', async (c) => {
           <h1><div class="status-dot"></div> Teacher's Aide Console</h1>
           <div class="controls">
              <span class="refresh-timer" id="timer">Refreshing in 60s</span>
-             <button class="action-btn" onclick="togglePause()" id="pauseBtn">Pause</button>
-             <button class="action-btn" onclick="window.location.reload()">Refresh Now</button>
+             <button class="action-btn" id="pauseBtn">Pause</button>
+             <button class="action-btn" id="refreshBtn">Refresh Now</button>
           </div>
         </header>
 
@@ -383,7 +389,7 @@ app.get('/', async (c) => {
       const safeId = escapeHtml(log.id);
 
       return `
-                <tr class="log-row" data-id="${safeId}" onclick="toggleRow(this.dataset.id)">
+                <tr class="log-row" data-id="${safeId}">
                   <td class="log-meta">
                     <div>${new Date(log.created_at).toLocaleTimeString()}</div>
                     <div style="font-size:0.75rem; opacity:0.6">${new Date(log.created_at).toLocaleDateString()}</div>
@@ -393,8 +399,8 @@ app.get('/', async (c) => {
                     <div style="font-weight:600;margin-bottom:4px;color:#fff">${safeQuestion ? safeQuestionShort : '(No Query)'}</div>
                     <div style="color:var(--muted);font-size:0.8rem;font-style:italic">ID: ${safeId}</div>
                   </td>
-                  <td style="text-align:right" onclick="event.stopPropagation()">
-                     <button class="action-btn" data-id="${safeId}" onclick="copyDebug(this.dataset.id)">Copy Debug Object</button>
+                  <td class="actions-cell" style="text-align:right">
+                     <button class="action-btn copy-btn" data-id="${safeId}">Copy Debug Object</button>
                      <textarea id="debug-${safeId}" style="display:none">${safeDebugObj}</textarea>
                   </td>
                 </tr>
@@ -420,16 +426,16 @@ app.get('/', async (c) => {
           </table>
         </div>
 
-        <script>
+        <script nonce="${nonce}">
           let paused = false;
           let timeLeft = 60;
 
-          window.toggleRow = function(id) {
+          function toggleRow(id) {
             const row = document.getElementById('row-' + id);
             if (row) row.classList.toggle('open');
           };
 
-          window.copyDebug = function(id) {
+          function copyDebug(id) {
             const content = document.getElementById('debug-' + id).value;
             const txt = document.createElement('textarea');
             txt.innerHTML = content;
@@ -438,7 +444,7 @@ app.get('/', async (c) => {
             });
           };
 
-          window.togglePause = function() {
+          function togglePause() {
             paused = !paused;
             const btn = document.getElementById('pauseBtn');
             if (btn) {
@@ -447,6 +453,29 @@ app.get('/', async (c) => {
               btn.style.color = paused ? "#fcd34d" : "var(--muted)";
             }
           };
+
+          // Event Delegation for dynamic rows
+          document.addEventListener('click', function(e) {
+            // Row Toggle
+            const row = e.target.closest('.log-row');
+            // Check if we clicked inside actions column or textarea
+            const isActions = e.target.closest('.actions-cell') || e.target.closest('textarea');
+
+            if (row && !isActions) {
+              toggleRow(row.dataset.id);
+            }
+
+            // Copy Button
+            const copyBtn = e.target.closest('.copy-btn');
+            if (copyBtn) {
+              e.stopPropagation(); // prevent row toggle safety
+              copyDebug(copyBtn.dataset.id);
+            }
+          });
+
+          // Static Buttons
+          document.getElementById('pauseBtn')?.addEventListener('click', togglePause);
+          document.getElementById('refreshBtn')?.addEventListener('click', () => window.location.reload());
 
           setInterval(() => {
             if (!paused) {
