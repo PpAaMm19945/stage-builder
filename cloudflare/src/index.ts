@@ -3696,19 +3696,36 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     const bookId = decodeURIComponent(c.req.param('bookId'));
     const bucket = c.env.BOOKS_BUCKET;
 
-    // Try multiple path patterns for resilience
+    // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
     const pathsToTry = [
-      `books/${series}/${bookId}/images/cover.png`,
+      // Standard cover locations with books/ prefix
       `books/${series}/${bookId}/cover.png`,
-      `${series}/${bookId}/images/cover.png`,
+      `books/${series}/${bookId}/cover.jpg`,
+      `books/${series}/${bookId}/cover.jpeg`,
+      `books/${series}/${bookId}/images/cover.png`,
+      `books/${series}/${bookId}/images/cover.jpg`,
+      // Without books/ prefix
       `${series}/${bookId}/cover.png`,
+      `${series}/${bookId}/cover.jpg`,
+      `${series}/${bookId}/cover.jpeg`,
+      `${series}/${bookId}/images/cover.png`,
+      `${series}/${bookId}/images/cover.jpg`,
+      // Fallback: use page-01 as cover (per R2_BUCKET_GUIDE.md convention)
+      `books/${series}/${bookId}/images/page-01.png`,
+      `books/${series}/${bookId}/images/page-01.jpg`,
+      `${series}/${bookId}/images/page-01.png`,
+      `${series}/${bookId}/images/page-01.jpg`,
     ];
 
     for (const key of pathsToTry) {
       const object = await bucket.get(key);
       if (object) {
         const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        // Detect content type from key extension or use R2 metadata
+        const ext = key.split('.').pop()?.toLowerCase();
+        const contentType = object.httpMetadata?.contentType || 
+          (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+        headers.set('Content-Type', contentType);
         headers.set('Cache-Control', 'public, max-age=86400');
         headers.set('Access-Control-Allow-Origin', '*');
         headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -3719,7 +3736,7 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     return c.json({
       error: 'Cover not found',
       tried: pathsToTry,
-      help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
+      help: 'Ensure cover.png, cover.jpg, or images/page-01.png exists in the book folder'
     }, 404);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
@@ -3736,19 +3753,28 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
 
     const paddedNum = pageNum.padStart(2, '0');
     
-    // Try multiple path patterns for resilience
+    // Try multiple path patterns for resilience (PNG and JPG)
     const pathsToTry = [
+      // With books/ prefix
       `books/${series}/${bookId}/images/page-${paddedNum}.png`,
+      `books/${series}/${bookId}/images/page-${paddedNum}.jpg`,
       `books/${series}/${bookId}/page-${paddedNum}.png`,
+      `books/${series}/${bookId}/page-${paddedNum}.jpg`,
+      // Without books/ prefix
       `${series}/${bookId}/images/page-${paddedNum}.png`,
+      `${series}/${bookId}/images/page-${paddedNum}.jpg`,
       `${series}/${bookId}/page-${paddedNum}.png`,
+      `${series}/${bookId}/page-${paddedNum}.jpg`,
     ];
 
     for (const key of pathsToTry) {
       const object = await bucket.get(key);
       if (object) {
         const headers = new Headers();
-        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        const ext = key.split('.').pop()?.toLowerCase();
+        const contentType = object.httpMetadata?.contentType || 
+          (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+        headers.set('Content-Type', contentType);
         headers.set('Cache-Control', 'public, max-age=86400');
         headers.set('Access-Control-Allow-Origin', '*');
         headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
@@ -3759,7 +3785,7 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     return c.json({
       error: 'Page not found',
       tried: pathsToTry,
-      help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
+      help: 'Ensure images/page-XX.png or page-XX.jpg exists in the book folder'
     }, 404);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
