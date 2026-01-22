@@ -201,16 +201,24 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                 align: "start",
                                 dragFree: true,
                             }}
-                            className="w-full group relative overflow-hidden"
+                             // overflow hidden is critical so nav buttons (which sit outside) don't create page-wide horizontal scroll
+                             className="w-full group relative overflow-hidden"
                         >
-                            <CarouselContent className="-ml-3 md:-ml-4">
+                            {/*
+                              The base CarouselContent applies `-ml-4` (from the shared UI component).
+                              On small screens, that negative margin can easily cause the *entire page* to overflow.
+                              We override it to `ml-0` on mobile, then restore the negative margin from sm+.
+                            */}
+                            <CarouselContent className="ml-0 sm:-ml-4">
                                 {booksBySeries[series].map(book => (
                                     <CarouselItem 
                                         key={`${book.series}-${book.id}`} 
-                                        className={`pl-3 md:pl-4 ${
+                                        className={`pl-0 sm:pl-4 ${
+                                            // Mobile: show exactly 1 landscape card at a time (fits within viewport)
+                                            // Desktop: progressively show more cards.
                                             isLandscape 
-                                                ? 'basis-[85%] sm:basis-[45%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
-                                                : 'basis-[45%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-[14%]'
+                                                ? 'basis-[92%] sm:basis-[45%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
+                                                : 'basis-[48%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-[14%]'
                                         }`}
                                     >
                                         <BookCard

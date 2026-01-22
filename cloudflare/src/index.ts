@@ -3698,19 +3698,24 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
 
     // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
     // Covers can be at: book folder level, images/ subfolder, or shared series images/ folder
+    // IMPORTANT: Your R2 structure is primarily: books/{series}/{bookId}/images/cover.png
+    // So we try that first, then fall back to shared series covers and finally page-01.
     const pathsToTry = [
-      // SHARED SERIES IMAGES FOLDER - cover.png inside series/images/ (Pastor Curtis pattern)
-      `books/${series}/images/cover.png`,
-      `books/${series}/images/cover.jpg`,
-      `books/${series}/images/cover.jpeg`,
-      // Book folder level (most common for African Men of Faith)
-      `books/${series}/${bookId}/cover.png`,
-      `books/${series}/${bookId}/cover.jpg`,
-      `books/${series}/${bookId}/cover.jpeg`,
-      // Inside images/ subfolder within book
+      // Primary (per-book) cover location
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
       `books/${series}/${bookId}/images/cover.jpeg`,
+
+      // Secondary (older) book folder level
+      `books/${series}/${bookId}/cover.png`,
+      `books/${series}/${bookId}/cover.jpg`,
+      `books/${series}/${bookId}/cover.jpeg`,
+
+      // Shared series-level cover (some collections)
+      `books/${series}/images/cover.png`,
+      `books/${series}/images/cover.jpg`,
+      `books/${series}/images/cover.jpeg`,
+
       // Fallback: page-01 as cover (with hyphen and underscore variants)
       `books/${series}/${bookId}/images/page-01.png`,
       `books/${series}/${bookId}/images/page-01.jpg`,
@@ -3720,13 +3725,17 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `books/${series}/${bookId}/page-01.jpg`,
       `books/${series}/${bookId}/page_01.png`,
       `books/${series}/${bookId}/page_01.jpg`,
-      // Without books/ prefix
-      `${series}/images/cover.png`,
-      `${series}/images/cover.jpg`,
-      `${series}/${bookId}/cover.png`,
-      `${series}/${bookId}/cover.jpg`,
+
+      // Without books/ prefix (legacy)
       `${series}/${bookId}/images/cover.png`,
       `${series}/${bookId}/images/cover.jpg`,
+      `${series}/${bookId}/images/cover.jpeg`,
+      `${series}/${bookId}/cover.png`,
+      `${series}/${bookId}/cover.jpg`,
+      `${series}/${bookId}/cover.jpeg`,
+      `${series}/images/cover.png`,
+      `${series}/images/cover.jpg`,
+      `${series}/images/cover.jpeg`,
       `${series}/${bookId}/images/page-01.png`,
       `${series}/${bookId}/images/page_01.png`,
       `${series}/${bookId}/page-01.png`,
