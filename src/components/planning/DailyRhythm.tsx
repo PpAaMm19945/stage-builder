@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import DOMPurify from 'dompurify';
 import {
     Sheet,
     SheetContent,
@@ -11,6 +12,11 @@ import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
 import { BookOpen } from '@phosphor-icons/react';
+
+// Helper to sanitize HTML content for safe rendering
+const sanitizeHtml = (html: string | undefined | null): string => {
+    return DOMPurify.sanitize(html || '');
+};
 import { FormationCard } from '@/components/formations/FormationCard';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
 import { RhythmItemRow, getIcon, getTypeColor } from './RhythmItemRow';
@@ -117,10 +123,12 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
                                                 dangerouslySetInnerHTML={{ 
-                                                    __html: activeItem.data.content?.lyrics || 
-                                                            activeItem.data.content?.content || 
-                                                            activeItem.data.content?.liturgical_script ||
-                                                            activeItem.description || '' 
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.content?.lyrics || 
+                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.liturgical_script ||
+                                                        activeItem.description
+                                                    )
                                                 }}
                                             />
                                             <p className="text-sm text-muted-foreground">
@@ -138,14 +146,16 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                             </div>
                                             <div className="bg-muted/30 rounded-lg p-5 space-y-3">
                                                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
-                                                <div
-                                                    className="prose prose-sm dark:prose-invert"
-                                                    dangerouslySetInnerHTML={{ 
-                                                        __html: activeItem.data.content?.content || 
-                                                                activeItem.data.content?.liturgical_script ||
-                                                                activeItem.description || '' 
-                                                    }}
-                                                />
+                                            <div
+                                                className="prose prose-sm dark:prose-invert"
+                                                dangerouslySetInnerHTML={{ 
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.liturgical_script ||
+                                                        activeItem.description
+                                                    )
+                                                }}
+                                            />
                                             </div>
                                             <p className="text-sm text-muted-foreground text-center">
                                                 📖 Recite together as a family
@@ -160,9 +170,11 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto text-left"
                                                 dangerouslySetInnerHTML={{ 
-                                                    __html: activeItem.data.content?.content || 
-                                                            activeItem.data.content?.description ||
-                                                            activeItem.description || '' 
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.description ||
+                                                        activeItem.description
+                                                    )
                                                 }}
                                             />
                                             <p className="text-sm text-muted-foreground">
@@ -196,9 +208,11 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                             <div
                                                 className="prose prose-sm dark:prose-invert"
                                                 dangerouslySetInnerHTML={{ 
-                                                    __html: activeItem.data.content?.description || 
-                                                            activeItem.data.content?.content ||
-                                                            activeItem.description || '' 
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.content?.description || 
+                                                        activeItem.data.content?.content ||
+                                                        activeItem.description
+                                                    )
                                                 }}
                                             />
                                             {activeItem.data.content?.materials && (
@@ -217,9 +231,11 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto"
                                                 dangerouslySetInnerHTML={{ 
-                                                    __html: activeItem.data.content?.content || 
-                                                            activeItem.data.content?.description || 
-                                                            activeItem.description || '' 
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.description || 
+                                                        activeItem.description
+                                                    )
                                                 }}
                                             />
                                         </div>

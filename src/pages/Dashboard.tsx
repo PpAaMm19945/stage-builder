@@ -240,10 +240,14 @@ export default function Dashboard() {
     onSuccess: (data) => {
       queryClient.invalidateQueries({ queryKey: ['paths-today'] });
       queryClient.invalidateQueries({ queryKey: ['path-subscriptions'] });
-      toast.success(`Progress saved! ${data.new_position}/${data.total_items}`);
-      if (data.is_completed) {
-        toast.success('Congratulations! You completed this path!');
+      toast.success(`Progress saved! ${data?.new_position || 1}/${data?.total_items || '?'}`);
+      if (data?.is_completed) {
+        toast.success('🎉 Congratulations! You completed this path!');
       }
+    },
+    onError: (error: any) => {
+      toast.error('Could not save progress. Please try again.');
+      console.error('Path advance error:', error);
     },
   });
 
