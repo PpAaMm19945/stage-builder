@@ -204,11 +204,11 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                 }}
                                 className="w-full group relative"
                             >
-                                <CarouselContent className="-ml-2">
+                                <CarouselContent className="-ml-1">
                                     {booksBySeries[series].map(book => (
                                         <CarouselItem 
                                             key={`${book.series}-${book.id}`} 
-                                            className="pl-2 shrink-0 grow-0 w-auto"
+                                            className="pl-1 shrink-0 grow-0 w-auto"
                                         >
                                             <BookCard
                                                 book={book}
