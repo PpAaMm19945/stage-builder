@@ -620,5 +620,36 @@ export const work = {
     apiRequest<any[]>('/api/apprenticeships'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work };
+// Learning Paths
+import type { LearningPath, PathSubscription, PathsTodayResponse } from '@/types/paths';
+
+export const paths = {
+  list: () => apiRequest<LearningPath[]>('/api/paths'),
+
+  getSubscriptions: () => apiRequest<PathSubscription[]>('/api/paths/subscriptions'),
+
+  subscribe: (pathId: string) =>
+    apiRequest<{ success: boolean; subscription: PathSubscription }>(`/api/paths/${pathId}/subscribe`, {
+      method: 'POST',
+    }),
+
+  pause: (pathId: string) =>
+    apiRequest<{ success: boolean }>(`/api/paths/${pathId}/pause`, {
+      method: 'POST',
+    }),
+
+  resume: (pathId: string) =>
+    apiRequest<{ success: boolean }>(`/api/paths/${pathId}/resume`, {
+      method: 'POST',
+    }),
+
+  unsubscribe: (pathId: string) =>
+    apiRequest<{ success: boolean }>(`/api/paths/${pathId}/unsubscribe`, {
+      method: 'DELETE',
+    }),
+
+  getToday: () => apiRequest<PathsTodayResponse>('/api/paths/today'),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths };
 export default api;
