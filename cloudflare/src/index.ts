@@ -3701,10 +3701,16 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     // IMPORTANT: Your R2 structure is primarily: books/{series}/{bookId}/images/cover.png
     // So we try that first, then fall back to shared series covers and finally page-01.
     const pathsToTry = [
-      // Primary (per-book) cover location
+      // Primary (per-book) cover location - picture books
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
       `books/${series}/${bookId}/images/cover.jpeg`,
+
+      // Series-level images folder with bookId as filename (Pastor Curtis pattern)
+      // e.g. books/pastor_curtis_knapp/images/the_call_to_the_ministry.png
+      `books/${series}/images/${bookId}.png`,
+      `books/${series}/images/${bookId}.jpg`,
+      `books/${series}/images/${bookId}.jpeg`,
 
       // Secondary (older) book folder level
       `books/${series}/${bookId}/cover.png`,
@@ -3730,6 +3736,9 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `${series}/${bookId}/images/cover.png`,
       `${series}/${bookId}/images/cover.jpg`,
       `${series}/${bookId}/images/cover.jpeg`,
+      `${series}/images/${bookId}.png`,
+      `${series}/images/${bookId}.jpg`,
+      `${series}/images/${bookId}.jpeg`,
       `${series}/${bookId}/cover.png`,
       `${series}/${bookId}/cover.jpg`,
       `${series}/${bookId}/cover.jpeg`,

@@ -64,9 +64,12 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         }
     };
 
+    // Add max-width constraints to prevent card bloat on larger screens
+    const maxWidthClass = isLandscape ? 'max-w-[320px]' : 'max-w-[200px]';
+
     return (
         <div
-            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
+            className={`group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg ${maxWidthClass}`}
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}

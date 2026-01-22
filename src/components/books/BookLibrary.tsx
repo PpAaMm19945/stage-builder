@@ -195,43 +195,45 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             )}
                         </div>
 
-                        {/* Carousel for horizontal scrolling - contained within parent */}
-                        <Carousel
-                            opts={{
-                                align: "start",
-                                dragFree: true,
-                            }}
-                             // overflow hidden is critical so nav buttons (which sit outside) don't create page-wide horizontal scroll
-                             className="w-full group relative overflow-hidden"
-                        >
-                            {/*
-                              The base CarouselContent applies `-ml-4` (from the shared UI component).
-                              On small screens, that negative margin can easily cause the *entire page* to overflow.
-                              We override it to `ml-0` on mobile, then restore the negative margin from sm+.
-                            */}
-                            <CarouselContent className="ml-0 sm:-ml-4">
-                                {booksBySeries[series].map(book => (
-                                    <CarouselItem 
-                                        key={`${book.series}-${book.id}`} 
-                                        className={`pl-0 sm:pl-4 ${
-                                            // Mobile: show exactly 1 landscape card at a time (fits within viewport)
-                                            // Desktop: progressively show more cards.
-                                            isLandscape 
-                                                ? 'basis-[92%] sm:basis-[45%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
-                                                : 'basis-[48%] sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-[14%]'
-                                        }`}
-                                    >
-                                        <BookCard
-                                            book={book}
-                                            onClick={handleBookClick}
-                                            landscape={isLandscape}
-                                        />
-                                    </CarouselItem>
-                                ))}
-                            </CarouselContent>
-                            <CarouselPrevious className="left-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg" />
-                            <CarouselNext className="right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg" />
-                        </Carousel>
+                        {/* Carousel wrapper with strict overflow control */}
+                        <div className="w-full overflow-hidden -mx-4 px-4">
+                            <Carousel
+                                opts={{
+                                    align: "start",
+                                    dragFree: true,
+                                }}
+                                className="w-full group relative"
+                            >
+                                {/* 
+                                  Use gap-3 for consistent spacing between cards.
+                                  Override the default -ml-4 from CarouselContent to avoid overflow issues.
+                                */}
+                                <CarouselContent className="ml-0 gap-3">
+                                    {booksBySeries[series].map(book => (
+                                        <CarouselItem 
+                                            key={`${book.series}-${book.id}`} 
+                                            className={`pl-0 shrink-0 ${
+                                                // Mobile: smaller cards that fit properly
+                                                // Landscape: ~75% width (1 card + peek)
+                                                // Portrait: ~40% width (2 cards + peek)
+                                                isLandscape 
+                                                    ? 'basis-[72%] sm:basis-[42%] md:basis-[30%] lg:basis-[23%] xl:basis-[18%]'
+                                                    : 'basis-[38%] sm:basis-[28%] md:basis-[22%] lg:basis-[17%] xl:basis-[13%]'
+                                            }`}
+                                        >
+                                            <BookCard
+                                                book={book}
+                                                onClick={handleBookClick}
+                                                landscape={isLandscape}
+                                            />
+                                        </CarouselItem>
+                                    ))}
+                                </CarouselContent>
+                                {/* Nav buttons positioned inside the carousel bounds */}
+                                <CarouselPrevious className="left-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/80 backdrop-blur-sm" />
+                                <CarouselNext className="right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/80 backdrop-blur-sm" />
+                            </Carousel>
+                        </div>
                     </section>
                 );
             })}
