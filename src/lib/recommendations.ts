@@ -72,11 +72,14 @@ export function getRecommendedBooks(books: Book[], student: Student): Book[] {
     // Mock gender (defaults to mixed/neutral if unknown)
     const gender = 'male'; // Placeholder, would come from Student profile
 
+    // Normalize age - handle both snake_case (API) and camelCase
+    const childAgeMonths = (student as any).age_in_months ?? student.ageInMonths ?? 0;
+
     return books
         .map(book => ({
             book,
             score: scoreBookSuitability(book, {
-                childAgeMonths: student.ageInMonths,
+                childAgeMonths,
                 childInterests: mockInterests,
                 childGender: gender as any
             })

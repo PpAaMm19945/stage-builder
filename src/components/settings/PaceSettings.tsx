@@ -67,8 +67,9 @@ export function PaceSettings() {
             // OR I just cast it here: `as unknown as PaceSetting[]`.
             // But wait, `ActivityDocument` also had issues.
             // I will cast here to fix build for now.
-            const data = await family.getPaceSettings(studentId) as unknown as PaceSetting[];
-            setSettings(prev => ({ ...prev, [studentId]: data }));
+        const rawData = await family.getPaceSettings(studentId);
+        const data = Array.isArray(rawData) ? rawData as unknown as PaceSetting[] : [];
+        setSettings(prev => ({ ...prev, [studentId]: data }));
         } catch (e) {
             console.error(e);
         } finally {
@@ -142,7 +143,7 @@ export function PaceSettings() {
                                         <div>
                                             <h3 className="font-medium">{child.name}</h3>
                                             <p className="text-sm text-muted-foreground">
-                                                {child.currentStage.replace('-', ' ')}
+                                                {(child.currentStage || 'early-years').replace('-', ' ')}
                                             </p>
                                         </div>
                                     </div>
