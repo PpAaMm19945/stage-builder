@@ -157,7 +157,8 @@ app.get('/books/*', async (c) => {
 // Debug R2 contents
 app.get('/books-debug', async (c) => {
   try {
-    const list = await c.env.BOOKS_BUCKET.list({ limit: 50 });
+    const prefix = c.req.query('prefix') || '';
+    const list = await c.env.BOOKS_BUCKET.list({ limit: 100, prefix });
     return c.json(list);
   } catch (e: any) {
     return c.text(`Error listing bucket: ${e.message}`, 500);
