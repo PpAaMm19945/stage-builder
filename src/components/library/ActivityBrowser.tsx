@@ -1,4 +1,3 @@
-import { useState } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { activities as activitiesApi } from '@/lib/api';
@@ -13,7 +12,8 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { Clock, CaretRight, Brain, HandPalm, Heart, Shapes, Sparkle } from '@phosphor-icons/react';
-import { cn } from '@/lib/utils'; // Keep this relative
+import { cn } from '@/lib/utils';
+import { useGuestViewTracker } from './GuestBanner';
 
 const virtueConfigs: Record<PrimaryVirtue, { label: string; icon: any; color: string; bgColor: string; borderColor: string }> = {
     'Wisdom': {
@@ -78,10 +78,17 @@ interface ApiActivity {
 
 export function ActivityBrowser() {
     const navigate = useNavigate();
+    const { trackView } = useGuestViewTracker();
+    
     const { data: activities = [], isLoading } = useQuery({
         queryKey: ['activities', 'all'],
         queryFn: () => activitiesApi.list(),
     });
+
+    const handleActivityClick = (activityId: string) => {
+        trackView(); // Track for guest conversion banner
+        navigate(`/library/activities/${activityId}`);
+    };
 
     if (isLoading) {
         return <div className="space-y-4">
@@ -158,7 +165,7 @@ export function ActivityBrowser() {
                                         <Card
                                             key={activity.id}
                                             className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all group bg-background/80 hover:bg-background backdrop-blur-sm"
-                                            onClick={() => navigate(`/library/activities/${activity.id}`)}
+                                            onClick={() => handleActivityClick(activity.id)}
                                         >
                                             <CardContent className="p-4 space-y-3">
                                                 <div className="flex justify-between items-start">

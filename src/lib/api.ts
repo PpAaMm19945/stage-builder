@@ -649,6 +649,12 @@ export const paths = {
     }),
 
   getToday: () => apiRequest<PathsTodayResponse>('/api/paths/today'),
+
+  advance: (pathId: string) =>
+    apiRequest<{ success: boolean; new_position: number; total_items: number; is_completed: boolean }>(
+      `/api/paths/${pathId}/advance`,
+      { method: 'POST' }
+    ),
 };
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths };
