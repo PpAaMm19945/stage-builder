@@ -342,10 +342,11 @@ export default function Dashboard() {
     }
 
     // 2. Family Sessions
-    if (dayData.familySessions) {
+    if (dayData.familySessions && Array.isArray(dayData.familySessions)) {
       dayData.familySessions.forEach((session: any, index: number) => {
+        if (!session) return;
         const activity = session.formation || session.activity;
-        if (!activity) return;
+        if (!activity || !activity.id) return;
 
         let time = '09:00';
         if (session.timeSlot === 'afternoon') time = '14:00';
@@ -383,8 +384,9 @@ export default function Dashboard() {
     }
 
     // 4. Daily Practices
-    if (isToday && dayData.dailyPractices) {
+    if (isToday && dayData.dailyPractices && Array.isArray(dayData.dailyPractices)) {
       dayData.dailyPractices.forEach((practice: any, index: number) => {
+        if (!practice || !practice.id) return;
         rawItems.push({
           id: `practice-${index}`,
           timeSlot: '18:00',
@@ -541,7 +543,7 @@ export default function Dashboard() {
       <div className="max-w-4xl mx-auto py-12 px-4">
         <div className="space-y-4 mb-8">
           <h2 className="text-xl font-bold text-center mb-4">Daily Liturgy</h2>
-          {(liturgyData?.items || []).map((item: any) => (
+          {(liturgyData?.items || []).filter((item: any) => item && item.id).map((item: any) => (
             <FormationCard
               key={item.id}
               formation={{
