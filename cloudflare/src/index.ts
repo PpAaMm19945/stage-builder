@@ -511,8 +511,12 @@ app.use('*', cors({
       'http://localhost:3000',
       'http://localhost:8080',
     ];
-    // Also allow any lovable.app subdomain
-    if (origin && (allowedOrigins.includes(origin) || origin.endsWith('.lovable.app'))) {
+    // Also allow any lovable.app or lovableproject.com subdomain
+    if (origin && (
+      allowedOrigins.includes(origin) || 
+      origin.endsWith('.lovable.app') || 
+      origin.endsWith('.lovableproject.com')
+    )) {
       return origin;
     }
     return frontendUrl;
