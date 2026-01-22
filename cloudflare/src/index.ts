@@ -154,6 +154,16 @@ app.get('/books/*', async (c) => {
   }
 });
 
+// Debug R2 contents
+app.get('/books-debug', async (c) => {
+  try {
+    const list = await c.env.BOOKS_BUCKET.list({ limit: 50 });
+    return c.json(list);
+  } catch (e: any) {
+    return c.text(`Error listing bucket: ${e.message}`, 500);
+  }
+});
+
 app.get('/', async (c) => {
   const key = c.req.query('key');
   const secret = c.env.ADMIN_SECRET;
