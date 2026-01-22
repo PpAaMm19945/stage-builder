@@ -22,6 +22,43 @@ interface BookLibraryProps {
     initialStage?: string;
 }
 
+// Utility: Convert snake_case or kebab-case to Title Case
+function toTitleCase(str: string): string {
+    if (!str) return '';
+    return str
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+// Series display name mapping for known series
+const SERIES_DISPLAY_NAMES: Record<string, string> = {
+    'my_first_books': 'My First Books',
+    'african_men_of_faith': 'African Men of Faith',
+    'the_paperback_bible': 'The Paperback Bible',
+    'pastor_curtis_knapp': 'Pastor Curtis Knapp',
+    'sanyus_growing_heart': "Sanyu's Growing Heart",
+    'reformed-hymns': 'Reformed Hymns',
+    'catechism': 'Catechism',
+};
+
+function getSeriesDisplayName(series: string): string {
+    const lower = series.toLowerCase();
+    return SERIES_DISPLAY_NAMES[lower] || SERIES_DISPLAY_NAMES[series] || toTitleCase(series);
+}
+
+// Check if a series contains primarily picture books (landscape)
+function isLandscapeSeries(series: string): boolean {
+    const landscapeSeries = [
+        'my_first_books',
+        'my first books',
+        'african_men_of_faith',
+        'african men of faith',
+        'sanyus_growing_heart',
+        "sanyu's growing heart",
+    ];
+    return landscapeSeries.some(s => series.toLowerCase().includes(s.toLowerCase()));
+}
+
 export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { children } = useAuth();
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -52,14 +89,27 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         }, {} as Record<string, Book[]>);
     }, [displayBooks]);
 
+    // Sort series with priority ordering
     const seriesNames = useMemo(() => {
         const keys = Object.keys(booksBySeries);
-        // Ensure Paperback Bible comes first or has specific order if desired
-        // For now, simple sort, but Paperback Bible usually starts with 'The' -> T
+        const priorityOrder = [
+            'The Paperback Bible',
+            'the_paperback_bible',
+            'My First Books',
+            'my_first_books',
+            'African Men of Faith',
+            'african_men_of_faith',
+        ];
+        
         return keys.sort((a, b) => {
-            if (a === 'The Paperback Bible') return -1;
-            if (b === 'The Paperback Bible') return 1;
-            return a.localeCompare(b);
+            const aIndex = priorityOrder.findIndex(p => a.toLowerCase().includes(p.toLowerCase()));
+            const bIndex = priorityOrder.findIndex(p => b.toLowerCase().includes(p.toLowerCase()));
+            
+            if (aIndex !== -1 && bIndex !== -1) return aIndex - bIndex;
+            if (aIndex !== -1) return -1;
+            if (bIndex !== -1) return 1;
+            
+            return getSeriesDisplayName(a).localeCompare(getSeriesDisplayName(b));
         });
     }, [booksBySeries]);
 
@@ -76,16 +126,20 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }
 
     return (
-        <div className="space-y-12 pb-12">
+        <div className="space-y-10 pb-12">
             {/* Loading State */}
             {isLoading && (
                 <div className="space-y-8">
                     {Array.from({ length: 2 }).map((_, i) => (
                         <div key={i} className="space-y-4">
-                            <Skeleton className="h-8 w-48" />
-                            <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-6 gap-4">
+                            <Skeleton className="h-7 w-48" />
+                            <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5 xl:grid-cols-6 gap-4">
                                 {Array.from({ length: 6 }).map((_, j) => (
-                                    <Skeleton key={j} className="aspect-[3/4] w-full" />
+                                    <div key={j} className="space-y-2">
+                                        <Skeleton className="aspect-[2/3] w-full rounded-lg" />
+                                        <Skeleton className="h-4 w-3/4" />
+                                        <Skeleton className="h-3 w-1/2" />
+                                    </div>
                                 ))}
                             </div>
                         </div>
@@ -95,65 +149,80 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
             {/* Empty State */}
             {!isLoading && displayBooks.length === 0 && (
-                <div className="text-center py-12">
-                    <BookIcon className="h-12 w-12 mx-auto mb-4 text-muted-foreground" weight="duotone" />
-                    <h3 className="text-lg font-medium mb-2">No Books Found</h3>
-                    <p className="text-muted-foreground">
-                        Books are being added. Check back soon!
+                <div className="text-center py-16">
+                    <BookIcon className="h-16 w-16 mx-auto mb-4 text-muted-foreground/50" weight="duotone" />
+                    <h3 className="text-lg font-semibold mb-2">No Books Found</h3>
+                    <p className="text-muted-foreground max-w-sm mx-auto">
+                        Books are being added to the library. Check back soon!
                     </p>
                 </div>
             )}
 
             {/* Books by Series */}
-            {!isLoading && seriesNames.map(series => (
-                <div key={series} className="space-y-4">
-                    <div className="flex items-end justify-between px-1">
-                        <div>
-                            <h2 className="text-xl font-semibold flex items-center gap-2">
-                                {series}
-                                <span className="text-sm font-normal text-muted-foreground">
-                                    ({booksBySeries[series].length})
-                                </span>
-                            </h2>
-                            {series === 'The Paperback Bible' && (
-                                <p className="text-sm text-muted-foreground mt-1">
-                                    PDFs provided by SermonAudio
-                                </p>
+            {!isLoading && seriesNames.map(series => {
+                const displayName = getSeriesDisplayName(series);
+                const isLandscape = isLandscapeSeries(series);
+                const isPaperbackBible = series.toLowerCase().includes('paperback');
+                
+                return (
+                    <section key={series} className="space-y-4">
+                        <div className="flex items-end justify-between gap-4">
+                            <div>
+                                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                                    {displayName}
+                                    <span className="text-sm font-normal text-muted-foreground">
+                                        ({booksBySeries[series].length})
+                                    </span>
+                                </h2>
+                                {isPaperbackBible && (
+                                    <p className="text-sm text-muted-foreground mt-0.5">
+                                        PDFs provided by SermonAudio
+                                    </p>
+                                )}
+                            </div>
+
+                            {isPaperbackBible && (
+                                <Button variant="outline" size="sm" asChild className="gap-2 h-8 shrink-0">
+                                    <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
+                                        Visit Store
+                                        <ArrowSquareOut className="h-4 w-4" />
+                                    </a>
+                                </Button>
                             )}
                         </div>
 
-                        {series === 'The Paperback Bible' && (
-                            <Button variant="outline" size="sm" asChild className="gap-2 h-8">
-                                <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
-                                    Visit Store
-                                    <ArrowSquareOut className="h-4 w-4" />
-                                </a>
-                            </Button>
-                        )}
-                    </div>
-
-                    {/* Carousel Container */}
-                    <Carousel
-                        opts={{
-                            align: "start",
-                        }}
-                        className="w-full group relative"
-                    >
-                        <CarouselContent>
-                            {booksBySeries[series].map(book => (
-                                <CarouselItem key={`${book.series}-${book.id}`} className="basis-1/2 xs:basis-1/3 sm:basis-1/3 md:basis-1/4 lg:basis-1/5 xl:basis-1/6">
-                                    <BookCard
-                                        book={book}
-                                        onClick={handleBookClick}
-                                    />
-                                </CarouselItem>
-                            ))}
-                        </CarouselContent>
-                        <CarouselPrevious className="left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0" />
-                        <CarouselNext className="right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0" />
-                    </Carousel>
-                </div>
-            ))}
+                        {/* Carousel for horizontal scrolling */}
+                        <Carousel
+                            opts={{
+                                align: "start",
+                                dragFree: true,
+                            }}
+                            className="w-full group relative -mx-1 px-1"
+                        >
+                            <CarouselContent className="-ml-3">
+                                {booksBySeries[series].map(book => (
+                                    <CarouselItem 
+                                        key={`${book.series}-${book.id}`} 
+                                        className={`pl-3 ${
+                                            isLandscape 
+                                                ? 'basis-[65%] xs:basis-1/2 sm:basis-[45%] md:basis-1/3 lg:basis-1/4 xl:basis-1/5'
+                                                : 'basis-[45%] xs:basis-1/3 sm:basis-1/4 md:basis-1/5 lg:basis-1/6 xl:basis-[14%]'
+                                        }`}
+                                    >
+                                        <BookCard
+                                            book={book}
+                                            onClick={handleBookClick}
+                                            landscape={isLandscape}
+                                        />
+                                    </CarouselItem>
+                                ))}
+                            </CarouselContent>
+                            <CarouselPrevious className="left-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 -translate-x-1/2 shadow-lg" />
+                            <CarouselNext className="right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 translate-x-1/2 shadow-lg" />
+                        </Carousel>
+                    </section>
+                );
+            })}
 
             {/* Book Reader Modal */}
             <BookReader

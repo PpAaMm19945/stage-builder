@@ -1,17 +1,25 @@
 import { useState, memo } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
-import { Card, CardContent } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Books as BooksIcon, Heart } from '@phosphor-icons/react';
+import { Books as BooksIcon } from '@phosphor-icons/react';
 
 interface BookCardProps {
     book: Book;
     onClick?: (book: Book) => void;
+    /** Use landscape aspect ratio for picture books */
+    landscape?: boolean;
 }
 
-export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps) {
+// Utility: Convert snake_case or kebab-case to Title Case
+function toTitleCase(str: string): string {
+    if (!str) return '';
+    return str
+        .replace(/[-_]/g, ' ')
+        .replace(/\b\w/g, char => char.toUpperCase());
+}
+
+export const BookCard = memo(function BookCard({ book, onClick, landscape }: BookCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -20,36 +28,34 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
         ? book.coverUrl
         : books.getCoverUrl(book.series, book.id);
 
-    // Format age range for display
-    const formatAgeRange = (minMonths: number, maxMonths: number) => {
-        const minYears = Math.floor(minMonths / 12);
-        const maxYears = Math.ceil(maxMonths / 12);
-        if (minYears === maxYears) return `${minYears} yrs`;
-        return `${minYears}-${maxYears} yrs`;
-    };
+    // Format title: use book.title, but clean it if it looks like a folder name
+    const displayTitle = book.title.includes('_') || book.title.includes('-')
+        ? toTitleCase(book.title)
+        : book.title;
 
-    // Use seriesTitle for display, fallback to series (folder name) formatted nicely
-    const displaySeries = book.seriesTitle || book.series
-        .split('_')
-        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(' ');
+    // Format series: use seriesTitle if available, otherwise clean the folder name
+    const displaySeries = book.seriesTitle || toTitleCase(book.series);
 
-    // Shorten series names for badge display
-    const shortenedSeries = displaySeries
-        .replace('My First Books', 'First')
-        .replace('African Men of Faith', 'Faith')
-        .replace('The Gospel Series', 'Gospel');
-
-    // Generate a consistent color based on the book series string
+    // Generate a consistent color based on the book series string for fallback
     const getSeriesColor = (series: string) => {
         let hash = 0;
         for (let i = 0; i < series.length; i++) {
             hash = series.charCodeAt(i) + ((hash << 5) - hash);
         }
-        const c = (hash & 0x00FFFFFF).toString(16).toUpperCase();
-        return '#' + '00000'.substring(0, 6 - c.length) + c;
+        const hue = Math.abs(hash % 360);
+        return `hsl(${hue}, 45%, 45%)`;
     };
     const seriesColor = getSeriesColor(book.series);
+
+    // Determine aspect ratio based on book type
+    // Picture books (landscape) use 4:3, standard books use 2:3 (portrait)
+    const isLandscape = landscape || 
+        book.renderFormat === 'image' || 
+        book.renderFormat === 'images' ||
+        book.series?.toLowerCase().includes('picture') ||
+        book.series?.toLowerCase().includes('first');
+    
+    const aspectClass = isLandscape ? 'aspect-[4/3]' : 'aspect-[2/3]';
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
         if (onClick && (e.key === 'Enter' || e.key === ' ')) {
@@ -60,42 +66,48 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
 
     return (
         <div
-            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] focus-visible:outline-none"
+            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg"
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}
-            aria-label={`Open ${book.title}`}
+            aria-label={`Open ${displayTitle}`}
             onKeyDown={handleKeyDown}
         >
-            {/* Main Image Container - Aspect 2:3 for standard book feel */}
-            <div className="aspect-[2/3] w-full relative overflow-hidden rounded-md shadow-sm border border-border/40 bg-muted group-hover:shadow-xl transition-shadow">
+            {/* Cover Image Container */}
+            <div className={`${aspectClass} w-full relative overflow-hidden rounded-lg shadow-md border border-border/30 bg-muted group-hover:shadow-xl transition-all duration-300`}>
                 {/* Skeleton loader */}
                 {!imageLoaded && !imageError && (
-                    <div className="absolute inset-0 animate-pulse">
-                        <Skeleton className="h-full w-full" />
+                    <div className="absolute inset-0">
+                        <Skeleton className="h-full w-full rounded-lg" />
                     </div>
                 )}
 
-                {/* Fallback for error state */}
+                {/* Fallback for error state - styled placeholder */}
                 {imageError && (
                     <div
-                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-4"
+                        className="absolute inset-0 flex flex-col items-center justify-center text-center p-4 rounded-lg"
                         style={{ backgroundColor: seriesColor }}
                     >
-                        <BooksIcon className="h-8 w-8 text-white/80 mb-2" weight="duotone" />
-                        <span className="text-white font-bold text-xs leading-tight line-clamp-3">
-                            {book.title}
+                        <BooksIcon className="h-10 w-10 text-white/70 mb-2" weight="duotone" />
+                        <span className="text-white font-semibold text-sm leading-tight line-clamp-3 drop-shadow-sm">
+                            {displayTitle}
                         </span>
+                        {book.author && (
+                            <span className="text-white/70 text-xs mt-1">
+                                {book.author}
+                            </span>
+                        )}
                     </div>
                 )}
 
-                {/* Image - Object Cover for slick uniform look */}
+                {/* Cover Image */}
                 <img
                     src={coverUrl}
-                    alt={book.title}
+                    alt={`Cover of ${displayTitle}`}
                     loading="lazy"
-                    className={`h-full w-full object-cover transition-opacity duration-300 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-                        }`}
+                    className={`h-full w-full object-cover transition-all duration-300 group-hover:brightness-105 ${
+                        imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+                    }`}
                     onLoad={() => setImageLoaded(true)}
                     onError={() => {
                         setImageError(true);
@@ -103,19 +115,25 @@ export const BookCard = memo(function BookCard({ book, onClick }: BookCardProps)
                     }}
                 />
 
-                {/* Hover Gradient Overlay */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-transparent to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-end p-3">
-                    <p className="text-white text-xs font-medium line-clamp-2 translate-y-2 group-hover:translate-y-0 transition-transform duration-300">
-                        {book.seriesTitle || book.series}
-                    </p>
-                </div>
+                {/* Subtle gradient overlay for depth */}
+                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
             </div>
 
-            {/* Minimal Content Below */}
-            <div>
-                <h3 className="font-medium text-sm leading-tight line-clamp-1 text-foreground/90 group-hover:text-primary transition-colors">
-                    {book.title}
+            {/* Book Info */}
+            <div className="space-y-0.5 px-0.5">
+                <h3 className="font-semibold text-sm leading-tight line-clamp-2 text-foreground group-hover:text-primary transition-colors">
+                    {displayTitle}
                 </h3>
+                {book.author && (
+                    <p className="text-xs text-muted-foreground line-clamp-1">
+                        {book.author}
+                    </p>
+                )}
+                {!book.author && displaySeries && (
+                    <p className="text-xs text-muted-foreground/70 line-clamp-1">
+                        {displaySeries}
+                    </p>
+                )}
             </div>
         </div>
     );
