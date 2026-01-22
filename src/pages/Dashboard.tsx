@@ -45,6 +45,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
 import { UsersThree, Crown } from '@phosphor-icons/react';
 import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
+import { useStableValue } from '@/hooks/useStableValue';
 
 const EMPTY_WEEK_DATA = {};
 
@@ -98,9 +99,12 @@ export default function Dashboard() {
   });
 
   // Memoize active children to prevent downstream re-renders (especially PDF generation)
-  const activeChildren = useMemo(() => {
+  const activeChildrenRaw = useMemo(() => {
     return dayData?.children?.filter((c: any) => !c.is_graduated) || [];
   }, [dayData?.children]);
+
+  // Make activeChildren stable based on content, not reference
+  const activeChildren = useStableValue(activeChildrenRaw);
 
   const childAges = useMemo(() => {
     return activeChildren.map((c: any) => `${Math.floor(c.age_in_months / 12)}y`) || [];
@@ -141,6 +145,20 @@ export default function Dashboard() {
     return pool[seed % pool.length];
   }, [recommendedBooks, readingHistory, youngestChild]);
 
+  // Stable keys for PDF generation
+  // We extract and stabilize only the data needed for the PDF.
+  // This prevents expensive PDF regeneration when unrelated dayData fields change (like 'message' or completion status).
+  const pdfActivitiesRaw = useMemo(() => {
+    return dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [];
+  }, [dayData?.familySessions]);
+
+  const pdfLiturgyRaw = liturgyData?.items || [];
+
+  // Stabilize the inputs for the PDF
+  const pdfActivities = useStableValue(pdfActivitiesRaw);
+  const pdfLiturgy = useStableValue(pdfLiturgyRaw);
+  const pdfBook = useStableValue(todaysBook);
+
   // Memoize PDF document to prevent expensive regeneration on every render
   // This must be declared here to avoid hook ordering issues with early returns
   const pdfDocument = useMemo(() => {
@@ -152,14 +170,14 @@ export default function Dashboard() {
         day={{
           date: new Date().toLocaleDateString(),
           dayName: format(new Date(), 'EEEE'),
-          liturgy: liturgyData?.items || [],
-          activities: dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [],
-          reading: todaysBook || undefined
+          liturgy: pdfLiturgy,
+          activities: pdfActivities,
+          reading: pdfBook || undefined
         }}
         children={activeChildren}
       />
     );
-  }, [isToday, dayData, liturgyData?.items, todaysBook, activeChildren]);
+  }, [isToday, !!dayData, pdfLiturgy, pdfActivities, pdfBook, activeChildren]);
 
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
