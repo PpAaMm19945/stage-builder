@@ -35,7 +35,7 @@ const SERIES_DISPLAY_NAMES: Record<string, string> = {
     'my_first_books': 'My First Books',
     'african_men_of_faith': 'African Men of Faith',
     'the_paperback_bible': 'The Paperback Bible',
-    'pastor_curtis_knapp': 'Pastor Curtis Knapp',
+    'pastor_curtis_knapp': 'Selected Works: Booklets on Doctrine, Family, and the Christian Walk',
     'sanyus_growing_heart': "Sanyu's Growing Heart",
     'reformed-hymns': 'Reformed Hymns',
     'catechism': 'Catechism',
@@ -48,15 +48,19 @@ function getSeriesDisplayName(series: string): string {
 
 // Check if a series contains primarily picture books (landscape)
 function isLandscapeSeries(series: string): boolean {
-    const landscapeSeries = [
-        'my_first_books',
-        'my first books',
-        'african_men_of_faith',
-        'african men of faith',
-        'sanyus_growing_heart',
-        "sanyu's growing heart",
-    ];
-    return landscapeSeries.some(s => series.toLowerCase().includes(s.toLowerCase()));
+    const s = series.toLowerCase();
+    // Heuristic keyword match (more robust than enumerating every series)
+    return (
+        s.includes('my_first_books') ||
+        s.includes('my first books') ||
+        s.includes('african_men_of_faith') ||
+        s.includes('african men of faith') ||
+        s.includes('sanyus_growing_heart') ||
+        s.includes("sanyu's growing heart") ||
+        s.includes('gospel') ||
+        s.includes('working_fathers_of_soroti') ||
+        s.includes('working fathers')
+    );
 }
 
 export function BookLibrary({ initialStage }: BookLibraryProps) {
@@ -197,7 +201,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                 align: "start",
                                 dragFree: true,
                             }}
-                            className="w-full group relative"
+                            className="w-full group relative overflow-hidden"
                         >
                             <CarouselContent className="-ml-2 md:-ml-3">
                                 {booksBySeries[series].map(book => (
@@ -217,8 +221,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                     </CarouselItem>
                                 ))}
                             </CarouselContent>
-                            <CarouselPrevious className="left-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 -translate-x-1/2 shadow-lg" />
-                            <CarouselNext className="right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 translate-x-1/2 shadow-lg" />
+                            <CarouselPrevious className="left-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg" />
+                            <CarouselNext className="right-0 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg" />
                         </Carousel>
                     </section>
                 );
