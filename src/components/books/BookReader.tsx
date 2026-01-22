@@ -283,29 +283,27 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                     {/* Reader Area */}
                     <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
                         {isPdf ? (
-                            <div className="w-full h-full flex flex-col items-center relative">
-                                {/* Fallback/Loading Background */}
-                                <div className="absolute inset-0 flex items-center justify-center z-0 text-gray-400 bg-white">
-                                    <div className="text-center p-8 max-w-sm">
-                                        <p className="mb-4">Loading PDF...</p>
-                                        <p className="text-sm text-gray-500 mb-6">If the document doesn't appear, it may be blocked by security settings.</p>
-                                        <Button
-                                            variant="outline"
-                                            onClick={() => window.open(pdfUrl, '_blank')}
-                                            className="gap-2"
-                                        >
-                                            Open PDF in New Tab
-                                        </Button>
+                            <div className="w-full h-full flex flex-col items-center justify-center relative bg-background/95 p-8">
+                                {/* PDF opens in new tab - iframe embedding blocked by CORS/CSP */}
+                                <div className="text-center max-w-md space-y-6">
+                                    <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
+                                        <BookOpenText className="w-10 h-10 text-primary" />
                                     </div>
+                                    <div>
+                                        <h3 className="text-xl font-semibold text-foreground mb-2">{book.title}</h3>
+                                        <p className="text-muted-foreground">
+                                            This book is available as a PDF document. Click below to open it in a new tab.
+                                        </p>
+                                    </div>
+                                    <Button
+                                        size="lg"
+                                        onClick={() => window.open(pdfUrl, '_blank')}
+                                        className="gap-2"
+                                    >
+                                        <ArrowsOutSimple className="w-5 h-5" />
+                                        Open PDF in New Tab
+                                    </Button>
                                 </div>
-
-                                {/* Use iframe for PDF display - most modern browsers support this */}
-                                <iframe
-                                    src={pdfUrl}
-                                    className="w-full h-full relative z-10"
-                                    title={book.title}
-                                    allow="fullscreen"
-                                />
 
                                 {/* Quick finish button for PDFs since we don't track page turns */}
                                 <div className="absolute bottom-6 right-6 z-20">

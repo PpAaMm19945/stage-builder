@@ -3699,6 +3699,10 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
     // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
     // Covers can be at: book folder level, images/ subfolder, or shared series images/ folder
     const pathsToTry = [
+      // SHARED SERIES IMAGES FOLDER - cover.png inside series/images/ (Pastor Curtis pattern)
+      `books/${series}/images/cover.png`,
+      `books/${series}/images/cover.jpg`,
+      `books/${series}/images/cover.jpeg`,
       // Book folder level (most common for African Men of Faith)
       `books/${series}/${bookId}/cover.png`,
       `books/${series}/${bookId}/cover.jpg`,
@@ -3707,38 +3711,7 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `books/${series}/${bookId}/images/cover.png`,
       `books/${series}/${bookId}/images/cover.jpg`,
       `books/${series}/${bookId}/images/cover.jpeg`,
-
-      // Some series store per-book cover images at series/images/{bookId}.png
-      // (e.g., books/pastor_curtis_knapp/images/before_you_tie_the_knot.png)
-      `books/${series}/images/${bookId}.png`,
-      `books/${series}/images/${bookId}.jpg`,
-      `books/${series}/images/${bookId}.jpeg`,
-
-      // Some books store the cover as images/{bookId}.png inside the book folder
-      `books/${series}/${bookId}/images/${bookId}.png`,
-      `books/${series}/${bookId}/images/${bookId}.jpg`,
-      `books/${series}/${bookId}/images/${bookId}.jpeg`,
-
-      // Shared series images folder (e.g., pastor_curtis_knapp/images/cover.png)
-      `books/${series}/images/cover.png`,
-      `books/${series}/images/cover.jpg`,
-      `books/${series}/images/cover.jpeg`,
-      // Without books/ prefix variants
-      `${series}/${bookId}/cover.png`,
-      `${series}/${bookId}/cover.jpg`,
-      `${series}/${bookId}/images/cover.png`,
-      `${series}/${bookId}/images/cover.jpg`,
-      `${series}/${bookId}/images/cover.jpeg`,
-      `${series}/images/${bookId}.png`,
-      `${series}/images/${bookId}.jpg`,
-      `${series}/images/${bookId}.jpeg`,
-      `${series}/${bookId}/images/${bookId}.png`,
-      `${series}/${bookId}/images/${bookId}.jpg`,
-      `${series}/${bookId}/images/${bookId}.jpeg`,
-      `${series}/images/cover.png`,
-      `${series}/images/cover.jpg`,
-      `${series}/images/cover.jpeg`,
-      // Fallback: use page-01 as cover (per R2_BUCKET_GUIDE.md convention)
+      // Fallback: page-01 as cover (with hyphen and underscore variants)
       `books/${series}/${bookId}/images/page-01.png`,
       `books/${series}/${bookId}/images/page-01.jpg`,
       `books/${series}/${bookId}/images/page_01.png`,
@@ -3747,14 +3720,17 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
       `books/${series}/${bookId}/page-01.jpg`,
       `books/${series}/${bookId}/page_01.png`,
       `books/${series}/${bookId}/page_01.jpg`,
+      // Without books/ prefix
+      `${series}/images/cover.png`,
+      `${series}/images/cover.jpg`,
+      `${series}/${bookId}/cover.png`,
+      `${series}/${bookId}/cover.jpg`,
+      `${series}/${bookId}/images/cover.png`,
+      `${series}/${bookId}/images/cover.jpg`,
       `${series}/${bookId}/images/page-01.png`,
-      `${series}/${bookId}/images/page-01.jpg`,
       `${series}/${bookId}/images/page_01.png`,
-      `${series}/${bookId}/images/page_01.jpg`,
       `${series}/${bookId}/page-01.png`,
-      `${series}/${bookId}/page-01.jpg`,
       `${series}/${bookId}/page_01.png`,
-      `${series}/${bookId}/page_01.jpg`,
     ];
 
     for (const key of pathsToTry) {
