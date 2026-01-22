@@ -12,8 +12,9 @@ export function PublicLayout() {
     );
   }
 
+  // Redirect authenticated users to dashboard instead of root
   if (isAuthenticated) {
-    return <Navigate to="/" replace />;
+    return <Navigate to="/dashboard" replace />;
   }
 
   return <Outlet />;

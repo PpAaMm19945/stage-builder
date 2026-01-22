@@ -158,7 +158,7 @@ export function ActivityBrowser() {
                                         <Card
                                             key={activity.id}
                                             className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all group bg-background/80 hover:bg-background backdrop-blur-sm"
-                                            onClick={() => navigate(`/early-years/activities/${activity.id}`)}
+                                            onClick={() => navigate(`/library/activities/${activity.id}`)}
                                         >
                                             <CardContent className="p-4 space-y-3">
                                                 <div className="flex justify-between items-start">

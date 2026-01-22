@@ -1,6 +1,7 @@
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
-import { Target, ChartLineUp, Lightbulb, Path } from '@phosphor-icons/react';
+import { Users, CalendarDots, TrendUp, Path } from '@phosphor-icons/react';
+import { Link } from 'react-router-dom';
 
 export default function Login() {
   const handleLogin = () => {
@@ -12,14 +13,14 @@ export default function Login() {
     <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
       {/* Header */}
       <header className="p-4 md:p-6">
-        <div className="flex items-center gap-2">
+        <Link to="/" className="flex items-center gap-2 hover:opacity-80 transition-opacity w-fit">
           <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
             <Path className="h-6 w-6 text-primary-foreground" />
           </div>
           <span className="font-display text-xl font-bold text-foreground">
             FamilyPath
           </span>
-        </div>
+        </Link>
       </header>
 
       {/* Main Content */}
@@ -28,32 +29,33 @@ export default function Login() {
           {/* Hero */}
           <div className="space-y-4">
             <h1 className="text-3xl md:text-4xl font-display font-bold text-foreground">
-              Welcome to FamilyPath
+              Unlock Your Family's Learning Path
             </h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              A simple daily rhythm for your family. Hymn, verse, book, activity.
+              Sign in to create personalized rhythms for your children, track their growth, 
+              and get age-specific suggestions from our library.
             </p>
           </div>
 
-          {/* Features */}
+          {/* Features - What signing in unlocks */}
           <div className="grid grid-cols-3 gap-4 py-8">
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-motor/10 flex items-center justify-center">
-                <Target className="h-6 w-6 text-domain-motor" weight="duotone" />
+                <Users className="h-6 w-6 text-domain-motor" weight="duotone" />
               </div>
-              <p className="text-sm text-muted-foreground">Daily Activities</p>
+              <p className="text-sm text-muted-foreground">Child Profiles</p>
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-cognitive/10 flex items-center justify-center">
-                <ChartLineUp className="h-6 w-6 text-domain-cognitive" weight="duotone" />
+                <CalendarDots className="h-6 w-6 text-domain-cognitive" weight="duotone" />
               </div>
-              <p className="text-sm text-muted-foreground">Track Progress</p>
+              <p className="text-sm text-muted-foreground">Weekly Planner</p>
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-social/10 flex items-center justify-center">
-                <Lightbulb className="h-6 w-6 text-domain-social" weight="duotone" />
+                <TrendUp className="h-6 w-6 text-domain-social" weight="duotone" />
               </div>
-              <p className="text-sm text-muted-foreground">Smart Recommendations</p>
+              <p className="text-sm text-muted-foreground">Track Progress</p>
             </div>
           </div>
 
@@ -84,15 +86,22 @@ export default function Login() {
               </svg>
               Sign in with Google
             </Button>
+            
+            <Link to="/library">
+              <Button variant="ghost" className="w-full text-muted-foreground">
+                Or continue browsing the library
+              </Button>
+            </Link>
+            
             <p className="text-xs text-muted-foreground">
               By signing in, you agree to our{' '}
-              <a href="/terms" className="underline hover:text-foreground">
+              <Link to="/terms" className="underline hover:text-foreground">
                 Terms of Service
-              </a>
+              </Link>
               {' '}and{' '}
-              <a href="/privacy" className="underline hover:text-foreground">
+              <Link to="/privacy" className="underline hover:text-foreground">
                 Privacy Policy
-              </a>.
+              </Link>.
             </p>
           </div>
         </div>

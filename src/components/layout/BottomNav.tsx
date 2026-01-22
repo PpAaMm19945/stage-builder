@@ -3,9 +3,9 @@ import { House, Books, TrendUp, SlidersHorizontal } from '@phosphor-icons/react'
 import { cn } from '@/lib/utils';
 
 const navItems = [
-    { icon: House, label: 'Home', path: '/' },
-    { icon: Books, label: 'Library', path: '/early-years/activities' },
-    { icon: TrendUp, label: 'Progress', path: '/early-years/progress' },
+    { icon: House, label: 'Home', path: '/dashboard' },
+    { icon: Books, label: 'Library', path: '/library' },
+    { icon: TrendUp, label: 'Progress', path: '/progress' },
     { icon: SlidersHorizontal, label: 'Settings', path: '/settings' },
 ];
 
