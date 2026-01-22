@@ -55,32 +55,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     // If opened from sidebar (no childrenIds), need to prompt if multiple children
     const needsChildSelection = !childrenIds && authChildren.length > 1;
 
-    // Fetch markdown content if needed
+    // Fetch markdown content if needed - use API route for consistent CORS handling
     const { data: markdownContent } = useQuery({
         queryKey: ['book-content', book?.id],
         queryFn: async () => {
             if (!book?.contentPath) return null;
-            // Use existing helper if possible, or construct consistently
-            // Since getPageUrl generates {series}/{book_id}/images/page_1.webp or similar
-            // We need a reliable way to get the content.md URL.
-            // Ideally we'd add books.getContentUrl() to api.ts, but for now we can infer from coverUrl which is more standard.
-            // Cover URL: {series}/{book_id}/images/cover.png
-            // Content URL: {series}/{book_id}/content.md
-
-            // NOTE: The previous replace logic was brittle.
-            // Let's rely on constructing it cleanly if book.series and book.id are available.
-
-            const baseUrl = `https://r2.schoolos.io/books/${book.series}/${book.id}`;
-            const url = `${baseUrl}/content.md`;
-
-            // Fallback: If we must use the API helper to respect some changing base URL
-            // const cover = books.getCoverUrl(book.series, book.id);
-            // const url = cover.replace('/images/cover.png', '/content.md');
-
+            
+            // Use the new API asset route for fetching markdown content
+            const url = books.getAssetUrl(book.series, book.id, 'content.md');
             const res = await fetch(url);
+            
             if (!res.ok) {
-                // Try fallback location (root vs images folder?)
-                const urlFallback = `${baseUrl}/images/content.md`;
+                // Try fallback location (images folder)
+                const urlFallback = books.getAssetUrl(book.series, book.id, 'images/content.md');
                 const res2 = await fetch(urlFallback);
                 if (!res2.ok) throw new Error('Failed to load book content');
                 return res2.text();
@@ -143,22 +130,21 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
-    // Fetch manifest for 'images' format
+    // Fetch manifest for 'images' format - use API route for consistent CORS handling
     const { data: manifestPages } = useQuery({
         queryKey: ['book-manifest', book?.id],
         queryFn: async () => {
             if (!book?.contentPath || (book.renderFormat !== 'image' && book.renderFormat !== 'images')) return null;
 
-            // If contentPath is a URL, use it directly (it's the manifest)
-            // If it's a relative path, construct the R2 URL
+            // If contentPath is a full URL, use it directly
+            // Otherwise use the API asset route
             const url = book.contentPath.startsWith('http')
                 ? book.contentPath
-                : `https://r2.schoolos.io/books/${book.series}/${book.id}/manifest.json`;
+                : books.getAssetUrl(book.series, book.id, 'manifest.json');
 
             const res = await fetch(url);
             if (!res.ok) {
-                // Fallback: If manifest fails, maybe it's legacy indexed images?
-                // Return null to fall through to legacy array generation
+                // Fallback: Return null to use legacy indexed images
                 return null;
             }
             const data = await res.json();
@@ -199,18 +185,18 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
 
     const isMarkdown = book.renderFormat === 'markdown' || book.renderFormat === 'hybrid';
     const isImages = book.renderFormat === 'image' || book.renderFormat === 'images';
-    const isPdf = book.renderFormat === 'pdf' || (!isMarkdown && !isImages); // Default to PDF/Custom if not explicitly images/markdown, though usually we want safe defaults.
-    // Actually, safer default:
-    // const isPdf = book.renderFormat === 'pdf'; 
-    // But let's stick to explicit checks to control the render flow.
+    const isPdf = book.renderFormat === 'pdf';
 
     // Total pages calculation
     const totalPages = isMarkdown ? parsedPages.length : imagePages.length;
 
-    // Use external cover if available
+    // Use external cover if available, otherwise use API route
     const coverUrl = (book.coverUrl && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')))
         ? book.coverUrl
         : books.getCoverUrl(book.series, book.id);
+
+    // PDF URL: use book.pdfUrl if set, otherwise use API route
+    const pdfUrl = book.pdfUrl || books.getPdfUrl(book.series, book.id);
 
     const showPdfButton = !!book.downloadUrl || book.renderFormat === 'pdf' ||
         book.renderFormat === 'hymnal' ||
@@ -305,7 +291,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                         <p className="text-sm text-gray-500 mb-6">If the document doesn't appear, it may be blocked by security settings.</p>
                                         <Button
                                             variant="outline"
-                                            onClick={() => window.open(book.pdfUrl, '_blank')}
+                                            onClick={() => window.open(pdfUrl, '_blank')}
                                             className="gap-2"
                                         >
                                             Open PDF in New Tab
@@ -315,7 +301,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
 
                                 {/* Use iframe for PDF display - most modern browsers support this */}
                                 <iframe
-                                    src={book.pdfUrl}
+                                    src={pdfUrl}
                                     className="w-full h-full relative z-10"
                                     title={book.title}
                                     allow="fullscreen"

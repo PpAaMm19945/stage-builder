@@ -268,7 +268,7 @@ export const activityCompletions_deprecated = {
   create: (data: any) => console.warn('Deprecated activityCompletions used', data)
 };
 
-// Books
+// Books - All assets served via /api/books/* routes for consistent CORS handling
 export const books = {
   list: (params?: { stage?: string; ageMonths?: number }) => {
     const query = new URLSearchParams();
@@ -280,11 +280,21 @@ export const books = {
   get: (series: string, bookId: string) =>
     apiRequest<Book>(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}`),
 
+  // Cover image URL - uses API route with CORS headers
   getCoverUrl: (series: string, bookId: string) =>
     `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
 
+  // Page image URL - uses API route with CORS headers
   getPageUrl: (series: string, bookId: string, pageNum: number) =>
     `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+
+  // PDF URL - for larger books with many pages
+  getPdfUrl: (series: string, bookId: string) =>
+    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pdf`,
+
+  // Generic asset URL - for markdown, manifests, etc.
+  getAssetUrl: (series: string, bookId: string, assetPath: string) =>
+    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/asset/${assetPath}`,
 };
 
 // Reading Sessions

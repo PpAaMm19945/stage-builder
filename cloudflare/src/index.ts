@@ -117,47 +117,12 @@ app.use('*', async (c, next) => {
   c.header('Strict-Transport-Security', 'max-age=31536000; includeSubDomains');
 });
 
-// ============ PUBLIC R2 PROXY ============
-// Public access to books bucket (bypassing auth for static assets)
-// Route: /books/* -> R2 bucket
-app.get('/books/*', async (c) => {
-  const key = c.req.path.slice(1); // Remove leading slash, keep 'books/...' to match bucket structure
+// ============ R2 ASSET ROUTES ============
+// All book assets are served via /api/books/* routes for consistency and CORS handling
+// The /books/* public proxy was removed due to net::ERR_CONNECTION_REFUSED issues
 
-  if (!key) {
-    return c.text('Missing file key', 400);
-  }
-
-  // Security: Prevent directory traversal
-  if (key.includes('..')) {
-    return c.text('Invalid key', 400);
-  }
-
-  try {
-    const object = await c.env.BOOKS_BUCKET.get(key);
-
-    if (!object) {
-      return c.text('File not found', 404);
-    }
-
-    const headers = new Headers();
-    object.writeHttpMetadata(headers);
-    headers.set('etag', object.httpEtag);
-
-    // Set cache control for static assets
-    headers.set('Cache-Control', 'public, max-age=31536000');
-    headers.set('Access-Control-Allow-Origin', '*');
-    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-
-    return new Response(object.body, {
-      headers,
-    });
-  } catch (e: any) {
-    return c.text(`Error fetching file: ${e.message}`, 500);
-  }
-});
-
-// Debug R2 contents
-app.get('/books-debug', async (c) => {
+// Debug R2 contents (admin only, keep for troubleshooting)
+app.get('/api/r2-debug', async (c) => {
   try {
     const prefix = c.req.query('prefix') || '';
     const list = await c.env.BOOKS_BUCKET.list({ limit: 100, prefix });
@@ -3724,28 +3689,36 @@ app.get('/api/books/:series/:bookId', async (c) => {
   }
 });
 
-// Get book cover image
-// Get book cover image
+// Get book cover image (with CORS for cross-origin requests)
 app.get('/api/books/:series/:bookId/cover', async (c) => {
   try {
-    const series = c.req.param('series');
-    const bookId = c.req.param('bookId');
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
     const bucket = c.env.BOOKS_BUCKET;
 
-    // STRICT: Always books/{series}/{bookId}/images/cover.png
-    const key = `books/${series}/${bookId}/images/cover.png`;
-    const object = await bucket.get(key);
+    // Try multiple path patterns for resilience
+    const pathsToTry = [
+      `books/${series}/${bookId}/images/cover.png`,
+      `books/${series}/${bookId}/cover.png`,
+      `${series}/${bookId}/images/cover.png`,
+      `${series}/${bookId}/cover.png`,
+    ];
 
-    if (object) {
-      const headers = new Headers();
-      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-      headers.set('Cache-Control', 'public, max-age=86400');
-      return new Response(object.body, { headers });
+    for (const key of pathsToTry) {
+      const object = await bucket.get(key);
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        headers.set('Cache-Control', 'public, max-age=86400');
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        return new Response(object.body, { headers });
+      }
     }
 
     return c.json({
       error: 'Cover not found',
-      expected: key,
+      tried: pathsToTry,
       help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
     }, 404);
   } catch (error: any) {
@@ -3753,32 +3726,114 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
   }
 });
 
-// Get book page image
-// Get book page image
+// Get book page image (with CORS for cross-origin requests)
 app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
   try {
-    const series = c.req.param('series');
-    const bookId = c.req.param('bookId');
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
     const pageNum = c.req.param('pageNum');
     const bucket = c.env.BOOKS_BUCKET;
 
     const paddedNum = pageNum.padStart(2, '0');
-    // STRICT: Always books/{series}/{bookId}/images/page-XX.png
-    const key = `books/${series}/${bookId}/images/page-${paddedNum}.png`;
-    const object = await bucket.get(key);
+    
+    // Try multiple path patterns for resilience
+    const pathsToTry = [
+      `books/${series}/${bookId}/images/page-${paddedNum}.png`,
+      `books/${series}/${bookId}/page-${paddedNum}.png`,
+      `${series}/${bookId}/images/page-${paddedNum}.png`,
+      `${series}/${bookId}/page-${paddedNum}.png`,
+    ];
 
-    if (object) {
-      const headers = new Headers();
-      headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
-      headers.set('Cache-Control', 'public, max-age=86400');
-      return new Response(object.body, { headers });
+    for (const key of pathsToTry) {
+      const object = await bucket.get(key);
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', object.httpMetadata?.contentType || 'image/png');
+        headers.set('Cache-Control', 'public, max-age=86400');
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        return new Response(object.body, { headers });
+      }
     }
 
     return c.json({
       error: 'Page not found',
-      expected: key,
+      tried: pathsToTry,
       help: 'See docs/BOOKS_CONFORMITY_STANDARD.md'
     }, 404);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get book PDF (for larger books with many pages)
+app.get('/api/books/:series/:bookId/pdf', async (c) => {
+  try {
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
+    const bucket = c.env.BOOKS_BUCKET;
+
+    // Try multiple path patterns for PDF files
+    const pathsToTry = [
+      `books/${series}/${bookId}/${bookId}.pdf`,
+      `books/${series}/${bookId}/book.pdf`,
+      `${series}/${bookId}/${bookId}.pdf`,
+      `${series}/${bookId}/book.pdf`,
+    ];
+
+    for (const key of pathsToTry) {
+      const object = await bucket.get(key);
+      if (object) {
+        const headers = new Headers();
+        headers.set('Content-Type', 'application/pdf');
+        headers.set('Cache-Control', 'public, max-age=86400');
+        headers.set('Access-Control-Allow-Origin', '*');
+        headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+        // Allow inline viewing, not forced download
+        headers.set('Content-Disposition', `inline; filename="${bookId}.pdf"`);
+        return new Response(object.body, { headers });
+      }
+    }
+
+    return c.json({
+      error: 'PDF not found',
+      tried: pathsToTry,
+      help: 'Upload PDF to R2 at books/{series}/{bookId}/book.pdf'
+    }, 404);
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get any book asset (generic fallback for markdown, manifests, etc.)
+app.get('/api/books/:series/:bookId/asset/*', async (c) => {
+  try {
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
+    const assetPath = c.req.path.split('/asset/')[1] || '';
+    const bucket = c.env.BOOKS_BUCKET;
+
+    if (!assetPath || assetPath.includes('..')) {
+      return c.json({ error: 'Invalid asset path' }, 400);
+    }
+
+    const pathsToTry = [
+      `books/${series}/${bookId}/${assetPath}`,
+      `${series}/${bookId}/${assetPath}`,
+    ];
+
+    for (const key of pathsToTry) {
+      const object = await bucket.get(key);
+      if (object) {
+        const headers = new Headers();
+        object.writeHttpMetadata(headers);
+        headers.set('Cache-Control', 'public, max-age=3600');
+        headers.set('Access-Control-Allow-Origin', '*');
+        return new Response(object.body, { headers });
+      }
+    }
+
+    return c.json({ error: 'Asset not found', tried: pathsToTry }, 404);
   } catch (error: any) {
     return c.json({ error: error.message }, 500);
   }
