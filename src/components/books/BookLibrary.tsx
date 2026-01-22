@@ -130,7 +130,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     }
 
     return (
-        <div className="space-y-10 pb-12 overflow-x-hidden">
+        <div className="space-y-10 pb-12 w-full max-w-full overflow-x-hidden">
             {/* Loading State */}
             {isLoading && (
                 <div className="space-y-8">
@@ -195,8 +195,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             )}
                         </div>
 
-                        {/* Carousel wrapper with strict overflow control */}
-                        <div className="w-full overflow-hidden -mx-4 px-4">
+                        {/* Carousel wrapper - no negative margins to prevent overflow */}
+                        <div className="w-full overflow-hidden">
                             <Carousel
                                 opts={{
                                     align: "start",
@@ -206,7 +206,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                             >
                                 {/* 
                                   Use gap-3 for consistent spacing between cards.
-                                  Override the default -ml-4 from CarouselContent to avoid overflow issues.
+                                  No negative margins - just clean gap-based spacing.
                                 */}
                                 <CarouselContent className="ml-0 gap-3">
                                     {booksBySeries[series].map(book => (
@@ -214,11 +214,11 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                             key={`${book.series}-${book.id}`} 
                                             className={`pl-0 shrink-0 ${
                                                 // Mobile: smaller cards that fit properly
-                                                // Landscape: ~75% width (1 card + peek)
-                                                // Portrait: ~40% width (2 cards + peek)
+                                                // Landscape: ~70% width (1 card + peek)
+                                                // Portrait: ~38% width (2+ cards visible)
                                                 isLandscape 
-                                                    ? 'basis-[72%] sm:basis-[42%] md:basis-[30%] lg:basis-[23%] xl:basis-[18%]'
-                                                    : 'basis-[38%] sm:basis-[28%] md:basis-[22%] lg:basis-[17%] xl:basis-[13%]'
+                                                    ? 'basis-[70%] sm:basis-[40%] md:basis-[28%] lg:basis-[22%] xl:basis-[17%]'
+                                                    : 'basis-[36%] sm:basis-[26%] md:basis-[20%] lg:basis-[16%] xl:basis-[12%]'
                                             }`}
                                         >
                                             <BookCard
@@ -229,9 +229,9 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                         </CarouselItem>
                                     ))}
                                 </CarouselContent>
-                                {/* Nav buttons positioned inside the carousel bounds */}
-                                <CarouselPrevious className="left-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/80 backdrop-blur-sm" />
-                                <CarouselNext className="right-2 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/80 backdrop-blur-sm" />
+                                {/* Nav buttons - hidden on mobile, positioned inside on larger screens */}
+                                <CarouselPrevious className="hidden sm:flex !left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
+                                <CarouselNext className="hidden sm:flex !right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
                             </Carousel>
                         </div>
                     </section>
