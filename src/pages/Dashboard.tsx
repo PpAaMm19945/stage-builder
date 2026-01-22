@@ -1,6 +1,7 @@
 import { useState, useMemo, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions, reading, liturgy } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading, liturgy, paths } from '@/lib/api';
+import { TodayPathItem } from '@/types/paths';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,6 +47,8 @@ import { Label } from '@/components/ui/label';
 import { UsersThree, Crown } from '@phosphor-icons/react';
 import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
 import { useStableValue } from '@/hooks/useStableValue';
+import { Compass } from '@phosphor-icons/react';
+import { Link } from 'react-router-dom';
 
 const EMPTY_WEEK_DATA = {};
 
@@ -75,6 +78,12 @@ export default function Dashboard() {
   const { data: liturgyData } = useQuery({
     queryKey: ['liturgy-today'],
     queryFn: liturgy.getToday,
+  });
+
+  const { data: pathsToday } = useQuery({
+    queryKey: ['paths-today'],
+    queryFn: paths.getToday,
+    enabled: isToday,
   });
 
   // Fetch day data - use getToday for today, getDay for other days
@@ -226,6 +235,18 @@ export default function Dashboard() {
     }
   });
 
+  const advancePathMutation = useMutation({
+    mutationFn: (pathId: string) => paths.advance(pathId),
+    onSuccess: (data) => {
+      queryClient.invalidateQueries({ queryKey: ['paths-today'] });
+      queryClient.invalidateQueries({ queryKey: ['path-subscriptions'] });
+      toast.success(`Progress saved! ${data.new_position}/${data.total_items}`);
+      if (data.is_completed) {
+        toast.success('Congratulations! You completed this path!');
+      }
+    },
+  });
+
   const handleRegenerate = useCallback(() => setIsBalanceDialogOpen(true), []);
 
   const confirmRegenerate = () => {
@@ -302,8 +323,16 @@ export default function Dashboard() {
 
   // Memoized handlers
   const handleRhythmComplete = useCallback((item: RhythmItem, duration?: number) => {
-    completeActivityMutation.mutate({ item, duration });
-  }, [completeActivityMutation]);
+    // Existing activity completion logic
+    if (item.type === 'activity') {
+      completeActivityMutation.mutate({ item, duration });
+    }
+
+    // Path item advancement
+    if (item.type === 'path_item' && item.data?.pathId) {
+      advancePathMutation.mutate(item.data.pathId);
+    }
+  }, [completeActivityMutation, advancePathMutation]);
 
   const handleBookClick = useCallback(() => {
     setSelectedBook(todaysBook);
@@ -339,6 +368,27 @@ export default function Dashboard() {
           allCompleted: allLiturgyCompleted
         }
       });
+
+      // Add Path Items (Hymns, Catechism from active paths)
+      if (pathsToday?.items) {
+        pathsToday.items.forEach((pathItem: TodayPathItem, index: number) => {
+          rawItems.push({
+            id: `path-${pathItem.path_id}-${index}`,
+            timeSlot: pathItem.item_type === 'hymn' ? '08:15' : '08:30',
+            title: pathItem.item_title || pathItem.path_type,
+            description: pathItem.path_title || '',
+            type: 'path_item',
+            status: 'upcoming',
+            data: {
+              ...pathItem,
+              context_anchor: 'Morning Circle',
+              pathId: pathItem.path_id,
+              pathName: pathItem.path_title,
+              content: pathItem.item_data
+            }
+          });
+        });
+      }
     }
 
     // 2. Family Sessions
@@ -453,7 +503,7 @@ export default function Dashboard() {
     });
 
     return flattenedItems;
-  }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData]);
+  }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData, pathsToday]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed').length, [timelineItems]);
@@ -637,6 +687,41 @@ export default function Dashboard() {
           <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">Rest Day</h2>
           <p className="text-blue-700 dark:text-blue-200">{dayData.message}</p>
         </div>
+      )}
+
+      {/* Active Paths Progress */}
+      {pathsToday?.active_paths && pathsToday.active_paths.length > 0 && (
+        <div className="space-y-3">
+          {pathsToday.active_paths.map(path => (
+            <div key={path.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded-lg">
+              <span className="font-medium flex items-center gap-2">
+                <Compass className="w-4 h-4 text-primary" />
+                {path.title}
+              </span>
+              <span className="text-muted-foreground text-xs">
+                {path.subscription?.current_position}/{path.total_items}
+              </span>
+            </div>
+          ))}
+        </div>
+      )}
+
+      {/* No Active Paths Empty State */}
+      {isToday && (!pathsToday?.active_paths || pathsToday.active_paths.length === 0) && (
+        <Card className="bg-gradient-to-br from-primary/5 to-transparent border-dashed">
+          <CardContent className="flex flex-col items-center text-center py-6 space-y-3">
+            <div className="h-10 w-10 bg-background rounded-full flex items-center justify-center shadow-sm">
+              <Compass className="h-5 w-5 text-primary" weight="duotone" />
+            </div>
+            <div>
+              <p className="font-medium">Start a Learning Path</p>
+              <p className="text-sm text-muted-foreground">Follow a guided journey through hymns, catechisms, and more.</p>
+            </div>
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/library/paths">Explore Paths</Link>
+            </Button>
+          </CardContent>
+        </Card>
       )}
 
       {/* Up Next Card - only for today */}
