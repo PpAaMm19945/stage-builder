@@ -4,11 +4,14 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
     Books,
     MusicNotes,
-    Shapes
+    Shapes,
+    Compass
 } from '@phosphor-icons/react';
+import { Button } from '@/components/ui/button';
 import { ActivityBrowser } from '@/components/library/ActivityBrowser';
 import { HymnBrowser } from '@/components/library/HymnBrowser';
 import { BookLibrary } from '@/components/books/BookLibrary';
+import { GuestBanner } from '@/components/library/GuestBanner';
 
 export default function LibraryPage() {
     const location = useLocation();
@@ -45,9 +48,19 @@ export default function LibraryPage() {
 
     return (
         <div className="space-y-6 pb-24">
-            <div className="py-2 space-y-2">
-                <h1 className="text-3xl font-display font-bold text-foreground">Library</h1>
-                <p className="text-muted-foreground">Resources for your family's formation and delight.</p>
+            <div className="py-2 space-y-3">
+                <div className="flex items-center justify-between">
+                    <div>
+                        <h1 className="text-3xl font-display font-bold text-foreground">Library</h1>
+                        <p className="text-muted-foreground">Resources for your family's formation and delight.</p>
+                    </div>
+                    <Button asChild variant="outline" className="hidden sm:flex">
+                        <Link to="/library/paths">
+                            <Compass className="mr-2 h-4 w-4" />
+                            Learning Paths
+                        </Link>
+                    </Button>
+                </div>
             </div>
 
             <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
@@ -80,6 +93,19 @@ export default function LibraryPage() {
                     </TabsContent>
                 </div>
             </Tabs>
+
+            {/* Mobile-only Learning Paths Link */}
+            <div className="sm:hidden">
+                <Button asChild variant="outline" className="w-full">
+                    <Link to="/library/paths">
+                        <Compass className="mr-2 h-4 w-4" />
+                        Explore Learning Paths
+                    </Link>
+                </Button>
+            </div>
+
+            {/* Guest Conversion Banner */}
+            <GuestBanner incrementView />
         </div>
     );
 }

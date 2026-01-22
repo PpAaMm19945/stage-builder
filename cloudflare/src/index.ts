@@ -5909,4 +5909,242 @@ app.put('/api/independence-settings/:studentId', async (c) => {
   }
 });
 
+// ============ LEARNING PATHS API ============
+
+// List all active learning paths (public)
+app.get('/api/paths', async (c) => {
+  try {
+    const result = await c.env.DB.prepare(
+      'SELECT * FROM learning_paths WHERE is_active = 1 ORDER BY sort_order ASC'
+    ).all();
+
+    return c.json(result.results || []);
+  } catch (error: any) {
+    console.error('Error fetching learning paths:', error);
+    // Return empty array if table doesn't exist yet
+    return c.json([]);
+  }
+});
+
+// Get user's path subscriptions (authenticated)
+app.get('/api/paths/subscriptions', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    const result = await c.env.DB.prepare(`
+      SELECT 
+        fps.*,
+        lp.title as path_title,
+        lp.path_type,
+        lp.total_items
+      FROM family_path_subscriptions fps
+      JOIN learning_paths lp ON fps.path_id = lp.id
+      WHERE fps.parent_id = ?
+      ORDER BY fps.started_at DESC
+    `).bind(user.id).all();
+
+    return c.json(result.results || []);
+  } catch (error: any) {
+    console.error('Error fetching subscriptions:', error);
+    return c.json([]);
+  }
+});
+
+// Subscribe to a path
+app.post('/api/paths/:pathId/subscribe', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const pathId = c.req.param('pathId');
+
+    // Check if path exists
+    const path = await c.env.DB.prepare(
+      'SELECT * FROM learning_paths WHERE id = ? AND is_active = 1'
+    ).bind(pathId).first();
+
+    if (!path) {
+      return c.json({ error: 'Path not found' }, 404);
+    }
+
+    // Check if already subscribed
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?'
+    ).bind(user.id, pathId).first();
+
+    if (existing) {
+      return c.json({ error: 'Already subscribed to this path' }, 400);
+    }
+
+    const subscriptionId = crypto.randomUUID();
+    await c.env.DB.prepare(`
+      INSERT INTO family_path_subscriptions (id, parent_id, path_id, started_at, current_position, is_paused)
+      VALUES (?, ?, ?, datetime('now'), 1, 0)
+    `).bind(subscriptionId, user.id, pathId).run();
+
+    const subscription = await c.env.DB.prepare(
+      'SELECT * FROM family_path_subscriptions WHERE id = ?'
+    ).bind(subscriptionId).first();
+
+    return c.json({ success: true, subscription });
+  } catch (error: any) {
+    console.error('Error subscribing to path:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Pause a path subscription
+app.post('/api/paths/:pathId/pause', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const pathId = c.req.param('pathId');
+
+    await c.env.DB.prepare(`
+      UPDATE family_path_subscriptions 
+      SET is_paused = 1 
+      WHERE parent_id = ? AND path_id = ?
+    `).bind(user.id, pathId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Resume a path subscription
+app.post('/api/paths/:pathId/resume', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const pathId = c.req.param('pathId');
+
+    await c.env.DB.prepare(`
+      UPDATE family_path_subscriptions 
+      SET is_paused = 0 
+      WHERE parent_id = ? AND path_id = ?
+    `).bind(user.id, pathId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Unsubscribe from a path
+app.delete('/api/paths/:pathId/unsubscribe', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const pathId = c.req.param('pathId');
+
+    await c.env.DB.prepare(`
+      DELETE FROM family_path_subscriptions 
+      WHERE parent_id = ? AND path_id = ?
+    `).bind(user.id, pathId).run();
+
+    return c.json({ success: true });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+// Get today's content from all active paths
+app.get('/api/paths/today', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    // Get all active subscriptions
+    const subscriptionsResult = await c.env.DB.prepare(`
+      SELECT 
+        fps.*,
+        lp.id as path_id,
+        lp.title as path_title,
+        lp.path_type,
+        lp.content_filter,
+        lp.pace,
+        lp.total_items
+      FROM family_path_subscriptions fps
+      JOIN learning_paths lp ON fps.path_id = lp.id
+      WHERE fps.parent_id = ? AND fps.is_paused = 0 AND fps.completed_at IS NULL
+    `).bind(user.id).all();
+
+    const subscriptions = subscriptionsResult.results || [];
+    const items: any[] = [];
+
+    // For each active subscription, get today's item
+    for (const sub of subscriptions) {
+      const pathType = (sub as any).path_type;
+      const position = (sub as any).current_position || 1;
+      const total = (sub as any).total_items;
+
+      let item = null;
+
+      // Fetch content based on path type
+      if (pathType === 'hymn_journey') {
+        // Get hymn at current position
+        const hymn = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('hymn', position - 1).first();
+        if (hymn) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'hymn',
+            item_id: (hymn as any).id,
+            item_title: (hymn as any).title,
+            item_data: hymn,
+            position,
+            total,
+          };
+        }
+      } else if (pathType === 'catechism') {
+        // Get catechism at current position
+        const catechism = await c.env.DB.prepare(
+          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
+        ).bind('catechism', position - 1).first();
+        if (catechism) {
+          item = {
+            path_id: (sub as any).path_id,
+            path_title: (sub as any).path_title,
+            path_type: pathType,
+            item_type: 'catechism',
+            item_id: (catechism as any).id,
+            item_title: (catechism as any).title,
+            item_data: catechism,
+            position,
+            total,
+          };
+        }
+      }
+      // Add more path types as needed...
+
+      if (item) {
+        items.push(item);
+      }
+    }
+
+    // Build active_paths response
+    const active_paths = subscriptions.map((sub: any) => ({
+      id: sub.path_id,
+      title: sub.path_title,
+      path_type: sub.path_type,
+      total_items: sub.total_items,
+      subscription: {
+        id: sub.id,
+        parent_id: sub.parent_id,
+        path_id: sub.path_id,
+        started_at: sub.started_at,
+        current_position: sub.current_position,
+        is_paused: Boolean(sub.is_paused),
+        completed_at: sub.completed_at,
+      },
+      progress_percent: sub.total_items 
+        ? Math.round((sub.current_position / sub.total_items) * 100) 
+        : 0,
+    }));
+
+    return c.json({ items, active_paths });
+  } catch (error: any) {
+    console.error('Error getting today\'s paths:', error);
+    return c.json({ items: [], active_paths: [] });
+  }
+});
+
 export default app;
