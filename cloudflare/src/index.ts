@@ -3804,6 +3804,61 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
   }
 });
 
+// Debug endpoint for cover URL probing
+app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
+  try {
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
+    const bucket = c.env.BOOKS_BUCKET;
+
+    const toTitleCase = (str: string) => str
+      .split('_')
+      .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+      .join(' ');
+    
+    const seriesTitleCase = toTitleCase(series);
+    const bookIdTitleCase = toTitleCase(bookId);
+    
+    const pathsToTry = [
+      `books/${series}/${bookId}/images/cover.png`,
+      `books/${series}/${bookId}/images/cover.jpg`,
+      `books/${series}/images/${bookId}.png`,
+      `books/${series}/images/${bookId}.jpg`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
+      `books/${series}/${bookId}/images/page-01.png`,
+      `books/${series}/${bookId}/images/page_01.png`,
+      `books/${seriesTitleCase}/${bookIdTitleCase}/images/Page 1.png`,
+    ];
+
+    const results = [];
+    let foundPath = null;
+    
+    for (const key of pathsToTry) {
+      const object = await bucket.head(key);
+      const found = !!object;
+      results.push({ 
+        path: key, 
+        found,
+        size: object?.size,
+        contentType: object?.httpMetadata?.contentType
+      });
+      if (found && !foundPath) foundPath = key;
+    }
+
+    return c.json({
+      requestedSeries: series,
+      requestedBookId: bookId,
+      seriesTitleCase,
+      bookIdTitleCase,
+      foundPath,
+      pathsChecked: results
+    });
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Get book page image (with CORS for cross-origin requests)
 app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
   try {

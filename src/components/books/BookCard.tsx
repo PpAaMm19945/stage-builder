@@ -1,4 +1,4 @@
-import { useState, memo } from 'react';
+import { useState, memo, useEffect } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -64,12 +64,24 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         }
     };
 
-    // Add max-width constraints to prevent card bloat on larger screens
-    const maxWidthClass = isLandscape ? 'max-w-[320px]' : 'max-w-[200px]';
+    // Clamp-based sizing: min, preferred (viewport-relative), max
+    // This ensures cards are ALWAYS smaller on mobile than desktop
+    const sizeClass = isLandscape 
+        ? 'w-[clamp(160px,50vw,280px)]'  // Landscape: 160px min, ~50% viewport, 280px max
+        : 'w-[clamp(100px,35vw,180px)]'; // Portrait: 100px min, ~35% viewport, 180px max
+    
+    // Debug logging for cover URLs
+    useEffect(() => {
+        console.log('[BookCard] Cover request:', {
+            series: book.series,
+            id: book.id,
+            coverUrl
+        });
+    }, [book.series, book.id, coverUrl]);
 
     return (
         <div
-            className={`group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg ${maxWidthClass}`}
+            className={`group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.02] active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 rounded-lg ${sizeClass}`}
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}
