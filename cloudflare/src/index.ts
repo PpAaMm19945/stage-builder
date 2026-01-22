@@ -6044,6 +6044,55 @@ app.delete('/api/paths/:pathId/unsubscribe', async (c) => {
   }
 });
 
+// Advance position in a path subscription
+app.post('/api/paths/:pathId/advance', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const pathId = c.req.param('pathId');
+
+    // Get current subscription
+    const subscription = await c.env.DB.prepare(`
+      SELECT fps.*, lp.total_items 
+      FROM family_path_subscriptions fps
+      JOIN learning_paths lp ON fps.path_id = lp.id
+      WHERE fps.parent_id = ? AND fps.path_id = ?
+    `).bind(user.id, pathId).first() as any;
+
+    if (!subscription) {
+      return c.json({ error: 'Subscription not found' }, 404);
+    }
+
+    const newPosition = (subscription.current_position || 1) + 1;
+    const isCompleted = subscription.total_items && newPosition > subscription.total_items;
+
+    if (isCompleted) {
+      // Mark path as completed
+      await c.env.DB.prepare(`
+        UPDATE family_path_subscriptions 
+        SET current_position = ?, completed_at = datetime('now')
+        WHERE parent_id = ? AND path_id = ?
+      `).bind(newPosition, user.id, pathId).run();
+    } else {
+      // Just advance position
+      await c.env.DB.prepare(`
+        UPDATE family_path_subscriptions 
+        SET current_position = ?
+        WHERE parent_id = ? AND path_id = ?
+      `).bind(newPosition, user.id, pathId).run();
+    }
+
+    return c.json({ 
+      success: true, 
+      new_position: newPosition,
+      total_items: subscription.total_items,
+      is_completed: isCompleted
+    });
+  } catch (error: any) {
+    console.error('Error advancing path:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 // Get today's content from all active paths
 app.get('/api/paths/today', async (c) => {
   try {

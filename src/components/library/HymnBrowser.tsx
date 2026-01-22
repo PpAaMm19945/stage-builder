@@ -5,13 +5,14 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { BookOpenText } from '@phosphor-icons/react';
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet';
 import { Separator } from '@/components/ui/separator';
-import { HymnAudioPlayer } from './HymnAudioPlayer';
 import { HymnContent } from '@/components/liturgy/HymnContent';
 import { Hymn, HymnCard } from './HymnCard';
 import { PlayHymnButton } from './PlayHymnButton';
+import { useGuestViewTracker } from './GuestBanner';
 
 export function HymnBrowser() {
     const [selectedHymn, setSelectedHymn] = useState<Hymn | null>(null);
+    const { trackView } = useGuestViewTracker();
 
     const { data: hymns = [], isLoading } = useQuery({
         queryKey: ['hymns', 'all'],
@@ -20,7 +21,8 @@ export function HymnBrowser() {
 
     const handleHymnSelect = useCallback((hymn: Hymn) => {
         setSelectedHymn(hymn);
-    }, []);
+        trackView(); // Track for guest conversion banner
+    }, [trackView]);
 
     if (isLoading) {
         return (
