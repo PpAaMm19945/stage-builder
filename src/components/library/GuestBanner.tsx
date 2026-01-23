@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, UserPlus, Sparkle } from '@phosphor-icons/react';
@@ -120,13 +120,13 @@ export function GuestBanner({ incrementView = false }: GuestBannerProps) {
 export function useGuestViewTracker() {
   const { isAuthenticated } = useAuth();
 
-  const trackView = () => {
+  const trackView = useCallback(() => {
     if (isAuthenticated) return;
     
     const stored = localStorage.getItem(STORAGE_KEY);
     const count = stored ? parseInt(stored, 10) : 0;
     localStorage.setItem(STORAGE_KEY, String(count + 1));
-  };
+  }, [isAuthenticated]);
 
   return { trackView };
 }
