@@ -17,3 +17,8 @@
 **Vulnerability:** The Admin Dashboard used `script-src 'unsafe-inline'` and inline event handlers (`onclick`), making it vulnerable to XSS if any injection point was missed by `escapeHtml`.
 **Learning:** Retrofitting strict CSP (`nonce-based`) into an existing app with inline handlers requires converting `onclick` attributes to event listeners. Event delegation (attaching one listener to `document` or a container) is a clean way to handle this for dynamic content without complex rewrites.
 **Prevention:** Start projects with strict CSP (`nonce` or `hash`) and avoid inline event handlers (`onclick`, `onload`, etc.) from day one.
+
+## 2026-01-10 - Path Traversal in R2 Keys
+**Vulnerability:** API endpoints constructed R2 object keys using user-supplied parameters (`series`, `bookId`) without validation. Attackers could potentially use `..` sequences to traverse out of the intended `books/` prefix (e.g., `books/../secret.json`) if the underlying storage or intermediate layers normalized paths.
+**Learning:** Never assume object storage keys are immune to path traversal. Path normalization might happen in the URL router, the HTTP client, or the storage driver. Explicitly validating that path segments do not contain traversal characters (`..`) is a necessary defense-in-depth measure.
+**Prevention:** Implement a strict `isValidPathSegment` check that rejects any input containing `..` for all parameters used to construct file paths or storage keys.
