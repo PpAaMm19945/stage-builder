@@ -10,11 +10,22 @@ import { useRef } from 'react';
  */
 export function useStableValue<T>(value: T): T {
   const ref = useRef(value);
-  const valueJson = JSON.stringify(value);
+  const previousJsonRef = useRef<string | undefined>(undefined);
+  const initializedRef = useRef(false);
 
-  // We use a ref to track the last JSON string to avoid re-parsing if possible,
-  // but we need to compare the current valueJson with the previous one.
-  const previousJsonRef = useRef(valueJson);
+  // Initialize on first render to avoid redundant stringify in subsequent renders if value is stable
+  if (!initializedRef.current) {
+    previousJsonRef.current = JSON.stringify(value);
+    initializedRef.current = true;
+  }
+
+  // Optimization: If the value is referentially identical to the last stored value,
+  // we can skip the expensive JSON serialization.
+  if (value === ref.current) {
+    return ref.current;
+  }
+
+  const valueJson = JSON.stringify(value);
 
   if (previousJsonRef.current !== valueJson) {
     ref.current = value;

@@ -13,3 +13,7 @@
 2. Memoized `timelineItems` creation in `Dashboard` using `useMemo`.
 3. Memoized handlers (`handleRhythmComplete`, `handleBookClick`, `handleSwap`) using `useCallback`.
 4. Ensured all hooks in `Dashboard` are called before any conditional returns (e.g. loading states) to adhere to Rules of Hooks.
+
+## 2026-05-26 - useStableValue Optimization
+**Learning:** The `useStableValue` hook was unconditionally calling `JSON.stringify(value)` on every render to check for deep equality. For large objects (like the PDF data in Dashboard), this O(N) operation runs even when the input reference is stable (e.g. from `useMemo`).
+**Action:** Added a fast-path reference equality check (`if (value === ref.current) return ref.current`) and implemented lazy initialization for the JSON ref. This reduces the cost to O(1) for stable references, significantly reducing overhead in the Dashboard during unrelated state changes.
