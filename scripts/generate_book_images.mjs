@@ -5,7 +5,7 @@ import { fileURLToPath } from 'url';
 // CONFIGURATION
 // ==========================================
 // Replace these with your actual details
-const WORKER_URL = 'https://stage-builder.antmwes104-1.workers.dev';
+const WORKER_URL = 'https://stage-builder-9hh.pages.dev';
 const ADMIN_SECRET = 'schoolos-admin';
 
 // Model Configuration
