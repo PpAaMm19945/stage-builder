@@ -1,5 +1,6 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import { FilePdf, Printer, Spinner } from '@phosphor-icons/react';
 import {
     DropdownMenu,
@@ -88,8 +89,8 @@ export function DownloadPrintButton({
                 }
 
                 return (
-                    <div className="flex gap-2">
-                        <Button variant={variant} size={size} asChild className={className}>
+                    <div className={cn("flex gap-2", className)}>
+                        <Button variant={variant} size={size} asChild>
                             <a href={url || '#'} download={fileName}>
                                 <FilePdf className="mr-2 h-4 w-4" />
                                 <span className="hidden sm:inline">{label}</span>
@@ -98,7 +99,7 @@ export function DownloadPrintButton({
                         </Button>
                         <DropdownMenu>
                             <DropdownMenuTrigger asChild>
-                                <Button variant="ghost" size="icon" className="h-9 w-9 text-white hover:bg-white/20" aria-label="More options">
+                                <Button variant={variant} size="icon" className="h-9 w-9" aria-label="More options">
                                     <CaretDown className="h-4 w-4" />
                                 </Button>
                             </DropdownMenuTrigger>
@@ -117,7 +118,7 @@ export function DownloadPrintButton({
 }
 
 // Helper icon
-function CaretDown(props: any) {
+function CaretDown(props: React.SVGProps<SVGSVGElement>) {
     return (
         <svg
             xmlns="http://www.w3.org/2000/svg"
