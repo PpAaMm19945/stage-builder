@@ -323,30 +323,38 @@ export default function Dashboard() {
     },
   });
 
+  const { mutate: completeLiturgy } = completeLiturgyMutation;
+  const { mutate: uncompleteLiturgy } = uncompleteLiturgyMutation;
+
   const handleLiturgyToggle = useCallback((id: string, completed: boolean) => {
     if (completed) {
-      completeLiturgyMutation.mutate(id);
+      completeLiturgy(id);
     } else {
-      uncompleteLiturgyMutation.mutate(id);
+      uncompleteLiturgy(id);
     }
-  }, [completeLiturgyMutation, uncompleteLiturgyMutation]);
+  }, [completeLiturgy, uncompleteLiturgy]);
+
+  const { mutate: advanceLiturgy } = advanceLiturgyMutation;
 
   const handleLiturgyAdvance = useCallback((type: string) => {
-    advanceLiturgyMutation.mutate(type as LiturgyType);
-  }, [advanceLiturgyMutation]);
+    advanceLiturgy(type as LiturgyType);
+  }, [advanceLiturgy]);
 
   // Memoized handlers
+  const { mutate: completeActivity } = completeActivityMutation;
+  const { mutate: advancePath } = advancePathMutation;
+
   const handleRhythmComplete = useCallback((item: RhythmItem, duration?: number) => {
     // Existing activity completion logic
     if (item.type === 'activity') {
-      completeActivityMutation.mutate({ item, duration });
+      completeActivity({ item, duration });
     }
 
     // Path item advancement
     if (item.type === 'path_item' && item.data?.pathId) {
-      advancePathMutation.mutate(item.data.pathId);
+      advancePath(item.data.pathId);
     }
-  }, [completeActivityMutation, advancePathMutation]);
+  }, [completeActivity, advancePath]);
 
   const handleBookClick = useCallback(() => {
     setSelectedBook(todaysBook);
@@ -521,8 +529,8 @@ export default function Dashboard() {
     return flattenedItems;
   }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData, pathsToday]);
 
-  const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed') || null, [timelineItems]);
-  const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed').length, [timelineItems]);
+  const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
+  const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
 
 
   // Loading State

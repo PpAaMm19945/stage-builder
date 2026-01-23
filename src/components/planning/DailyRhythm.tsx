@@ -1,4 +1,4 @@
-import { useState, useCallback } from 'react';
+import { useState, useCallback, memo } from 'react';
 import DOMPurify from 'dompurify';
 import {
     Sheet,
@@ -40,7 +40,7 @@ interface DailyRhythmProps {
     onLiturgyAdvance?: (type: string) => void;
 }
 
-export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLiturgyToggle, onLiturgyAdvance }: DailyRhythmProps) {
+export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLiturgyToggle, onLiturgyAdvance }: DailyRhythmProps) {
     const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
 
     const timelineItems = items.length > 0 ? items : [];
@@ -345,4 +345,4 @@ export function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLit
             </Sheet>
         </div>
     );
-}
+});
