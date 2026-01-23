@@ -36,6 +36,22 @@ function slugify(text: string): string {
     .replace(/-+$/, '');
 }
 
+// Security helper: Constant-time comparison
+async function safeCompare(a: string | undefined | null, b: string | undefined | null): Promise<boolean> {
+  if (!a || !b) {
+    return false;
+  }
+
+  const encoder = new TextEncoder();
+  const aBuf = encoder.encode(a);
+  const bBuf = encoder.encode(b);
+
+  const aHash = await crypto.subtle.digest('SHA-256', aBuf);
+  const bHash = await crypto.subtle.digest('SHA-256', bBuf);
+
+  return crypto.subtle.timingSafeEqual(aHash, bHash);
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request, env } = context;
 
@@ -45,7 +61,8 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   const url = new URL(request.url);
   const querySecret = url.searchParams.get('secret');
 
-  const isAuthorized = (secret && authHeader === `Bearer ${secret}`) || (secret && querySecret === secret);
+  const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+  const isAuthorized = (await safeCompare(headerToken, secret)) || (await safeCompare(querySecret, secret));
 
   if (!isAuthorized) {
     return new Response('Unauthorized', { status: 401 });
