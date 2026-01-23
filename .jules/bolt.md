@@ -17,3 +17,7 @@
 ## 2026-05-26 - useStableValue Optimization
 **Learning:** The `useStableValue` hook was unconditionally calling `JSON.stringify(value)` on every render to check for deep equality. For large objects (like the PDF data in Dashboard), this O(N) operation runs even when the input reference is stable (e.g. from `useMemo`).
 **Action:** Added a fast-path reference equality check (`if (value === ref.current) return ref.current`) and implemented lazy initialization for the JSON ref. This reduces the cost to O(1) for stable references, significantly reducing overhead in the Dashboard during unrelated state changes.
+
+## 2026-05-27 - Memoized Hooks for Render Performance
+**Learning:** The `useGuestViewTracker` hook was returning a new `trackView` function instance on every render because it wasn't wrapped in `useCallback`. This caused consuming components like `BookLibrary` to recreate their handlers (`handleBookClick`) on every render, which in turn broke `React.memo` optimizations on child components (`BookCard`), leading to O(N) re-renders of the entire list whenever parent state changed.
+**Action:** Always wrap returned functions in custom hooks with `useCallback` if they are likely to be used as dependencies in `useEffect` or other `useCallback` hooks in consuming components, especially when those components render large lists of memoized items.
