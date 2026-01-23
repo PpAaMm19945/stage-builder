@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { ai, overrides, liturgy, rhythm, weeklyPlan, family, formation } from '@/lib/api';
+import { ai, overrides, liturgy, rhythm, weeklyPlan, family, formation, students } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { toast } from 'sonner';
@@ -313,7 +313,7 @@ export function SchoolOSChat() {
                 // Ideally we use the context `children` but it's not async.
                 // We can use the students API directly if needed.
 
-                const studentsData = await import('@/lib/api').then(m => m.students.list());
+                const studentsData = await students.list();
 
                 if (planData?.plan && studentsData) {
                     const insights = await weeklyPlan.getStrategicInsights(planData.plan, studentsData);
