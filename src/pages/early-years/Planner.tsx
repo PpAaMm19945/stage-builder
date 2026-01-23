@@ -32,6 +32,7 @@ import { Label } from '@/components/ui/label';
 import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
 import { WeeklyPlanDocument, DayPlan } from '@/components/pdf/documents';
 import { LiturgyItem, ApiActivity, Book, LiturgyType } from '@/types';
+import { ErrorState } from '@/components/ui/ErrorState';
 
 // Helper to get smart week start (matches backend)
 function getSmartWeekStart(date = new Date()) {
@@ -70,6 +71,10 @@ export default function Planner() {
         queryKey: ['weekly-plan', weekStartStr],
         queryFn: () => weeklyPlan.get(weekStartStr),
     });
+
+    if (error) {
+        return <ErrorState message="We couldn't load your weekly plan." onRetry={() => refetch()} />;
+    }
 
     // Regenerate Mutation
     const regenerateMutation = useMutation({
@@ -135,7 +140,7 @@ export default function Planner() {
 
             {/* Control Bar */}
             <div className="flex justify-end items-center gap-3">
-                {planData?.plan?.slots && (
+                {planData?.plan?.slots && Array.isArray(planData.plan.slots) && (
                     <DownloadPrintButton
                         document={
                             <WeeklyPlanDocument
@@ -309,7 +314,8 @@ export default function Planner() {
                         const dayDate = new Date(currentWeek);
                         dayDate.setDate(currentWeek.getDate() + index);
 
-                        const slots = planData?.plan?.slots.filter(s => s.day === dayStr) || [];
+                        // Safe access with optional chaining for slots array
+                        const slots = planData?.plan?.slots?.filter((s: any) => s.day === dayStr) || [];
                         const isToday = isSameDay(new Date(), dayDate);
 
                         return (

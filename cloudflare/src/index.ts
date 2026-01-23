@@ -2632,6 +2632,68 @@ app.get('/api/catechism', async (c) => {
   }
 });
 
+// Helper: Get or create liturgy progress
+async function getOrCreateLiturgyProgress(db: D1Database, userId: string): Promise<any> {
+  // Try to fetch existing progress
+  const progress = await db.prepare(
+    'SELECT * FROM family_liturgy_progress WHERE parent_id = ?'
+  ).bind(userId).first();
+
+  if (progress) return progress;
+
+  // If missing, migrate from family_preferences if available
+  const prefs = await db.prepare(
+    'SELECT current_catechism_week, current_hymn_week, current_scripture_week FROM family_preferences WHERE parent_id = ?'
+  ).bind(userId).first();
+
+  const id = generateId('litprog');
+  const now = new Date().toISOString();
+
+  // Use values from prefs or defaults
+  const catechismPos = (prefs as any)?.current_catechism_week || 1;
+  const hymnPos = (prefs as any)?.current_hymn_week || 1;
+  const scripturePos = (prefs as any)?.current_scripture_week || 1;
+
+  // Determine catechism source based on oldest child age
+  let catechismSource = 'prove_it'; // Default
+
+  try {
+     const { results: children } = await db.prepare(
+       'SELECT date_of_birth FROM students WHERE household_id = (SELECT household_id FROM users WHERE id = ?)'
+     ).bind(userId).all();
+
+     if (children && children.length > 0) {
+        const ages = children.map((c: any) => {
+            const dob = new Date(c.date_of_birth);
+            const nowTime = new Date();
+            return (nowTime.getFullYear() - dob.getFullYear()) * 12 + (nowTime.getMonth() - dob.getMonth());
+        });
+        const oldestAge = Math.max(...ages);
+        if (oldestAge >= 120) { // 10 years
+            catechismSource = 'westminster_shorter';
+        }
+     }
+  } catch (e) {
+    console.warn('Failed to determine catechism source from children ages', e);
+  }
+
+  await db.prepare(`
+    INSERT INTO family_liturgy_progress (id, parent_id, catechism_position, catechism_source, hymn_position, scripture_position, created_at, updated_at)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+  `).bind(id, userId, catechismPos, catechismSource, hymnPos, scripturePos, now, now).run();
+
+  return {
+    id,
+    parent_id: userId,
+    catechism_position: catechismPos,
+    catechism_source: catechismSource,
+    hymn_position: hymnPos,
+    scripture_position: scripturePos,
+    created_at: now,
+    updated_at: now
+  };
+}
+
 // Get unified daily rhythm - composes activities, books, and liturgy
 app.get('/api/family/daily-rhythm', async (c) => {
   try {
@@ -2658,61 +2720,89 @@ app.get('/api/family/daily-rhythm', async (c) => {
 
     // 1. LITURGY (if enabled)
     if (liturgyEnabled) {
-      // Get liturgy settings
-      let settings = await c.env.DB.prepare(
-        'SELECT * FROM family_liturgy_settings WHERE parent_id = ?'
-      ).bind(user.id).first() as any;
+      // Get progress
+      const progress = await getOrCreateLiturgyProgress(c.env.DB, user.id);
 
-      if (settings) {
+      if (progress) {
         // Check liturgy completions for today
+        // Note: We check 'evidences' now for unified tracking, but legacy 'liturgy_completions' might still be used?
+        // The endpoint /api/liturgy/complete writes to 'evidences' (lines 4335).
+        // So we should check 'evidences'.
+        // Wait, line 2736 below uses 'evidences' for activity completions.
+        // Let's use 'evidences' for consistency with the new system.
+
         const { results: liturgyCompletions } = await c.env.DB.prepare(
-          'SELECT liturgy_item_id FROM liturgy_completions WHERE parent_id = ? AND completed_date = ?'
+          'SELECT formation_id FROM evidences WHERE parent_id = ? AND date(captured_at) = ?'
         ).bind(user.id, today).all();
 
-        const completedLiturgyIds = new Set(liturgyCompletions.map((lc: any) => lc.liturgy_item_id));
+        const completedIds = new Set(liturgyCompletions.map((lc: any) => lc.formation_id));
 
-        // Get today's liturgy items based on current weeks
-        // Get today's liturgy items based on current weeks (using unified formations table)
-        const { results: liturgyItems } = await c.env.DB.prepare(`
+        // 1. Catechism
+        const catechism = await c.env.DB.prepare(`
           SELECT * FROM formations 
-          WHERE formation_type = 'liturgy' AND (
-            (cluster_tag = 'catechism' AND source = ? AND sequence_number = ?) OR
-            (cluster_tag = 'hymn' AND source = ? AND sequence_number = ?) OR
-            (cluster_tag = 'scripture' AND sequence_number = ?)
-          ) AND is_active = 1
-        `).bind(
-          settings.catechism_source || 'westminster_shorter',
-          settings.current_catechism_week || 1,
-          settings.hymnal_source || 'classic_hymns',
-          settings.current_hymn_week || 1,
-          settings.current_scripture_week || 1
-        ).all();
+          WHERE formation_type = 'liturgy' AND cluster_tag = 'catechism'
+          AND source = ? AND sequence_number = ? AND is_active = 1
+        `).bind(progress.catechism_source, progress.catechism_position).first();
 
-        const liturgyCompleted = liturgyItems.length > 0 &&
-          liturgyItems.every((item: any) => completedLiturgyIds.has(item.id));
+        if (catechism) {
+            const isCompleted = completedIds.has((catechism as any).id);
+            items.push({
+                id: (catechism as any).id,
+                timeSlot: '08:00',
+                title: 'Catechism',
+                description: (catechism as any).title,
+                type: 'liturgy',
+                status: isCompleted ? 'completed' : 'upcoming',
+                data: { ...catechism, itemType: 'catechism' }
+            });
+            completions[(catechism as any).id] = isCompleted;
+        }
 
-        items.push({
-          id: 'liturgy-morning',
-          timeSlot: '08:00',
-          title: 'Morning Liturgy',
-          description: 'Scripture, hymnal, and catechism.',
-          type: 'liturgy',
-          status: liturgyCompleted ? 'completed' : 'upcoming',
-          data: { items: liturgyItems }
-        });
+        // 2. Hymn
+        // Note: Hymns might filter by source if needed, but schema usually has 'classic_hymns' or similar
+        // We'll assume cluster_tag='hymn' is enough or add source check if needed.
+        // Usually source='classic_hymns' or 'reformed_hymns'.
+        // Let's just use cluster_tag and sequence_number for now as hymns are unified.
+        const hymn = await c.env.DB.prepare(`
+          SELECT * FROM formations
+          WHERE formation_type = 'liturgy' AND cluster_tag = 'hymn'
+          AND sequence_number = ? AND is_active = 1
+        `).bind(progress.hymn_position).first();
 
-        completions['liturgy-morning'] = liturgyCompleted;
-      } else {
-        // No settings yet, still show liturgy as an option
-        items.push({
-          id: 'liturgy-morning',
-          timeSlot: '08:00',
-          title: 'Morning Liturgy',
-          description: 'Scripture, hymnal, and catechism.',
-          type: 'liturgy',
-          status: 'upcoming',
-          data: {}
-        });
+        if (hymn) {
+            const isCompleted = completedIds.has((hymn as any).id);
+            items.push({
+                id: (hymn as any).id,
+                timeSlot: '08:05',
+                title: 'Hymn',
+                description: (hymn as any).title,
+                type: 'liturgy',
+                status: isCompleted ? 'completed' : 'upcoming',
+                data: { ...hymn, itemType: 'hymn' }
+            });
+            completions[(hymn as any).id] = isCompleted;
+        }
+
+        // 3. Scripture
+        const scripture = await c.env.DB.prepare(`
+          SELECT * FROM formations
+          WHERE formation_type = 'liturgy' AND cluster_tag = 'scripture'
+          AND sequence_number = ? AND is_active = 1
+        `).bind(progress.scripture_position).first();
+
+        if (scripture) {
+            const isCompleted = completedIds.has((scripture as any).id);
+            items.push({
+                id: (scripture as any).id,
+                timeSlot: '08:10',
+                title: 'Scripture',
+                description: (scripture as any).title,
+                type: 'liturgy',
+                status: isCompleted ? 'completed' : 'upcoming',
+                data: { ...scripture, itemType: 'scripture' }
+            });
+            completions[(scripture as any).id] = isCompleted;
+        }
       }
     }
 
@@ -4248,29 +4338,31 @@ app.get('/api/liturgy/today', async (c) => {
   const user = requireAuth(c);
   const today = new Date().toISOString().split('T')[0];
 
-  // 1. Get preferences
+  // 1. Get preferences (for enabled flag)
   const prefs = await c.env.DB.prepare(
     'SELECT * FROM family_preferences WHERE parent_id = ?'
   ).bind(user.id).first();
 
   const liturgyEnabled = prefs ? !!(prefs as any).liturgy_enabled : true;
 
-  // Hardcoded defaults for now
+  if (!liturgyEnabled) {
+    return c.json({ date: today, items: [], completedIds: [], settings: { liturgy_enabled: false } });
+  }
+
+  // 2. Get progress
+  const progress = await getOrCreateLiturgyProgress(c.env.DB, user.id);
+
   const settings = {
-    catechism_source: 'westminster_shorter',
+    catechism_source: progress.catechism_source,
     hymnal_source: 'classic_hymns',
     bible_translation: 'esv',
-    current_catechism_week: (prefs as any)?.current_catechism_week || 1,
-    current_hymn_week: (prefs as any)?.current_hymn_week || 1,
-    current_scripture_week: (prefs as any)?.current_scripture_week || 1,
+    current_catechism_week: progress.catechism_position,
+    current_hymn_week: progress.hymn_position,
+    current_scripture_week: progress.scripture_position,
     liturgy_enabled: liturgyEnabled
   };
 
-  if (!liturgyEnabled) {
-    return c.json({ date: today, items: [], completedIds: [], settings });
-  }
-
-  // 2. Fetch items from `formations`
+  // 3. Fetch items from `formations`
   const items: any[] = [];
 
   // Catechism
@@ -4278,23 +4370,23 @@ app.get('/api/liturgy/today', async (c) => {
     SELECT * FROM formations 
     WHERE formation_type = 'liturgy' AND cluster_tag = 'catechism' 
     AND source = ? AND sequence_number = ? AND is_active = 1
-  `).bind(settings.catechism_source, settings.current_catechism_week).first();
+  `).bind(progress.catechism_source, progress.catechism_position).first();
   if (catechism) items.push({ ...catechism, itemType: 'catechism' });
 
   // Hymn
   const hymn = await c.env.DB.prepare(`
     SELECT * FROM formations 
     WHERE formation_type = 'liturgy' AND cluster_tag = 'hymn'
-    AND source = ? AND sequence_number = ? AND is_active = 1
-  `).bind(settings.hymnal_source, settings.current_hymn_week).first();
+    AND sequence_number = ? AND is_active = 1
+  `).bind(progress.hymn_position).first();
   if (hymn) items.push({ ...hymn, itemType: 'hymn' });
 
   // Scripture
   const scripture = await c.env.DB.prepare(`
     SELECT * FROM formations 
     WHERE formation_type = 'liturgy' AND cluster_tag = 'scripture'
-    AND source = ? AND sequence_number = ? AND is_active = 1
-  `).bind(settings.bible_translation, settings.current_scripture_week).first();
+    AND sequence_number = ? AND is_active = 1
+  `).bind(progress.scripture_position).first();
   if (scripture) items.push({ ...scripture, itemType: 'scripture' });
 
   // 3. Completions from `evidences`
@@ -4372,9 +4464,9 @@ app.post('/api/liturgy/advance', async (c) => {
   const { type } = await c.req.json(); // 'catechism' | 'hymn' | 'scripture'
 
   const columnMap: Record<string, string> = {
-    catechism: 'current_catechism_week',
-    hymn: 'current_hymn_week',
-    scripture: 'current_scripture_week'
+    catechism: 'catechism_position',
+    hymn: 'hymn_position',
+    scripture: 'scripture_position'
   };
 
   const column = columnMap[type];
@@ -4382,9 +4474,12 @@ app.post('/api/liturgy/advance', async (c) => {
     return c.json({ error: 'Invalid type' }, 400);
   }
 
-  // Update family_preferences (unified settings)
+  // Ensure record exists
+  await getOrCreateLiturgyProgress(c.env.DB, user.id);
+
+  // Update family_liturgy_progress
   await c.env.DB.prepare(`
-    UPDATE family_preferences
+    UPDATE family_liturgy_progress
     SET ${column} = ${column} + 1, updated_at = datetime('now')
     WHERE parent_id = ?
   `).bind(user.id).run();
