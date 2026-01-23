@@ -95,10 +95,12 @@ function ChildProgressCard({ child }: { child: Student }) {
   }
 
   const totalActivities = progressData?.totalCompleted || 0;
-  const recentActivity = observations && observations.length > 0 ? observations[0] : null;
+  const recentActivity = Array.isArray(observations) && observations.length > 0 ? observations[0] : null;
 
   // Calculate domains with activity
-  const activeDomains = progressData?.byDomain?.filter((d: any) => d.count > 0).length || 0;
+  const activeDomains = Array.isArray(progressData?.byDomain)
+    ? progressData.byDomain.filter((d: any) => d.count > 0).length
+    : 0;
 
   return (
     <Card className={cn("transition-all duration-200 border-l-4", isOpen ? "border-l-primary shadow-md" : "border-l-transparent hover:border-l-muted-foreground/30")}>
@@ -141,7 +143,9 @@ function ChildProgressCard({ child }: { child: Student }) {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               {(Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[]).map((domain) => {
                 const Icon = domainIcons[domain];
-                const domainData = progressData?.byDomain?.find((d: any) => d.domain === domain);
+                const domainData = Array.isArray(progressData?.byDomain)
+                  ? progressData.byDomain.find((d: any) => d.domain === domain)
+                  : undefined;
                 const count = domainData?.count || 0;
 
                 // Gentle progress calculation (just based on activity count for now)
