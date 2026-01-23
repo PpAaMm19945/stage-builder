@@ -282,19 +282,19 @@ export const books = {
 
   // Cover image URL - uses API route with CORS headers
   getCoverUrl: (series: string, bookId: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
+    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
 
   // Page image URL - uses API route with CORS headers
   getPageUrl: (series: string, bookId: string, pageNum: number) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
 
   // PDF URL - for larger books with many pages
   getPdfUrl: (series: string, bookId: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pdf`,
+    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pdf`,
 
   // Generic asset URL - for markdown, manifests, etc.
   getAssetUrl: (series: string, bookId: string, assetPath: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/asset/${assetPath}`,
+    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/asset/${assetPath}`,
 };
 
 // Reading Sessions
