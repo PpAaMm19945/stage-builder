@@ -4487,6 +4487,41 @@ app.post('/api/liturgy/advance', async (c) => {
   return c.json({ success: true });
 });
 
+// GET /api/liturgy/progress - Get progress for badges
+app.get('/api/liturgy/progress', async (c) => {
+  const user = requireAuth(c);
+  const progress = await getOrCreateLiturgyProgress(c.env.DB, user.id);
+
+  // Get totals
+  const catechismTotal = await c.env.DB.prepare(
+    "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'catechism' AND source = ? AND is_active = 1"
+  ).bind(progress.catechism_source).first();
+
+  const hymnTotal = await c.env.DB.prepare(
+    "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'hymn' AND is_active = 1"
+  ).first();
+
+  const scriptureTotal = await c.env.DB.prepare(
+    "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'scripture' AND is_active = 1"
+  ).first();
+
+  return c.json({
+    catechism: {
+      position: progress.catechism_position,
+      total: (catechismTotal as any)?.count || 0,
+      source: progress.catechism_source
+    },
+    hymn: {
+      position: progress.hymn_position,
+      total: (hymnTotal as any)?.count || 0
+    },
+    scripture: {
+      position: progress.scripture_position,
+      total: (scriptureTotal as any)?.count || 0
+    }
+  });
+});
+
 // GET /api/liturgy/settings - Get family liturgy settings
 app.get('/api/liturgy/settings', async (c) => {
   const user = requireAuth(c);
