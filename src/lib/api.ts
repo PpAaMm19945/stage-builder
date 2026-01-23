@@ -268,6 +268,18 @@ export const activityCompletions_deprecated = {
   create: (data: any) => console.warn('Deprecated activityCompletions used', data)
 };
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with -
+    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+    .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+    .replace(/^-+/, '')       // Trim - from start of text
+    .replace(/-+$/, '');      // Trim - from end of text
+}
+
 // Books - All assets served via /api/books/* routes for consistent CORS handling
 export const books = {
   list: (params?: { stage?: string; ageMonths?: number }) => {
@@ -278,23 +290,23 @@ export const books = {
   },
 
   get: (series: string, bookId: string) =>
-    apiRequest<Book>(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}`),
+    apiRequest<Book>(`/api/books/${slugify(series)}/${slugify(bookId)}`),
 
   // Cover image URL - uses API route with CORS headers
   getCoverUrl: (series: string, bookId: string) =>
-    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/cover`,
 
   // Page image URL - uses API route with CORS headers
   getPageUrl: (series: string, bookId: string, pageNum: number) =>
-    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
 
   // PDF URL - for larger books with many pages
   getPdfUrl: (series: string, bookId: string) =>
-    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pdf`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/pdf`,
 
   // Generic asset URL - for markdown, manifests, etc.
   getAssetUrl: (series: string, bookId: string, assetPath: string) =>
-    `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/asset/${assetPath}`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/asset/${assetPath}`,
 };
 
 // Reading Sessions
