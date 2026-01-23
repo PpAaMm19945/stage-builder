@@ -224,8 +224,8 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                                     ))}
                                 </CarouselContent>
                                 {/* Nav buttons - hidden on mobile, positioned inside on larger screens */}
-                                <CarouselPrevious className="hidden sm:flex left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
-                                <CarouselNext className="hidden sm:flex right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
+                                <CarouselPrevious className="hidden sm:flex left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
+                                <CarouselNext className="hidden sm:flex right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
                             </Carousel>
                         </div>
                     </section>

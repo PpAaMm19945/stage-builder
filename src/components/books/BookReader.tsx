@@ -427,12 +427,12 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                 <div
                                     className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
                                     onClick={() => api?.scrollPrev()}
-                                    aria-label="Previous page"
+                                    aria-hidden="true"
                                 />
                                 <div
                                     className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
                                     onClick={() => api?.scrollNext()}
-                                    aria-label="Next page"
+                                    aria-hidden="true"
                                 />
 
                                 <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
