@@ -38,7 +38,7 @@ export function SettingsFamily() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const getInitials = (name: string) => {
-        return name
+        return (name || 'Unknown')
             .split(' ')
             .map((n) => n[0])
             .join('')
@@ -46,8 +46,11 @@ export function SettingsFamily() {
             .slice(0, 2);
     };
 
-    const calculateAge = (dateOfBirth: string) => {
+    const calculateAge = (dateOfBirth: string | null | undefined) => {
+        if (!dateOfBirth) return 'Age not set';
         const birthDate = new Date(dateOfBirth);
+        if (isNaN(birthDate.getTime())) return 'Age not set';
+
         const now = new Date();
         const ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
             (now.getMonth() - birthDate.getMonth());

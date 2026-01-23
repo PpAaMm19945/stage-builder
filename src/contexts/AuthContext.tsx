@@ -1,6 +1,7 @@
 import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from 'react';
 import { User, Student } from '@/types';
 import { auth } from '@/lib/api';
+import { normalizeChild } from '@/lib/normalizeChild';
 import { toast } from 'sonner';
 
 interface AuthContextType {
@@ -61,17 +62,14 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
           updatedAt: response.user.updated_at,
         };
 
-        const childrenData: Student[] = (response.children || []).map((child: any) => ({
-          id: child.id,
-          householdId: child.household_id || response.user.household_id || response.user.id,
-          name: child.name,
-          dateOfBirth: child.date_of_birth,
-          ageInMonths: child.age_in_months,
-          currentStage: child.current_stage || 'early-years',
-          avatarUrl: child.avatar_url,
-          createdAt: child.created_at,
-          updatedAt: child.updated_at,
-        }));
+        const childrenData: Student[] = (response.children || []).map((child: any) => {
+          const student = normalizeChild(child);
+          // Ensure householdId falls back to user context if missing on child
+          if (student.householdId === 'unknown-household') {
+            student.householdId = response.user.household_id || response.user.id;
+          }
+          return student;
+        });
 
         setUser(userData);
         setStudentChildren(childrenData);
