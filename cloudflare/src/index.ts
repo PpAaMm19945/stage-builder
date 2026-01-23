@@ -85,6 +85,14 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#039;');
 }
 
+// Security helper: Validate path segment to prevent traversal
+function isValidPathSegment(segment: string): boolean {
+  if (!segment) return false;
+  // Disallow ".." components to prevent traversing up the bucket
+  const parts = segment.split(/[/\\]/);
+  return !parts.includes('..');
+}
+
 // Security helper: Constant-time comparison using Web Crypto to prevent timing attacks
 async function safeCompare(a: string | undefined | null, b: string | undefined | null): Promise<boolean> {
   if (!a || !b) {
@@ -3817,8 +3825,12 @@ app.get('/api/series/:seriesId/cover', async (c) => {
 // Get single book metadata
 app.get('/api/books/:series/:bookId', async (c) => {
   try {
-    const series = c.req.param('series');
-    const bookId = c.req.param('bookId');
+    const series = decodeURIComponent(c.req.param('series'));
+    const bookId = decodeURIComponent(c.req.param('bookId'));
+
+    if (!isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+      return c.json({ error: 'Invalid path segment' }, 400);
+    }
 
     const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId);
 
@@ -3837,6 +3849,11 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
   try {
     const series = decodeURIComponent(c.req.param('series'));
     const bookId = decodeURIComponent(c.req.param('bookId'));
+
+    if (!isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+      return c.json({ error: 'Invalid path segment' }, 400);
+    }
+
     const bucket = c.env.BOOKS_BUCKET;
 
     // Try multiple path patterns for resilience (PNG, JPG, and page-01 fallback)
@@ -4008,6 +4025,11 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     const series = decodeURIComponent(c.req.param('series'));
     const bookId = decodeURIComponent(c.req.param('bookId'));
     const pageNum = c.req.param('pageNum');
+
+    if (!isValidPathSegment(series) || !isValidPathSegment(bookId) || !isValidPathSegment(pageNum)) {
+      return c.json({ error: 'Invalid path segment' }, 400);
+    }
+
     const bucket = c.env.BOOKS_BUCKET;
 
     const paddedNum = pageNum.padStart(2, '0');
@@ -4064,6 +4086,11 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
   try {
     const series = decodeURIComponent(c.req.param('series'));
     const bookId = decodeURIComponent(c.req.param('bookId'));
+
+    if (!isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+      return c.json({ error: 'Invalid path segment' }, 400);
+    }
+
     const bucket = c.env.BOOKS_BUCKET;
 
     // Try multiple path patterns for PDF files
@@ -4112,8 +4139,8 @@ app.get('/api/books/:series/:bookId/asset/*', async (c) => {
     const assetPath = c.req.path.split('/asset/')[1] || '';
     const bucket = c.env.BOOKS_BUCKET;
 
-    if (!assetPath || assetPath.includes('..')) {
-      return c.json({ error: 'Invalid asset path' }, 400);
+    if (!assetPath || assetPath.includes('..') || !isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+      return c.json({ error: 'Invalid path segment' }, 400);
     }
 
     const pathsToTry = [
