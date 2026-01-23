@@ -6,6 +6,7 @@ import { SettingsSchedule } from '@/components/settings/SettingsSchedule';
 import { SettingsCurriculum } from '@/components/settings/SettingsCurriculum';
 import { SettingsMaterials } from '@/components/settings/SettingsMaterials';
 import { SettingsAccount } from '@/components/settings/SettingsAccount';
+import { SettingsErrorBoundary } from '@/components/settings/SettingsErrorBoundary';
 import {
   UsersThree,
   Bell,
@@ -76,23 +77,33 @@ export default function Settings() {
 
         <div className="mt-6">
           <TabsContent value="family" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsFamily />
+            <SettingsErrorBoundary>
+              <SettingsFamily />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="schedule" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsSchedule />
+            <SettingsErrorBoundary>
+              <SettingsSchedule />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="curriculum" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsCurriculum />
+            <SettingsErrorBoundary>
+              <SettingsCurriculum />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="materials" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsMaterials />
+            <SettingsErrorBoundary>
+              <SettingsMaterials />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="account" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsAccount />
+            <SettingsErrorBoundary>
+              <SettingsAccount />
+            </SettingsErrorBoundary>
           </TabsContent>
         </div>
       </Tabs>
