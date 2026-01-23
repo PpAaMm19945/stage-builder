@@ -92,6 +92,11 @@ export default function Dashboard() {
     enabled: isToday,
   });
 
+  const { data: liturgyProgress } = useQuery({
+    queryKey: ['liturgy-progress'],
+    queryFn: liturgy.getProgress,
+  });
+
   // Fetch day data - use getToday for today, getDay for other days
   // Use keepPreviousData to avoid jarring full-page reloads
   const { data: dayData, isLoading: dayLoading, isFetching: dayFetching, error: dayError } = useQuery({
@@ -330,6 +335,7 @@ export default function Dashboard() {
     mutationFn: liturgy.advance,
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
+      queryClient.invalidateQueries({ queryKey: ['liturgy-progress'] });
       toast.success('Advanced to next week!');
     },
   });
@@ -379,16 +385,29 @@ export default function Dashboard() {
 
   // BUILD TIMELINE ITEMS (Moved up before conditional returns)
   const timelineItems = useMemo(() => {
-    if (!dayData) return []; // Safety check for early returns
+    const items: RhythmItem[] = [];
 
-    const pathItems: RhythmItem[] = [];
+    // 1. Liturgy Items
+    if (liturgyData?.items && Array.isArray(liturgyData.items)) {
+      liturgyData.items.forEach((item: any, index: number) => {
+        items.push({
+          id: item.id || `liturgy-${index}`,
+          timeSlot: item.timeSlot || 'Morning',
+          title: item.title || 'Liturgy',
+          description: item.description || item.reference || '',
+          type: 'liturgy',
+          status: item.completedToday ? 'completed' : 'upcoming',
+          data: item
+        });
+      });
+    }
 
-    // Only render path items - one per active path
+    // 2. Learning Path Items
     if (isToday && pathsToday?.items && Array.isArray(pathsToday.items)) {
       pathsToday.items
         .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
         .forEach((pathItem: TodayPathItem, index: number) => {
-          pathItems.push({
+          items.push({
             id: `path-${pathItem.path_id}-${index}`,
             timeSlot: '', // No time by default
             title: pathItem.item_title || pathItem.path_type || 'Path Item',
@@ -405,8 +424,26 @@ export default function Dashboard() {
         });
     }
 
-    return pathItems;
-  }, [dayData, isToday, pathsToday]);
+    // 3. Family Activities
+    if (dayData?.familySessions && Array.isArray(dayData.familySessions)) {
+      dayData.familySessions.forEach((session: any, index: number) => {
+        // Avoid duplicates if also in paths
+        if (items.some(i => i.id === session.formation.id)) return;
+
+        items.push({
+          id: session.formation.id || `activity-${index}`,
+          timeSlot: session.timeSlot || 'Day',
+          title: session.formation.title,
+          description: session.reasoning,
+          type: 'activity',
+          status: session.isCompleted ? 'completed' : 'upcoming',
+          data: session.formation
+        });
+      });
+    }
+
+    return items;
+  }, [dayData, isToday, pathsToday, liturgyData]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
@@ -606,6 +643,24 @@ export default function Dashboard() {
               </span>
             </div>
           ))}
+        </div>
+      )}
+
+      {/* Liturgy Progress Badges */}
+      {liturgyProgress && (
+        <div className="flex flex-wrap gap-2 justify-start">
+           <div className="flex items-center gap-2 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-medium border border-indigo-200 dark:border-indigo-800">
+             <span className="opacity-70">Catechism</span>
+             <span>{liturgyProgress.catechism.position}/{liturgyProgress.catechism.total}</span>
+           </div>
+           <div className="flex items-center gap-2 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800">
+             <span className="opacity-70">Hymn</span>
+             <span>{liturgyProgress.hymn.position}/{liturgyProgress.hymn.total}</span>
+           </div>
+           <div className="flex items-center gap-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-full font-medium border border-amber-200 dark:border-amber-800">
+             <span className="opacity-70">Scripture</span>
+             <span>{liturgyProgress.scripture.position}/{liturgyProgress.scripture.total}</span>
+           </div>
         </div>
       )}
 

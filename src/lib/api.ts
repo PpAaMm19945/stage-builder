@@ -378,6 +378,12 @@ export const liturgy = {
       method: 'PUT',
       body: JSON.stringify(settings),
     }),
+
+  getProgress: (): Promise<{
+    catechism: { position: number; total: number; source: string };
+    hymn: { position: number; total: number };
+    scripture: { position: number; total: number };
+  }> => apiRequest('/api/liturgy/progress'),
 };
 
 // Hymns

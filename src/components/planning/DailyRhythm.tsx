@@ -266,6 +266,92 @@ export const DailyRhythm = memo(function DailyRhythm({
                                 </div>
                             )}
 
+                            {/* Liturgy Item (Unified) */}
+                            {activeItem?.type === 'liturgy' && !activeItem.data?.items && activeItem.data?.itemType && (
+                                <div className="space-y-6 py-4">
+                                    {/* Catechism */}
+                                    {activeItem.data.itemType === 'catechism' && (
+                                        <div className="space-y-4">
+                                            <div className="bg-primary/5 border border-primary/10 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Question</p>
+                                                {/* Use description as question, since index.ts puts question in description */}
+                                                <p className="text-lg font-semibold">{activeItem.description}</p>
+                                            </div>
+                                            <div className="bg-muted/30 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
+                                                {/* Use liturgical_script as answer */}
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.liturgical_script ||
+                                                            activeItem.data.content
+                                                        )
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground text-center">
+                                                📖 Recite together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Hymn */}
+                                    {activeItem.data.itemType === 'hymn' && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                            <div
+                                                className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.liturgical_script ||
+                                                        activeItem.data.content
+                                                    )
+                                                }}
+                                            />
+                                            {activeItem.data.audio_url && (
+                                                <div className="mt-4">
+                                                    <audio controls src={activeItem.data.audio_url} className="w-full" />
+                                                </div>
+                                            )}
+                                            <p className="text-sm text-muted-foreground">
+                                                🎵 Sing together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Scripture */}
+                                    {activeItem.data.itemType === 'scripture' && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-xl font-display font-bold">{activeItem.title}</h3>
+                                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-xl p-6 shadow-sm">
+                                                <div
+                                                    className="prose prose-lg dark:prose-invert mx-auto font-serif italic text-amber-900 dark:text-amber-100"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.description ||
+                                                            activeItem.data.liturgical_script
+                                                        )
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                📜 Read and meditate together
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4">
+                                        <Button onClick={() => {
+                                            handleSheetComplete();
+                                            if (onLiturgyAdvance) onLiturgyAdvance(activeItem.data.itemType);
+                                        }} size="lg" className="w-full">
+                                            Done - Load Next
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
                             {activeItem?.type === 'liturgy' && activeItem.data?.items && (
                                 <div className="space-y-4">
                                     {(activeItem.data.items || []).filter((item: any) => item && item.id).map((item: any) => (
