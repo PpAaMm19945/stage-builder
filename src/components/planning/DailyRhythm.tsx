@@ -33,6 +33,8 @@ export interface RhythmItem {
 
 interface DailyRhythmProps {
     items?: RhythmItem[];
+    activeItem?: RhythmItem | null;
+    onSelectItem?: (item: RhythmItem | null) => void;
     onComplete?: (item: RhythmItem, duration?: number) => void;
     onBookClick?: () => void;
     onSwap?: (item: RhythmItem) => void;
@@ -40,8 +42,22 @@ interface DailyRhythmProps {
     onLiturgyAdvance?: (type: string) => void;
 }
 
-export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLiturgyToggle, onLiturgyAdvance }: DailyRhythmProps) {
-    const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
+export const DailyRhythm = memo(function DailyRhythm({
+    items = [],
+    activeItem: propActiveItem,
+    onSelectItem: propOnSelectItem,
+    onComplete,
+    onBookClick,
+    onSwap,
+    onLiturgyToggle,
+    onLiturgyAdvance
+}: DailyRhythmProps) {
+    // Internal state if not controlled
+    const [internalActiveItem, setInternalActiveItem] = useState<RhythmItem | null>(null);
+
+    // Derived state
+    const activeItem = propActiveItem !== undefined ? propActiveItem : internalActiveItem;
+    const setActiveItem = propOnSelectItem || setInternalActiveItem;
 
     const timelineItems = items.length > 0 ? items : [];
 
@@ -57,7 +73,7 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
         if (item.type !== 'section_header') {
             setActiveItem(item);
         }
-    }, []);
+    }, [setActiveItem]);
 
     const handleSheetComplete = (duration?: number) => {
         if (activeItem && onComplete) {
@@ -68,8 +84,6 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
 
     return (
         <div className="space-y-4 relative">
-            <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border/50 -z-10" />
-
             {timelineItems.map((item) => (
                 <RhythmItemRow
                     key={item.id}
@@ -150,6 +164,8 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                                 className="prose prose-sm dark:prose-invert"
                                                 dangerouslySetInnerHTML={{ 
                                                     __html: sanitizeHtml(
+                                                        activeItem.data.item_data?.liturgical_script ||
+                                                        activeItem.data.item_data?.description ||
                                                         activeItem.data.content?.content || 
                                                         activeItem.data.content?.liturgical_script ||
                                                         activeItem.description

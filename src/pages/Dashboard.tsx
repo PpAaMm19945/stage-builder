@@ -13,10 +13,7 @@ import {
   Baby,
   Sparkle,
   Calendar,
-  CaretDown,
-  CaretUp
 } from '@phosphor-icons/react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { UpNextCard } from '@/components/dashboard/UpNextCard';
 import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
@@ -60,7 +57,6 @@ export default function Dashboard() {
   // State for day navigation
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [showFullDay, setShowFullDay] = useState(false);
 
   // State for regenerate dialog
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
@@ -68,6 +64,9 @@ export default function Dashboard() {
 
   // State for swap sheet
   const [swapActivity, setSwapActivity] = useState<{ id: string; title: string } | null>(null);
+
+  // State for active rhythm item (lifted from DailyRhythm)
+  const [activeRhythmItem, setActiveRhythmItem] = useState<RhythmItem | null>(null);
 
   const today = startOfDay(new Date());
   const weekStart = getWeekStart(today);
@@ -370,164 +369,32 @@ export default function Dashboard() {
   const timelineItems = useMemo(() => {
     if (!dayData) return []; // Safety check for early returns
 
-    const rawItems: RhythmItem[] = [];
+    const pathItems: RhythmItem[] = [];
 
-    // 1. Liturgy (Morning)
-    if (isToday) {
-      const liturgyItems = liturgyData?.items || [];
-      const allLiturgyCompleted = liturgyItems.length > 0 && liturgyItems.every((i: any) => i.completedToday);
-
-      rawItems.push({
-        id: 'liturgy-morning',
-        timeSlot: '08:00',
-        title: 'Morning Liturgy',
-        description: 'Scripture, hymnal, and catechism.',
-        type: 'liturgy',
-        status: allLiturgyCompleted ? 'completed' : 'upcoming',
-        data: {
-          context_anchor: 'Morning Circle',
-          items: liturgyItems,
-          allCompleted: allLiturgyCompleted
-        }
-      });
-
-      // Add Path Items (Hymns, Catechism from active paths)
-      if (pathsToday?.items && Array.isArray(pathsToday.items)) {
-        pathsToday.items
-          .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
-          .forEach((pathItem: TodayPathItem, index: number) => {
-            rawItems.push({
-              id: `path-${pathItem.path_id}-${index}`,
-              timeSlot: pathItem.item_type === 'hymn' ? '08:15' : '08:30',
-              title: pathItem.item_title || pathItem.path_type || 'Path Item',
-              description: pathItem.path_title || '',
-              type: 'path_item',
+    // Only render path items - one per active path
+    if (isToday && pathsToday?.items && Array.isArray(pathsToday.items)) {
+      pathsToday.items
+        .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
+        .forEach((pathItem: TodayPathItem, index: number) => {
+          pathItems.push({
+            id: `path-${pathItem.path_id}-${index}`,
+            timeSlot: '', // No time by default
+            title: pathItem.item_title || pathItem.path_type || 'Path Item',
+            description: `${pathItem.position || 1}/${pathItem.total || '?'} in ${pathItem.path_title}`,
+            type: 'path_item',
             status: 'upcoming',
             data: {
               ...pathItem,
-              context_anchor: 'Morning Circle',
               pathId: pathItem.path_id,
               pathName: pathItem.path_title,
               content: pathItem.item_data
             }
           });
         });
-      }
     }
 
-    // 2. Family Sessions
-    if (dayData.familySessions && Array.isArray(dayData.familySessions)) {
-      dayData.familySessions.forEach((session: any, index: number) => {
-        if (!session) return;
-        const activity = session.formation || session.activity;
-        if (!activity || !activity.id) return;
-
-        let time = '09:00';
-        if (session.timeSlot === 'afternoon') time = '14:00';
-
-        const isCompleted = session.isCompleted ||
-          (weeklyPlanData?.completions && weeklyPlanData.completions[activity.id]);
-
-        // Determine context anchor
-        const context = activity.context_anchor ||
-          (activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
-
-        rawItems.push({
-          id: `session-${index}`,
-          timeSlot: time,
-          title: activity.title || 'Untitled Activity',
-          description: activity.description || '',
-          type: 'activity',
-          status: isCompleted ? 'completed' : 'upcoming',
-          data: { ...activity, context_anchor: context }
-        });
-      });
-    }
-
-    // 3. Book (Read Aloud)
-    if (isToday && todaysBook) {
-      rawItems.push({
-        id: 'book-reading',
-        timeSlot: '11:00',
-        title: 'Read Aloud Time',
-        description: todaysBook.title || 'Book',
-        type: 'book',
-        status: 'upcoming',
-        data: { ...todaysBook, context_anchor: 'Morning Circle' }
-      });
-    }
-
-    // 4. Daily Practices
-    if (isToday && dayData.dailyPractices && Array.isArray(dayData.dailyPractices)) {
-      dayData.dailyPractices.forEach((practice: any, index: number) => {
-        if (!practice || !practice.id) return;
-        rawItems.push({
-          id: `practice-${index}`,
-          timeSlot: '18:00',
-          title: practice.title || 'Daily Practice',
-          description: practice.description || '',
-          type: 'activity',
-          status: 'upcoming',
-          data: { ...practice, context_anchor: 'Walk By The Way' }
-        });
-      });
-    }
-
-    // Sort raw items by time first to ensure order within groups
-    rawItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-
-    // Group by Context Anchor
-    const groups: Record<string, RhythmItem[]> = {
-      'Morning Circle': [],
-      'Table Fellowship': [],
-      'Walk By The Way': [],
-      'Other': []
-    };
-
-    rawItems.forEach(item => {
-      const context = item.data?.context_anchor;
-      if (context && groups[context]) {
-        groups[context].push(item);
-      } else if (context) {
-        // Handle custom contexts dynamically if needed, or fallback
-        if (!groups[context]) groups[context] = [];
-        groups[context].push(item);
-      } else {
-        // Fallback mapping based on type
-        if (item.type === 'liturgy' || item.type === 'book') groups['Morning Circle'].push(item);
-        else if (item.type === 'activity') groups['Table Fellowship'].push(item); // Default for sessions
-        else groups['Walk By The Way'].push(item);
-      }
-    });
-
-    // Flatten into timelineItems with Headers
-    const flattenedItems: RhythmItem[] = [];
-    const orderedContexts = ['Morning Circle', 'Table Fellowship', 'Walk By The Way'];
-
-    // Add any custom contexts found
-    Object.keys(groups).forEach(k => {
-      if (!orderedContexts.includes(k) && k !== 'Other') orderedContexts.push(k);
-    });
-    orderedContexts.push('Other');
-
-    orderedContexts.forEach(context => {
-      const items = groups[context];
-      if (items && items.length > 0) {
-        // Add Header
-        flattenedItems.push({
-          id: `header-${context}`,
-          timeSlot: 'Header',
-          title: context,
-          type: 'section_header',
-          status: 'upcoming' // not used for header
-        });
-        // Add Items
-        items.forEach(item => flattenedItems.push(item));
-      }
-    });
-
-    return flattenedItems;
-  }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData, pathsToday]);
+    return pathItems;
+  }, [dayData, isToday, pathsToday]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
@@ -753,51 +620,39 @@ export default function Dashboard() {
         <UpNextCard
           item={nextItem}
           onAction={(item) => {
-            if (item.type === 'book' && todaysBook) setSelectedBook(todaysBook);
-            setShowFullDay(true);
+             setActiveRhythmItem(item);
           }}
-          onExpand={() => setShowFullDay(!showFullDay)}
+          onExpand={() => {}}
           pendingCount={pendingCount}
         />
       )}
 
       {/* Timeline */}
-      <Collapsible open={showFullDay || !isToday} onOpenChange={setShowFullDay} className="space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              {isToday ? `Full Schedule (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Activities (${timelineItems.length})`}
+              {isToday ? `Learning Path (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Items (${timelineItems.length})`}
             </h3>
             {dayFetching && (
               <CircleNotch className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
             )}
           </div>
-          {isToday && (
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                {showFullDay ? (
-                  <CaretUp className="h-4 w-4" />
-                ) : (
-                  <CaretDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          )}
         </div>
 
-        <CollapsibleContent forceMount={!isToday ? true : undefined}>
-          <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
-            <DailyRhythm
-              items={timelineItems}
-              onComplete={handleRhythmComplete}
-              onBookClick={handleBookClick}
-              onSwap={isToday ? handleSwap : undefined}
-              onLiturgyToggle={handleLiturgyToggle}
-              onLiturgyAdvance={handleLiturgyAdvance}
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
+          <DailyRhythm
+            items={timelineItems}
+            activeItem={activeRhythmItem}
+            onSelectItem={setActiveRhythmItem}
+            onComplete={handleRhythmComplete}
+            onBookClick={handleBookClick}
+            onSwap={isToday ? handleSwap : undefined}
+            onLiturgyToggle={handleLiturgyToggle}
+            onLiturgyAdvance={handleLiturgyAdvance}
+          />
+        </div>
+      </div>
 
       {/* Book Reader */}
       <BookReader

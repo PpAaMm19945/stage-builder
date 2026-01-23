@@ -76,6 +76,7 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
             ) : (
                 <>
                     {/* Time Column */}
+                    {item.timeSlot && (
                     <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
                         <div className={cn(
                             "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
@@ -99,6 +100,7 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                             )}
                         </div>
                     </div>
+                    )}
 
                     {/* Content Card */}
                     <Card className={cn(
