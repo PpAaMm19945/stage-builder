@@ -5802,11 +5802,28 @@ app.get('/api/portfolio/file/:key', async (c) => {
     const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
 
     // Security: Strict path validation
-    // Ensure key starts with "{user.id}/" or "portfolio/{user.id}/"
+    // 1. Owner Access (Fast Path): Check if user is the uploader
     const validPrefix1 = `${user.id}/`;
     const validPrefix2 = `portfolio/${user.id}/`;
+    const isOwner = key.startsWith(validPrefix1) || key.startsWith(validPrefix2);
 
-    if (!key.startsWith(validPrefix1) && !key.startsWith(validPrefix2)) {
+    let isAuthorized = isOwner;
+
+    // 2. Household Access (Slow Path): Check if file belongs to household student
+    if (!isAuthorized && user.household_id) {
+       const authorized = await c.env.DB.prepare(`
+         SELECT 1
+         FROM portfolio_items p
+         JOIN students s ON p.student_id = s.id
+         WHERE p.r2_key = ? AND s.household_id = ?
+       `).bind(key, user.household_id).first();
+
+       if (authorized) {
+         isAuthorized = true;
+       }
+    }
+
+    if (!isAuthorized) {
       return c.json({ error: 'Unauthorized access to file' }, 403);
     }
 
