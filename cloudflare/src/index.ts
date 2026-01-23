@@ -6315,4 +6315,66 @@ app.get('/api/paths/today', async (c) => {
   }
 });
 
+// GET /api/library/stats - Get library completion stats for the authenticated family
+app.get('/api/library/stats', async (c) => {
+  try {
+    const user = requireAuth(c);
+
+    // Get total counts from formations
+    const hymnCount = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'hymn'"
+    ).first() as any;
+    
+    const catechismCount = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'catechism'"
+    ).first() as any;
+    
+    const bookCount = await c.env.DB.prepare(
+      "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'book' OR formation_type = 'story'"
+    ).first() as any;
+
+    // Get current positions from active subscriptions
+    const subscriptions = await c.env.DB.prepare(`
+      SELECT 
+        lp.path_type,
+        fps.current_position,
+        lp.total_items,
+        fps.completed_at
+      FROM family_path_subscriptions fps
+      JOIN learning_paths lp ON fps.path_id = lp.id
+      WHERE fps.parent_id = ?
+    `).bind(user.id).all();
+
+    const subs = subscriptions.results || [];
+
+    // Calculate completed counts based on position or completed_at
+    const hymnSub = subs.find((s: any) => s.path_type === 'hymn_journey') as any;
+    const catechismSub = subs.find((s: any) => s.path_type === 'catechism') as any;
+
+    const stats = {
+      hymns: {
+        completed: hymnSub ? (hymnSub.completed_at ? hymnSub.total_items : hymnSub.current_position - 1) : 0,
+        total: hymnCount?.count || 100,
+      },
+      catechism: {
+        completed: catechismSub ? (catechismSub.completed_at ? catechismSub.total_items : catechismSub.current_position - 1) : 0,
+        total: catechismCount?.count || 107,
+      },
+      books: {
+        completed: 0, // TODO: Track from evidences or reading table
+        total: bookCount?.count || 100,
+      },
+    };
+
+    return c.json(stats);
+  } catch (error: any) {
+    console.error('Error getting library stats:', error);
+    return c.json({ 
+      hymns: { completed: 0, total: 100 },
+      catechism: { completed: 0, total: 107 },
+      books: { completed: 0, total: 100 },
+    });
+  }
+});
+
 export default app;

@@ -46,6 +46,7 @@ import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
 import { useStableValue } from '@/hooks/useStableValue';
 import { Compass } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
+import { PathCompletionModal } from '@/components/paths/PathCompletionModal';
 
 const EMPTY_WEEK_DATA = {};
 
@@ -67,6 +68,12 @@ export default function Dashboard() {
 
   // State for active rhythm item (lifted from DailyRhythm)
   const [activeRhythmItem, setActiveRhythmItem] = useState<RhythmItem | null>(null);
+
+  // State for path completion celebration
+  const [completedPathInfo, setCompletedPathInfo] = useState<{
+    pathName: string;
+    totalItems: number;
+  } | null>(null);
 
   const today = startOfDay(new Date());
   const weekStart = getWeekStart(today);
@@ -251,7 +258,12 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['path-subscriptions'] });
       toast.success(`Progress saved! ${data?.new_position || 1}/${data?.total_items || '?'}`);
       if (data?.is_completed) {
-        toast.success('🎉 Congratulations! You completed this path!');
+        // Show celebration modal - get path name from the active item
+        const currentPathItem = pathsToday?.items?.find((p: TodayPathItem) => p.path_id);
+        setCompletedPathInfo({
+          pathName: currentPathItem?.path_title || 'Learning Path',
+          totalItems: data?.total_items || 0,
+        });
       }
     },
     onError: (error: any) => {
@@ -754,6 +766,14 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Path Completion Celebration Modal */}
+      <PathCompletionModal
+        isOpen={!!completedPathInfo}
+        onClose={() => setCompletedPathInfo(null)}
+        pathName={completedPathInfo?.pathName || ''}
+        totalItems={completedPathInfo?.totalItems || 0}
+      />
     </div>
   );
 }

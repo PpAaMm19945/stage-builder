@@ -667,6 +667,13 @@ export const paths = {
       `/api/paths/${pathId}/advance`,
       { method: 'POST' }
     ),
+
+  getStats: () =>
+    apiRequest<{
+      hymns: { completed: number; total: number };
+      catechism: { completed: number; total: number };
+      books: { completed: number; total: number };
+    }>('/api/library/stats'),
 };
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths };
