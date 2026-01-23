@@ -13,3 +13,7 @@
 ## 2026-01-21 - Ghost Buttons vs. Touch Targets
 **Learning:** Large invisible `div`s used as touch targets can duplicate screen reader announcements if accessible buttons also exist for the same action.
 **Action:** Use `aria-hidden="true"` on purely "convenience" tap zones if there are standard, accessible buttons already present in the DOM.
+
+## 2026-01-23 - Composite Component Styling
+**Learning:** Passing `className` props to composite components (like a split button) can be ambiguous. Applying it to an internal trigger instead of the root wrapper breaks layout expectations (e.g., positioning) and causes conflicts.
+**Action:** Always apply the root `className` prop to the outermost container of the component. If internal elements need styling, expose specific props (e.g., `triggerClassName`) or rely on variant props.
