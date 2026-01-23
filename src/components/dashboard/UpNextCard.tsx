@@ -75,7 +75,7 @@ export function UpNextCard({ item, onAction, onExpand, pendingCount }: UpNextCar
             <CardHeader className="pb-3">
                 <div className="flex items-center gap-2 mb-2">
                     <span className="text-xs font-bold uppercase tracking-wider opacity-70">
-                        Up Next • {item.timeSlot}
+                        {item.timeSlot ? `Up Next • ${item.timeSlot}` : 'Up Next'}
                     </span>
                 </div>
                 <CardTitle className="text-2xl font-display leading-tight">

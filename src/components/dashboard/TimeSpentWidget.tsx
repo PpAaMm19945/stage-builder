@@ -64,7 +64,8 @@ export function TimeSpentWidget({ className }: TimeSpentWidgetProps) {
         return null; // Silently fail - don't show widget if no data
     }
 
-    const hasData = data.totalMinutes > 0;
+    const hasData = (data.totalMinutes || 0) > 0;
+    const students = data.students || [];
 
     return (
         <Card className={cn(
@@ -81,7 +82,7 @@ export function TimeSpentWidget({ className }: TimeSpentWidgetProps) {
                 {/* Total Time */}
                 <div className="flex items-baseline gap-2">
                     <span className="text-3xl font-bold text-amber-700 dark:text-amber-300">
-                        {hasData ? formatDuration(data.totalMinutes) : '—'}
+                        {hasData ? formatDuration(data.totalMinutes || 0) : '—'}
                     </span>
                     {hasData && (
                         <span className="text-xs text-muted-foreground">
@@ -91,9 +92,9 @@ export function TimeSpentWidget({ className }: TimeSpentWidgetProps) {
                 </div>
 
                 {/* Per-child breakdown */}
-                {data.students.length > 0 && (
+                {students.length > 0 && (
                     <div className="space-y-2 pt-2 border-t border-amber-100 dark:border-amber-900/50">
-                        {data.students.map((student) => (
+                        {students.map((student) => (
                             <div
                                 key={student.student_id}
                                 className="flex items-center justify-between text-sm"
