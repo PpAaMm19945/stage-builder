@@ -9,3 +9,7 @@
 ## 2026-05-21 - List Action Loading States
 **Learning:** In list views with inline actions (like Approve/Reject), failing to disable *all* related actions while one is processing can lead to race conditions or confused user state.
 **Action:** When implementing async actions in a list, track the specific `processingId` but disable *all* action buttons in the list during the operation to ensure data integrity and clear feedback.
+
+## 2026-06-15 - Modal Keyboard Navigation
+**Learning:** Modals often trap focus but don't automatically map global keyboard shortcuts like Left/Right arrows to internal navigation components (like carousels). Users expect "remote control" navigation (Arrow keys) to work immediately upon opening a modal, even if focus is on a "Close" button.
+**Action:** Add a scoped `keydown` listener to the modal component that listens for navigation keys, respecting `defaultPrevented` to avoid conflicting with internal focused elements.
