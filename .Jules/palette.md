@@ -6,14 +6,6 @@
 **Learning:** Using `alert()` interrupts the user flow and provides a poor experience, especially for recoverable errors like network failures.
 **Action:** Replace `alert()` with inline error states or non-blocking toast notifications. This keeps the user in context and allows them to retry without dismissing a system modal.
 
-## 2026-01-21 - Keyboard Visibility for Hover Controls
-**Learning:** Components that rely on `group-hover` for visibility (like carousel arrows) are invisible to keyboard users. This creates a "tab into the void" experience.
-**Action:** Always pair `group-hover:opacity-100` with `focus:opacity-100` (or `focus-visible`) to ensure keyboard users can track their focus location.
-
-## 2026-01-21 - Ghost Buttons vs. Touch Targets
-**Learning:** Large invisible `div`s used as touch targets can duplicate screen reader announcements if accessible buttons also exist for the same action.
-**Action:** Use `aria-hidden="true"` on purely "convenience" tap zones if there are standard, accessible buttons already present in the DOM.
-
-## 2026-01-23 - Composite Component Styling
-**Learning:** Passing `className` props to composite components (like a split button) can be ambiguous. Applying it to an internal trigger instead of the root wrapper breaks layout expectations (e.g., positioning) and causes conflicts.
-**Action:** Always apply the root `className` prop to the outermost container of the component. If internal elements need styling, expose specific props (e.g., `triggerClassName`) or rely on variant props.
+## 2026-05-21 - List Action Loading States
+**Learning:** In list views with inline actions (like Approve/Reject), failing to disable *all* related actions while one is processing can lead to race conditions or confused user state.
+**Action:** When implementing async actions in a list, track the specific `processingId` but disable *all* action buttons in the list during the operation to ensure data integrity and clear feedback.
