@@ -77,35 +77,38 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                 <>
                     {/* Time Column */}
                     {item.timeSlot && (
-                    <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
-                        <div className={cn(
-                            "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
-                            getTypeColor(item.type),
-                            item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
-                        )}>
-                            {item.status === 'completed' ? (
-                                <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
-                            ) : (
-                                <>
-                                    {getIcon(item.type)}
-                                    {/* Hover checkmark for quick completion */}
-                                    <div
-                                        className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
-                                        onClick={handleQuickComplete}
-                                        title="Mark complete"
-                                    >
-                                        <CheckCircle className="h-6 w-6 text-green-500" />
-                                    </div>
-                                </>
-                            )}
+                        <div className="w-[54px] flex flex-col items-center pt-1 shrink-0 bg-background z-0">
+                            <div className={cn(
+                                "h-10 w-10 rounded-full flex items-center justify-center border-2 transition-colors relative",
+                                getTypeColor(item.type),
+                                item.status === 'completed' && "bg-muted text-muted-foreground border-muted"
+                            )}>
+                                {item.status === 'completed' ? (
+                                    <CheckCircle weight="fill" className="h-6 w-6 text-green-600 dark:text-green-500" />
+                                ) : (
+                                    <>
+                                        {getIcon(item.type)}
+                                        {/* Hover checkmark for quick completion */}
+                                        <div
+                                            className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
+                                            onClick={handleQuickComplete}
+                                            title="Mark complete"
+                                        >
+                                            <CheckCircle className="h-6 w-6 text-green-500" />
+                                        </div>
+                                    </>
+                                )}
+                            </div>
                         </div>
-                    </div>
                     )}
 
                     {/* Content Card */}
                     <Card className={cn(
                         "flex-1 p-4 hover:shadow-md transition-all border-l-4",
-                        item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' : 'border-l-primary',
+                        item.status === 'completed' ? 'opacity-60 border-l-muted bg-muted/20' :
+                            item.status === 'skipped' ? 'opacity-50 border-l-red-200 bg-red-50/10' :
+                                item.status === 'transferred' ? 'border-l-amber-400 bg-amber-50/10' :
+                                    'border-l-primary',
                     )}>
                         {item.status === 'completed' && (
                             <div className="absolute top-2 right-2 text-green-600 dark:text-green-500">
@@ -120,11 +123,28 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                                             {item.timeSlot}
                                         </span>
                                     )}
-                                    <h4 className={cn("font-semibold", item.status === 'completed' && "line-through decoration-slate-400")}>
+                                    {item.status === 'transferred' && (
+                                        <span className="text-[10px] font-bold text-amber-600 bg-amber-100 dark:bg-amber-900/30 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                            Moved
+                                        </span>
+                                    )}
+                                    {item.status === 'skipped' && (
+                                        <span className="text-[10px] font-bold text-red-500 bg-red-100 dark:bg-red-900/30 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                            Skipped
+                                        </span>
+                                    )}
+                                    <h4 className={cn("font-semibold",
+                                        (item.status === 'completed' || item.status === 'skipped') && "line-through decoration-slate-400"
+                                    )}>
                                         {item.title}
                                     </h4>
                                 </div>
                                 <p className="text-sm text-muted-foreground line-clamp-1">{item.description}</p>
+                                {item.transferred_from && (
+                                    <p className="text-xs text-amber-600 dark:text-amber-500 mt-1 italic">
+                                        Moved from earlier
+                                    </p>
+                                )}
                             </div>
                             <div className="flex items-center gap-1">
                                 {/* Swap button for activities */}

@@ -18,6 +18,7 @@ export interface FamilyContext {
         hymn_position: number;
         current_book_id: string | null;
     };
+    family_id: string; // Added for plan lookup
 }
 
 export interface RhythmItem {
@@ -94,11 +95,28 @@ export class RhythmGenerator {
                 catechism_position: profile?.catechism_position || 1,
                 hymn_position: profile?.hymn_position || 1,
                 current_book_id: null // TODO: Implement reading progress lookup
-            }
+            },
+            family_id: householdId
         };
     }
 
-    async generateWeeklyRhythm(context: FamilyContext, weekStart: string, frozenDays: string[] = []): Promise<WeeklyPlan> {
+    async generateWeeklyRhythm(context: FamilyContext, weekStart: string, frozenDays: string[] = [], additionalContext?: string): Promise<WeeklyPlan> {
+        // 1. Handle Frozen Days - Load existing if needed
+        let existingDays: DailyRhythm[] = [];
+        if (frozenDays.length > 0) {
+            const existingPlan = await this.env.DB.prepare(
+                'SELECT days FROM weekly_plans WHERE family_id = ? AND week_start = ?'
+            ).bind(context.family_id, weekStart).first<any>();
+
+            if (existingPlan?.days) {
+                const parsed = typeof existingPlan.days === 'string' ? JSON.parse(existingPlan.days) : existingPlan.days;
+                existingDays = parsed.filter((d: any) => frozenDays.includes(d.day));
+            }
+
+            // Filter context.available_days so AI only plans for remaining days
+            context.available_days = context.available_days.filter(d => !frozenDays.includes(d));
+        }
+
         const systemPrompt = `You are the FamilyPath Rhythm Generator. Your goal is to create a personalized weekly formation plan for a family.
     
     FAMILY CONTEXT:
@@ -107,6 +125,7 @@ export class RhythmGenerator {
     Days: ${JSON.stringify(context.available_days)}
     Goals: ${JSON.stringify(context.goals)}
     Progress: Catechism Q${context.progress.catechism_position}, Hymn #${context.progress.hymn_position}
+    ${additionalContext ? `\n    ADDITIONAL CONTEXT:\n    ${additionalContext}` : ''}
     
     LIBRARY CONTENT:
     - Catechism: Westminster Shorter Catechism (use Q${context.progress.catechism_position} onwards)
@@ -234,11 +253,17 @@ export class RhythmGenerator {
                 }))
             }));
 
+            // Merge with frozen days and sort
+            const allDays = [...existingDays, ...days].sort((a, b) => {
+                const dayOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+                return dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
+            });
+
             return {
                 id: crypto.randomUUID(),
                 family_id: "pending_save", // Will be set by caller
                 week_start: weekStart,
-                days,
+                days: allDays,
                 theme: generatedData.weekly_theme,
                 generated_at: new Date().toISOString(),
                 frozen_through: frozenDays.length > 0 ? frozenDays[frozenDays.length - 1] : null

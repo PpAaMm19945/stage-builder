@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions, reading, liturgy, paths } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading, liturgy, paths, rhythm } from '@/lib/api';
 import { TodayPathItem } from '@/types/paths';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -47,6 +47,7 @@ import { useStableValue } from '@/hooks/useStableValue';
 import { Compass } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { PathCompletionModal } from '@/components/paths/PathCompletionModal';
+import { EndOfDaySummary } from '@/components/dashboard/EndOfDaySummary';
 
 const EMPTY_WEEK_DATA = {};
 
@@ -62,6 +63,7 @@ export default function Dashboard() {
   // State for regenerate dialog
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
+  const [transferAction, setTransferAction] = useState<'move' | 'skip'>('move');
 
   // State for swap sheet
   const [swapActivity, setSwapActivity] = useState<{ id: string; title: string } | null>(null);
@@ -74,6 +76,9 @@ export default function Dashboard() {
     pathName: string;
     totalItems: number;
   } | null>(null);
+
+  // End of Day Summary State
+  const [showSummary, setShowSummary] = useState(false);
 
   const today = startOfDay(new Date());
   const weekStart = getWeekStart(today);
@@ -117,6 +122,22 @@ export default function Dashboard() {
     queryFn: () => family.getToday().then(d => d.children),
     enabled: isBalanceDialogOpen,
   });
+
+  // End of Day Check
+  useEffect(() => {
+    const now = new Date();
+    const isEvening = now.getHours() >= 18;
+    // Only show if it's "today" (not browsing past/future) and evening
+    if (isEvening && isToday) {
+      const dateStr = format(now, 'yyyy-MM-dd');
+      const shown = localStorage.getItem('daily_summary_shown');
+      if (shown !== dateStr) {
+        // Small delay to let data load
+        const timer = setTimeout(() => setShowSummary(true), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isToday]);
 
   // Memoize active children to prevent downstream re-renders (especially PDF generation)
   const activeChildrenRaw = useMemo(() => {
@@ -215,10 +236,10 @@ export default function Dashboard() {
     queryFn: () => weeklyPlan.get(),
   });
 
-  // Regenerate mutation
+  // Regenerate mutation (Switched to AI Rhythm Generator)
   const regenerateMutation = useMutation({
-    mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused'; weekStart: string }) =>
-      weeklyPlan.regenerate(prefs),
+    mutationFn: (vars: { weekStart: string; frozenDays: string[]; additionalContext?: string }) =>
+      rhythm.regenerate(vars), // Uses new AI endpoint
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['family-day'] });
       queryClient.invalidateQueries({ queryKey: ['family-today'] });
@@ -279,8 +300,83 @@ export default function Dashboard() {
 
   const handleRegenerate = useCallback(() => setIsBalanceDialogOpen(true), []);
 
+  const { frozenDays, missedItems } = useMemo(() => {
+    if (!isToday || !weeklyPlanData) return { frozenDays: [], missedItems: [] };
+
+    // Calculate frozen days (past days in current week)
+    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const todayIndex = new Date().getDay();
+    // Assuming week starts Monday (1), if today is Wed (3), frozen are Mon, Tue.
+    // If today is Monday (1), nothing frozen.
+    // If today is Sunday (0), it's end of week, but maybe user regenerating for next week?
+    // User regenerating "mid-week" implies current week.
+
+    // Simple logic: Freeze everything before today
+    const currentDayName = dayNames[todayIndex];
+    const frozen: string[] = [];
+
+    // We need the days from the plan to identify what's passed
+    // But simplified: Mon, Tue... if today is Wed
+
+    if (todayIndex === 1) return { frozenDays: [], missedItems: [] }; // Monday
+
+    // Add days before today
+    // Note: This logic assumes M-F week structure roughly.
+    // Better: Filter plan items.
+
+    return { frozenDays: [], missedItems: [] }; // Placeholder for complex logic, user prompt implies specific example
+  }, [weeklyPlanData, isToday]);
+
+  // Actual logic to populate frozenDays
+  const regenerationContext = useMemo(() => {
+    if (!isToday) return { frozenDays: [], missedItems: [] };
+    const now = new Date();
+    const todayDay = now.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"
+    const daysOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayIdx = daysOrder.indexOf(todayDay);
+
+    if (todayIdx <= 0) return { frozenDays: [], missedItems: [] };
+
+    const frozenDays = daysOrder.slice(0, todayIdx);
+
+    // Find missed items in frozen days
+    // Need to parse weeklyPlanData (Phase 3/5 structure)
+    // Assuming V2 AI structure: { days: [ { day: 'Mon', morning: [], evening: [] } ] }
+    let missed: RhythmItem[] = [];
+
+    if (weeklyPlanData?.plan) { // Plan object
+      // Check format
+      const days = weeklyPlanData.plan.days || weeklyPlanData.plan; // Handle V2/Legacy
+      if (Array.isArray(days)) {
+        days.forEach((d: any) => {
+          if (frozenDays.includes(d.day)) {
+            const allItems = [...(d.morning || []), ...(d.evening || [])];
+            allItems.forEach((i: any) => {
+              if (i.status !== 'completed' && i.status !== 'skipped' && i.status !== 'transferred') {
+                missed.push(i);
+              }
+            });
+          }
+        });
+      }
+    }
+
+    return { frozenDays, missedItems: missed };
+  }, [isToday, weeklyPlanData]);
+
   const confirmRegenerate = () => {
-    regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
+    let context = '';
+    const { frozenDays, missedItems } = regenerationContext;
+
+    if (missedItems.length > 0 && transferAction === 'move') {
+      context = `Ensure the following activities are moved to tomorrow (${format(selectedDate, 'EEEE')}): ${missedItems.map(i => i.title).join(', ')}.`;
+    }
+
+    regenerateMutation.mutate({
+      weekStart: weekStartStr,
+      frozenDays,
+      additionalContext: context
+    });
   };
 
   // Liturgy Mutations
@@ -788,6 +884,16 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      <EndOfDaySummary
+        date={selectedDate}
+        items={timelineItems}
+        open={showSummary}
+        onClose={() => {
+          setShowSummary(false);
+          localStorage.setItem('daily_summary_shown', format(new Date(), 'yyyy-MM-dd'));
+        }}
+      />
+
       {/* Regenerate Dialog */}
       <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
         <DialogContent>
@@ -797,6 +903,35 @@ export default function Dashboard() {
               How should we balance activities for your children{childAges.length > 0 ? ` (${childAges.join(', ')})` : ''}?
             </DialogDescription>
           </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Missed Items Warning */}
+            {regenerationContext.missedItems.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                  I noticed {regenerationContext.missedItems.length} incomplete items from earlier this week.
+                </p>
+                <RadioGroup value={transferAction} onValueChange={(v: any) => setTransferAction(v)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="move" id="move" />
+                    <Label htmlFor="move">Move to tomorrow</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="skip" id="skip" />
+                    <Label htmlFor="skip">Skip and continue</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            {regenerationContext.frozenDays.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                * {regenerationContext.frozenDays.join(', ')} are passed and will be frozen.
+              </p>
+            )}
+          </div>
+
+
 
           <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
             <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">

@@ -41,7 +41,7 @@ export function StudentAiChat({ studentId, currentSubject }: StudentAiChatProps)
                 currentSubject: currentSubject || 'general',
             };
 
-            const stream = await ai.chat(userMessage, context, 'student');
+            const stream = await ai.chat([{ role: 'user', content: userMessage }], { ...context, mode: 'student' });
 
             if (!stream) {
                 throw new Error('No response stream');
@@ -148,8 +148,8 @@ export function StudentAiChat({ studentId, currentSubject }: StudentAiChatProps)
                     >
                         <div
                             className={`max-w-[85%] rounded-2xl px-4 py-2 text-sm ${msg.role === 'user'
-                                    ? 'bg-indigo-500 text-white rounded-br-md'
-                                    : 'bg-white dark:bg-slate-800 border shadow-sm rounded-bl-md'
+                                ? 'bg-indigo-500 text-white rounded-br-md'
+                                : 'bg-white dark:bg-slate-800 border shadow-sm rounded-bl-md'
                                 }`}
                         >
                             {msg.content || (

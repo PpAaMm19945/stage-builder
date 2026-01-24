@@ -16,8 +16,9 @@ import {
 } from '@/components/ui/carousel';
 import { X, BookBookmark } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
-import { useQuery } from '@tanstack/react-query';
-import { catechism as catechismApi } from '@/lib/api';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { catechism as catechismApi, liturgy } from '@/lib/api';
+import { toast } from 'sonner';
 
 interface CatechismReaderProps {
     open: boolean;
@@ -27,6 +28,30 @@ interface CatechismReaderProps {
 export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
+    const [isAnswerRevealed, setIsAnswerRevealed] = useState<Record<string, boolean>>({});
+    const queryClient = useQueryClient();
+
+    const revealAnswer = (id: string) => {
+        setIsAnswerRevealed(prev => ({ ...prev, [id]: true }));
+
+        // Auto-complete after delay
+        setTimeout(() => {
+            liturgy.complete(id).then(() => {
+                toast.success('Catechism marked complete ✓', {
+                    duration: 5000,
+                    action: {
+                        label: 'Undo',
+                        onClick: () => {
+                            liturgy.uncomplete(id);
+                            toast.info('Completion undone');
+                            queryClient.invalidateQueries({ queryKey: ['family-day'] }); // Update dashboard
+                        }
+                    }
+                });
+                queryClient.invalidateQueries({ queryKey: ['family-day'] });
+            });
+        }, 3000);
+    };
 
     const { data: items = [] } = useQuery({
         queryKey: ['catechism', 'all'],
@@ -132,9 +157,22 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
 
                                                 <div className="space-y-4">
                                                     <h3 className="text-sm font-bold text-slate-400 uppercase tracking-widest text-center">Answer</h3>
-                                                    <p className="text-lg sm:text-xl font-serif text-slate-800 text-center leading-loose italic">
-                                                        {answer}
-                                                    </p>
+
+                                                    {isAnswerRevealed[item.id] ? (
+                                                        <p className="text-lg sm:text-xl font-serif text-slate-800 text-center leading-loose italic animate-in fade-in zoom-in duration-500">
+                                                            {answer}
+                                                        </p>
+                                                    ) : (
+                                                        <div className="flex justify-center py-4">
+                                                            <Button
+                                                                variant="outline"
+                                                                onClick={() => revealAnswer(item.id)}
+                                                                className="font-serif italic text-slate-600 border-slate-300 hover:bg-slate-100"
+                                                            >
+                                                                Tap to Reveal Answer
+                                                            </Button>
+                                                        </div>
+                                                    )}
                                                 </div>
                                             </div>
 

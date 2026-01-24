@@ -27,8 +27,9 @@ export interface RhythmItem {
     title: string;
     description?: string;
     type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item';
-    status: 'upcoming' | 'current' | 'completed';
+    status: 'upcoming' | 'current' | 'completed' | 'skipped' | 'transferred';
     data?: any; // The full object (Activity, Book, etc.)
+    transferred_from?: string; // Date string if transferred
 }
 
 interface DailyRhythmProps {
@@ -136,10 +137,10 @@ export const DailyRhythm = memo(function DailyRhythm({
                                             )}
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.lyrics || 
-                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.lyrics ||
+                                                        activeItem.data.content?.content ||
                                                         activeItem.data.content?.liturgical_script ||
                                                         activeItem.description
                                                     )
@@ -160,18 +161,18 @@ export const DailyRhythm = memo(function DailyRhythm({
                                             </div>
                                             <div className="bg-muted/30 rounded-lg p-5 space-y-3">
                                                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
-                                            <div
-                                                className="prose prose-sm dark:prose-invert"
-                                                dangerouslySetInnerHTML={{ 
-                                                    __html: sanitizeHtml(
-                                                        activeItem.data.item_data?.liturgical_script ||
-                                                        activeItem.data.item_data?.description ||
-                                                        activeItem.data.content?.content || 
-                                                        activeItem.data.content?.liturgical_script ||
-                                                        activeItem.description
-                                                    )
-                                                }}
-                                            />
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.item_data?.liturgical_script ||
+                                                            activeItem.data.item_data?.description ||
+                                                            activeItem.data.content?.content ||
+                                                            activeItem.data.content?.liturgical_script ||
+                                                            activeItem.description
+                                                        )
+                                                    }}
+                                                />
                                             </div>
                                             <p className="text-sm text-muted-foreground text-center">
                                                 📖 Recite together as a family
@@ -185,9 +186,9 @@ export const DailyRhythm = memo(function DailyRhythm({
                                             <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto text-left"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.content ||
                                                         activeItem.data.content?.description ||
                                                         activeItem.description
                                                     )
@@ -223,9 +224,9 @@ export const DailyRhythm = memo(function DailyRhythm({
                                             <h3 className="text-xl font-display font-bold text-center">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.description || 
+                                                        activeItem.data.content?.description ||
                                                         activeItem.data.content?.content ||
                                                         activeItem.description
                                                     )
@@ -246,10 +247,10 @@ export const DailyRhythm = memo(function DailyRhythm({
                                             <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.content || 
-                                                        activeItem.data.content?.description || 
+                                                        activeItem.data.content?.content ||
+                                                        activeItem.data.content?.description ||
                                                         activeItem.description
                                                     )
                                                 }}

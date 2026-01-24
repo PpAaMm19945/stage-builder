@@ -178,25 +178,36 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         setFailedImages(prev => new Set([...prev, index]));
     };
 
-    const handleClose = () => {
-        // Auto-complete trigger
-        if (activityId && pagesViewed.size >= 2) {
-            progress.complete(activityId, 'auto')
-                .then(() => {
-                    toast.success("Book marked complete", {
-                        action: {
-                            label: "Undo",
-                            onClick: () => {
-                                progress.start(activityId).then(() => {
-                                    toast.info("Completion undone");
-                                    queryClient.invalidateQueries({ queryKey: ['family-day'] });
-                                });
-                            }
+    const handleClose = async () => {
+        // Auto-complete trigger if activityId is present (planned activity)
+        // If > 2 pages viewed OR it's a PDF (where we can't track pages well, but user opened it)
+        const isProgressive = activityId && (pagesViewed.size >= 2 || isPdf);
+
+        if (isProgressive) {
+            // Auto-complete
+            try {
+                // Use 'auto' source
+                await progress.complete(activityId, 'auto', 'book');
+
+                toast.success('Book marked complete ✓', {
+                    duration: 5000, // 5 seconds to undo
+                    action: {
+                        label: 'Undo',
+                        onClick: async () => {
+                            // Revert to upcoming/skipped
+                            await progress.skip(activityId, 'book');
+                            toast.info('Completion undone');
+                            queryClient.invalidateQueries({ queryKey: ['family-day'] });
                         }
-                    });
-                    queryClient.invalidateQueries({ queryKey: ['family-day'] }); // Refresh dashboard
-                    if (onComplete) onComplete();
+                    }
                 });
+
+                queryClient.invalidateQueries({ queryKey: ['family-day'] });
+                if (onComplete) onComplete();
+
+            } catch (err) {
+                console.error("Auto-complete failed", err);
+            }
         }
 
         onOpenChange(false);

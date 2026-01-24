@@ -6896,4 +6896,162 @@ app.get('/api/library/stats', async (c) => {
   }
 });
 
+// ============ PROGRESS API ============
+
+// Transfer activity to another day
+app.post('/api/progress/transfer', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { activityId, fromDate, toDate, type } = await c.req.json();
+
+    if (!activityId || !fromDate || !toDate) {
+      return c.json({ error: 'Missing required fields' }, 400);
+    }
+
+    // Helper to get Monday of a date
+    const getWeekStart = (d: Date) => {
+      const date = new Date(d);
+      const day = date.getDay();
+      const diff = date.getDate() - day + (day === 0 ? -6 : 1);
+      const monday = new Date(date.setDate(diff));
+      return monday.toISOString().split('T')[0];
+    };
+
+    const fromWeekStart = getWeekStart(new Date(fromDate));
+    const toWeekStart = getWeekStart(new Date(toDate));
+
+    // 1. Handle Source Plan
+    const sourcePlan = await c.env.DB.prepare(
+      'SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
+    ).bind(user.id, fromWeekStart).first();
+
+    let transferredItem: any = null;
+
+    if (sourcePlan) {
+      const planData = JSON.parse((sourcePlan as any).plan_json);
+      let updated = false;
+      const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+      const fromDayName = days[new Date(fromDate).getDay()];
+
+      // Find day and item
+      for (const day of planData.days) {
+        if (day.day === fromDayName) {
+          // Check morning
+          const mIdx = day.morning.findIndex((i: any) => i.id === activityId || i.content_id === activityId);
+          if (mIdx !== -1) {
+            transferredItem = { ...day.morning[mIdx] };
+            day.morning[mIdx].status = 'transferred';
+            updated = true;
+          } else {
+            // Check evening
+            const eIdx = day.evening.findIndex((i: any) => i.id === activityId || i.content_id === activityId);
+            if (eIdx !== -1) {
+              transferredItem = { ...day.evening[eIdx] };
+              day.evening[eIdx].status = 'transferred';
+              updated = true;
+            }
+          }
+        }
+      }
+
+      if (updated) {
+        await c.env.DB.prepare(
+          'UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?'
+        ).bind(JSON.stringify(planData), (sourcePlan as any).id).run();
+      }
+    }
+
+    if (!transferredItem) {
+      return c.json({ error: 'Activity not found in source plan' }, 404);
+    }
+
+    // 2. Handle Target Plan
+    let targetPlan = await c.env.DB.prepare(
+      'SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
+    ).bind(user.id, toWeekStart).first();
+
+    if (fromWeekStart === toWeekStart && sourcePlan) {
+      // Refetch if same week to get updated "transferred" status (though we primarily need the structure to append)
+      targetPlan = await c.env.DB.prepare(
+        'SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?'
+      ).bind(user.id, toWeekStart).first();
+    }
+
+    if (!targetPlan) {
+      return c.json({ error: 'Target weekly plan not found. Please generate a plan for that week first.' }, 404);
+    }
+
+    const targetPlanData = JSON.parse((targetPlan as any).plan_json);
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const toDayName = days[new Date(toDate).getDay()];
+    const targetDay = targetPlanData.days.find((d: any) => d.day === toDayName);
+
+    if (targetDay) {
+      // Add to morning by default
+      targetDay.morning.push({
+        ...transferredItem,
+        id: crypto.randomUUID(), // New ID for the new instance
+        status: 'upcoming',
+        transferred_from: fromDate
+      });
+
+      await c.env.DB.prepare(
+        'UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?'
+      ).bind(JSON.stringify(targetPlanData), (targetPlan as any).id).run();
+    } else {
+      return c.json({ error: 'Target day not found in plan' }, 404);
+    }
+
+    return c.json({ success: true });
+
+  } catch (error: any) {
+    console.error('Transfer error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
+
+// ============ RHYTHM API V2 ============
+
+// Regenerate Plan (AI)
+app.post('/api/rhythm/regenerate', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { weekStart, frozenDays, additionalContext } = await c.req.json();
+    const targetWeek = weekStart || getSmartWeekStart();
+
+    const generator = new RhythmGenerator(c.env);
+    const context = await generator.loadFamilyContext(user.id);
+
+    // Pass to generator
+    const plan = await generator.generateWeeklyRhythm(context, targetWeek, frozenDays || [], additionalContext);
+
+    // Save plan
+    const planId = generateId('plan');
+    const planToSave = {
+      ...plan,
+      id: planId,
+      family_id: user.id
+    };
+
+    await c.env.DB.prepare(`
+            INSERT INTO weekly_plans (id, parent_id, week_start, plan_json, created_at, updated_at) 
+            VALUES (?, ?, ?, ?, datetime('now'), datetime('now'))
+            ON CONFLICT(parent_id, week_start) DO UPDATE SET 
+            plan_json = excluded.plan_json, 
+            updated_at = datetime('now')
+        `).bind(
+      planId,
+      user.id,
+      targetWeek,
+      JSON.stringify(planToSave)
+    ).run();
+
+    return c.json({ success: true, plan: planToSave });
+
+  } catch (error: any) {
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
