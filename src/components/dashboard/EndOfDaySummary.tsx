@@ -54,7 +54,7 @@ export function EndOfDaySummary({ date, items, open, onClose }: EndOfDaySummaryP
                                 {inProgress.map(i => (
                                     <li key={i.id} className="text-foreground/90">
                                         {i.title}
-                                        {i.type === 'reading' && <span className="text-muted-foreground text-xs ml-2">(Continuing tomorrow)</span>}
+                                        {i.type === 'book' && <span className="text-muted-foreground text-xs ml-2">(Continuing tomorrow)</span>}
                                     </li>
                                 ))}
                             </ul>
