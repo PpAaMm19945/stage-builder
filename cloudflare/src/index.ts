@@ -8,6 +8,7 @@ import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 import { RhythmGenerator } from './ai/rhythm-generator';
 import { AiCoach } from './ai';
 import { ReportGenerator } from './ai/report-generator';
+import { FrontdeskOfficer } from './ai/frontdesk';
 import { PdfService } from './services/pdf-service';
 import { handleArchiveExport, handleSignedDownload } from './export';
 
@@ -6099,7 +6100,19 @@ app.post('/api/ai/chat', async (c) => {
     // Determine mode: explicit param or inferred from user role
     const chatMode = mode || (user.role === 'student' ? 'student' : 'parent');
 
-    const stream = await coach.chat(message, fullContext, chatMode);
+    let stream;
+
+    if (chatMode === 'student') {
+      const coach = new AiCoach(c.env);
+      stream = await coach.chat(message, fullContext, 'student');
+    } else {
+      // Use Frontdesk Officer (Gemini) for parents
+      const officer = new FrontdeskOfficer(c.env);
+      // Construct basic history from single message for now
+      // In a real app we'd pass the full conversation history from frontend
+      const history: any[] = [{ role: 'user', content: message }];
+      stream = await officer.chat(history, fullContext);
+    }
 
     return new Response(stream as any, {
       headers: {
