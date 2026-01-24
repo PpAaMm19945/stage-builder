@@ -136,6 +136,7 @@ export class FrontdeskOfficer {
                         }
 
                         if (chunk.toolCall) {
+                            console.log('[Frontdesk] Tool Call Received:', chunk.toolCall.name);
                             // Handle Tool Call
                             // For now, in this migration, we will serialize the tool call 
                             // and send it as a special marker if needed, or structured JSON.

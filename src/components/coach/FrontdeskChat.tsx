@@ -73,9 +73,14 @@ export function FrontdeskChat() {
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) break;
+                if (done) {
+                    console.log('[Chat] Stream done');
+                    break;
+                }
 
                 const chunk = decoder.decode(value, { stream: true });
+                console.log('[Chat] Chunk received:', chunk);
+
                 // Handle [ACTION] markers or text
                 // If chunk contains [ACTION_PENDING], parse the JSON
                 if (chunk.includes('[ACTION_PENDING]')) {
@@ -106,8 +111,8 @@ export function FrontdeskChat() {
                 }
             }
         } catch (err) {
-            console.error(err);
-            toast.error("Failed to send message");
+            console.error('[Chat] Stream error:', err);
+            toast.error("Failed to send message: " + (err instanceof Error ? err.message : String(err)));
         } finally {
             setIsLoading(false);
         }

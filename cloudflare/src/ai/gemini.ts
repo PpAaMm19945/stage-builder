@@ -30,11 +30,12 @@ export interface GeminiTool {
 export class GeminiService {
     private apiKey: string;
     private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    private model = 'gemini-2.0-flash-exp';
+    private model = 'gemini-2.0-flash-exp'; // User confirmed compatibility
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
         if (model) this.model = model;
+        console.log(`[GeminiService] Initialized with model: ${this.model}`);
     }
 
     /**
@@ -142,6 +143,7 @@ export class GeminiService {
 
                     try {
                         const chunk = JSON.parse(jsonStr);
+                        // console.log('[GeminiService] Stream chunk:', JSON.stringify(chunk).slice(0, 100)); // Debug log
                         const candidate = chunk.candidates?.[0];
 
                         if (candidate) {
