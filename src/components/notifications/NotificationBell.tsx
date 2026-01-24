@@ -31,12 +31,19 @@ export function NotificationBell() {
     return (
         <Popover>
             <PopoverTrigger asChild>
-                <Button variant="ghost" size="icon" className="relative">
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="relative"
+                    aria-label={unreadCount > 0 ? `Notifications, ${unreadCount} unread` : "Notifications"}
+                >
                     <Bell className="h-5 w-5 text-muted-foreground" />
                     {unreadCount > 0 && (
-                        <span className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background" />
+                        <span
+                            className="absolute top-2 right-2 h-2.5 w-2.5 rounded-full bg-primary ring-2 ring-background"
+                            aria-hidden="true"
+                        />
                     )}
-                    <span className="sr-only">Notifications</span>
                 </Button>
             </PopoverTrigger>
             <PopoverContent className="w-80 p-0" align="end">
