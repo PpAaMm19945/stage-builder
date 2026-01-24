@@ -27,6 +27,7 @@ import { MarkdownBookSlide } from './MarkdownBookSlide';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ChildSelectionModal } from './ChildSelectionModal';
+import { BookPageImage } from './BookPageImage';
 
 interface BookReaderProps {
     book: Book | null;
@@ -42,7 +43,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     const [count, setCount] = useState(0);
     const [showPrompts, setShowPrompts] = useState(false);
     const [parsedPages, setParsedPages] = useState<string[]>([]);
-    const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
@@ -165,10 +165,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     // Filter out failed images from display
     const validImagePages = imagePages.filter((_, i) => !failedImages.has(i));
 
-    const handleImageLoad = (index: number) => {
-        setLoadedImages(prev => new Set([...prev, index]));
-    };
-
     const handleImageError = (index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
     };
@@ -177,7 +173,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         onOpenChange(false);
         // Reset state
         setShowPrompts(false);
-        setLoadedImages(new Set());
         setFailedImages(new Set());
     };
 
@@ -360,43 +355,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
-                                        const isLoaded = loadedImages.has(index);
+                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
+                                            typeof p === 'object' && 'page' in p && p.page === index + 1
+                                        ) as { page: number; prompt: string } | undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                <div className="relative w-full h-full flex items-center justify-center p-4">
-                                                    {/* Loading skeleton */}
-                                                    {!isLoaded && (
-                                                        <div className="absolute inset-4 flex items-center justify-center">
-                                                            <Skeleton className="w-full max-w-2xl aspect-[4/3] rounded-lg bg-white/10" />
-                                                        </div>
-                                                    )}
-
-                                                    <img
-                                                        src={pageUrl}
-                                                        alt={`Page ${index + 1}`}
-                                                        className={cn(
-                                                            "max-w-full max-h-[80dvh] sm:max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
-                                                            !isLoaded && "opacity-0"
-                                                        )}
-                                                        loading={index < 3 ? "eager" : "lazy"}
-                                                        onLoad={() => handleImageLoad(index)}
-                                                        onError={() => handleImageError(index)}
-                                                    />
-
-                                                    {/* Overlay Prompt */}
-                                                    {showPrompts && book.readingPrompts?.some(p =>
-                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
-                                                    ) && (
-                                                            <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
-                                                                <p className="text-sm font-medium leading-relaxed">
-                                                                    💡 {(book.readingPrompts.find(p =>
-                                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
-                                                                    ) as { page: number; prompt: string } | undefined)?.prompt}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                </div>
+                                                <BookPageImage
+                                                    src={pageUrl}
+                                                    alt={`Page ${index + 1}`}
+                                                    index={index}
+                                                    onError={() => handleImageError(index)}
+                                                    prompt={prompt?.prompt}
+                                                />
                                             </CarouselItem>
                                         );
                                     })}

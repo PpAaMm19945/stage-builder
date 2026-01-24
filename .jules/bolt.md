@@ -21,3 +21,11 @@
 ## 2026-05-27 - Memoized Hooks for Render Performance
 **Learning:** The `useGuestViewTracker` hook was returning a new `trackView` function instance on every render because it wasn't wrapped in `useCallback`. This caused consuming components like `BookLibrary` to recreate their handlers (`handleBookClick`) on every render, which in turn broke `React.memo` optimizations on child components (`BookCard`), leading to O(N) re-renders of the entire list whenever parent state changed.
 **Action:** Always wrap returned functions in custom hooks with `useCallback` if they are likely to be used as dependencies in `useEffect` or other `useCallback` hooks in consuming components, especially when those components render large lists of memoized items.
+
+## 2026-05-28 - BookReader Image Loading Optimization
+**Learning:** The `BookReader` component was managing `loadedImages` state (a Set of indices) at the top level. Every time a single image loaded, the state update caused the entire `BookReader` and all `CarouselItem` children to re-render. For a 20-page book, this resulted in 20 full re-renders of the carousel.
+**Action:** Extracted the image rendering logic into a `BookPageImage` component with its own local `isLoaded` state. This isolated the re-renders to the individual image component, reducing the parent's render count from O(N) to O(1) (only on mount and error).
+
+## 2026-05-28 - Playwright Route Matching
+**Learning:** In `verify_book_reader.py`, the pattern `page.route("**/*.png", ...)` failed to intercept requests to `/api/books/.../pages/01` because the URL lacked a file extension, even though the content type was image/png. This caused the test to trigger the error handling path (skipping pages), inadvertently verifying the error propagation logic.
+**Action:** When mocking API endpoints that serve files without extensions, use path-based patterns (e.g., `**/pages/*`) instead of extension-based patterns.
