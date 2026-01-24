@@ -11,6 +11,7 @@ import {
   Baby,
   Calendar,
   ListBullets,
+  ShieldCheck,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,6 +37,7 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
 
 // Simplified primary navigation (stage-agnostic)
 const primaryLinks = [
@@ -71,17 +73,21 @@ export function AppSidebar() {
       <Sidebar className="border-r border-border/50" collapsible="icon">
         <SidebarHeader className="p-4">
           {/* Logo - Clickable to Dashboard */}
-          <button
-            onClick={() => handleNavigation('/')}
-            className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
-            </div>
-            <span className="font-display text-lg font-bold text-foreground">
-              FamilyPath
-            </span>
-          </button>
+          <div className="flex items-center justify-between w-full">
+            <button
+              onClick={() => handleNavigation('/')}
+              className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
+              </div>
+              <span className="font-display text-lg font-bold text-foreground">
+                FamilyPath
+              </span>
+            </button>
+
+            <NotificationBell />
+          </div>
         </SidebarHeader>
 
         <SidebarContent>
@@ -92,7 +98,7 @@ export function AppSidebar() {
                 {primaryLinks.map((link) => (
                   <SidebarMenuItem key={link.url}>
                     <SidebarMenuButton
-                    isActive={
+                      isActive={
                         location.pathname === link.url ||
                         (link.url !== '/dashboard' && location.pathname.startsWith(link.url))
                       }
@@ -135,6 +141,16 @@ export function AppSidebar() {
                   >
                     <Heart className="h-4 w-4" weight="fill" />
                     <span className="font-medium">Support FamilyPath</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/trust')}
+                    isActive={location.pathname === '/trust'}
+                    className="flex items-center gap-3"
+                  >
+                    <ShieldCheck className="h-4 w-4" weight="duotone" />
+                    <span>Trust Covenant</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               </SidebarMenu>

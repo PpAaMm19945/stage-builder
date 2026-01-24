@@ -614,6 +614,14 @@ export const formation = {
     }>('/api/family/daily-rhythm'),
 };
 
+export const profile = {
+  get: () => apiRequest<any>('/api/profile'),
+  update: (data: Partial<any>) =>
+    apiRequest<any>('/api/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  updateGoals: (goals: string[]) =>
+    apiRequest<void>('/api/profile/goals', { method: 'POST', body: JSON.stringify({ goals }) })
+};
+
 export const work = {
   // Log work
   log: (data: { apprenticeshipId: string; date: string; hours: number; description: string; photoUrl?: string; skillsApplied?: string[] }) =>
@@ -682,5 +690,5 @@ export const paths = {
     }>('/api/library/stats'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths };
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile };
 export default api;

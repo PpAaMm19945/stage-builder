@@ -45,6 +45,7 @@ const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
+const TrustCovenant = lazy(() => import("./pages/TrustCovenant"));
 
 const queryClient = new QueryClient();
 
@@ -81,6 +82,7 @@ const App = () => (
                       <Route path="/privacy" element={<PrivacyPolicy />} />
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/support" element={<SupportPage />} />
+                      <Route path="/trust" element={<TrustCovenant />} />
                     </Route>
 
                     {/* Protected Routes - Requires Auth */}

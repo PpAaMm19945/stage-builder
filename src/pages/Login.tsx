@@ -32,7 +32,7 @@ export default function Login() {
               Unlock Your Family's Learning Path
             </h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              Sign in to create personalized rhythms for your children, track their growth, 
+              Sign in to create personalized rhythms for your children, track their growth,
               and get age-specific suggestions from our library.
             </p>
           </div>
@@ -57,6 +57,28 @@ export default function Login() {
               </div>
               <p className="text-sm text-muted-foreground">Track Progress</p>
             </div>
+          </div>
+
+          {/* Trust Badges */}
+          <div className="flex items-center justify-center gap-4 md:gap-8 pb-8 text-xs text-muted-foreground">
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🔒</span>
+              <span>Your data is never sold</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">📤</span>
+              <span>Export anytime</span>
+            </div>
+            <div className="flex items-center gap-1.5">
+              <span className="text-base">🛡️</span>
+              <span>AI you control</span>
+            </div>
+          </div>
+
+          <div className="pb-4">
+            <Link to="/trust" className="text-sm font-medium text-primary hover:underline flex items-center justify-center gap-1">
+              Read our promise to families <span aria-hidden="true">→</span>
+            </Link>
           </div>
 
           {/* Login Button */}
@@ -86,13 +108,13 @@ export default function Login() {
               </svg>
               Sign in with Google
             </Button>
-            
+
             <Link to="/library">
               <Button variant="ghost" className="w-full text-muted-foreground">
                 Or continue browsing the library
               </Button>
             </Link>
-            
+
             <p className="text-xs text-muted-foreground">
               By signing in, you agree to our{' '}
               <Link to="/terms" className="underline hover:text-foreground">
@@ -108,10 +130,15 @@ export default function Login() {
       </main>
 
       {/* Footer */}
-      <footer className="p-4 md:p-6 text-center">
+      <footer className="p-4 md:p-6 text-center space-y-2">
         <p className="text-sm text-muted-foreground">
           © 2024 FamilyPath. Made with love for families.
         </p>
+        <div>
+          <Link to="/trust" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">
+            Read our Trust Covenant
+          </Link>
+        </div>
       </footer>
     </div>
   );
