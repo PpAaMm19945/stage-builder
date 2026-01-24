@@ -53,23 +53,23 @@ export default function Settings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid grid-cols-5 w-full h-auto p-1 bg-muted/50 rounded-xl">
-          <TabsTrigger value="family" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="family" aria-label="Family" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <UsersThree className="h-5 w-5" />
             <span className="hidden sm:inline">Family</span>
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="schedule" aria-label="Schedule" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <Bell className="h-5 w-5" />
             <span className="hidden sm:inline">Schedule</span>
           </TabsTrigger>
-          <TabsTrigger value="curriculum" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="curriculum" aria-label="Curriculum" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <BookOpen className="h-5 w-5" />
             <span className="hidden sm:inline">Curriculum</span>
           </TabsTrigger>
-          <TabsTrigger value="materials" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="materials" aria-label="Materials" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <PaintBrush className="h-5 w-5" />
             <span className="hidden sm:inline">Materials</span>
           </TabsTrigger>
-          <TabsTrigger value="account" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="account" aria-label="Account" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <User className="h-5 w-5" />
             <span className="hidden sm:inline">Account</span>
           </TabsTrigger>
