@@ -76,9 +76,14 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   // Handle Upload (PUT /api/books/upload)
   if (pathSegments.length === 1 && pathSegments[0] === 'upload' && request.method === 'PUT') {
     const key = url.searchParams.get('key');
+    const authHeader = request.headers.get('Authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const secret = env.ADMIN_SECRET;
 
-    if (!secret || !(await safeCompare(key, secret))) {
+    // Check both query param and Authorization header for backward compatibility
+    const isAuthorized = (await safeCompare(key, secret)) || (await safeCompare(headerToken, secret));
+
+    if (!secret || !isAuthorized) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
