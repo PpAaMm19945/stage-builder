@@ -130,6 +130,25 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
+    // Keyboard navigation
+    useEffect(() => {
+        if (!open || !api || showChildSelection) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Respect default prevented events (e.g. if focus is already in Carousel)
+            if (e.defaultPrevented) return;
+
+            if (e.key === 'ArrowLeft') {
+                api.scrollPrev();
+            } else if (e.key === 'ArrowRight') {
+                api.scrollNext();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, api, showChildSelection]);
+
     // Fetch manifest for 'images' format - use API route for consistent CORS handling
     const { data: manifestPages } = useQuery({
         queryKey: ['book-manifest', book?.id],
