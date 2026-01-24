@@ -30,7 +30,7 @@ export interface GeminiTool {
 export class GeminiService {
     private apiKey: string;
     private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    private model = 'gemini-3-flash-preview';
+    private model = 'gemini-2.0-flash-exp';
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;

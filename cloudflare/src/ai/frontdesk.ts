@@ -145,14 +145,17 @@ export class FrontdeskOfficer {
                             // But since we can't easily save to DB here without context,
                             // We'll send a formatted JSON block that the frontend can parse as "Action Proposal".
 
+                            // Construct payload matching frontend ActionPayload interface
+                            // { id: string, type: string, data: any, reason: string }
                             const actionPayload = {
-                                type: 'action_proposal',
-                                tool: chunk.toolCall.name,
-                                args: chunk.toolCall.args
+                                id: crypto.randomUUID(),
+                                type: chunk.toolCall.name, // e.g. "propose_schedule_change"
+                                data: chunk.toolCall.args,
+                                reason: (chunk.toolCall.args as any).reason || "AI proposed action"
                             };
 
-                            // Send as a special block
-                            controller.enqueue(encoder.encode(`\n\n[ACTION]${JSON.stringify(actionPayload)}[/ACTION]\n\n`));
+                            // Send as a special block expected by FrontdeskChat.tsx
+                            controller.enqueue(encoder.encode(`[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`));
                         }
                     }
                 } catch (e) {

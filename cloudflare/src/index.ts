@@ -7147,4 +7147,28 @@ app.post('/api/rhythm/regenerate', async (c) => {
   }
 });
 
+// Chat with Frontdesk Officer
+app.post('/api/chat', async (c) => {
+  try {
+    const user = requireHouseholdMember(c);
+    const body = await c.req.json();
+    const { messages, context } = body;
+
+    const officer = new FrontdeskOfficer(c.env);
+    // Pass user context to officer
+    const stream = await officer.chat(messages, { ...context, user });
+
+    return new Response(stream, {
+      headers: {
+        'Content-Type': 'text/event-stream',
+        'Cache-Control': 'no-cache',
+        'Connection': 'keep-alive',
+      },
+    });
+  } catch (error: any) {
+    console.error('Chat error:', error);
+    return c.json({ error: error.message }, 500);
+  }
+});
+
 export default app;
