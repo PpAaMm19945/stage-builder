@@ -62,10 +62,18 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')
-    .replace(/[^\w\-]+/g, '')
-    .replace(/\-\-+/g, '-')
+    .replace(/[^\w-]+/g, '')
+    .replace(/--+/g, '-')
     .replace(/^-+/, '')
     .replace(/-+$/, '');
+}
+
+function isValidPath(path: string): boolean {
+  // Prevent Path Traversal
+  if (path.includes('..')) return false;
+  // Enforce Prefix to contained folder
+  if (!path.startsWith('books/')) return false;
+  return true;
 }
 
 export const onRequest: PagesFunction<Env> = async (context) => {
@@ -76,21 +84,32 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   // Handle Upload (PUT /api/books/upload)
   if (pathSegments.length === 1 && pathSegments[0] === 'upload' && request.method === 'PUT') {
     const key = url.searchParams.get('key');
+    const authHeader = request.headers.get('Authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const secret = env.ADMIN_SECRET;
 
-    if (!secret || !(await safeCompare(key, secret))) {
+    // Check both query param and Authorization header for backward compatibility
+    const isAuthorized = (await safeCompare(key, secret)) || (await safeCompare(headerToken, secret));
+
+    if (!secret || !isAuthorized) {
       return new Response(JSON.stringify({ error: 'Unauthorized' }), { status: 401, headers: { 'Content-Type': 'application/json' } });
     }
 
     const path = url.searchParams.get('path');
     if (!path) return new Response(JSON.stringify({ error: 'Path required' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
 
+    // Security: Prevent path traversal and enforce prefix
+    if (!isValidPath(path)) {
+      return new Response(JSON.stringify({ error: 'Invalid path' }), { status: 400, headers: { 'Content-Type': 'application/json' } });
+    }
+
     try {
       const body = await request.arrayBuffer();
       await env.APP_ASSETS.put(path, body);
       return new Response(JSON.stringify({ success: true, path }), { status: 200, headers: { 'Content-Type': 'application/json' } });
-    } catch (error: any) {
-      return new Response(JSON.stringify({ error: error.message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Unknown error';
+      return new Response(JSON.stringify({ error: message }), { status: 500, headers: { 'Content-Type': 'application/json' } });
     }
   }
 

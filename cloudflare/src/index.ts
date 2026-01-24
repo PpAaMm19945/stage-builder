@@ -37,6 +37,7 @@ export interface Env {
   ENVIRONMENT: string;
   ADMIN_SECRET?: string;
   GOOGLE_API_KEY: string;
+  LOVABLE_API_KEY?: string;
 }
 
 export interface BookMetadata {
@@ -1265,6 +1266,16 @@ app.post('/api/student/enable-login', async (c) => {
     ).bind(student_id, user.household_id).first<any>();
 
     if (!student) return c.json({ error: 'Student not found in your household' }, 404);
+
+    // SECURITY FIX: Check if email is already associated with an existing user
+    // This prevents account takeover/DoS attacks where a parent claims an existing user's email
+    const existingUser = await c.env.DB.prepare(
+      'SELECT 1 FROM users WHERE email = ?'
+    ).bind(email).first();
+
+    if (existingUser) {
+      return c.json({ error: 'Email is already associated with an existing account' }, 409);
+    }
 
     await c.env.DB.prepare(
       'UPDATE students SET pending_login_email = ? WHERE id = ?'

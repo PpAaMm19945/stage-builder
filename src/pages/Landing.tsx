@@ -15,11 +15,11 @@ export default function Landing() {
             FamilyPath
           </span>
         </div>
-        <Link to="/login">
-          <Button variant="ghost" size="sm">
+        <Button variant="ghost" size="sm" asChild>
+          <Link to="/login">
             Sign In
-          </Button>
-        </Link>
+          </Link>
+        </Button>
       </header>
 
       {/* Main Content */}
@@ -40,7 +40,7 @@ export default function Landing() {
           <div className="grid grid-cols-3 gap-4 py-6">
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-motor/10 to-domain-motor/5 border border-domain-motor/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-motor/20 flex items-center justify-center">
-                <MusicNotes className="h-7 w-7 text-domain-motor" weight="duotone" />
+                <MusicNotes className="h-7 w-7 text-domain-motor" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">50+</p>
@@ -49,7 +49,7 @@ export default function Landing() {
             </div>
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-cognitive/10 to-domain-cognitive/5 border border-domain-cognitive/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-cognitive/20 flex items-center justify-center">
-                <Books className="h-7 w-7 text-domain-cognitive" weight="duotone" />
+                <Books className="h-7 w-7 text-domain-cognitive" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">100+</p>
@@ -58,7 +58,7 @@ export default function Landing() {
             </div>
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-social/10 to-domain-social/5 border border-domain-social/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-social/20 flex items-center justify-center">
-                <Shapes className="h-7 w-7 text-domain-social" weight="duotone" />
+                <Shapes className="h-7 w-7 text-domain-social" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">200+</p>
@@ -69,17 +69,17 @@ export default function Landing() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/library">
-              <Button size="lg" className="w-full sm:w-auto gap-2 h-14 text-base font-medium px-8">
+            <Button size="lg" className="w-full sm:w-auto gap-2 h-14 text-base font-medium px-8" asChild>
+              <Link to="/library">
                 Browse the Library
                 <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 text-base font-medium px-8">
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 text-base font-medium px-8" asChild>
+              <Link to="/login">
                 Sign In to Personalize
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           {/* Subtle Value Prop */}

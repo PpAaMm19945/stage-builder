@@ -22,3 +22,13 @@
 **Vulnerability:** API endpoints constructed R2 object keys using user-supplied parameters (`series`, `bookId`) without validation. Attackers could potentially use `..` sequences to traverse out of the intended `books/` prefix (e.g., `books/../secret.json`) if the underlying storage or intermediate layers normalized paths.
 **Learning:** Never assume object storage keys are immune to path traversal. Path normalization might happen in the URL router, the HTTP client, or the storage driver. Explicitly validating that path segments do not contain traversal characters (`..`) is a necessary defense-in-depth measure.
 **Prevention:** Implement a strict `isValidPathSegment` check that rejects any input containing `..` for all parameters used to construct file paths or storage keys.
+
+## 2026-05-23 - Credentials in URL Parameters
+**Vulnerability:** The `PUT /api/books/upload` endpoint required the `ADMIN_SECRET` to be passed as a query parameter (`?key=SECRET`). URLs are frequently logged by proxies, servers, and browser history, exposing the secret to anyone with access to these logs.
+**Learning:** Secrets should never be passed in the URL. Even over HTTPS, the full URL (including query parameters) is visible in server logs and browser history. Headers are the standard, secure place for credentials as they are encrypted in transit and typically not logged by default.
+**Prevention:** Always use the `Authorization` header (e.g., Bearer token) for authentication credentials. Support headers as the primary method and deprecated/remove query parameter support.
+
+## 2026-05-24 - Arbitrary File Write in Pages Functions
+**Vulnerability:** The `PUT /api/books/upload` endpoint allowed unvalidated paths (via `path` query param) to be passed directly to `R2Bucket.put()`. This allowed authenticated users (admins) to overwrite critical system files like `manifest.json` (at the root) or `index.html` (if serving from same bucket) or traverse paths if storage layers allowed it.
+**Learning:** Cloudflare Pages Functions arguments (like `env.ASSETS.put`) do not automatically sandbox writes to a safe subdirectory. When accepting file paths from user input, always enforce a strict allowlist or directory prefix and validate against traversal characters (`..`).
+**Prevention:** Implement `isValidPath` checks that enforce `startsWith('safe-dir/')` and reject `includes('..')`.

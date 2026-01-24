@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, Link } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
@@ -56,9 +56,9 @@ export function MainLayout() {
 
           {/* Footer with legal links */}
           <footer className="py-6 text-center text-xs text-muted-foreground">
-            <a href="/privacy" className="hover:underline">Privacy Policy</a>
+            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
             {' · '}
-            <a href="/terms" className="hover:underline">Terms of Service</a>
+            <Link to="/terms" className="hover:underline">Terms of Service</Link>
             {' · '}
             © 2024 SchoolOS
           </footer>

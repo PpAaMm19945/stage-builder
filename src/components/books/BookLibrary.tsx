@@ -233,12 +233,15 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             })}
 
             {/* Book Reader Modal */}
-            <BookReader
-                book={selectedBook}
-                open={!!selectedBook}
-                onOpenChange={(open) => !open && setSelectedBook(null)}
-                childrenIds={children.map(c => c.id)}
-            />
+            {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
+            {selectedBook && (
+                <BookReader
+                    book={selectedBook}
+                    open={!!selectedBook}
+                    onOpenChange={(open) => !open && setSelectedBook(null)}
+                    childrenIds={children.map(c => c.id)}
+                />
+            )}
 
             <GuestBanner />
         </div>
