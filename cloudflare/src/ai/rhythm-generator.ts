@@ -1,5 +1,6 @@
 
 import { Env } from '../index';
+import { GeminiService } from './gemini';
 
 export interface FamilyContext {
     children: Array<{
@@ -49,7 +50,11 @@ export interface WeeklyPlan {
 }
 
 export class RhythmGenerator {
-    constructor(private env: Env) { }
+    private gemini: GeminiService;
+
+    constructor(private env: Env) {
+        this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp');
+    }
 
     async loadFamilyContext(userId: string): Promise<FamilyContext> {
         const db = this.env.DB;
@@ -139,102 +144,65 @@ export class RhythmGenerator {
     3. Ensure variety but continuity (progressive formation).
     4. Provide a rationale for every item.
     5. Assign activities to specific children or "all".
-    6. Return a STRUCTURED JSON response using the 'generate_weekly_rhythm' tool.
+    6. Return a STRUCTURED JSON response matching the schema.
     `;
 
-        const tools = [
-            {
-                name: "generate_weekly_rhythm",
-                description: "Generate the structured weekly rhythm plan",
-                parameters: {
-                    type: "object",
-                    properties: {
-                        days: {
-                            type: "array",
-                            items: {
-                                type: "object",
-                                properties: {
-                                    day: { type: "string" },
-                                    morning: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                type: { type: "string", enum: ["catechism", "hymn", "book", "scripture", "activity"] },
-                                                title: { type: "string" },
-                                                duration: { type: "number" },
-                                                for_children: { type: "array", items: { type: "string" } },
-                                                rationale: { type: "string" }
-                                            },
-                                            required: ["type", "title", "duration", "for_children", "rationale"]
-                                        }
+        const responseSchema = {
+            type: "object",
+            properties: {
+                days: {
+                    type: "array",
+                    items: {
+                        type: "object",
+                        properties: {
+                            day: { type: "string" },
+                            morning: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        type: { type: "string", enum: ["catechism", "hymn", "book", "scripture", "activity"] },
+                                        title: { type: "string" },
+                                        duration: { type: "number" },
+                                        for_children: { type: "array", items: { type: "string" } },
+                                        rationale: { type: "string" }
                                     },
-                                    evening: {
-                                        type: "array",
-                                        items: {
-                                            type: "object",
-                                            properties: {
-                                                type: { type: "string", enum: ["catechism", "hymn", "book", "scripture", "activity"] },
-                                                title: { type: "string" },
-                                                duration: { type: "number" },
-                                                for_children: { type: "array", items: { type: "string" } },
-                                                rationale: { type: "string" }
-                                            },
-                                            required: ["type", "title", "duration", "for_children", "rationale"]
-                                        }
-                                    }
-                                },
-                                required: ["day", "morning", "evening"]
+                                    required: ["type", "title", "duration", "for_children", "rationale"]
+                                }
+                            },
+                            evening: {
+                                type: "array",
+                                items: {
+                                    type: "object",
+                                    properties: {
+                                        type: { type: "string", enum: ["catechism", "hymn", "book", "scripture", "activity"] },
+                                        title: { type: "string" },
+                                        duration: { type: "number" },
+                                        for_children: { type: "array", items: { type: "string" } },
+                                        rationale: { type: "string" }
+                                    },
+                                    required: ["type", "title", "duration", "for_children", "rationale"]
+                                }
                             }
                         },
-                        weekly_theme: { type: "string" },
-                        parent_notes: { type: "array", items: { type: "string" } }
-                    },
-                    required: ["days", "weekly_theme", "parent_notes"]
-                }
-            }
-        ];
+                        required: ["day", "morning", "evening"]
+                    }
+                },
+                weekly_theme: { type: "string" },
+                parent_notes: { type: "array", items: { type: "string" } }
+            },
+            required: ["days", "weekly_theme", "parent_notes"]
+        };
 
         try {
-            // Direct call to Lovable AI Gateway
-            // NOTE: Using generic fetch here as we might not have a dedicated SDK bound yet, 
-            // or we use the 'AI' binding if it supports gateway routing. 
-            // Assuming 'AI' binding for now, but if that fails we'd use fetch.
-            // Given the 'AI' binding in 'index.ts' is likely Workers AI, checking spec again.
-            // Spec says: "Call Lovable AI Gateway". Usually this is an external HTTP endpoint.
+            const responseText = await this.gemini.generateContent(
+                [{ role: 'user', parts: [{ text: "Generate the weekly rhythm plan." }] }],
+                systemPrompt,
+                responseSchema,
+                'application/json'
+            );
 
-            const gatewayUrl = `https://${this.env.AI_GATEWAY_HOST}/v1/chat/completions`;
-
-            const response = await fetch(gatewayUrl, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    "Authorization": `Bearer ${this.env.LOVABLE_API_KEY}`, // Using API Key if available, or Gateway params
-                    "cf-aig-account-id": this.env.AI_GATEWAY_ACCOUNT_ID,
-                    "cf-aig-gateway-name": this.env.AI_GATEWAY_NAME
-                },
-                body: JSON.stringify({
-                    model: "google/gemini-2.0-flash-exp", // Or "gemini-1.5-flash"
-                    messages: [{ role: "system", content: systemPrompt }],
-                    tools: tools,
-                    tool_choice: { type: "function", function: { name: "generate_weekly_rhythm" } }
-                })
-            });
-
-            if (!response.ok) {
-                const errText = await response.text();
-                console.error("AI Gateway Error:", errText);
-                throw new Error(`AI Generation Failed: ${response.status}`);
-            }
-
-            const result: any = await response.json();
-            const toolCall = result.choices[0]?.message?.tool_calls?.[0];
-
-            if (!toolCall || toolCall.function.name !== 'generate_weekly_rhythm') {
-                throw new Error("AI did not generate a valid rhythm plan");
-            }
-
-            const generatedData = JSON.parse(toolCall.function.arguments);
+            const generatedData = JSON.parse(responseText);
 
             // Enhance with IDs and status
             const days = generatedData.days.map((d: any) => ({
