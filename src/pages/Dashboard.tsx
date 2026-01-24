@@ -836,16 +836,19 @@ export default function Dashboard() {
       </div>
 
       {/* Book Reader */}
-      <BookReader
-        book={selectedBook}
-        open={!!selectedBook}
-        onOpenChange={(open) => !open && setSelectedBook(null)}
-        childrenIds={dayData?.children?.map((c: any) => c.id)}
-        onComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ['todays-book'] });
-          queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
-        }}
-      />
+      {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
+      {selectedBook && (
+        <BookReader
+          book={selectedBook}
+          open={!!selectedBook}
+          onOpenChange={(open) => !open && setSelectedBook(null)}
+          childrenIds={dayData?.children?.map((c: any) => c.id)}
+          onComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ['todays-book'] });
+            queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+          }}
+        />
+      )}
 
 
 

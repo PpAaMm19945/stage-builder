@@ -304,7 +304,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     };
 
     const handleCloseComplete = () => {
-        onOpenChange(false);
         // Reset state
         setShowPrompts(false);
         setFailedImages(new Set());
@@ -312,6 +311,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         setShowFinishDialog(false);
         setRestoredPage(null);
         setInitialProgressChecked(false);
+
+        onOpenChange(false);
     };
 
     if (!book) return null;
