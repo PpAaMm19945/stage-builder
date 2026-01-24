@@ -11,10 +11,18 @@ export function SettingsSchedule() {
                     Weekly Schedule
                 </CardTitle>
                 <CardDescription>
-                    Set your family's availability and pacing preferences
+                    Define your family's rhythm. Set available days and time slots.
                 </CardDescription>
             </CardHeader>
             <CardContent>
+                {/* 
+                     Ideally we would pass props to TimeModelEditor to support split limits 
+                     (Morning vs Evening), but for now we'll rely on the existing editor 
+                     which mostly handles 'total minutes' and 'sessions'.
+                     
+                     TODO: Refactor TimeModelEditor to explicitly support 
+                     morning_minutes and evening_minutes separation as per Phase 3.
+                 */}
                 <TimeModelEditor />
             </CardContent>
         </Card>

@@ -379,43 +379,8 @@ export const feedback = {
 };
 
 // Liturgy
-export const liturgy = {
-  getToday: (): Promise<LiturgyTodayResponse> =>
-    apiRequest('/api/liturgy/today'),
-
-  complete: (itemId: string): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/complete', {
-      method: 'POST',
-      body: JSON.stringify({ itemId }),
-    }),
-
-  uncomplete: (itemId: string): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/uncomplete', {
-      method: 'POST',
-      body: JSON.stringify({ itemId }),
-    }),
-
-  advance: (type: LiturgyType): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/advance', {
-      method: 'POST',
-      body: JSON.stringify({ type }),
-    }),
-
-  getSettings: (): Promise<FamilyLiturgySettings> =>
-    apiRequest('/api/liturgy/settings'),
-
-  updateSettings: (settings: Partial<FamilyLiturgySettings>): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
-    }),
-
-  getProgress: (): Promise<{
-    catechism: { position: number; total: number; source: string };
-    hymn: { position: number; total: number };
-    scripture: { position: number; total: number };
-  }> => apiRequest('/api/liturgy/progress'),
-};
+// Liturgy - Deprecated/Unified into Formations
+// export const liturgy = { ... }
 
 // Hymns
 export const hymns = {
@@ -668,14 +633,6 @@ export const formation = {
       method: 'POST',
       body: JSON.stringify(prefs),
     }),
-
-  getDailyRhythm: () =>
-    apiRequest<{
-      date: string;
-      items: any[];
-      completions: Record<string, boolean>;
-      preferences: { activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean };
-    }>('/api/family/daily-rhythm'),
 };
 
 export const profile = {

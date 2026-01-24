@@ -1,4 +1,4 @@
-import { Env } from '../index';
+import { Env } from '../types';
 import { GeminiService } from './gemini';
 
 export interface WeeklyReport {
@@ -92,7 +92,7 @@ export class ReportGenerator {
         // Since we don't know exact schema, let's try a safe approach:
         // Fetch formations for the IDs we found.
 
-        const activityIds = results.map(r => r.formation_id).filter(id => id);
+        const activityIds = results.map((r: any) => r.formation_id).filter((id: any) => id);
         let formations: any[] = [];
 
         if (activityIds.length > 0) {
@@ -104,7 +104,7 @@ export class ReportGenerator {
         }
 
         // Map formations to results
-        const combined = results.map(r => {
+        const combined = results.map((r: any) => {
             const f = formations.find(form => form.id === r.formation_id);
             return {
                 ...r,

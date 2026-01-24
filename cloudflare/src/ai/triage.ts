@@ -1,4 +1,4 @@
-import { Env } from '../index';
+import { Env } from '../types';
 
 export type TriageStatus = 'VALID' | 'AMBIGUOUS' | 'INVALID';
 

@@ -47,6 +47,7 @@ const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 const TrustCovenant = lazy(() => import("./pages/TrustCovenant"));
+const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 const queryClient = new QueryClient();
 
@@ -110,6 +111,7 @@ const App = () => (
 
                       {/* Phase 3: Student Portal */}
                       <Route path="/student" element={<StudentPortal />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
                     </Route>
 
                     {/* Backward Compatibility Redirects */}

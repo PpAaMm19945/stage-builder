@@ -1,5 +1,5 @@
 
-import { Env } from '../index';
+import { Env } from '../types';
 import { RhythmGenerator } from './rhythm-generator';
 import { GeminiService, GeminiContent, GeminiTool } from './gemini';
 

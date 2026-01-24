@@ -1,4 +1,4 @@
-import { Env } from '../index';
+import { Env } from '../types';
 
 export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GENERAL_CHAT';
 

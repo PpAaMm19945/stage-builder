@@ -1,6 +1,6 @@
 
 import { Context } from 'hono';
-import { Env, User } from './index';
+import { Env, User } from './types';
 
 // Helper: Generate a signed URL for a file
 // We use HMAC-SHA256 to sign the key and expiration time

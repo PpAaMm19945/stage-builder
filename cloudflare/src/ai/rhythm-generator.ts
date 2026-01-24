@@ -1,5 +1,5 @@
 
-import { Env } from '../index';
+import { Env } from '../types';
 import { GeminiService } from './gemini';
 
 export interface FamilyContext {

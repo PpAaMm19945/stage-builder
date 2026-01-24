@@ -8,11 +8,14 @@ import {
     Trash,
     Baby,
     GraduationCap,
-    CircleNotch
+    GraduationCap,
+    CircleNotch,
+    Robot
 } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { students } from '@/lib/api';
 import { toast } from 'sonner';
+import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { IndependenceManager } from '@/components/independence/IndependenceManager';
@@ -190,6 +193,22 @@ export function SettingsFamily() {
 
             {/* Phase 6: Data Archive */}
             <DataArchive />
+
+            {/* Phase 3: AI Interaction Log */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <Robot className="h-5 w-5" weight="duotone" />
+                        AI Interaction Log
+                    </CardTitle>
+                    <CardDescription>
+                        Review how the AI has advised your family. Total transparency.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AiLogViewer />
+                </CardContent>
+            </Card>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!deletingChild} onOpenChange={(open) => !open && setDeletingChild(null)}>

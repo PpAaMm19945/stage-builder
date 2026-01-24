@@ -606,99 +606,7 @@ export default function Dashboard() {
     );
   }
 
-  // First Time User (No Materials)
-  const isFirstTimeUser = dayData.materials?.every((m: MaterialItem) => m.status === 'unknown');
-  if (isFirstTimeUser && dayData.familySessions?.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4">
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="text-center space-y-2">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
-            </div>
-            <CardTitle className="text-2xl">Welcome to Your Family Learning Journey!</CardTitle>
-            <CardDescription className="text-base">We're excited to help your family learn and grow together.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                To give you the best activity recommendations, we need to know what materials you have at home.
-              </AlertDescription>
-            </Alert>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
-                <Gear className="h-4 w-4" weight="duotone" />
-                Set Up Materials
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/settings?quickstart=true')} className="flex-1">
-                Quick Start →
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Needs Plan State
-  if (dayData.needsPlan) {
-    return (
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="space-y-4 mb-8">
-          <h2 className="text-xl font-bold text-center mb-4">Daily Liturgy</h2>
-          {(liturgyData?.items || []).filter((item: any) => item && item.id).map((item: any) => (
-            <FormationCard
-              key={item.id}
-              formation={{
-                id: item.id,
-                title: item.title || 'Liturgy Item',
-                description: item.reference || '',
-                formation_type: item.type, // types like 'catechism' work with FormationCard
-                primary_virtue: 'Wisdom',
-                context_anchor: 'Morning_Circle',
-                min_age_months: 0,
-                max_age_months: 0,
-                duration_minutes: 5,
-                guide_steps: [],
-                parent_posture: '',
-                materials: [],
-                liturgical_script: item.content,
-                is_active: 1,
-                content_source: 'liturgy'
-              }}
-              isCompleted={item.completedToday}
-              onComplete={handleLiturgyToggle}
-            />
-          ))}
-          {liturgyData?.items?.length > 0 && liturgyData.items.every((i: any) => i && i.completedToday) && (
-            <Button onClick={() => handleLiturgyAdvance('catechism')} variant="outline" className="w-full">
-              Advance Liturgy
-            </Button>
-          )}
-        </div>
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mt-8">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Let's Plan Your Week!</CardTitle>
-            <CardDescription>{dayData.message || "Generate a schedule to get personalized activities."}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-8">
-            <Button onClick={() => navigate('/early-years/planner')} size="lg" className="gap-2">
-              <Calendar className="w-5 h-5" />
-              Generate Weekly Plan
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Build day data for week strip
-  const weekDayData = weekSummary?.days || EMPTY_WEEK_DATA;
-
-  // Get day name for swap
-  const selectedDayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDate.getDay()];
-
+  // Dashboard Content
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
       {/* Greeting */}
@@ -710,6 +618,19 @@ export default function Dashboard() {
           {isToday ? "Ready for today's rhythms?" : `Viewing ${format(selectedDate, 'EEEE, MMM d')}`}
         </p>
       </div>
+
+      {/* Materials Banner (Optional) */}
+      {dayData.materials?.every((m: MaterialItem) => m.status === 'unknown') && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 mb-6">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-900 dark:text-blue-200 flex items-center justify-between">
+            <span>To get the best activity recommendations, set up your materials.</span>
+            <Button variant="link" size="sm" onClick={() => navigate('/settings')} className="h-auto p-0 ml-2">
+              Setup Materials &rarr;
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Week Strip */}
       <WeekStrip
