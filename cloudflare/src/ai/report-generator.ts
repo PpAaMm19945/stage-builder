@@ -1,5 +1,5 @@
 import { Env } from '../index';
-import { LovableGateway } from './lovable-gateway';
+import { GeminiService } from './gemini';
 
 export interface WeeklyReport {
     week_start: string;
@@ -34,12 +34,12 @@ export interface WeeklyReport {
 
 export class ReportGenerator {
     private env: Env;
-    private lovable: LovableGateway | null = null;
+    private gemini: GeminiService | null = null;
 
     constructor(env: Env) {
         this.env = env;
-        if (env.LOVABLE_API_KEY) {
-            this.lovable = new LovableGateway(env.LOVABLE_API_KEY);
+        if (env.GOOGLE_API_KEY) {
+            this.gemini = new GeminiService(env.GOOGLE_API_KEY);
         }
     }
 
@@ -164,8 +164,8 @@ export class ReportGenerator {
     }
 
     private async generateInsights(stats: any, children: any[], activities: any[]): Promise<{ insights: string[], efficiency_note: string }> {
-        // If no Lovable key, fall back to basic rules or Workers AI
-        if (!this.lovable && !this.env.AI) {
+        // If no Gemini key, fall back to basic
+        if (!this.gemini) {
             return {
                 insights: ["Great work this week!"],
                 efficiency_note: "Keep up the consistency."
@@ -181,40 +181,20 @@ export class ReportGenerator {
     Stats: ${JSON.stringify(stats)}
     Activities: ${JSON.stringify(activities.slice(0, 20).map(a => ({ title: a.title, type: a.type, status: a.status })))}
     
-    Output JSON:
+    Output strictly valid JSON with this structure:
     {
         "insights": ["string"],
         "efficiency_note": "string"
     }`;
 
         try {
-            if (this.lovable) {
-                const result = await this.lovable.complete({
-                    messages: [{ role: 'system', content: systemPrompt }],
-                    temperature: 0.7
-                });
-                const content = result.choices[0].message.content;
-                return JSON.parse(content.replace(/```json/g, '').replace(/```/g, ''));
-            } else {
-                // Fallback to Workers AI (Llama 3)
-                const response = await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
-                    messages: [{ role: 'system', content: systemPrompt }],
-                });
-                // Llama 3 often returns text, try to parse JSON
-                // Or prompt it to be very strict
-                // For simplicity, let's assume it works or handle string
-                let text = response.response || response;
-                try {
-                    // Find JSON blob
-                    const match = text.match(/\{[\s\S]*\}/);
-                    if (match) return JSON.parse(match[0]);
-                } catch (e) { }
-
-                return {
-                    insights: ["Consistent progress this week!"],
-                    efficiency_note: "Good job maintaining rhythms."
-                };
-            }
+            const responseText = await this.gemini.generateContent(
+                [{ role: 'user', parts: [{ text: "Generate weekly report insights." }] }],
+                systemPrompt,
+                null,
+                'application/json'
+            );
+            return JSON.parse(responseText);
         } catch (e) {
             console.error("Failed to generate insights", e);
             return {

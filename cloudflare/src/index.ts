@@ -35,7 +35,7 @@ export interface Env {
   FRONTEND_URL: string;
   ENVIRONMENT: string;
   ADMIN_SECRET?: string;
-  LOVABLE_API_KEY?: string;
+  GOOGLE_API_KEY: string;
 }
 
 export interface BookMetadata {
