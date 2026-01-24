@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -163,14 +163,20 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     // Generate page URLs:
     // 1. Use manifest if available
     // 2. Use legacy indexed generation if no manifest
-    const imagePages = (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat))
-        ? (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
-            return books.getPageUrl(book.series, book.id, i + 1);
-        }))
-        : [];
+    const imagePages = useMemo(() => {
+        if (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat)) {
+             return (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
+                return books.getPageUrl(book.series, book.id, i + 1);
+            }));
+        }
+        return [];
+    }, [book, manifestPages]);
 
     // Filter out failed images from display
-    const validImagePages = imagePages.filter((_, i) => !failedImages.has(i));
+    const validImagePages = useMemo(() =>
+        imagePages.filter((_, i) => !failedImages.has(i)),
+        [imagePages, failedImages]
+    );
 
     const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
