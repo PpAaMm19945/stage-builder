@@ -101,7 +101,7 @@ export default function Dashboard() {
   // Use keepPreviousData to avoid jarring full-page reloads
   const { data: dayData, isLoading: dayLoading, isFetching: dayFetching, error: dayError } = useQuery({
     queryKey: ['family-day', selectedDateStr],
-    queryFn: () => isToday ? family.getToday() : family.getDay(selectedDateStr),
+    queryFn: () => isToday ? rhythm.getToday() : family.getDay(selectedDateStr),
     placeholderData: (previousData) => previousData, // Keep showing previous data while fetching
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
@@ -132,9 +132,9 @@ export default function Dashboard() {
 
   const youngestChild = useMemo(() => {
     return activeChildren.length > 0
-      ? [...activeChildren].sort((a: any, b: any) => 
-          (a.age_in_months ?? a.ageInMonths ?? 0) - (b.age_in_months ?? b.ageInMonths ?? 0)
-        )[0]
+      ? [...activeChildren].sort((a: any, b: any) =>
+        (a.age_in_months ?? a.ageInMonths ?? 0) - (b.age_in_months ?? b.ageInMonths ?? 0)
+      )[0]
       : null;
   }, [activeChildren]);
 
@@ -424,8 +424,26 @@ export default function Dashboard() {
         });
     }
 
-    // 3. Family Activities
-    if (dayData?.familySessions && Array.isArray(dayData.familySessions)) {
+    // 3. Family Activities (Rhythm V2 & V1 Fallback)
+    const rhythmData = dayData as any; // Using any for flexible V1/V2 parsing
+
+    // Handle V2 Structure (morning/evening)
+    if (rhythmData?.morning || rhythmData?.evening) {
+      const mapRhythmItem = (item: any, slot: string) => ({
+        id: item.id,
+        timeSlot: slot,
+        title: item.title,
+        description: item.rationale || item.description || '',
+        type: item.type === 'book' ? 'reading' : (item.type || 'activity'),
+        status: item.status,
+        data: item
+      });
+
+      (rhythmData.morning || []).forEach((item: any) => items.push(mapRhythmItem(item, 'Morning')));
+      (rhythmData.evening || []).forEach((item: any) => items.push(mapRhythmItem(item, 'Evening')));
+    }
+    // Legacy V1 Structure (familySessions)
+    else if (dayData?.familySessions && Array.isArray(dayData.familySessions)) {
       dayData.familySessions.forEach((session: any, index: number) => {
         // Avoid duplicates if also in paths
         if (items.some(i => i.id === session.formation.id)) return;
@@ -649,18 +667,18 @@ export default function Dashboard() {
       {/* Liturgy Progress Badges */}
       {liturgyProgress && (
         <div className="flex flex-wrap gap-2 justify-start">
-           <div className="flex items-center gap-2 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-medium border border-indigo-200 dark:border-indigo-800">
-             <span className="opacity-70">Catechism</span>
-             <span>{liturgyProgress.catechism.position}/{liturgyProgress.catechism.total}</span>
-           </div>
-           <div className="flex items-center gap-2 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800">
-             <span className="opacity-70">Hymn</span>
-             <span>{liturgyProgress.hymn.position}/{liturgyProgress.hymn.total}</span>
-           </div>
-           <div className="flex items-center gap-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-full font-medium border border-amber-200 dark:border-amber-800">
-             <span className="opacity-70">Scripture</span>
-             <span>{liturgyProgress.scripture.position}/{liturgyProgress.scripture.total}</span>
-           </div>
+          <div className="flex items-center gap-2 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-medium border border-indigo-200 dark:border-indigo-800">
+            <span className="opacity-70">Catechism</span>
+            <span>{liturgyProgress.catechism.position}/{liturgyProgress.catechism.total}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800">
+            <span className="opacity-70">Hymn</span>
+            <span>{liturgyProgress.hymn.position}/{liturgyProgress.hymn.total}</span>
+          </div>
+          <div className="flex items-center gap-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-full font-medium border border-amber-200 dark:border-amber-800">
+            <span className="opacity-70">Scripture</span>
+            <span>{liturgyProgress.scripture.position}/{liturgyProgress.scripture.total}</span>
+          </div>
         </div>
       )}
 
@@ -687,9 +705,9 @@ export default function Dashboard() {
         <UpNextCard
           item={nextItem}
           onAction={(item) => {
-             setActiveRhythmItem(item);
+            setActiveRhythmItem(item);
           }}
-          onExpand={() => {}}
+          onExpand={() => { }}
           pendingCount={pendingCount}
         />
       )}

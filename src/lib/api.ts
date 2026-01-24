@@ -429,19 +429,27 @@ export const weeklyPlan = {
 
 // AI
 export const ai = {
-  chat: async (message: string, context: any, mode?: 'parent' | 'student') => {
+  chat: async (messages: any[], context: any) => {
     const token = getAuthToken();
-    const response = await fetch(`${API_URL}/api/ai/chat`, {
+    const response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, context, mode }),
+      body: JSON.stringify({ messages, context }),
     });
     if (!response.ok) throw new Error('Chat failed');
     return response.body;
   },
+
+  getActions: () => apiRequest<any[]>('/api/chat/actions'),
+
+  confirmAction: (actionId: string) =>
+    apiRequest<{ success: boolean }>('/api/chat/confirm', { method: 'POST', body: JSON.stringify({ actionId }) }),
+
+  rejectAction: (actionId: string) =>
+    apiRequest<{ success: boolean }>('/api/chat/reject', { method: 'POST', body: JSON.stringify({ actionId }) }),
 
   explainPlan: (slot: any, childId: string) =>
     apiRequest<any>('/api/ai/explain-plan', {
@@ -572,6 +580,11 @@ export const portfolio = {
 };
 
 export const rhythm = {
+  getToday: () => apiRequest<any>('/api/rhythm/today'), // Use new endpoint
+  getWeek: () => apiRequest<any>('/api/rhythm/week'),
+  regenerate: (options?: { frozenDays?: string[] }) =>
+    apiRequest<any>('/api/rhythm/regenerate', { method: 'POST', body: JSON.stringify(options || {}) }),
+
   readjust: (instruction: string, weekStart?: string) => {
     // Calculate Monday of current week if not provided
     const today = new Date();
@@ -588,6 +601,20 @@ export const rhythm = {
       }),
     });
   },
+};
+
+export const progress = {
+  start: (activityId: string, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/start', { method: 'POST', body: JSON.stringify({ activityId, type, date }) }),
+
+  complete: (activityId: string, source: 'auto' | 'manual' = 'manual', type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/complete', { method: 'POST', body: JSON.stringify({ activityId, source, type, date }) }),
+
+  skip: (activityId: string, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/skip', { method: 'POST', body: JSON.stringify({ activityId, type, date }) }),
+
+  transfer: (activityId: string, toDate: string, type?: string, fromDate?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/transfer', { method: 'POST', body: JSON.stringify({ activityId, toDate, type, fromDate }) }),
 };
 
 export const notifications = {

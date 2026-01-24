@@ -21,7 +21,7 @@ import { AspectRatio } from '@/components/ui/aspect-ratio';
 import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { books, reading } from '@/lib/api';
+import { books, reading, progress } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarkdownBookSlide } from './MarkdownBookSlide';
 import { toast } from 'sonner';
@@ -35,9 +35,10 @@ interface BookReaderProps {
     onOpenChange: (open: boolean) => void;
     childrenIds?: string[];
     onComplete?: () => void;
+    activityId?: string;
 }
 
-export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }: BookReaderProps) {
+export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
@@ -60,11 +61,11 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         queryKey: ['book-content', book?.id],
         queryFn: async () => {
             if (!book?.contentPath) return null;
-            
+
             // Use the new API asset route for fetching markdown content
             const url = books.getAssetUrl(book.series, book.id, 'content.md');
             const res = await fetch(url);
-            
+
             if (!res.ok) {
                 // Try fallback location (images folder)
                 const urlFallback = books.getAssetUrl(book.series, book.id, 'images/content.md');
@@ -116,7 +117,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         setCurrent(api.selectedScrollSnap() + 1);
 
         api.on("select", () => {
-            setCurrent(api.selectedScrollSnap() + 1);
+            const page = api.selectedScrollSnap() + 1;
+            setCurrent(page);
+            setPagesViewed(prev => {
+                const next = new Set(prev);
+                next.add(page);
+                return next;
+            });
         });
     }, [api]);
 
@@ -165,15 +172,38 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     // Filter out failed images from display
     const validImagePages = imagePages.filter((_, i) => !failedImages.has(i));
 
+    const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
+
     const handleImageError = (index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
     };
 
     const handleClose = () => {
+        // Auto-complete trigger
+        if (activityId && pagesViewed.size >= 2) {
+            progress.complete(activityId, 'auto')
+                .then(() => {
+                    toast.success("Book marked complete", {
+                        action: {
+                            label: "Undo",
+                            onClick: () => {
+                                progress.start(activityId).then(() => {
+                                    toast.info("Completion undone");
+                                    queryClient.invalidateQueries({ queryKey: ['family-day'] });
+                                });
+                            }
+                        }
+                    });
+                    queryClient.invalidateQueries({ queryKey: ['family-day'] }); // Refresh dashboard
+                    if (onComplete) onComplete();
+                });
+        }
+
         onOpenChange(false);
         // Reset state
         setShowPrompts(false);
         setFailedImages(new Set());
+        setPagesViewed(new Set());
     };
 
     if (!book) return null;
