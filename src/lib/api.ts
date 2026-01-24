@@ -381,6 +381,13 @@ export const feedback = {
 // Liturgy
 // Liturgy - Deprecated/Unified into Formations
 // export const liturgy = { ... }
+export const liturgy = {
+  getToday: () => Promise.resolve({ items: [] }),
+  getProgress: () => Promise.resolve(null),
+  complete: () => Promise.resolve({}),
+  uncomplete: () => Promise.resolve({}),
+  advance: () => Promise.resolve({}),
+};
 
 // Hymns
 export const hymns = {

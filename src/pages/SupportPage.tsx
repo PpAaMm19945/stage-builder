@@ -34,7 +34,7 @@ const SupportPage = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 p-6 flex flex-col items-center">
+    <div className="bg-slate-900 text-slate-100 p-6 flex flex-col items-center rounded-lg min-h-full">
       {/* Header Section */}
       <div className="max-w-2xl text-center mb-12">
         <h1 className="text-4xl font-bold mb-4 tracking-tight">FamilyPath: Learning Together</h1>
@@ -109,9 +109,9 @@ const SupportPage = () => {
         </div>
       </div>
 
-      <footer className="mt-16 text-slate-500 text-sm italic">
+      <div className="mt-16 text-slate-500 text-sm italic">
         "Whatever you do, work at it with all your heart, as working for the Lord..." — Colossians 3:23
-      </footer>
+      </div>
     </div>
   );
 };

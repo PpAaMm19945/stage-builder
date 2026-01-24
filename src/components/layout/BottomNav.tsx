@@ -1,16 +1,26 @@
 import { useLocation, Link } from 'react-router-dom';
-import { House, Books, TrendUp, SlidersHorizontal } from '@phosphor-icons/react';
+import { House, Books, TrendUp, SlidersHorizontal, SignIn } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
+import { useAuth } from '@/contexts/AuthContext';
 
-const navItems = [
+const userNavItems = [
     { icon: House, label: 'Home', path: '/dashboard' },
     { icon: Books, label: 'Library', path: '/library' },
     { icon: TrendUp, label: 'Progress', path: '/progress' },
     { icon: SlidersHorizontal, label: 'Settings', path: '/settings' },
 ];
 
+const guestNavItems = [
+    { icon: House, label: 'Home', path: '/' },
+    { icon: Books, label: 'Library', path: '/library' },
+    { icon: SignIn, label: 'Sign In', path: '/login' },
+];
+
 export function BottomNav() {
     const location = useLocation();
+    const { user } = useAuth();
+
+    const navItems = user ? userNavItems : guestNavItems;
 
     return (
         <nav className="fixed bottom-0 left-0 right-0 z-50 bg-background border-t border-border lg:hidden pb-safe">

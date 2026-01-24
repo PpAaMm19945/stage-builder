@@ -8,8 +8,8 @@ import '@fontsource/plus-jakarta-sans/700.css';
 
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import { AuthProvider } from "@/contexts/AuthContext";
+import { BrowserRouter, Routes, Route, Navigate, Outlet } from "react-router-dom";
+import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { AudioPlayerProvider } from "@/contexts/AudioPlayerContext";
 import { ErrorBoundary } from '@/components/ErrorBoundary';
 import { ThemeProvider } from "@/components/theme/ThemeProvider";
@@ -20,8 +20,6 @@ import { PageLoader } from "@/components/ui/PageLoader";
 
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
-import { PublicLayout } from "@/components/layout/PublicLayout";
-import { PublicLibraryLayout } from "@/components/layout/PublicLibraryLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 
 // Pages - Lazy Loaded
@@ -51,6 +49,20 @@ const Onboarding = lazy(() => import("./pages/Onboarding"));
 
 const queryClient = new QueryClient();
 
+// Inline Wrappers
+const GuestHome = () => {
+  const { isAuthenticated, isLoading } = useAuth();
+  if (isLoading) return <PageLoader />;
+  if (isAuthenticated) return <Navigate to="/dashboard" replace />;
+  return <Landing />;
+};
+
+const ProtectedLayout = () => (
+  <ProtectedRoute>
+    <Outlet />
+  </ProtectedRoute>
+);
+
 const App = () => (
   <ErrorBoundary>
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem storageKey="schoolos-theme">
@@ -62,19 +74,16 @@ const App = () => (
               <BrowserRouter>
                 <Suspense fallback={<PageLoader />}>
                   <Routes>
-                    {/* Landing Page - Public */}
-                    <Route path="/" element={<Landing />} />
-
-                    {/* Auth Callback - Must be outside layouts */}
+                    {/* Auth Callback - Must be outside layouts to prevent UI flash */}
                     <Route path="/auth/callback" element={<AuthCallback />} />
 
-                    {/* Public Auth Routes */}
-                    <Route element={<PublicLayout />}>
+                    {/* Main Application Layout */}
+                    <Route element={<MainLayout />}>
+                      {/* Public / Guest Routes */}
+                      <Route path="/" element={<GuestHome />} />
                       <Route path="/login" element={<Login />} />
-                    </Route>
 
-                    {/* Public Library Routes - Accessible without login */}
-                    <Route element={<PublicLibraryLayout />}>
+                      {/* Library & Legal (Publicly Accessible) */}
                       <Route path="/library" element={<LibraryPage />} />
                       <Route path="/library/activities" element={<LibraryPage />} />
                       <Route path="/library/books" element={<LibraryPage />} />
@@ -85,33 +94,33 @@ const App = () => (
                       <Route path="/terms" element={<TermsOfService />} />
                       <Route path="/support" element={<SupportPage />} />
                       <Route path="/trust" element={<TrustCovenant />} />
-                    </Route>
 
-                    {/* Protected Routes - Requires Auth */}
-                    <Route element={<ProtectedRoute><MainLayout /></ProtectedRoute>}>
-                      <Route path="/dashboard" element={<Dashboard />} />
-                      <Route path="/planner" element={<Planner />} />
-                      <Route path="/progress" element={<ProgressPage />} />
-                      <Route path="/reports" element={<Reports />} />
-                      <Route path="/settings" element={<Settings />} />
+                      {/* Protected Routes */}
+                      <Route element={<ProtectedLayout />}>
+                        <Route path="/dashboard" element={<Dashboard />} />
+                        <Route path="/planner" element={<Planner />} />
+                        <Route path="/progress" element={<ProgressPage />} />
+                        <Route path="/reports" element={<Reports />} />
+                        <Route path="/settings" element={<Settings />} />
 
-                      {/* Early Years - Legacy routes that still need auth */}
-                      <Route path="/early-years/planner" element={<Navigate to="/planner" replace />} />
-                      <Route path="/early-years/daily-practices" element={<DailyPractices />} />
-                      <Route path="/early-years/today" element={<Navigate to="/dashboard" replace />} />
-                      <Route path="/early-years/reading" element={<Reading />} />
-                      <Route path="/early-years/progress" element={<Navigate to="/progress" replace />} />
-                      <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
-                      <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
+                        {/* Early Years - Legacy routes */}
+                        <Route path="/early-years/planner" element={<Navigate to="/planner" replace />} />
+                        <Route path="/early-years/daily-practices" element={<DailyPractices />} />
+                        <Route path="/early-years/today" element={<Navigate to="/dashboard" replace />} />
+                        <Route path="/early-years/reading" element={<Reading />} />
+                        <Route path="/early-years/progress" element={<Navigate to="/progress" replace />} />
+                        <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
+                        <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
 
-                      {/* Locked Stages */}
-                      <Route path="/lower-primary" element={<LockedStage />} />
-                      <Route path="/middle-school" element={<LockedStage />} />
-                      <Route path="/upper-school" element={<LockedStage />} />
+                        {/* Locked Stages */}
+                        <Route path="/lower-primary" element={<LockedStage />} />
+                        <Route path="/middle-school" element={<LockedStage />} />
+                        <Route path="/upper-school" element={<LockedStage />} />
 
-                      {/* Phase 3: Student Portal */}
-                      <Route path="/student" element={<StudentPortal />} />
-                      <Route path="/onboarding" element={<Onboarding />} />
+                        {/* Student Portal & Onboarding */}
+                        <Route path="/student" element={<StudentPortal />} />
+                        <Route path="/onboarding" element={<Onboarding />} />
+                      </Route>
                     </Route>
 
                     {/* Backward Compatibility Redirects */}

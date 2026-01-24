@@ -8,7 +8,7 @@ export default function TrustCovenant() {
     const navigate = useNavigate();
 
     return (
-        <div className="min-h-screen bg-background">
+        <div className="bg-background">
             {/* Header */}
             <div className="bg-muted/30 border-b">
                 <div className="max-w-4xl mx-auto px-4 py-6">

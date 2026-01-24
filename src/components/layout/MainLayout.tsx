@@ -1,4 +1,4 @@
-import { Navigate, Outlet, Link } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
@@ -27,10 +27,6 @@ export function MainLayout() {
     );
   }
 
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
-  }
-
   return (
     <SidebarProvider>
       <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
@@ -42,8 +38,8 @@ export function MainLayout() {
             {/* Spacer to push items right */}
             <div className="flex-1" />
 
-            {/* Coach Chat */}
-            <SchoolOSChat />
+            {/* Coach Chat - Only for authenticated users */}
+            {isAuthenticated && <SchoolOSChat />}
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -63,13 +59,13 @@ export function MainLayout() {
             © 2024 SchoolOS
           </footer>
         </main>
-        {/* Floating Feedback Button */}
-        <FeedbackButton />
+        {/* Floating Feedback Button - Only for authenticated users */}
+        {isAuthenticated && <FeedbackButton />}
       </div>
       {/* Mobile Bottom Navigation */}
       <BottomNav />
-      {/* Evening Prep Modal */}
-      <TomorrowsPrepModal />
+      {/* Evening Prep Modal - Only for authenticated users */}
+      {isAuthenticated && <TomorrowsPrepModal />}
     </SidebarProvider>
   );
 }

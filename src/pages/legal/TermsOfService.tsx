@@ -1,5 +1,3 @@
-import { PublicLayout } from '@/components/layout/PublicLayout';
-
 export default function TermsOfService() {
     return (
         <div className="container max-w-4xl py-12 space-y-8">
