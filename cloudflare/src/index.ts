@@ -7,6 +7,7 @@ import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { generateWeeklyPlan, getSmartWeekStart } from './planner';
 import { RhythmGenerator } from './ai/rhythm-generator';
 import { AiCoach } from './ai';
+import { ReportGenerator } from './ai/report-generator';
 import { PdfService } from './services/pdf-service';
 import { handleArchiveExport, handleSignedDownload } from './export';
 
@@ -732,6 +733,34 @@ app.post('/api/profile/goals', async (c) => {
   }
 
   return c.json({ success: true, goals });
+});
+
+// GET /api/reports/weekly — Get weekly report
+app.get('/api/reports/weekly', async (c) => {
+  const user = requireHouseholdMember(c);
+  const generator = new ReportGenerator(c.env);
+  const start = getSmartWeekStart();
+  try {
+    const report = await generator.generateReport(user.id, start);
+    return c.json(report);
+  } catch (e: any) {
+    return c.text(`Error generating report: ${e.message}`, 500);
+  }
+});
+
+// GET /api/reports/weekly/:date — Get historical report
+app.get('/api/reports/weekly/:date', async (c) => {
+  const user = requireHouseholdMember(c);
+  const date = c.req.param('date');
+  const generator = new ReportGenerator(c.env);
+  // Ensure date is a valid Monday or adjust it
+  const start = getSmartWeekStart(date);
+  try {
+    const report = await generator.generateReport(user.id, start);
+    return c.json(report);
+  } catch (e: any) {
+    return c.text(`Error generating report: ${e.message}`, 500);
+  }
 });
 
 // Auth middleware
@@ -2698,6 +2727,46 @@ app.post('/api/progress/transfer', async (c) => {
       crypto.randomUUID(), user.household_id, type || 'unknown', activityId, fromDate, toDate
     ).run();
     return c.json({ success: true });
+  } catch (e: any) { return c.json({ error: e.message }, 500); }
+});
+
+app.post('/api/progress/save', async (c) => {
+  try {
+    const user = requireHouseholdMember(c);
+    const { activityId, type, date, progressData } = await c.req.json();
+
+    // Check if there's an existing in_progress record for today to update, or just insert new log?
+    // Log approach: Insert new state.
+    await c.env.DB.prepare(`
+            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status, updated_at, progress_data)
+            VALUES (?, ?, ?, ?, ?, 'in_progress', datetime('now'), ?)
+        `).bind(
+      crypto.randomUUID(), user.household_id, type || 'unknown', activityId, date || new Date().toISOString().split('T')[0], JSON.stringify(progressData)
+    ).run();
+    return c.json({ success: true });
+  } catch (e: any) { return c.json({ error: e.message }, 500); }
+});
+
+app.get('/api/progress/:contentId', async (c) => {
+  try {
+    const user = requireHouseholdMember(c);
+    const contentId = c.req.param('contentId');
+    // Get latest progress
+    const result = await c.env.DB.prepare(`
+       SELECT * FROM activity_progress 
+       WHERE family_id = ? AND content_id = ? 
+       ORDER BY updated_at DESC, created_at DESC LIMIT 1
+    `).bind(user.household_id, contentId).first<any>();
+
+    if (!result) return c.json({ progress: null });
+
+    return c.json({
+      progress: {
+        status: result.status,
+        data: result.progress_data ? JSON.parse(result.progress_data) : null,
+        updatedAt: result.updated_at || result.created_at
+      }
+    });
   } catch (e: any) { return c.json({ error: e.message }, 500); }
 });
 

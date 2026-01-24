@@ -75,3 +75,30 @@ export const useNotifications = create<NotificationState>()(
         }
     )
 );
+
+export const checkWeeklyReportNotification = () => {
+    const now = new Date();
+    const day = now.getDay(); // 0 = Sunday
+    const hour = now.getHours();
+
+    // Check if it's Sunday after 6pm (18:00)
+    if (day === 0 && hour >= 18) {
+        const weekStart = new Date(now);
+        weekStart.setDate(now.getDate() - 6); // Monday of this week (approx)
+        const weekStartStr = weekStart.toISOString().split('T')[0];
+
+        const lastNotified = localStorage.getItem('familypath_report_notification_week');
+
+        if (lastNotified !== weekStartStr) {
+            useNotifications.getState().addNotification({
+                type: 'weekly_report_ready',
+                title: 'Weekly Report Ready',
+                description: 'Your family formation report for this week is ready to view.',
+                actionUrl: '/reports',
+                actionLabel: 'View Report',
+                dismissible: true
+            });
+            localStorage.setItem('familypath_report_notification_week', weekStartStr);
+        }
+    }
+};

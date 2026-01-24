@@ -7,9 +7,17 @@ import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 import { SchoolOSChat } from '@/components/coach/CoachChat';
+import { checkWeeklyReportNotification } from '@/hooks/useNotifications';
+import { useEffect } from 'react';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkWeeklyReportNotification();
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (

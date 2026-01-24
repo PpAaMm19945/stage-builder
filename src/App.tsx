@@ -39,6 +39,7 @@ const Reading = lazy(() => import("./pages/early-years/Reading"));
 const PortfolioPage = lazy(() => import("./pages/early-years/Portfolio"));
 const ScopeSequence = lazy(() => import("./pages/early-years/ScopeSequence"));
 const Settings = lazy(() => import("./pages/Settings"));
+const Reports = lazy(() => import("./pages/Reports"));
 const StudentPortal = lazy(() => import("./pages/student/StudentPortal"));
 const LockedStage = lazy(() => import("./pages/stages/LockedStage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
@@ -90,6 +91,7 @@ const App = () => (
                       <Route path="/dashboard" element={<Dashboard />} />
                       <Route path="/planner" element={<Planner />} />
                       <Route path="/progress" element={<ProgressPage />} />
+                      <Route path="/reports" element={<Reports />} />
                       <Route path="/settings" element={<Settings />} />
 
                       {/* Early Years - Legacy routes that still need auth */}

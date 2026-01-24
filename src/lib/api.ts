@@ -2,6 +2,37 @@
 
 import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
 
+export interface WeeklyReport {
+  week_start: string;
+  week_end: string;
+  summary: {
+    total: number;
+    completed: number;
+    skipped: number;
+    transferred: number;
+    completion_rate: number;
+  };
+  by_type: {
+    catechism: number;
+    hymns: number;
+    books: number;
+    scripture: number;
+    skill: number;
+    habit: number;
+    service: number;
+    rest: number;
+  };
+  time_invested: {
+    total_minutes: number;
+    daily_average: number;
+  };
+  insights: string[];
+  next_week_preview: {
+    theme: string;
+    highlights: string[];
+  };
+}
+
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 export const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
@@ -615,6 +646,12 @@ export const progress = {
 
   transfer: (activityId: string, toDate: string, type?: string, fromDate?: string) =>
     apiRequest<{ success: boolean }>('/api/progress/transfer', { method: 'POST', body: JSON.stringify({ activityId, toDate, type, fromDate }) }),
+
+  save: (activityId: string, progressData: any, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/save', { method: 'POST', body: JSON.stringify({ activityId, progressData, type, date }) }),
+
+  get: (activityId: string) =>
+    apiRequest<{ progress: { status: string; data: any; updatedAt: string } | null }>(`/api/progress/${activityId}`),
 };
 
 export const notifications = {
@@ -717,5 +754,10 @@ export const paths = {
     }>('/api/library/stats'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile };
+export const reports = {
+  getWeekly: (weekStart?: string) =>
+    apiRequest<WeeklyReport>(`/api/reports/weekly${weekStart ? `/${weekStart}` : ''}`),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports };
 export default api;

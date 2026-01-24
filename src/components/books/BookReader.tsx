@@ -46,6 +46,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const [parsedPages, setParsedPages] = useState<string[]>([]);
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
+    const [showFinishDialog, setShowFinishDialog] = useState(false);
+    const [initialProgressChecked, setInitialProgressChecked] = useState(false);
+    const [restoredPage, setRestoredPage] = useState<number | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const { user, children: authChildren } = useAuth();
@@ -76,6 +79,67 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             return res.text();
         },
         enabled: !!book && (book.renderFormat === 'markdown' || book.renderFormat === 'hybrid')
+    });
+
+
+    // Fetch progress
+    useQuery({
+        queryKey: ['book-progress', book?.id],
+        queryFn: async () => {
+            if (!book) return null;
+            const res = await progress.get(book.id);
+            if (res.progress && res.progress.status === 'in_progress' && res.progress.data?.current_page) {
+                setRestoredPage(res.progress.data.current_page);
+            }
+            setInitialProgressChecked(true);
+            return res.progress;
+        },
+        enabled: !!book && open && !initialProgressChecked
+    });
+
+    // Restore page effect
+    useEffect(() => {
+        if (restoredPage && api && restoredPage > 1 && open) {
+            // Ask user? Or just restore? 
+            // Spec says "Show 'Continue from page X?' on reopen".
+            // Implementation detail: For now, we can toast or auto-jump.
+            // Let's us toast with action to jump.
+            toast.info(`You were on page ${restoredPage}`, {
+                action: {
+                    label: 'Jump there',
+                    onClick: () => api.scrollTo(restoredPage - 1)
+                },
+                duration: 8000
+            });
+            setRestoredPage(null); // Clear after notifying
+        }
+    }, [restoredPage, api, open]);
+
+    // Save progress mutation
+    const saveProgressMutation = useMutation({
+        mutationFn: async () => {
+            if (!book) return;
+            await progress.save(book.id, {
+                current_page: current,
+                total_pages: count || 0
+            }, 'book'); // 'book' type
+        },
+        onSuccess: () => {
+            toast.success("Progress saved");
+            handleCloseComplete();
+        }
+    });
+
+    const skipMutation = useMutation({
+        mutationFn: async () => {
+            if (!book || !activityId) return;
+            await progress.skip(activityId, 'book');
+        },
+        onSuccess: () => {
+            toast.info("Book skipped");
+            queryClient.invalidateQueries({ queryKey: ['family-day'] });
+            handleCloseComplete();
+        }
     });
 
     // Completion mutation - now accepts optional override for childrenIds
@@ -178,43 +242,51 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         setFailedImages(prev => new Set([...prev, index]));
     };
 
-    const handleClose = async () => {
+    const handleCloseRequest = async () => {
+        // If finished, close handling is standard
+        if (current === count || current === totalPages) {
+            handleCloseStandard();
+            return;
+        }
+
+        // Check if "incomplete but read something"
+        // E.g. > 1 page read (excluding cover)
+        if (current > 1 && current < (count || totalPages)) {
+            setShowFinishDialog(true);
+        } else {
+            handleCloseStandard();
+        }
+    };
+
+    const handleCloseStandard = async () => {
+        // Standard logic from before (auto-complete if valid)
         // Auto-complete trigger if activityId is present (planned activity)
         // If > 2 pages viewed OR it's a PDF (where we can't track pages well, but user opened it)
         const isProgressive = activityId && (pagesViewed.size >= 2 || isPdf);
 
-        if (isProgressive) {
-            // Auto-complete
-            try {
-                // Use 'auto' source
-                await progress.complete(activityId, 'auto', 'book');
-
-                toast.success('Book marked complete ✓', {
-                    duration: 5000, // 5 seconds to undo
-                    action: {
-                        label: 'Undo',
-                        onClick: async () => {
-                            // Revert to upcoming/skipped
-                            await progress.skip(activityId, 'book');
-                            toast.info('Completion undone');
-                            queryClient.invalidateQueries({ queryKey: ['family-day'] });
-                        }
-                    }
-                });
-
-                queryClient.invalidateQueries({ queryKey: ['family-day'] });
-                if (onComplete) onComplete();
-
-            } catch (err) {
-                console.error("Auto-complete failed", err);
-            }
+        if (isProgressive && !isPdf) { // Only auto current for PDF or if near end? 
+            // Actually, if they close early via X, we shouldn't auto-complete unless at end.
+            // The old logic was aggressive.
+            // New logic: If close at end -> Complete. If close middle -> Dialog.
+            // If close start (<2 pages) -> Just close.
+            // So here we likely just close.
         }
 
+        // For PDF, we still might want auto-complete if they spent time?
+        // But let's rely on the PDF "Finish Book" button for explicit completion.
+
+        handleCloseComplete();
+    };
+
+    const handleCloseComplete = () => {
         onOpenChange(false);
         // Reset state
         setShowPrompts(false);
         setFailedImages(new Set());
         setPagesViewed(new Set());
+        setShowFinishDialog(false);
+        setRestoredPage(null);
+        setInitialProgressChecked(false);
     };
 
     if (!book) return null;
@@ -257,7 +329,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleClose}>
+            <Dialog open={open} onOpenChange={handleCloseRequest}>
                 <DialogContent
                     ref={dialogRef}
                     className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none"
@@ -307,7 +379,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={handleClose}
+                                onClick={handleCloseRequest}
                                 className="text-white hover:bg-white/20 rounded-full"
                                 aria-label="Close reader"
                             >
@@ -463,6 +535,49 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                 onConfirm={(selectedIds) => completeMutation.mutate(selectedIds)}
                 isPending={completeMutation.isPending}
             />
+
+            {/* Didn't Finish Dialog */}
+            <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Finished for now?</DialogTitle>
+                        <DialogDescription>
+                            You're on page {current} of {count}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-3 mt-4">
+                        <Button
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => {
+                                if (needsChildSelection) {
+                                    setShowChildSelection(true);
+                                    setShowFinishDialog(false);
+                                } else {
+                                    completeMutation.mutate(undefined);
+                                }
+                            }}
+                        >
+                            Yes, mark complete
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => saveProgressMutation.mutate()}
+                        >
+                            No, continue later (Save page)
+                        </Button>
+                        {activityId && (
+                            <Button
+                                variant="ghost"
+                                className="w-full text-slate-500"
+                                onClick={() => skipMutation.mutate()}
+                            >
+                                Skip this book
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

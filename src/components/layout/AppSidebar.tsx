@@ -11,6 +11,7 @@ import {
   Baby,
   Calendar,
   ListBullets,
+  FileText,
   ShieldCheck,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
@@ -44,6 +45,7 @@ const primaryLinks = [
   { title: 'Home', url: '/dashboard', icon: House },
   { title: 'Library', url: '/library', icon: Books },
   { title: 'Progress', url: '/progress', icon: TrendUp },
+  { title: 'Reports', url: '/reports', icon: FileText },
 ];
 
 export function AppSidebar() {
