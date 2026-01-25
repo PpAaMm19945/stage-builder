@@ -1,30 +1,18 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Path, Books, MusicNotes, Shapes, Heart, ArrowRight } from '@phosphor-icons/react';
+import { Books, MusicNotes, Shapes, ArrowRight } from '@phosphor-icons/react';
+import { useAuth } from '@/contexts/AuthContext';
 
-export default function Landing() {
+export default function GuestHome() {
+  const { isAuthenticated, isLoading } = useAuth();
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
-      {/* Header */}
-      <header className="p-4 md:p-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <Path className="h-6 w-6 text-primary-foreground" weight="duotone" />
-          </div>
-          <span className="font-display text-xl font-bold text-foreground">
-            FamilyPath
-          </span>
-        </div>
-        <Button variant="ghost" size="sm" asChild>
-          <Link to="/login">
-            Sign In
-          </Link>
-        </Button>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 md:px-6">
-        <div className="max-w-2xl w-full space-y-10 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="max-w-2xl w-full space-y-10 text-center">
           {/* Hero */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground leading-tight">
@@ -88,22 +76,6 @@ export default function Landing() {
             track your family's progress, and get age-specific suggestions.
           </p>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© 2024 FamilyPath. Made with love for families.</p>
-          <div className="flex items-center gap-4">
-            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link to="/support" className="hover:text-foreground transition-colors flex items-center gap-1">
-              <Heart className="h-4 w-4" weight="fill" />
-              Support
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }
