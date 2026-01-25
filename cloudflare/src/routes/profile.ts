@@ -53,33 +53,38 @@ app.put('/api/profile', async (c) => {
     ).bind(user.id).first<any>();
 
     // Helper to stringify if needed
-    const available_days = JSON.stringify(body.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
-    const goals = JSON.stringify(body.goals || []);
-    const preferences = JSON.stringify(body.preferences || {});
+    // Use NULL for undefined fields to support partial updates via COALESCE
+    const available_days = body.available_days !== undefined ? JSON.stringify(body.available_days) : null;
+    const goals = body.goals !== undefined ? JSON.stringify(body.goals) : null;
+    const preferences = body.preferences !== undefined ? JSON.stringify(body.preferences) : null;
 
     if (existing) {
         await db.prepare(`
       UPDATE family_profiles SET 
-        morning_minutes = ?,
-        evening_minutes = ?,
-        available_days = ?,
-        goals = ?,
-        preferences = ?,
-        catechism_position = ?,
-        hymn_position = ?,
+        morning_minutes = COALESCE(?, morning_minutes),
+        evening_minutes = COALESCE(?, evening_minutes),
+        available_days = COALESCE(?, available_days),
+        goals = COALESCE(?, goals),
+        preferences = COALESCE(?, preferences),
+        catechism_position = COALESCE(?, catechism_position),
+        hymn_position = COALESCE(?, hymn_position),
         updated_at = datetime('now')
       WHERE parent_id = ?
     `).bind(
-            body.morning_minutes,
-            body.evening_minutes,
+            body.morning_minutes ?? null,
+            body.evening_minutes ?? null,
             available_days,
             goals,
             preferences,
-            body.catechism_position,
-            body.hymn_position,
+            body.catechism_position ?? null,
+            body.hymn_position ?? null,
             user.id
         ).run();
     } else {
+        // For new records, ensure we have defaults for required fields
+        const defaultDays = JSON.stringify(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+        const defaultGoals = '[]';
+        const defaultPrefs = '{}';
         // Determine Onboarding Mode
         // If not set, can infer from preferences or set default
         const id = generateId('profile');
@@ -95,9 +100,9 @@ app.put('/api/profile', async (c) => {
             user.id,
             body.morning_minutes,
             body.evening_minutes,
-            available_days,
-            goals,
-            preferences,
+            available_days ?? defaultDays,
+            goals ?? defaultGoals,
+            preferences ?? defaultPrefs,
             body.catechism_position,
             body.hymn_position
         ).run();
