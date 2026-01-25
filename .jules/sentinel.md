@@ -32,3 +32,8 @@
 **Vulnerability:** The `PUT /api/books/upload` endpoint allowed unvalidated paths (via `path` query param) to be passed directly to `R2Bucket.put()`. This allowed authenticated users (admins) to overwrite critical system files like `manifest.json` (at the root) or `index.html` (if serving from same bucket) or traverse paths if storage layers allowed it.
 **Learning:** Cloudflare Pages Functions arguments (like `env.ASSETS.put`) do not automatically sandbox writes to a safe subdirectory. When accepting file paths from user input, always enforce a strict allowlist or directory prefix and validate against traversal characters (`..`).
 **Prevention:** Implement `isValidPath` checks that enforce `startsWith('safe-dir/')` and reject `includes('..')`.
+
+## 2026-05-24 - CSRF in OAuth Flow (State Parameter)
+**Vulnerability:** The Google OAuth implementation generated a `state` parameter but failed to store or verify it in the callback handler. This allows attackers to perform Cross-Site Request Forgery (CSRF) by logging victims into the attacker's account, potentially to track activity or harvest data.
+**Learning:** Generating a random `state` is only half the solution; it MUST be verified. The pattern of "generate state -> redirect -> check state in callback" requires persistence (e.g., cookie/session) between the request and the callback.
+**Prevention:** Store the `state` in a short-lived, HttpOnly, secure cookie (or session) before redirecting. In the callback, strictly verify that the `state` query parameter matches the stored value and delete the cookie immediately.
