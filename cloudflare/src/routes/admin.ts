@@ -1,28 +1,8 @@
-interface Env {
-  APP_ASSETS: R2Bucket;
-  ADMIN_SECRET?: string;
-}
+import { Hono } from 'hono';
+import { Env, User } from '../types';
+import { safeCompare } from '../lib/security';
 
-interface R2Bucket {
-  list(options?: R2ListOptions): Promise<R2Objects>;
-  put(key: string, value: any): Promise<R2Object>;
-}
-
-interface R2ListOptions {
-  prefix?: string;
-  cursor?: string;
-  limit?: number;
-}
-
-interface R2Objects {
-  objects: R2Object[];
-  truncated: boolean;
-  cursor?: string;
-}
-
-interface R2Object {
-  key: string;
-}
+const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 function slugify(text: string): string {
   return text
@@ -36,55 +16,37 @@ function slugify(text: string): string {
     .replace(/-+$/, '');
 }
 
-// Security helper: Constant-time comparison
-async function safeCompare(a: string | undefined | null, b: string | undefined | null): Promise<boolean> {
-  if (!a || !b) {
-    return false;
-  }
-
-  const encoder = new TextEncoder();
-  const aBuf = encoder.encode(a);
-  const bBuf = encoder.encode(b);
-
-  const aHash = await crypto.subtle.digest('SHA-256', aBuf);
-  const bHash = await crypto.subtle.digest('SHA-256', bBuf);
-
-  return crypto.subtle.timingSafeEqual(aHash, bHash);
-}
-
-export const onRequest: PagesFunction<Env> = async (context) => {
-  const { request, env } = context;
-
-  // Security Check
-  const authHeader = request.headers.get('Authorization');
-  const secret = env.ADMIN_SECRET;
-  const url = new URL(request.url);
+// Reindex R2 bucket to generate manifest.json
+app.get('/api/admin/reindex', async (c) => {
+  const secret = c.env.ADMIN_SECRET;
+  const url = new URL(c.req.url);
   const querySecret = url.searchParams.get('secret');
-
+  const authHeader = c.req.header('Authorization');
   const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+
   const isAuthorized = (await safeCompare(headerToken, secret)) || (await safeCompare(querySecret, secret));
 
   if (!isAuthorized) {
-    return new Response('Unauthorized', { status: 401 });
+    return c.json({ error: 'Unauthorized' }, 401);
   }
 
-  // List all objects
+  const bucket = c.env.BOOKS_BUCKET;
   let cursor: string | undefined;
   let truncated = true;
-  const allObjects: R2Object[] = [];
+  const allObjects: any[] = [];
 
   try {
     while (truncated) {
-      const list: R2Objects = await env.APP_ASSETS.list({
+      const list = await bucket.list({
         prefix: 'books/',
         cursor,
       });
       allObjects.push(...list.objects);
       truncated = list.truncated;
-      cursor = list.cursor;
+      cursor = list.truncated ? list.cursor : undefined;
     }
   } catch (e: any) {
-    return new Response(JSON.stringify({ error: e.message }), { status: 500 });
+    return c.json({ error: e.message }, 500);
   }
 
   // Build Manifest
@@ -146,8 +108,6 @@ export const onRequest: PagesFunction<Env> = async (context) => {
         }
 
         if (normalizedKey) {
-          // If multiple files map to same key, last one wins.
-          // Ideally we could prioritize (e.g. prefer .png over .jpg), but simple overwrite is acceptable for now.
           manifest[normalizedKey] = key;
           indexedCount++;
         }
@@ -157,9 +117,9 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   }
 
   // Save Manifest
-  await env.APP_ASSETS.put('manifest.json', JSON.stringify(manifest));
+  await bucket.put('manifest.json', JSON.stringify(manifest));
 
-  return new Response(JSON.stringify({ success: true, count: indexedCount, totalFiles: allObjects.length }), {
-    headers: { 'Content-Type': 'application/json' }
-  });
-};
+  return c.json({ success: true, count: indexedCount, totalFiles: allObjects.length });
+});
+
+export default app;
