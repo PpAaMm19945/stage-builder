@@ -3,6 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Switch } from '@/components/ui/switch';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
+import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
+import { cn } from '@/lib/utils';
 import { Lightning } from '@phosphor-icons/react';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
 import { FormationSettings } from '@/components/settings/FormationSettings';
@@ -106,32 +108,26 @@ export function SettingsCurriculum() {
                     <div className="pt-4 border-t">
                         <div className="flex flex-col gap-2">
                             <label className="text-sm font-medium">Planning Strategy</label>
-                            <div className="flex gap-2">
-                                <div
-                                    className={`flex items-center gap-2 border p-3 rounded-lg flex-1 cursor-pointer transition-colors ${focus === 'balanced' ? 'bg-muted border-primary' : 'hover:bg-muted/50'}`}
-                                    onClick={() => updateFocus('balanced')}
-                                >
-                                    <div className={`h-4 w-4 rounded-full border border-primary flex items-center justify-center ${focus === 'balanced' ? 'bg-primary' : ''}`}>
-                                        {focus === 'balanced' && <div className="h-2 w-2 rounded-full bg-white" />}
-                                    </div>
-                                    <div>
+                            <RadioGroup
+                                value={focus}
+                                onValueChange={(val) => updateFocus(val as 'balanced' | 'interests')}
+                                className="flex gap-2"
+                            >
+                                <div className={cn("flex items-center space-x-2 border p-3 rounded-lg flex-1 hover:bg-muted/50 transition-colors", focus === 'balanced' && "bg-muted border-primary")}>
+                                    <RadioGroupItem value="balanced" id="focus-balanced" />
+                                    <Label htmlFor="focus-balanced" className="flex-1 cursor-pointer">
                                         <div className="font-medium">Balanced</div>
                                         <div className="text-xs text-muted-foreground">Equal coverage of all domains</div>
-                                    </div>
+                                    </Label>
                                 </div>
-                                <div
-                                    className={`flex items-center gap-2 border p-3 rounded-lg flex-1 cursor-pointer transition-colors ${focus === 'interests' ? 'bg-muted border-primary' : 'hover:bg-muted/50'}`}
-                                    onClick={() => updateFocus('interests')}
-                                >
-                                    <div className={`h-4 w-4 rounded-full border border-primary flex items-center justify-center ${focus === 'interests' ? 'bg-primary' : ''}`}>
-                                        {focus === 'interests' && <div className="h-2 w-2 rounded-full bg-white" />}
-                                    </div>
-                                    <div>
+                                <div className={cn("flex items-center space-x-2 border p-3 rounded-lg flex-1 hover:bg-muted/50 transition-colors", focus === 'interests' && "bg-muted border-primary")}>
+                                    <RadioGroupItem value="interests" id="focus-interests" />
+                                    <Label htmlFor="focus-interests" className="flex-1 cursor-pointer">
                                         <div className="font-medium">Follow Interests</div>
                                         <div className="text-xs text-muted-foreground">More weight on passion areas</div>
-                                    </div>
+                                    </Label>
                                 </div>
-                            </div>
+                            </RadioGroup>
                         </div>
                     </div>
                 </CardContent>

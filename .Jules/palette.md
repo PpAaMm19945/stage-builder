@@ -17,3 +17,7 @@
 ## 2026-05-25 - External Redirect Loading States
 **Learning:** Even when redirecting to an external URL (like Google OAuth), a loading state is critical. Without it, the delay between click and browser navigation makes the app feel unresponsive or broken.
 **Action:** Always wrap external redirects (window.location.href) with a loading state, disabling the button to prevent double-clicks and reassure the user.
+
+## 2026-06-15 - Accessible Card Selection
+**Learning:** Custom selection cards built with `div`s and `onClick` handlers completely exclude keyboard users and screen readers.
+**Action:** Replace custom selection grids with `RadioGroup` components. Wrap the card content in a `Label` linked to the `RadioGroupItem` to maintain the rich visual design while ensuring native accessibility (arrow key navigation, proper role announcement).
