@@ -20,6 +20,7 @@ import workRoutes from './routes/work';
 import analyticsRoutes from './routes/analytics';
 import exportRoutes from './routes/export';
 import reportsRoutes from './routes/reports';
+import adminRoutes from './routes/admin';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
@@ -84,6 +85,7 @@ app.route('/', workRoutes);
 app.route('/', analyticsRoutes);
 app.route('/', exportRoutes);
 app.route('/', reportsRoutes);
+app.route('/', adminRoutes);
 
 // Auth middleware
 app.use('/api/*', async (c, next) => {
