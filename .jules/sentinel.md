@@ -37,3 +37,8 @@
 **Vulnerability:** The Google OAuth implementation generated a `state` parameter but failed to store or verify it in the callback handler. This allows attackers to perform Cross-Site Request Forgery (CSRF) by logging victims into the attacker's account, potentially to track activity or harvest data.
 **Learning:** Generating a random `state` is only half the solution; it MUST be verified. The pattern of "generate state -> redirect -> check state in callback" requires persistence (e.g., cookie/session) between the request and the callback.
 **Prevention:** Store the `state` in a short-lived, HttpOnly, secure cookie (or session) before redirecting. In the callback, strictly verify that the `state` query parameter matches the stored value and delete the cookie immediately.
+
+## 2026-05-25 - IDOR in Work Logging (Authorization Bypass)
+**Vulnerability:** The `POST /api/work/log` endpoint allowed users to log work entries for any `apprenticeshipId` without checking if that apprenticeship belonged to the user or their household. This allowed authenticated users to tamper with or spam other students' apprenticeship records.
+**Learning:** Trusting client-supplied IDs without verifying ownership is a classic Insecure Direct Object Reference (IDOR) vulnerability. Even if a user is authenticated, they must be authorized for the specific resource they are attempting to modify. "MVP" shortcuts that bypass these checks often become long-term security holes.
+**Prevention:** Always verify that the ID of the resource being acted upon belongs to the current user (or their scope, like household) before performing any write operations. Use explicit ownership queries (e.g. `JOIN` with user/household tables) to validate authorization.

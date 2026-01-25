@@ -20,8 +20,17 @@ app.post('/api/work/log', async (c) => {
         const id = generateId('work');
         const now = new Date().toISOString();
 
-        // Verify apprenticeship exists and belongs to student (or student in household)
-        // For MVP, we trust the ID if it's valid, but ideally we check ownership.
+        // Verify apprenticeship exists and belongs to student in the user's household
+        const ownershipCheck = await c.env.DB.prepare(`
+            SELECT 1
+            FROM apprenticeships a
+            JOIN students s ON a.student_id = s.id
+            WHERE a.id = ? AND s.household_id = ?
+        `).bind(apprenticeshipId, user.household_id).first();
+
+        if (!ownershipCheck) {
+             return c.json({ error: 'Unauthorized: Apprenticeship not found or does not belong to your household' }, 403);
+        }
 
         await c.env.DB.prepare(`
       INSERT INTO work_entries (id, apprenticeship_id, date, hours, description, photo_url, skills_applied, status, created_at, updated_at)
