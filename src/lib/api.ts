@@ -382,6 +382,16 @@ export const feedback = {
 // Liturgy - Deprecated/Unified into Formations
 export const liturgy = {
   list: () => Promise.resolve([]),
+  complete: (id: string) =>
+    apiRequest<{ success: boolean }>('/api/liturgy/complete', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    }),
+  uncomplete: (id: string) =>
+    apiRequest<{ success: boolean }>('/api/liturgy/uncomplete', {
+      method: 'POST',
+      body: JSON.stringify({ id }),
+    }),
 };
 
 // Hymns

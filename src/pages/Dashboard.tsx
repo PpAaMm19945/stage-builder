@@ -505,7 +505,7 @@ export default function Dashboard() {
         onDaySelect={setSelectedDate}
         onRegenerate={handleRegenerate}
         isRegenerating={regenerateMutation.isPending}
-        dayData={weekSummary}
+        dayData={weekSummary?.days || {}}
       />
 
       {/* Print Button */}
