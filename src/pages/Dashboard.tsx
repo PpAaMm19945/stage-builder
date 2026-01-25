@@ -1,6 +1,6 @@
 import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions, reading, liturgy, paths, rhythm } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading, paths, rhythm } from '@/lib/api';
 import { TodayPathItem } from '@/types/paths';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -21,7 +21,7 @@ import { toast } from 'sonner';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
 import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
-import { MaterialItem, Book, LiturgyType } from '@/types';
+import { MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
@@ -84,22 +84,13 @@ export default function Dashboard() {
   const weekStart = getWeekStart(today);
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const selectedDayName = format(selectedDate, 'EEEE');
   const isToday = isSameDay(selectedDate, today);
-
-  const { data: liturgyData } = useQuery({
-    queryKey: ['liturgy-today'],
-    queryFn: liturgy.getToday,
-  });
 
   const { data: pathsToday } = useQuery({
     queryKey: ['paths-today'],
     queryFn: paths.getToday,
     enabled: isToday,
-  });
-
-  const { data: liturgyProgress } = useQuery({
-    queryKey: ['liturgy-progress'],
-    queryFn: liturgy.getProgress,
   });
 
   // Fetch day data - use getToday for today, getDay for other days
@@ -203,11 +194,8 @@ export default function Dashboard() {
     return dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [];
   }, [dayData?.familySessions]);
 
-  const pdfLiturgyRaw = liturgyData?.items || [];
-
   // Stabilize the inputs for the PDF
   const pdfActivities = useStableValue(pdfActivitiesRaw);
-  const pdfLiturgy = useStableValue(pdfLiturgyRaw);
   const pdfBook = useStableValue(todaysBook);
 
   // Memoize PDF document to prevent expensive regeneration on every render
@@ -221,14 +209,14 @@ export default function Dashboard() {
         day={{
           date: new Date().toLocaleDateString(),
           dayName: format(new Date(), 'EEEE'),
-          liturgy: pdfLiturgy,
+          liturgy: [],
           activities: pdfActivities,
           reading: pdfBook || undefined
         }}
         children={activeChildren}
       />
     );
-  }, [isToday, !!dayData, pdfLiturgy, pdfActivities, pdfBook, activeChildren]);
+  }, [isToday, !!dayData, pdfActivities, pdfBook, activeChildren]);
 
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
@@ -379,80 +367,6 @@ export default function Dashboard() {
     });
   };
 
-  // Liturgy Mutations
-  const completeLiturgyMutation = useMutation({
-    mutationFn: liturgy.complete,
-    onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
-      const previousData = queryClient.getQueryData(['liturgy-today']);
-      queryClient.setQueryData(['liturgy-today'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((item: any) =>
-            item.id === itemId ? { ...item, completedToday: true } : item
-          ),
-        };
-      });
-      return { previousData };
-    },
-    onError: (err, itemId, context: any) => {
-      queryClient.setQueryData(['liturgy-today'], context.previousData);
-      toast.error('Failed to mark as complete');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-      toast.success('Marked as complete!');
-    },
-  });
-
-  const uncompleteLiturgyMutation = useMutation({
-    mutationFn: liturgy.uncomplete,
-    onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
-      const previousData = queryClient.getQueryData(['liturgy-today']);
-      queryClient.setQueryData(['liturgy-today'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((item: any) =>
-            item.id === itemId ? { ...item, completedToday: false } : item
-          ),
-        };
-      });
-      return { previousData };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-    },
-  });
-
-  const advanceLiturgyMutation = useMutation({
-    mutationFn: liturgy.advance,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-      queryClient.invalidateQueries({ queryKey: ['liturgy-progress'] });
-      toast.success('Advanced to next week!');
-    },
-  });
-
-  const { mutate: completeLiturgy } = completeLiturgyMutation;
-  const { mutate: uncompleteLiturgy } = uncompleteLiturgyMutation;
-
-  const handleLiturgyToggle = useCallback((id: string, completed: boolean) => {
-    if (completed) {
-      completeLiturgy(id);
-    } else {
-      uncompleteLiturgy(id);
-    }
-  }, [completeLiturgy, uncompleteLiturgy]);
-
-  const { mutate: advanceLiturgy } = advanceLiturgyMutation;
-
-  const handleLiturgyAdvance = useCallback((type: string) => {
-    advanceLiturgy(type as LiturgyType);
-  }, [advanceLiturgy]);
-
   // Memoized handlers
   const { mutate: completeActivity } = completeActivityMutation;
   const { mutate: advancePath } = advancePathMutation;
@@ -483,22 +397,7 @@ export default function Dashboard() {
   const timelineItems = useMemo(() => {
     const items: RhythmItem[] = [];
 
-    // 1. Liturgy Items
-    if (liturgyData?.items && Array.isArray(liturgyData.items)) {
-      liturgyData.items.forEach((item: any, index: number) => {
-        items.push({
-          id: item.id || `liturgy-${index}`,
-          timeSlot: item.timeSlot || 'Morning',
-          title: item.title || 'Liturgy',
-          description: item.description || item.reference || '',
-          type: 'liturgy',
-          status: item.completedToday ? 'completed' : 'upcoming',
-          data: item
-        });
-      });
-    }
-
-    // 2. Learning Path Items
+    // 1. Learning Path Items
     if (isToday && pathsToday?.items && Array.isArray(pathsToday.items)) {
       pathsToday.items
         .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
@@ -557,7 +456,7 @@ export default function Dashboard() {
     }
 
     return items;
-  }, [dayData, isToday, pathsToday, liturgyData]);
+  }, [dayData, isToday, pathsToday]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
@@ -639,7 +538,7 @@ export default function Dashboard() {
         onDaySelect={setSelectedDate}
         onRegenerate={handleRegenerate}
         isRegenerating={regenerateMutation.isPending}
-        dayData={weekDayData}
+        dayData={weekSummary}
       />
 
       {/* Print Button */}
@@ -678,24 +577,6 @@ export default function Dashboard() {
               </span>
             </div>
           ))}
-        </div>
-      )}
-
-      {/* Liturgy Progress Badges */}
-      {liturgyProgress && (
-        <div className="flex flex-wrap gap-2 justify-start">
-          <div className="flex items-center gap-2 text-xs bg-indigo-100 dark:bg-indigo-900/30 text-indigo-700 dark:text-indigo-300 px-3 py-1.5 rounded-full font-medium border border-indigo-200 dark:border-indigo-800">
-            <span className="opacity-70">Catechism</span>
-            <span>{liturgyProgress.catechism.position}/{liturgyProgress.catechism.total}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 px-3 py-1.5 rounded-full font-medium border border-emerald-200 dark:border-emerald-800">
-            <span className="opacity-70">Hymn</span>
-            <span>{liturgyProgress.hymn.position}/{liturgyProgress.hymn.total}</span>
-          </div>
-          <div className="flex items-center gap-2 text-xs bg-amber-100 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300 px-3 py-1.5 rounded-full font-medium border border-amber-200 dark:border-amber-800">
-            <span className="opacity-70">Scripture</span>
-            <span>{liturgyProgress.scripture.position}/{liturgyProgress.scripture.total}</span>
-          </div>
         </div>
       )}
 
@@ -750,8 +631,6 @@ export default function Dashboard() {
             onComplete={handleRhythmComplete}
             onBookClick={handleBookClick}
             onSwap={isToday ? handleSwap : undefined}
-            onLiturgyToggle={handleLiturgyToggle}
-            onLiturgyAdvance={handleLiturgyAdvance}
           />
         </div>
       </div>

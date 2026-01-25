@@ -8,7 +8,6 @@ import {
     Trash,
     Baby,
     GraduationCap,
-    GraduationCap,
     CircleNotch,
     Robot
 } from '@phosphor-icons/react';

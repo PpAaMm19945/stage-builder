@@ -6,7 +6,6 @@ import { Label } from '@/components/ui/label';
 import { Lightning } from '@phosphor-icons/react';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
 import { FormationSettings } from '@/components/settings/FormationSettings';
-import { LiturgySettings } from '@/components/liturgy/LiturgySettings';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { formation } from '@/lib/api';
@@ -54,9 +53,6 @@ export function SettingsCurriculum() {
         <div className="space-y-6">
             {/* Formation Preferences */}
             <FormationSettings />
-
-            {/* Daily Liturgy Settings */}
-            <LiturgySettings />
 
             {/* Goals & Focus */}
             <Card>
