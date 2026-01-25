@@ -2,7 +2,7 @@ import { Hono } from 'hono';
 import { Env, User, JWTPayload } from '../types';
 import { signJWT, verifyJWT } from '../lib/auth';
 import { generateId, generateInviteCode } from '../lib/utils';
-import { getCookie, setCookie } from 'hono/cookie';
+import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -15,6 +15,15 @@ app.get('/auth/google', (c) => {
     const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
     const state = crypto.randomUUID(); // Recommended for security
 
+    // Security: Store state in HttpOnly cookie to prevent CSRF
+    setCookie(c, 'oauth_state', state, {
+        httpOnly: true,
+        path: '/',
+        maxAge: 600, // 10 minutes
+        sameSite: 'Lax',
+        secure: c.env.ENVIRONMENT === 'production',
+    });
+
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${state}&access_type=offline&prompt=consent`;
 
     return c.redirect(url);
@@ -24,6 +33,15 @@ app.get('/auth/google', (c) => {
 app.get('/auth/google/callback', async (c) => {
     const code = c.req.query('code');
     const state = c.req.query('state');
+
+    // Security: Verify state parameter to prevent CSRF
+    const storedState = getCookie(c, 'oauth_state');
+    if (!state || !storedState || state !== storedState) {
+        return c.text('Invalid state parameter (CSRF check failed)', 400);
+    }
+
+    // Clean up state cookie
+    deleteCookie(c, 'oauth_state', { path: '/', secure: c.env.ENVIRONMENT === 'production' });
 
     if (!code) {
         return c.text('Missing code', 400);
