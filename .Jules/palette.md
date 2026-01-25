@@ -13,3 +13,7 @@
 ## 2026-05-24 - Responsive Tabs Accessibility
 **Learning:** `TabsTrigger` components often use `hidden sm:inline` to show icons only on mobile. This removes the accessible name for screen readers if `aria-label` is not manually added.
 **Action:** When hiding text labels responsively in Tabs or Buttons, always ensure `aria-label` is present to provide context for screen reader users on small screens.
+
+## 2026-05-25 - External Redirect Loading States
+**Learning:** Even when redirecting to an external URL (like Google OAuth), a loading state is critical. Without it, the delay between click and browser navigation makes the app feel unresponsive or broken.
+**Action:** Always wrap external redirects (window.location.href) with a loading state, disabling the button to prevent double-clicks and reassure the user.
