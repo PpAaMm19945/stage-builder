@@ -108,12 +108,6 @@ export default function Dashboard() {
     queryFn: () => family.getWeekSummary(weekStartStr),
   });
 
-  const { data: childrenData } = useQuery({
-    queryKey: ['students'],
-    queryFn: () => family.getToday().then(d => d.children),
-    enabled: isBalanceDialogOpen,
-  });
-
   // End of Day Check
   useEffect(() => {
     const now = new Date();
@@ -287,33 +281,6 @@ export default function Dashboard() {
   });
 
   const handleRegenerate = useCallback(() => setIsBalanceDialogOpen(true), []);
-
-  const { frozenDays, missedItems } = useMemo(() => {
-    if (!isToday || !weeklyPlanData) return { frozenDays: [], missedItems: [] };
-
-    // Calculate frozen days (past days in current week)
-    const dayNames = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
-    const todayIndex = new Date().getDay();
-    // Assuming week starts Monday (1), if today is Wed (3), frozen are Mon, Tue.
-    // If today is Monday (1), nothing frozen.
-    // If today is Sunday (0), it's end of week, but maybe user regenerating for next week?
-    // User regenerating "mid-week" implies current week.
-
-    // Simple logic: Freeze everything before today
-    const currentDayName = dayNames[todayIndex];
-    const frozen: string[] = [];
-
-    // We need the days from the plan to identify what's passed
-    // But simplified: Mon, Tue... if today is Wed
-
-    if (todayIndex === 1) return { frozenDays: [], missedItems: [] }; // Monday
-
-    // Add days before today
-    // Note: This logic assumes M-F week structure roughly.
-    // Better: Filter plan items.
-
-    return { frozenDays: [], missedItems: [] }; // Placeholder for complex logic, user prompt implies specific example
-  }, [weeklyPlanData, isToday]);
 
   // Actual logic to populate frozenDays
   const regenerationContext = useMemo(() => {
