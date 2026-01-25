@@ -1,10 +1,37 @@
-import { Link, Navigate } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Books, MusicNotes, Shapes, ArrowRight } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/api';
+import { useEffect } from 'react';
 
 export default function GuestHome() {
-  const { isAuthenticated, isLoading } = useAuth();
+  const { isAuthenticated, isLoading, refreshAuth } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      // Store the token
+      auth.handleCallback(token);
+
+      // Clear token from URL so it doesn't linger
+      setSearchParams({}, { replace: true });
+
+      // Refresh auth state which will trigger the redirect
+      refreshAuth();
+    }
+  }, [searchParams, setSearchParams, refreshAuth]);
+
+  // If we are processing a token, show a simple loader or nothing
+  // to avoid flashing the landing page content.
+  if (searchParams.get('token')) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh]">
+        <div className="animate-pulse text-muted-foreground">Signing in...</div>
+      </div>
+    );
+  }
 
   if (!isLoading && isAuthenticated) {
     return <Navigate to="/dashboard" replace />;

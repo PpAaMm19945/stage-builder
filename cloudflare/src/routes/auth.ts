@@ -126,7 +126,7 @@ app.get('/auth/google/callback', async (c) => {
 
         // Redirect to Frontend
         const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
-        return c.redirect(`${frontendUrl}?token=${token}`);
+        return c.redirect(`${frontendUrl}/auth/callback?token=${token}`);
 
     } catch (error: any) {
         console.error('Auth Error:', error);
