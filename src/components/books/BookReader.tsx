@@ -159,7 +159,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
             if (onComplete) onComplete();
             setShowChildSelection(false);
-            handleClose();
+            handleCloseComplete();
         },
         onError: (err: any) => {
             toast.error("Failed to log session", { description: err.message });

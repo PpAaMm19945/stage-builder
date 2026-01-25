@@ -196,4 +196,55 @@ app.get('/api/r2-debug', async (c) => {
     }
 });
 
+// ============ LITURGY COMPLETION ROUTES ============
+
+app.post('/api/liturgy/complete', async (c) => {
+    try {
+        const user = requireParent(c);
+        const { id } = await c.req.json();
+
+        // Check if item exists in formations
+        const formation = await c.env.DB.prepare(
+            'SELECT * FROM formations WHERE id = ?'
+        ).bind(id).first();
+
+        if (!formation) {
+            return c.json({ error: 'Item not found' }, 404);
+        }
+
+        const completionId = crypto.randomUUID();
+        // Uses 'liturgy_item_id' column
+        await c.env.DB.prepare(`
+            INSERT INTO liturgy_completions (id, parent_id, liturgy_item_id, completed_date, created_at)
+            VALUES (?, ?, ?, date('now'), datetime('now'))
+        `).bind(completionId, user.id, id).run();
+
+        return c.json({ success: true });
+    } catch (error: any) {
+        console.error("Liturgy complete error:", error);
+        // If constraint violation (already completed today), just return success
+        if (error.message && error.message.includes('UNIQUE constraint failed')) {
+            return c.json({ success: true });
+        }
+        return c.json({ error: error.message }, 500);
+    }
+});
+
+app.post('/api/liturgy/uncomplete', async (c) => {
+    try {
+        const user = requireParent(c);
+        const { id } = await c.req.json();
+
+        // Delete completion for today
+        await c.env.DB.prepare(`
+            DELETE FROM liturgy_completions
+            WHERE parent_id = ? AND liturgy_item_id = ? AND completed_date = date('now')
+        `).bind(user.id, id).run();
+
+        return c.json({ success: true });
+    } catch (error: any) {
+        return c.json({ error: error.message }, 500);
+    }
+});
+
 export default app;
