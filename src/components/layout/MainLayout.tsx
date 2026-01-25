@@ -38,8 +38,8 @@ export function MainLayout() {
             {/* Spacer to push items right */}
             <div className="flex-1" />
 
-            {/* Coach Chat - Only for authenticated users */}
-            {isAuthenticated && <SchoolOSChat />}
+            {/* Coach Chat - Available for all users (Frontdesk Officer) */}
+            <SchoolOSChat />
 
             {/* Theme Toggle */}
             <ThemeToggle />

@@ -380,7 +380,9 @@ export const feedback = {
 
 // Liturgy
 // Liturgy - Deprecated/Unified into Formations
-// export const liturgy = { ... }
+export const liturgy = {
+  list: () => Promise.resolve([]),
+};
 
 // Hymns
 export const hymns = {
@@ -716,5 +718,5 @@ export const reports = {
     apiRequest<WeeklyReport>(`/api/reports/weekly${weekStart ? `/${weekStart}` : ''}`),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports };
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy };
 export default api;
