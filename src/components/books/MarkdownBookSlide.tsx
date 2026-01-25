@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { memo } from 'react';
 import Markdown from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Book } from '@/types';
@@ -11,7 +11,8 @@ interface MarkdownBookSlideProps {
     book: Book;
 }
 
-export function MarkdownBookSlide({ content, styleProfile, pageIndex, book }: MarkdownBookSlideProps) {
+// ⚡ Bolt: Memoized to prevent expensive markdown re-parsing on parent re-renders
+export const MarkdownBookSlide = memo(function MarkdownBookSlide({ content, styleProfile, pageIndex, book }: MarkdownBookSlideProps) {
     // Basic splitting logic: If the markdown has "---" separators, use them as pages.
     // Otherwise, just show the whole thing (scrolling).
     // The parent component (BookReader) might handle pagination if we split the content there.
@@ -65,4 +66,4 @@ export function MarkdownBookSlide({ content, styleProfile, pageIndex, book }: Ma
             </div>
         </div>
     );
-}
+});
