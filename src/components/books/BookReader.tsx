@@ -18,7 +18,7 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple } from '@phosphor-icons/react';
+import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
 import { books, reading, progress } from '@/lib/api';
@@ -453,7 +453,14 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         }}
                                         disabled={completeMutation.isPending}
                                     >
-                                        {completeMutation.isPending ? "Saving..." : "Finish Book"}
+                                        {completeMutation.isPending ? (
+                                            <>
+                                                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            "Finish Book"
+                                        )}
                                     </Button>
                                 </div>
                             </div>
@@ -527,7 +534,14 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                 }}
                                                 disabled={completeMutation.isPending}
                                             >
-                                                {completeMutation.isPending ? "Saving..." : "Finish & Log Book"}
+                                                {completeMutation.isPending ? (
+                                                    <>
+                                                        <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                                        Saving...
+                                                    </>
+                                                ) : (
+                                                    "Finish & Log Book"
+                                                )}
                                             </Button>
                                         </div>
                                     </CarouselItem>
@@ -582,8 +596,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     completeMutation.mutate(undefined);
                                 }
                             }}
+                            disabled={completeMutation.isPending}
                         >
-                            Yes, mark complete
+                            {completeMutation.isPending ? (
+                                <>
+                                    <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                "Yes, mark complete"
+                            )}
                         </Button>
                         <Button
                             variant="outline"
