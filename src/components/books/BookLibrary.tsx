@@ -2,66 +2,18 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
-import { BookCard } from './BookCard';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
-import { Book as BookIcon, ArrowSquareOut } from '@phosphor-icons/react';
+import { Book as BookIcon } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 import { CURTIS_KNAPP_BOOKS } from '@/data/curtis-knapp-books';
-import { Button } from '@/components/ui/button';
 import { GuestBanner, useGuestViewTracker } from '@/components/library/GuestBanner';
-import {
-    Carousel,
-    CarouselContent,
-    CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
-} from "@/components/ui/carousel";
+import { BookSeriesRow } from './BookSeriesRow';
+import { getSeriesDisplayName } from './book-utils';
 
 interface BookLibraryProps {
     initialStage?: string;
-}
-
-// Utility: Convert snake_case or kebab-case to Title Case
-function toTitleCase(str: string): string {
-    if (!str) return '';
-    return str
-        .replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, char => char.toUpperCase());
-}
-
-// Series display name mapping for known series
-const SERIES_DISPLAY_NAMES: Record<string, string> = {
-    'my_first_books': 'My First Books',
-    'african_men_of_faith': 'African Men of Faith',
-    'the_paperback_bible': 'The Paperback Bible',
-    'pastor_curtis_knapp': 'Selected Works: Booklets on Doctrine, Family, and the Christian Walk',
-    'sanyus_growing_heart': "Sanyu's Growing Heart",
-    'reformed-hymns': 'Reformed Hymns',
-    'catechism': 'Catechism',
-};
-
-function getSeriesDisplayName(series: string): string {
-    const lower = series.toLowerCase();
-    return SERIES_DISPLAY_NAMES[lower] || SERIES_DISPLAY_NAMES[series] || toTitleCase(series);
-}
-
-// Check if a series contains primarily picture books (landscape)
-function isLandscapeSeries(series: string): boolean {
-    const s = series.toLowerCase();
-    // Heuristic keyword match (more robust than enumerating every series)
-    return (
-        s.includes('my_first_books') ||
-        s.includes('my first books') ||
-        s.includes('african_men_of_faith') ||
-        s.includes('african men of faith') ||
-        s.includes('sanyus_growing_heart') ||
-        s.includes("sanyu's growing heart") ||
-        s.includes('gospel') ||
-        s.includes('working_fathers_of_soroti') ||
-        s.includes('working fathers')
-    );
 }
 
 export function BookLibrary({ initialStage }: BookLibraryProps) {
@@ -167,70 +119,14 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             )}
 
             {/* Books by Series */}
-            {!isLoading && seriesNames.map(series => {
-                const displayName = getSeriesDisplayName(series);
-                const isLandscape = isLandscapeSeries(series);
-                const isPaperbackBible = series.toLowerCase().includes('paperback');
-                
-                return (
-                    <section key={series} className="space-y-4">
-                        <div className="flex items-end justify-between gap-4">
-                            <div>
-                                <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                                    {displayName}
-                                    <span className="text-sm font-normal text-muted-foreground">
-                                        ({booksBySeries[series].length})
-                                    </span>
-                                </h2>
-                                {isPaperbackBible && (
-                                    <p className="text-sm text-muted-foreground mt-0.5">
-                                        PDFs provided by SermonAudio
-                                    </p>
-                                )}
-                            </div>
-
-                            {isPaperbackBible && (
-                                <Button variant="outline" size="sm" asChild className="gap-2 h-8 shrink-0">
-                                    <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
-                                        Visit Store
-                                        <ArrowSquareOut className="h-4 w-4" />
-                                    </a>
-                                </Button>
-                            )}
-                        </div>
-
-                        {/* Carousel wrapper with overflow clip */}
-                        <div className="w-full overflow-hidden -mx-4 px-4">
-                            <Carousel
-                                opts={{
-                                    align: "start",
-                                    dragFree: false, // Snap scrolling for Netflix feel
-                                    containScroll: "trimSnaps", // Prevent overscroll
-                                }}
-                                className="w-full group relative"
-                            >
-                                <CarouselContent className="-ml-3 md:-ml-4">
-                                    {booksBySeries[series].map(book => (
-                                        <CarouselItem 
-                                            key={`${book.series}-${book.id}`} 
-                                            className="pl-3 md:pl-4 shrink-0 grow-0 w-auto"
-                                        >
-                                            <BookCard
-                                                book={book}
-                                                onClick={handleBookClick}
-                                                landscape={isLandscape}
-                                            />
-                                        </CarouselItem>
-                                    ))}
-                                </CarouselContent>
-                                {/* Nav buttons - hidden on mobile, positioned inside on larger screens */}
-                                <CarouselPrevious className="hidden sm:flex left-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
-                                <CarouselNext className="hidden sm:flex right-1 z-10 opacity-0 transition-opacity group-hover:opacity-100 focus:opacity-100 disabled:opacity-0 shadow-lg bg-background/90 backdrop-blur-sm" />
-                            </Carousel>
-                        </div>
-                    </section>
-                );
-            })}
+            {!isLoading && seriesNames.map(series => (
+                <BookSeriesRow
+                    key={series}
+                    series={series}
+                    books={booksBySeries[series]}
+                    onBookClick={handleBookClick}
+                />
+            ))}
 
             {/* Book Reader Modal */}
             {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}

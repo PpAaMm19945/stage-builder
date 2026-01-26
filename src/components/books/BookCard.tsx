@@ -3,20 +3,13 @@ import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Books as BooksIcon } from '@phosphor-icons/react';
+import { toTitleCase } from './book-utils';
 
 interface BookCardProps {
     book: Book;
     onClick?: (book: Book) => void;
     /** Use landscape aspect ratio for picture books */
     landscape?: boolean;
-}
-
-// Utility: Convert snake_case or kebab-case to Title Case
-function toTitleCase(str: string): string {
-    if (!str) return '';
-    return str
-        .replace(/[-_]/g, ' ')
-        .replace(/\b\w/g, char => char.toUpperCase());
 }
 
 export const BookCard = memo(function BookCard({ book, onClick, landscape }: BookCardProps) {
