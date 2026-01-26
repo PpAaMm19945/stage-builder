@@ -174,5 +174,51 @@ app.get('/api/auth/me', async (c) => {
 
     return c.json({ user, children });
 });
+// DEBUG ENDPOINT
+app.get('/api/debug/auth', async (c) => {
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.replace('Bearer ', '') || c.req.query('token') as string;
+
+    const secret = c.env.JWT_SECRET;
+    const secretStatus = {
+        exists: !!secret,
+        length: secret?.length,
+        preview: secret ? secret.substring(0, 3) + '...' : 'null'
+    };
+
+    let verificationLibResult = null;
+    let userLookup = null;
+    let manualVerify = 'Not attempted';
+
+    if (token) {
+        try {
+            // 1. Try library verification
+            verificationLibResult = await verifyJWT(token, secret);
+
+            if (verificationLibResult) {
+                // 2. Try DB lookup
+                try {
+                    userLookup = await withD1Retry(() =>
+                        c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(verificationLibResult!.sub).first()
+                    );
+                } catch (e: any) { userLookup = { error: e.message } }
+            } else {
+                manualVerify = 'Library returned null';
+            }
+
+        } catch (e: any) {
+            manualVerify = `Error: ${e.message}`;
+        }
+    }
+
+    return c.json({
+        secretStatus,
+        tokenReceived: !!token,
+        tokenPreview: token ? token.substring(0, 10) + '...' : null,
+        verificationLibResult,
+        userLookup,
+        manualVerify
+    });
+});
 
 export default app;
