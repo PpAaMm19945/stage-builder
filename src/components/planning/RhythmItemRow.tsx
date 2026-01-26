@@ -89,13 +89,15 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                                     <>
                                         {getIcon(item.type)}
                                         {/* Hover checkmark for quick completion */}
-                                        <div
-                                            className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20"
+                                        <button
+                                            type="button"
+                                            className="absolute inset-0 bg-background/80 flex items-center justify-center opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity rounded-full cursor-pointer hover:bg-green-50 dark:hover:bg-green-900/20 outline-none focus-visible:ring-2 focus-visible:ring-green-500"
                                             onClick={handleQuickComplete}
                                             title="Mark complete"
+                                            aria-label={`Mark ${item.title} as complete`}
                                         >
                                             <CheckCircle className="h-6 w-6 text-green-500" />
-                                        </div>
+                                        </button>
                                     </>
                                 )}
                             </div>
@@ -155,6 +157,7 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                                         className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
                                         onClick={handleSwap}
                                         title="Swap activity"
+                                        aria-label="Swap activity"
                                     >
                                         <ArrowsClockwise className="h-4 w-4" />
                                     </Button>
