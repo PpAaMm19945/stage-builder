@@ -1,4 +1,4 @@
-import type { Env } from './index';
+import type { Env } from './types';
 import { AiTriage } from './ai/triage';
 import { AiRouter } from './ai/router';
 import { searchBooks, searchActivities } from './ai/tools';
@@ -220,14 +220,14 @@ Remember: Guide them TO the answer, never GIVE them the answer.`;
             const student = await this.env.DB.prepare(
                 'SELECT household_id FROM students WHERE id = ?'
             ).bind(studentId).first();
-            
+
             // Get parent from household
             const parent = student ? await this.env.DB.prepare(
                 'SELECT id FROM users WHERE household_id = ? AND role = ? LIMIT 1'
             ).bind((student as any).household_id, 'parent').first() : null;
-            
+
             const parentId = parent ? (parent as any).id : 'unknown';
-            
+
             await this.env.DB.prepare(`
                 INSERT INTO ai_interaction_logs (id, parent_id, student_id, interaction_type, question, answer, context_json, created_at)
                 VALUES (?, ?, ?, 'socratic', ?, ?, ?, datetime('now'))

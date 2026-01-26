@@ -11,18 +11,23 @@ import { Button } from '@/components/ui/button';
 import { InlineAddChildForm } from '@/components/children/InlineAddChildForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation } from '@tanstack/react-query';
-import { weeklyPlan } from '@/lib/api';
+import { weeklyPlan, profile } from '@/lib/api';
 import {
     Sparkles,
     Calendar,
     BarChart3,
     Eye,
     ArrowRight,
-    Check
+    Check,
+    Timer,
+    CalendarCheck,
+    Target
 } from 'lucide-react';
-import { BookOpen, UsersThree, Heart, Baby, Crown } from '@phosphor-icons/react';
+import { BookOpen, UsersThree, Heart, Baby, Crown, MoonStars, Sun } from '@phosphor-icons/react';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Label } from '@/components/ui/label';
+import { OnboardingModeSelector, OnboardingMode } from './OnboardingModeSelector';
+import { ConversationalOnboarding } from './ConversationalOnboarding'; // Will create next
 
 const ONBOARDING_COMPLETE_KEY = 'schoolos_onboarding_complete';
 const IDENTITY_PREFS_KEY = 'schoolos_identity_prefs';
@@ -46,14 +51,29 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
         godlyCharacter: false,
     });
     const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
+    const [onboardingMode, setOnboardingMode] = useState<OnboardingMode | null>(null);
+
+    // Guided Setup State
+    const [morningMinutes, setMorningMinutes] = useState(15);
+    const [eveningMinutes, setEveningMinutes] = useState(15);
+    const [selectedDays, setSelectedDays] = useState<string[]>(['Mon', 'Tue', 'Wed', 'Thu', 'Fri']);
+    const [selectedGoals, setSelectedGoals] = useState<string[]>([]);
 
     const { children, isAuthenticated } = useAuth();
     const navigate = useNavigate();
 
     // Generate Mutation
     const generateMutation = useMutation({
-        mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused' }) =>
-            weeklyPlan.regenerate(prefs),
+        mutationFn: async (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused' }) => {
+            await profile.update({
+                morning_minutes: morningMinutes,
+                evening_minutes: eveningMinutes,
+                available_days: JSON.stringify(selectedDays),
+                goals: JSON.stringify(selectedGoals),
+                onboarding_mode: onboardingMode || 'guided'
+            });
+            return weeklyPlan.regenerate(prefs);
+        },
         onSuccess: () => {
             handleComplete();
             navigate('/early-years/planner'); // Redirect to planner to see the result
@@ -80,8 +100,13 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
     };
 
     const handleChildAdded = () => {
-        // Move to planning step (Step 3) instead of Quick Tour (Step 4)
-        setStep(3);
+        if (onboardingMode === 'quick') {
+            // Quick Start: Auto-generate and finish
+            generateMutation.mutate({ balancePreference: 'mixed' });
+        } else {
+            // Guided: Move to planning step (Step 3)
+            setStep(3);
+        }
     };
 
     const handleSkip = () => {
@@ -97,164 +122,175 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
         setIdentityPrefs(prev => ({ ...prev, [key]: value }));
     };
 
+    const handleDayToggle = (day: string) => {
+        if (selectedDays.includes(day)) {
+            setSelectedDays(prev => prev.filter(d => d !== day));
+        } else {
+            setSelectedDays(prev => [...prev, day]);
+        }
+    };
+
+    const handleGoalToggle = (goal: string) => {
+        if (selectedGoals.includes(goal)) {
+            setSelectedGoals(prev => prev.filter(g => g !== goal));
+        } else {
+            setSelectedGoals(prev => [...prev, goal]);
+        }
+    };
+
     const handleGeneratePlan = () => {
         generateMutation.mutate({ balancePreference });
     };
 
     const steps = [
         // Step 0: Welcome
+        // Step 0: Mode Selection
         {
             content: (
-                <div className="space-y-6 text-center">
-                    <div className="flex justify-center">
-                        <div className="p-4 rounded-full bg-primary/10">
-                            <Sparkles className="h-12 w-12 text-primary" />
-                        </div>
-                    </div>
-
-                    <div className="space-y-2">
-                        <DialogTitle className="text-2xl font-display">
-                            Welcome to FamilyPath
-                        </DialogTitle>
-                        <DialogDescription className="text-base">
-                            A simple daily rhythm for your family
-                        </DialogDescription>
-                    </div>
-
-                    <ul className="space-y-3 text-left max-w-sm mx-auto">
-                        <li className="flex items-start gap-3">
-                            <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                            <span className="text-foreground">
-                                Start each day with a hymn, verse, and prayer
-                            </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                            <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                            <span className="text-foreground">
-                                Read stories that form hearts and minds
-                            </span>
-                        </li>
-                        <li className="flex items-start gap-3">
-                            <Check className="h-5 w-5 text-primary mt-0.5 shrink-0" />
-                            <span className="text-foreground">
-                                Simple activities that fit your family's pace
-                            </span>
-                        </li>
-                    </ul>
-
-                    <div className="flex flex-col gap-3 pt-4">
-                        <Button onClick={() => setStep(1)} size="lg" className="gap-2">
-                            Get Started
-                            <ArrowRight className="h-4 w-4" />
-                        </Button>
-                        <Button variant="ghost" size="sm" onClick={handleSkip}>
-                            Skip for now
-                        </Button>
-                    </div>
+                <div className="py-2">
+                    <OnboardingModeSelector onSelect={(mode) => {
+                        setOnboardingMode(mode);
+                        if (mode === 'quick') {
+                            setStep(1); // Go to Add Child directly
+                        } else if (mode === 'guided') {
+                            setStep(1); // Go to Identity Questions (Need to reorder steps or handle dynamically)
+                        } else if (mode === 'chat') {
+                            setStep(1); // Go to Chat
+                        }
+                    }} />
                 </div>
             ),
         },
-        // Step 1: Identity Questions
+        // Step 1: Guided Setup (Identity & Preferences)
         {
             content: (
-                <div className="space-y-6 text-center">
+                <div className="space-y-6 text-center h-[60vh] overflow-y-auto px-1">
                     <div className="space-y-2">
                         <DialogTitle className="text-2xl font-display">
-                            Before we begin...
+                            Customize Your Rhythm
                         </DialogTitle>
                         <DialogDescription className="text-base">
                             Help us personalize your family's experience
                         </DialogDescription>
                     </div>
 
-                    <div className="space-y-4 text-left">
-                        {/* Scripture Question */}
-                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-amber-100 dark:bg-amber-900/30">
-                                    <BookOpen className="h-5 w-5 text-amber-600 dark:text-amber-400" weight="duotone" />
+                    <div className="space-y-6 text-left">
+                        {/* Section 1: Identity */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Family Culture</h4>
+
+                            {/* Scripture Question */}
+                            <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                                <div className="flex items-center gap-2">
+                                    <BookOpen className="h-4 w-4 text-amber-600" weight="duotone" />
+                                    <p className="font-medium text-sm">Valid Scripture Grounding?</p>
                                 </div>
-                                <p className="font-medium text-foreground">Is raising children grounded in Scripture important to you?</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant={identityPrefs.scriptureGrounded ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('scriptureGrounded', true)}
-                                    className="flex-1"
-                                >
-                                    Yes
-                                </Button>
-                                <Button
-                                    variant={identityPrefs.scriptureGrounded === false ? "secondary" : "ghost"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('scriptureGrounded', false)}
-                                    className="flex-1"
-                                >
-                                    Not right now
-                                </Button>
+                                <div className="flex gap-2">
+                                    <Button
+                                        variant={identityPrefs.scriptureGrounded ? "default" : "outline"}
+                                        size="sm"
+                                        onClick={() => handleIdentityAnswer('scriptureGrounded', true)}
+                                        className="flex-1 h-8 text-xs"
+                                    >
+                                        Yes
+                                    </Button>
+                                    <Button
+                                        variant={identityPrefs.scriptureGrounded === false ? "secondary" : "ghost"}
+                                        size="sm"
+                                        onClick={() => handleIdentityAnswer('scriptureGrounded', false)}
+                                        className="flex-1 h-8 text-xs"
+                                    >
+                                        Not right now
+                                    </Button>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Sibling Learning Question */}
-                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-blue-100 dark:bg-blue-900/30">
-                                    <UsersThree className="h-5 w-5 text-blue-600 dark:text-blue-400" weight="duotone" />
+                        {/* Section 2: Time Availability */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Time Availability</h4>
+                            <div className="grid grid-cols-2 gap-3">
+                                <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <Sun weight="duotone" className="w-4 h-4 text-orange-500" />
+                                        <span className="text-sm font-medium">Morning</span>
+                                    </div>
+                                    <select
+                                        className="w-full bg-background border rounded px-2 py-1 text-sm"
+                                        value={morningMinutes}
+                                        onChange={(e) => setMorningMinutes(Number(e.target.value))}
+                                    >
+                                        <option value={5}>5 min</option>
+                                        <option value={10}>10 min</option>
+                                        <option value={15}>15 min</option>
+                                        <option value={30}>30 min</option>
+                                    </select>
                                 </div>
-                                <p className="font-medium text-foreground">Do you want your children to learn alongside their siblings?</p>
-                            </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant={identityPrefs.siblingLearning ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('siblingLearning', true)}
-                                    className="flex-1"
-                                >
-                                    Yes
-                                </Button>
-                                <Button
-                                    variant={identityPrefs.siblingLearning === false ? "secondary" : "ghost"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('siblingLearning', false)}
-                                    className="flex-1"
-                                >
-                                    Not right now
-                                </Button>
+                                <div className="p-3 rounded-lg border bg-muted/30 space-y-2">
+                                    <div className="flex items-center gap-2">
+                                        <MoonStars weight="duotone" className="w-4 h-4 text-indigo-500" />
+                                        <span className="text-sm font-medium">Evening</span>
+                                    </div>
+                                    <select
+                                        className="w-full bg-background border rounded px-2 py-1 text-sm"
+                                        value={eveningMinutes}
+                                        onChange={(e) => setEveningMinutes(Number(e.target.value))}
+                                    >
+                                        <option value={0}>None</option>
+                                        <option value={5}>5 min</option>
+                                        <option value={10}>10 min</option>
+                                        <option value={15}>15 min</option>
+                                        <option value={30}>30 min</option>
+                                    </select>
+                                </div>
                             </div>
                         </div>
 
-                        {/* Godly Character Question */}
-                        <div className="p-4 rounded-lg border bg-muted/30 space-y-3">
-                            <div className="flex items-center gap-3">
-                                <div className="p-2 rounded-lg bg-rose-100 dark:bg-rose-900/30">
-                                    <Heart className="h-5 w-5 text-rose-600 dark:text-rose-400" weight="duotone" />
-                                </div>
-                                <p className="font-medium text-foreground">Is developing godly character a priority in your home?</p>
+                        {/* Section 3: Days */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Available Days</h4>
+                            <div className="flex justify-between gap-1">
+                                {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map(day => (
+                                    <button
+                                        key={day}
+                                        onClick={() => handleDayToggle(day)}
+                                        className={`w-9 h-9 rounded-full text-xs font-medium transition-colors ${selectedDays.includes(day)
+                                            ? 'bg-primary text-primary-foreground'
+                                            : 'bg-muted text-muted-foreground hover:bg-muted/80'
+                                            }`}
+                                    >
+                                        {day.charAt(0)}
+                                    </button>
+                                ))}
                             </div>
-                            <div className="flex gap-2">
-                                <Button
-                                    variant={identityPrefs.godlyCharacter ? "default" : "outline"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('godlyCharacter', true)}
-                                    className="flex-1"
-                                >
-                                    Yes
-                                </Button>
-                                <Button
-                                    variant={identityPrefs.godlyCharacter === false ? "secondary" : "ghost"}
-                                    size="sm"
-                                    onClick={() => handleIdentityAnswer('godlyCharacter', false)}
-                                    className="flex-1"
-                                >
-                                    Not right now
-                                </Button>
+                        </div>
+
+                        {/* Section 4: Goals */}
+                        <div className="space-y-3">
+                            <h4 className="font-semibold text-sm text-muted-foreground uppercase tracking-wide">Focus Areas</h4>
+                            <div className="grid grid-cols-2 gap-2">
+                                {['Catechism', 'Hymns', 'Scripture', 'Habits'].map(goal => (
+                                    <button
+                                        key={goal}
+                                        onClick={() => handleGoalToggle(goal)}
+                                        className={`p-2 rounded-md border text-xs font-medium transition-all text-left flex items-center gap-2 ${selectedGoals.includes(goal)
+                                            ? 'border-primary bg-primary/5'
+                                            : 'border-transparent bg-muted/50 hover:bg-muted'
+                                            }`}
+                                    >
+                                        <div className={`w-4 h-4 rounded-full border flex items-center justify-center ${selectedGoals.includes(goal) ? 'border-primary bg-primary' : 'border-muted-foreground'
+                                            }`}>
+                                            {selectedGoals.includes(goal) && <Check className="w-3 h-3 text-primary-foreground" />}
+                                        </div>
+                                        {goal}
+                                    </button>
+                                ))}
                             </div>
                         </div>
                     </div>
 
                     <div className="flex flex-col gap-3 pt-4">
-                        <Button onClick={() => setStep(2)} size="lg" className="gap-2">
+                        <Button onClick={() => setStep(2)} size="lg" className="gap-2 w-full">
                             Continue
                             <ArrowRight className="h-4 w-4" />
                         </Button>
@@ -343,7 +379,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                 </div>
             )
         },
-        // Step 4: Quick Tour (Shifted)
+        // Step 4: Quick Tour
         {
             content: (
                 <div className="space-y-6 text-center">
@@ -355,7 +391,6 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                             Here's what you can do with FamilyPath
                         </DialogDescription>
                     </div>
-
                     <div className="space-y-4 text-left">
                         <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
                             <div className="p-2 rounded-lg bg-primary/10">
@@ -368,39 +403,20 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                                 </p>
                             </div>
                         </div>
-
-                        <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
-                            <div className="p-2 rounded-lg bg-secondary/10">
-                                <BarChart3 className="h-5 w-5 text-secondary" />
-                            </div>
-                            <div>
-                                <h4 className="font-medium text-foreground">Formation Progress</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Track growth across activities, reading, and family devotions
-                                </p>
-                            </div>
-                        </div>
-
-                        <div className="flex items-start gap-4 p-4 rounded-lg bg-muted/50">
-                            <div className="p-2 rounded-lg bg-accent/10">
-                                <Eye className="h-5 w-5 text-accent" />
-                            </div>
-                            <div>
-                                <h4 className="font-medium text-foreground">Capture Learning</h4>
-                                <p className="text-sm text-muted-foreground">
-                                    Record observations and portfolio moments as you go
-                                </p>
-                            </div>
-                        </div>
                     </div>
-
                     <Button onClick={handleStartExploring} size="lg" className="gap-2">
                         Start Exploring
                         <ArrowRight className="h-4 w-4" />
                     </Button>
                 </div>
-            ),
+            )
         },
+        // Step 5: Conversational Onboarding
+        {
+            content: (
+                <ConversationalOnboarding onComplete={handleComplete} />
+            )
+        }
     ];
 
     const handleOpenChange = (isOpen: boolean) => {

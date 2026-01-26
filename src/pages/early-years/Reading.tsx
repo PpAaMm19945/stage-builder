@@ -92,12 +92,15 @@ export default function Reading() {
             </section>
 
             {/* Reader Modal for Today's Pick */}
-            <BookReader
-                book={recommendedBook}
-                open={!!recommendedBook}
-                onOpenChange={(open) => !open && setRecommendedBook(null)}
-                childrenIds={children.map(c => c.id)}
-            />
+            {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
+            {recommendedBook && (
+                <BookReader
+                    book={recommendedBook}
+                    open={!!recommendedBook}
+                    onOpenChange={(open) => !open && setRecommendedBook(null)}
+                    childrenIds={children.map(c => c.id)}
+                />
+            )}
         </div>
     );
 }

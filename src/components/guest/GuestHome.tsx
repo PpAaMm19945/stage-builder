@@ -1,30 +1,45 @@
-import { Link } from 'react-router-dom';
+import { Link, Navigate, useSearchParams } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-import { Path, Books, MusicNotes, Shapes, Heart, ArrowRight } from '@phosphor-icons/react';
+import { Books, MusicNotes, Shapes, ArrowRight } from '@phosphor-icons/react';
+import { useAuth } from '@/contexts/AuthContext';
+import { auth } from '@/lib/api';
+import { useEffect } from 'react';
 
-export default function Landing() {
+export default function GuestHome() {
+  const { isAuthenticated, isLoading, refreshAuth } = useAuth();
+  const [searchParams, setSearchParams] = useSearchParams();
+
+  useEffect(() => {
+    const token = searchParams.get('token');
+    if (token) {
+      // Store the token
+      auth.handleCallback(token);
+
+      // Clear token from URL so it doesn't linger
+      setSearchParams({}, { replace: true });
+
+      // Refresh auth state which will trigger the redirect
+      refreshAuth();
+    }
+  }, [searchParams, setSearchParams, refreshAuth]);
+
+  // If we are processing a token, show a simple loader or nothing
+  // to avoid flashing the landing page content.
+  if (searchParams.get('token')) {
+    return (
+      <div className="flex flex-col items-center justify-center min-h-[80vh]">
+        <div className="animate-pulse text-muted-foreground">Signing in...</div>
+      </div>
+    );
+  }
+
+  if (!isLoading && isAuthenticated) {
+    return <Navigate to="/dashboard" replace />;
+  }
+
   return (
-    <div className="min-h-screen bg-gradient-to-br from-background via-background to-primary/5 flex flex-col">
-      {/* Header */}
-      <header className="p-4 md:p-6 flex items-center justify-between">
-        <div className="flex items-center gap-2">
-          <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-primary">
-            <Path className="h-6 w-6 text-primary-foreground" weight="duotone" />
-          </div>
-          <span className="font-display text-xl font-bold text-foreground">
-            FamilyPath
-          </span>
-        </div>
-        <Link to="/login">
-          <Button variant="ghost" size="sm">
-            Sign In
-          </Button>
-        </Link>
-      </header>
-
-      {/* Main Content */}
-      <main className="flex-1 flex items-center justify-center px-4 md:px-6">
-        <div className="max-w-2xl w-full space-y-10 text-center">
+    <div className="flex flex-col items-center justify-center min-h-[80vh]">
+      <div className="max-w-2xl w-full space-y-10 text-center">
           {/* Hero */}
           <div className="space-y-4">
             <h1 className="text-4xl md:text-5xl font-display font-bold text-foreground leading-tight">
@@ -40,7 +55,7 @@ export default function Landing() {
           <div className="grid grid-cols-3 gap-4 py-6">
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-motor/10 to-domain-motor/5 border border-domain-motor/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-motor/20 flex items-center justify-center">
-                <MusicNotes className="h-7 w-7 text-domain-motor" weight="duotone" />
+                <MusicNotes className="h-7 w-7 text-domain-motor" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">50+</p>
@@ -49,7 +64,7 @@ export default function Landing() {
             </div>
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-cognitive/10 to-domain-cognitive/5 border border-domain-cognitive/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-cognitive/20 flex items-center justify-center">
-                <Books className="h-7 w-7 text-domain-cognitive" weight="duotone" />
+                <Books className="h-7 w-7 text-domain-cognitive" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">100+</p>
@@ -58,7 +73,7 @@ export default function Landing() {
             </div>
             <div className="space-y-3 p-4 rounded-2xl bg-gradient-to-br from-domain-social/10 to-domain-social/5 border border-domain-social/20">
               <div className="h-14 w-14 mx-auto rounded-full bg-domain-social/20 flex items-center justify-center">
-                <Shapes className="h-7 w-7 text-domain-social" weight="duotone" />
+                <Shapes className="h-7 w-7 text-domain-social" weight="duotone" aria-hidden="true" />
               </div>
               <div>
                 <p className="text-2xl font-bold text-foreground">200+</p>
@@ -69,17 +84,17 @@ export default function Landing() {
 
           {/* CTAs */}
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <Link to="/library">
-              <Button size="lg" className="w-full sm:w-auto gap-2 h-14 text-base font-medium px-8">
+            <Button size="lg" className="w-full sm:w-auto gap-2 h-14 text-base font-medium px-8" asChild>
+              <Link to="/library">
                 Browse the Library
                 <ArrowRight className="h-5 w-5" />
-              </Button>
-            </Link>
-            <Link to="/login">
-              <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 text-base font-medium px-8">
+              </Link>
+            </Button>
+            <Button variant="outline" size="lg" className="w-full sm:w-auto h-14 text-base font-medium px-8" asChild>
+              <Link to="/login">
                 Sign In to Personalize
-              </Button>
-            </Link>
+              </Link>
+            </Button>
           </div>
 
           {/* Subtle Value Prop */}
@@ -88,22 +103,6 @@ export default function Landing() {
             track your family's progress, and get age-specific suggestions.
           </p>
         </div>
-      </main>
-
-      {/* Footer */}
-      <footer className="p-4 md:p-6">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4 text-sm text-muted-foreground">
-          <p>© 2024 FamilyPath. Made with love for families.</p>
-          <div className="flex items-center gap-4">
-            <Link to="/privacy" className="hover:text-foreground transition-colors">Privacy</Link>
-            <Link to="/terms" className="hover:text-foreground transition-colors">Terms</Link>
-            <Link to="/support" className="hover:text-foreground transition-colors flex items-center gap-1">
-              <Heart className="h-4 w-4" weight="fill" />
-              Support
-            </Link>
-          </div>
-        </div>
-      </footer>
     </div>
   );
 }

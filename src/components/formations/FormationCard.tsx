@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { Formation } from '@/types';
 import { cn } from '@/lib/utils';
@@ -145,105 +144,109 @@ export function FormationCard({
     const canComplete = studentPermissions ? studentPermissions.canMarkComplete : true; // Default to true if no perms passed (legacy/parent view)
 
     return (
-        <Card
-            className={cn(
-                "transition-all duration-200",
-                borderColor,
-                isCompleted ? "opacity-90 bg-slate-50 dark:bg-slate-900/50" : "bg-white dark:bg-slate-950",
-                className
-            )}
+        <Collapsible
+            open={isOpen || variant === 'full' && type === 'reading'}
+            onOpenChange={setIsOpen}
+            asChild
         >
-            <CardHeader className="p-4 pb-2">
-                <div className="flex items-start justify-between gap-3">
-                    {/* Main Visual & Title */}
-                    <div className="flex items-start gap-3 flex-1">
-                        <div className={cn("p-2 rounded-lg bg-opacity-10 shrink-0 mt-0.5", iconColor.replace('text-', 'bg-'))}>
-                            <Icon weight="duotone" className={cn("w-5 h-5", iconColor)} />
-                        </div>
-
-                        <div className="flex-1 space-y-1">
-                            <div className="flex items-center gap-2">
-                                <h3 className={cn(
-                                    "font-medium leading-tight",
-                                    isCompleted && "line-through text-muted-foreground"
-                                )}>
-                                    {formation.title}
-                                </h3>
-                                {type === 'skill' && formation.duration_minutes && (
-                                    <Badge variant="secondary" className="text-[10px] h-5 px-1.5 gap-1 font-normal text-muted-foreground">
-                                        <Clock size={12} />
-                                        {formation.duration_minutes}m
-                                    </Badge>
-                                )}
-
-                                {/* Timer Indicator (Visible always if running or has time) */}
-                                {(isRunning || elapsedSeconds > 0) && !isCompleted && (
-                                    <FormationTimer
-                                        isRunning={isRunning}
-                                        onToggle={handleManualTimerToggle}
-                                        showControls
-                                        className="ml-2 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-xs"
-                                    />
-                                )}
+            <Card
+                className={cn(
+                    "transition-all duration-200",
+                    borderColor,
+                    isCompleted ? "opacity-90 bg-slate-50 dark:bg-slate-900/50" : "bg-white dark:bg-slate-950",
+                    className
+                )}
+            >
+                <CardHeader className="p-4 pb-2">
+                    <div className="flex items-start justify-between gap-3">
+                        {/* Main Visual & Title */}
+                        <div className="flex items-start gap-3 flex-1">
+                            <div className={cn("p-2 rounded-lg bg-opacity-10 shrink-0 mt-0.5", iconColor.replace('text-', 'bg-'))}>
+                                <Icon weight="duotone" className={cn("w-5 h-5", iconColor)} />
                             </div>
 
-                            {/* Context Anchor / Tagline */}
-                            {formation.context_anchor && (
-                                <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
-                                    {formation.context_anchor.replace(/_/g, ' ')}
-                                </p>
+                            <div className="flex-1 space-y-1">
+                                <div className="flex items-center gap-2">
+                                    <h3 className={cn(
+                                        "font-medium leading-tight",
+                                        isCompleted && "line-through text-muted-foreground"
+                                    )}>
+                                        {formation.title}
+                                    </h3>
+                                    {type === 'skill' && formation.duration_minutes && (
+                                        <Badge variant="secondary" className="text-[10px] h-5 px-1.5 gap-1 font-normal text-muted-foreground">
+                                            <Clock size={12} />
+                                            {formation.duration_minutes}m
+                                        </Badge>
+                                    )}
+
+                                    {/* Timer Indicator (Visible always if running or has time) */}
+                                    {(isRunning || elapsedSeconds > 0) && !isCompleted && (
+                                        <FormationTimer
+                                            isRunning={isRunning}
+                                            onToggle={handleManualTimerToggle}
+                                            showControls
+                                            className="ml-2 bg-slate-100 dark:bg-slate-800 px-2 py-0.5 rounded-full text-xs"
+                                        />
+                                    )}
+                                </div>
+
+                                {/* Context Anchor / Tagline */}
+                                {formation.context_anchor && (
+                                    <p className="text-xs text-muted-foreground uppercase tracking-wider font-medium">
+                                        {formation.context_anchor.replace(/_/g, ' ')}
+                                    </p>
+                                )}
+                            </div>
+                        </div>
+
+                        {/* Action Area */}
+                        <div className="flex items-center gap-2 shrink-0">
+                            {/* Passion Signal (Heart) - Always visible if handler provided, highlighted if active */}
+                            {onLove && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={(e) => { e.stopPropagation(); handleLoveToggle(); }}
+                                    className={cn(
+                                        "h-8 w-8 hover:bg-rose-50 hover:text-rose-600 transition-colors",
+                                        isLoved ? "text-rose-500" : "text-muted-foreground/50"
+                                    )}
+                                >
+                                    <Heart weight={isLoved ? "fill" : "regular"} className="w-5 h-5" />
+                                </Button>
+                            )}
+
+                            {onComplete && (
+                                canComplete ? (
+                                    <Checkbox
+                                        checked={isCompleted}
+                                        onCheckedChange={handleToggle}
+                                        className={cn(
+                                            "h-5 w-5 transition-colors",
+                                            isCompleted ? "data-[state=checked]:bg-green-600 border-green-600" : ""
+                                        )}
+                                    />
+                                ) : (
+                                    // Permission Denied Indicator
+                                    <div title="Parent check required">
+                                        <LockKey weight="duotone" className="w-5 h-5 text-muted-foreground/50" />
+                                    </div>
+                                )
+                            )}
+
+                            {variant === 'full' && (
+                                <CollapsibleTrigger asChild onClick={() => setIsOpen(!isOpen)}>
+                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground">
+                                        {isOpen ? <CaretUp size={16} /> : <CaretDown size={16} />}
+                                    </Button>
+                                </CollapsibleTrigger>
                             )}
                         </div>
                     </div>
+                </CardHeader>
 
-                    {/* Action Area */}
-                    <div className="flex items-center gap-2 shrink-0">
-                        {/* Passion Signal (Heart) - Always visible if handler provided, highlighted if active */}
-                        {onLove && (
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={(e) => { e.stopPropagation(); handleLoveToggle(); }}
-                                className={cn(
-                                    "h-8 w-8 hover:bg-rose-50 hover:text-rose-600 transition-colors",
-                                    isLoved ? "text-rose-500" : "text-muted-foreground/50"
-                                )}
-                            >
-                                <Heart weight={isLoved ? "fill" : "regular"} className="w-5 h-5" />
-                            </Button>
-                        )}
-
-                        {onComplete && (
-                            canComplete ? (
-                                <Checkbox
-                                    checked={isCompleted}
-                                    onCheckedChange={handleToggle}
-                                    className={cn(
-                                        "h-5 w-5 transition-colors",
-                                        isCompleted ? "data-[state=checked]:bg-green-600 border-green-600" : ""
-                                    )}
-                                />
-                            ) : (
-                                // Permission Denied Indicator
-                                <div title="Parent check required">
-                                    <LockKey weight="duotone" className="w-5 h-5 text-muted-foreground/50" />
-                                </div>
-                            )
-                        )}
-
-                        {variant === 'full' && (
-                            <CollapsibleTrigger asChild onClick={() => setIsOpen(!isOpen)}>
-                                <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground">
-                                    {isOpen ? <CaretUp size={16} /> : <CaretDown size={16} />}
-                                </Button>
-                            </CollapsibleTrigger>
-                        )}
-                    </div>
-                </div>
-            </CardHeader>
-
-            {/* Expandable Content based on Type */}
-            <Collapsible open={isOpen || variant === 'full' && type === 'reading'} onOpenChange={setIsOpen}>
+                {/* Expandable Content based on Type */}
                 <CollapsibleContent className="p-4 pt-0 text-sm space-y-4 animate-slide-down">
 
                     {/* DESCRIPTION */}
@@ -331,7 +334,7 @@ export function FormationCard({
                     )}
 
                 </CollapsibleContent>
-            </Collapsible>
-        </Card>
+            </Card>
+        </Collapsible>
     );
 }

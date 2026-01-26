@@ -1,4 +1,4 @@
-import { Navigate, Outlet } from 'react-router-dom';
+import { Navigate, Outlet, Link } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
@@ -7,9 +7,17 @@ import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 import { SchoolOSChat } from '@/components/coach/CoachChat';
+import { checkWeeklyReportNotification } from '@/hooks/useNotifications';
+import { useEffect } from 'react';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isAuthenticated) {
+      checkWeeklyReportNotification();
+    }
+  }, [isAuthenticated]);
 
   if (isLoading) {
     return (
@@ -17,10 +25,6 @@ export function MainLayout() {
         <div className="animate-pulse text-muted-foreground">Loading...</div>
       </div>
     );
-  }
-
-  if (!isAuthenticated) {
-    return <Navigate to="/login" replace />;
   }
 
   return (
@@ -34,7 +38,7 @@ export function MainLayout() {
             {/* Spacer to push items right */}
             <div className="flex-1" />
 
-            {/* Coach Chat */}
+            {/* Coach Chat - Available for all users (Frontdesk Officer) */}
             <SchoolOSChat />
 
             {/* Theme Toggle */}
@@ -48,20 +52,20 @@ export function MainLayout() {
 
           {/* Footer with legal links */}
           <footer className="py-6 text-center text-xs text-muted-foreground">
-            <a href="/privacy" className="hover:underline">Privacy Policy</a>
+            <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
             {' · '}
-            <a href="/terms" className="hover:underline">Terms of Service</a>
+            <Link to="/terms" className="hover:underline">Terms of Service</Link>
             {' · '}
             © 2024 SchoolOS
           </footer>
         </main>
-        {/* Floating Feedback Button */}
-        <FeedbackButton />
+        {/* Floating Feedback Button - Only for authenticated users */}
+        {isAuthenticated && <FeedbackButton />}
       </div>
       {/* Mobile Bottom Navigation */}
       <BottomNav />
-      {/* Evening Prep Modal */}
-      <TomorrowsPrepModal />
+      {/* Evening Prep Modal - Only for authenticated users */}
+      {isAuthenticated && <TomorrowsPrepModal />}
     </SidebarProvider>
   );
 }

@@ -264,7 +264,7 @@ export function IndependenceManager() {
     };
 
     const getInitials = (name: string) =>
-        name
+        (name || 'Unknown')
             .split(' ')
             .map((n) => n[0])
             .join('')
@@ -285,7 +285,9 @@ export function IndependenceManager() {
     return (
         <Accordion type="single" collapsible className="w-full">
             {children.map((child) => {
-                const settings = allSettings?.[child.id] || [];
+                // Ensure settings is always an array
+                const rawSettings = allSettings?.[child.id];
+                const settings = Array.isArray(rawSettings) ? rawSettings : [];
                 const isUpdating = updatingChild === child.id;
 
                 return (

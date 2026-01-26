@@ -4,15 +4,19 @@ import { Button } from '@/components/ui/button';
 import { Slider } from '@/components/ui/slider';
 import { cn } from '@/lib/utils';
 import { useAudioPlayer, Track } from '@/contexts/AudioPlayerContext';
+import { toast } from 'sonner';
+import { liturgy } from '@/lib/api';
+import { useQueryClient } from '@tanstack/react-query';
 
 interface HymnPlayerProps {
   url: string;
   title: string;
   className?: string;
   queue?: Track[];
+  activityId?: string; // Added for auto-completion
 }
 
-export function HymnPlayer({ url, title, className, queue }: HymnPlayerProps) {
+export function HymnPlayer({ url, title, className, queue, activityId }: HymnPlayerProps) {
   const {
     currentTrack,
     isPlaying: globalIsPlaying,
@@ -24,6 +28,41 @@ export function HymnPlayer({ url, title, className, queue }: HymnPlayerProps) {
     seek,
     toggleMute
   } = useAudioPlayer();
+
+  const queryClient = useQueryClient();
+  const [completed, setCompleted] = React.useState(false);
+
+  // Monitor playback for auto-completion
+  React.useEffect(() => {
+    if (!activityId || completed) return;
+
+    const isCurrentTrack = currentTrack?.url === url;
+    if (!isCurrentTrack) return;
+
+    // Completion Logic: If played more than 30s or ended
+    const progressPercent = globalDuration > 0 ? (globalCurrentTime / globalDuration) : 0;
+    const isEnded = progressPercent > 0.95; // Rough end check
+    const significantListen = globalCurrentTime > 30;
+
+    if (significantListen || isEnded) {
+      setCompleted(true);
+      liturgy.complete(activityId).then(() => {
+        toast.success('Hymn marked complete ✓', {
+          duration: 5000,
+          action: {
+            label: 'Undo',
+            onClick: () => {
+              liturgy.uncomplete(activityId);
+              setCompleted(false);
+              toast.info('Completion undone');
+              queryClient.invalidateQueries({ queryKey: ['family-day'] });
+            }
+          }
+        });
+        queryClient.invalidateQueries({ queryKey: ['family-day'] });
+      });
+    }
+  }, [globalCurrentTime, globalDuration, currentTrack, url, activityId, completed]);
 
   // Determine if this is a direct audio file or an embed
   const isDirectAudio = /\.(mp3|m4a|wav|aac)($|\?)/i.test(url);

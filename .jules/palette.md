@@ -5,3 +5,11 @@
 ## 2026-01-20 - Error Handling Patterns
 **Learning:** Using `alert()` interrupts the user flow and provides a poor experience, especially for recoverable errors like network failures.
 **Action:** Replace `alert()` with inline error states or non-blocking toast notifications. This keeps the user in context and allows them to retry without dismissing a system modal.
+
+## 2026-05-21 - List Action Loading States
+**Learning:** In list views with inline actions (like Approve/Reject), failing to disable *all* related actions while one is processing can lead to race conditions or confused user state.
+**Action:** When implementing async actions in a list, track the specific `processingId` but disable *all* action buttons in the list during the operation to ensure data integrity and clear feedback.
+
+## 2026-05-24 - Responsive Tabs Accessibility
+**Learning:** `TabsTrigger` components often use `hidden sm:inline` to show icons only on mobile. This removes the accessible name for screen readers if `aria-label` is not manually added.
+**Action:** When hiding text labels responsively in Tabs or Buttons, always ensure `aria-label` is present to provide context for screen reader users on small screens.

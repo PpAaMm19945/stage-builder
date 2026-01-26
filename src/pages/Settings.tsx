@@ -6,6 +6,7 @@ import { SettingsSchedule } from '@/components/settings/SettingsSchedule';
 import { SettingsCurriculum } from '@/components/settings/SettingsCurriculum';
 import { SettingsMaterials } from '@/components/settings/SettingsMaterials';
 import { SettingsAccount } from '@/components/settings/SettingsAccount';
+import { SettingsErrorBoundary } from '@/components/settings/SettingsErrorBoundary';
 import {
   UsersThree,
   Bell,
@@ -52,23 +53,23 @@ export default function Settings() {
 
       <Tabs value={activeTab} onValueChange={handleTabChange} className="space-y-6">
         <TabsList className="grid grid-cols-5 w-full h-auto p-1 bg-muted/50 rounded-xl">
-          <TabsTrigger value="family" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="family" aria-label="Family" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <UsersThree className="h-5 w-5" />
             <span className="hidden sm:inline">Family</span>
           </TabsTrigger>
-          <TabsTrigger value="schedule" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="schedule" aria-label="Schedule" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <Bell className="h-5 w-5" />
             <span className="hidden sm:inline">Schedule</span>
           </TabsTrigger>
-          <TabsTrigger value="curriculum" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="curriculum" aria-label="Curriculum" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <BookOpen className="h-5 w-5" />
             <span className="hidden sm:inline">Curriculum</span>
           </TabsTrigger>
-          <TabsTrigger value="materials" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="materials" aria-label="Materials" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <PaintBrush className="h-5 w-5" />
             <span className="hidden sm:inline">Materials</span>
           </TabsTrigger>
-          <TabsTrigger value="account" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
+          <TabsTrigger value="account" aria-label="Account" className="flex flex-col gap-1 py-3 text-xs sm:text-sm data-[state=active]:bg-background data-[state=active]:shadow-sm rounded-lg transition-all">
             <User className="h-5 w-5" />
             <span className="hidden sm:inline">Account</span>
           </TabsTrigger>
@@ -76,23 +77,33 @@ export default function Settings() {
 
         <div className="mt-6">
           <TabsContent value="family" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsFamily />
+            <SettingsErrorBoundary>
+              <SettingsFamily />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="schedule" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsSchedule />
+            <SettingsErrorBoundary>
+              <SettingsSchedule />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="curriculum" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsCurriculum />
+            <SettingsErrorBoundary>
+              <SettingsCurriculum />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="materials" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsMaterials />
+            <SettingsErrorBoundary>
+              <SettingsMaterials />
+            </SettingsErrorBoundary>
           </TabsContent>
 
           <TabsContent value="account" className="animate-in fade-in slide-in-from-left-4 duration-300">
-            <SettingsAccount />
+            <SettingsErrorBoundary>
+              <SettingsAccount />
+            </SettingsErrorBoundary>
           </TabsContent>
         </div>
       </Tabs>

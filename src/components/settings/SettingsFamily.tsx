@@ -8,11 +8,13 @@ import {
     Trash,
     Baby,
     GraduationCap,
-    CircleNotch
+    CircleNotch,
+    Robot
 } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { students } from '@/lib/api';
 import { toast } from 'sonner';
+import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { EditChildForm } from '@/components/children/EditChildForm';
 import { AddChildForm } from '@/components/children/AddChildForm';
 import { IndependenceManager } from '@/components/independence/IndependenceManager';
@@ -38,7 +40,7 @@ export function SettingsFamily() {
     const [isDeleting, setIsDeleting] = useState(false);
 
     const getInitials = (name: string) => {
-        return name
+        return (name || 'Unknown')
             .split(' ')
             .map((n) => n[0])
             .join('')
@@ -46,8 +48,11 @@ export function SettingsFamily() {
             .slice(0, 2);
     };
 
-    const calculateAge = (dateOfBirth: string) => {
+    const calculateAge = (dateOfBirth: string | null | undefined) => {
+        if (!dateOfBirth) return 'Age not set';
         const birthDate = new Date(dateOfBirth);
+        if (isNaN(birthDate.getTime())) return 'Age not set';
+
         const now = new Date();
         const ageMonths = (now.getFullYear() - birthDate.getFullYear()) * 12 +
             (now.getMonth() - birthDate.getMonth());
@@ -187,6 +192,22 @@ export function SettingsFamily() {
 
             {/* Phase 6: Data Archive */}
             <DataArchive />
+
+            {/* Phase 3: AI Interaction Log */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <Robot className="h-5 w-5" weight="duotone" />
+                        AI Interaction Log
+                    </CardTitle>
+                    <CardDescription>
+                        Review how the AI has advised your family. Total transparency.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    <AiLogViewer />
+                </CardContent>
+            </Card>
 
             {/* Delete Confirmation Dialog */}
             <AlertDialog open={!!deletingChild} onOpenChange={(open) => !open && setDeletingChild(null)}>

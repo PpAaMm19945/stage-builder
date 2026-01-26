@@ -6,10 +6,14 @@
 **Learning:** Using `alert()` interrupts the user flow and provides a poor experience, especially for recoverable errors like network failures.
 **Action:** Replace `alert()` with inline error states or non-blocking toast notifications. This keeps the user in context and allows them to retry without dismissing a system modal.
 
-## 2026-01-20 - Carousel Navigation Visibility
-**Learning:** "Show on hover" controls (using `opacity-0 group-hover:opacity-100`) create "invisible focus traps" for keyboard users, who navigate to buttons they cannot see.
-**Action:** Always add `focus:opacity-100` (or `focus-visible:opacity-100`) alongside hover states for absolute-positioned navigation controls to ensure they become visible when receiving keyboard focus.
+## 2026-05-21 - List Action Loading States
+**Learning:** In list views with inline actions (like Approve/Reject), failing to disable *all* related actions while one is processing can lead to race conditions or confused user state.
+**Action:** When implementing async actions in a list, track the specific `processingId` but disable *all* action buttons in the list during the operation to ensure data integrity and clear feedback.
 
-## 2026-01-20 - Redundant Touch Targets
-**Learning:** Invisible overlays used for convenient touch navigation (e.g., left/right screen taps) often duplicate explicit navigation buttons, causing screen readers to announce "Next Page" twice—once for the button and once for the overlay.
-**Action:** Mark purely functional touch/click overlays with `aria-hidden="true"` and remove semantic roles/labels if accessible buttons already exist in the DOM for the same action.
+## 2026-05-24 - Responsive Tabs Accessibility
+**Learning:** `TabsTrigger` components often use `hidden sm:inline` to show icons only on mobile. This removes the accessible name for screen readers if `aria-label` is not manually added.
+**Action:** When hiding text labels responsively in Tabs or Buttons, always ensure `aria-label` is present to provide context for screen reader users on small screens.
+
+## 2026-05-25 - External Redirect Loading States
+**Learning:** Even when redirecting to an external URL (like Google OAuth), a loading state is critical. Without it, the delay between click and browser navigation makes the app feel unresponsive or broken.
+**Action:** Always wrap external redirects (window.location.href) with a loading state, disabling the button to prevent double-clicks and reassure the user.

@@ -17,3 +17,28 @@
 **Vulnerability:** The Admin Dashboard used `script-src 'unsafe-inline'` and inline event handlers (`onclick`), making it vulnerable to XSS if any injection point was missed by `escapeHtml`.
 **Learning:** Retrofitting strict CSP (`nonce-based`) into an existing app with inline handlers requires converting `onclick` attributes to event listeners. Event delegation (attaching one listener to `document` or a container) is a clean way to handle this for dynamic content without complex rewrites.
 **Prevention:** Start projects with strict CSP (`nonce` or `hash`) and avoid inline event handlers (`onclick`, `onload`, etc.) from day one.
+
+## 2026-01-10 - Path Traversal in R2 Keys
+**Vulnerability:** API endpoints constructed R2 object keys using user-supplied parameters (`series`, `bookId`) without validation. Attackers could potentially use `..` sequences to traverse out of the intended `books/` prefix (e.g., `books/../secret.json`) if the underlying storage or intermediate layers normalized paths.
+**Learning:** Never assume object storage keys are immune to path traversal. Path normalization might happen in the URL router, the HTTP client, or the storage driver. Explicitly validating that path segments do not contain traversal characters (`..`) is a necessary defense-in-depth measure.
+**Prevention:** Implement a strict `isValidPathSegment` check that rejects any input containing `..` for all parameters used to construct file paths or storage keys.
+
+## 2026-05-23 - Credentials in URL Parameters
+**Vulnerability:** The `PUT /api/books/upload` endpoint required the `ADMIN_SECRET` to be passed as a query parameter (`?key=SECRET`). URLs are frequently logged by proxies, servers, and browser history, exposing the secret to anyone with access to these logs.
+**Learning:** Secrets should never be passed in the URL. Even over HTTPS, the full URL (including query parameters) is visible in server logs and browser history. Headers are the standard, secure place for credentials as they are encrypted in transit and typically not logged by default.
+**Prevention:** Always use the `Authorization` header (e.g., Bearer token) for authentication credentials. Support headers as the primary method and deprecated/remove query parameter support.
+
+## 2026-05-24 - Arbitrary File Write in Pages Functions
+**Vulnerability:** The `PUT /api/books/upload` endpoint allowed unvalidated paths (via `path` query param) to be passed directly to `R2Bucket.put()`. This allowed authenticated users (admins) to overwrite critical system files like `manifest.json` (at the root) or `index.html` (if serving from same bucket) or traverse paths if storage layers allowed it.
+**Learning:** Cloudflare Pages Functions arguments (like `env.ASSETS.put`) do not automatically sandbox writes to a safe subdirectory. When accepting file paths from user input, always enforce a strict allowlist or directory prefix and validate against traversal characters (`..`).
+**Prevention:** Implement `isValidPath` checks that enforce `startsWith('safe-dir/')` and reject `includes('..')`.
+
+## 2026-05-24 - CSRF in OAuth Flow (State Parameter)
+**Vulnerability:** The Google OAuth implementation generated a `state` parameter but failed to store or verify it in the callback handler. This allows attackers to perform Cross-Site Request Forgery (CSRF) by logging victims into the attacker's account, potentially to track activity or harvest data.
+**Learning:** Generating a random `state` is only half the solution; it MUST be verified. The pattern of "generate state -> redirect -> check state in callback" requires persistence (e.g., cookie/session) between the request and the callback.
+**Prevention:** Store the `state` in a short-lived, HttpOnly, secure cookie (or session) before redirecting. In the callback, strictly verify that the `state` query parameter matches the stored value and delete the cookie immediately.
+
+## 2026-06-15 - IDOR in Work Logging
+**Vulnerability:** The `POST /api/work/log` endpoint allowed any authenticated user to log work entries for any apprenticeship ID, regardless of ownership. This Insecure Direct Object Reference (IDOR) could allow students to log work for others or parents to log work for unrelated students.
+**Learning:** Relying on the secrecy of IDs (even UUIDs) is not a substitute for authorization. If an object ID is provided in a request, the backend MUST verify that the current user has permission to act on that specific object.
+**Prevention:** Always perform an ownership check when accessing resources by ID. Query the database to ensure the resource belongs to the user (or their household) before performing any action.

@@ -11,6 +11,9 @@ import {
   Baby,
   Calendar,
   ListBullets,
+  FileText,
+  ShieldCheck,
+  ArrowRight,
 } from '@phosphor-icons/react';
 import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
@@ -36,16 +39,25 @@ import {
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip';
+import { NotificationBell } from '@/components/notifications/NotificationBell';
+import { Button } from '@/components/ui/button';
 
 // Simplified primary navigation (stage-agnostic)
 const primaryLinks = [
   { title: 'Home', url: '/dashboard', icon: House },
   { title: 'Library', url: '/library', icon: Books },
   { title: 'Progress', url: '/progress', icon: TrendUp },
+  { title: 'Reports', url: '/reports', icon: FileText },
+];
+
+// Guest navigation
+const guestLinks = [
+  { title: 'Home', url: '/', icon: House },
+  { title: 'Library', url: '/library', icon: Books },
 ];
 
 export function AppSidebar() {
-  const { user, children, logout } = useAuth();
+  const { user, children, logout, isAuthenticated } = useAuth();
   const { setOpenMobile, isMobile } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
@@ -66,35 +78,41 @@ export function AppSidebar() {
     }
   };
 
+  const activeLinks = isAuthenticated ? primaryLinks : guestLinks;
+
   return (
     <>
       <Sidebar className="border-r border-border/50" collapsible="icon">
         <SidebarHeader className="p-4">
-          {/* Logo - Clickable to Dashboard */}
-          <button
-            onClick={() => handleNavigation('/')}
-            className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
-          >
-            <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
-              <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
-            </div>
-            <span className="font-display text-lg font-bold text-foreground">
-              FamilyPath
-            </span>
-          </button>
+          {/* Logo - Clickable to Dashboard or Home */}
+          <div className="flex items-center justify-between w-full">
+            <button
+              onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
+              className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
+            >
+              <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
+                <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
+              </div>
+              <span className="font-display text-lg font-bold text-foreground">
+                FamilyPath
+              </span>
+            </button>
+
+            {isAuthenticated && <NotificationBell />}
+          </div>
         </SidebarHeader>
 
         <SidebarContent>
-          {/* Primary Navigation Links */}
+          {/* Navigation Links */}
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {primaryLinks.map((link) => (
+                {activeLinks.map((link) => (
                   <SidebarMenuItem key={link.url}>
                     <SidebarMenuButton
-                    isActive={
+                      isActive={
                         location.pathname === link.url ||
-                        (link.url !== '/dashboard' && location.pathname.startsWith(link.url))
+                        (link.url !== '/' && link.url !== '/dashboard' && location.pathname.startsWith(link.url))
                       }
                       onClick={() => handleNavigation(link.url)}
                       className="flex items-center gap-3"
@@ -104,8 +122,9 @@ export function AppSidebar() {
                     </SidebarMenuButton>
                   </SidebarMenuItem>
                 ))}
-                {/* Daily Practices - Only visible for families with infants */}
-                {children.some(c => c.ageInMonths <= 12) && (
+
+                {/* Daily Practices - Only visible for AUTHENTICATED families with infants */}
+                {isAuthenticated && children.some(c => c.ageInMonths <= 12) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location.pathname === '/early-years/daily-practices'}
@@ -137,59 +156,83 @@ export function AppSidebar() {
                     <span className="font-medium">Support FamilyPath</span>
                   </SidebarMenuButton>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/trust')}
+                    isActive={location.pathname === '/trust'}
+                    className="flex items-center gap-3"
+                  >
+                    <ShieldCheck className="h-4 w-4" weight="duotone" />
+                    <span>Trust Covenant</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroupContent>
           </SidebarGroup>
         </SidebarContent>
 
         <SidebarFooter className="p-4">
-          <SidebarMenu>
-            <SidebarMenuItem>
-              <SidebarMenuButton
-                onClick={() => handleNavigation('/settings')}
-                isActive={location.pathname === '/settings'}
-                className="flex items-center gap-3"
-              >
-                <SlidersHorizontal className="h-4 w-4" weight="duotone" />
-                <span>Settings</span>
-              </SidebarMenuButton>
-            </SidebarMenuItem>
-          </SidebarMenu>
+          {isAuthenticated ? (
+            <>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <SidebarMenuButton
+                    onClick={() => handleNavigation('/settings')}
+                    isActive={location.pathname === '/settings'}
+                    className="flex items-center gap-3"
+                  >
+                    <SlidersHorizontal className="h-4 w-4" weight="duotone" />
+                    <span>Settings</span>
+                  </SidebarMenuButton>
+                </SidebarMenuItem>
+              </SidebarMenu>
 
-          {/* User Info */}
-          <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/30 p-3">
-            <Avatar className="h-8 w-8">
-              {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
-              <AvatarFallback className="bg-secondary/20 text-secondary-foreground text-sm">
-                {user ? getInitials(user.name) : '?'}
-              </AvatarFallback>
-            </Avatar>
-            <div className="flex-1 min-w-0">
-              <p className="text-sm font-medium text-foreground truncate">
-                {user?.name}
-              </p>
-              <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
-            </div>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <button
-                  onClick={logout}
-                  className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
-                  aria-label="Sign out"
+              {/* User Info */}
+              <div className="mt-4 flex items-center gap-3 rounded-lg bg-muted/30 p-3">
+                <Avatar className="h-8 w-8">
+                  {user?.avatarUrl && <AvatarImage src={user.avatarUrl} alt={user.name} />}
+                  <AvatarFallback className="bg-secondary/20 text-secondary-foreground text-sm">
+                    {user ? getInitials(user.name) : '?'}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1 min-w-0">
+                  <p className="text-sm font-medium text-foreground truncate">
+                    {user?.name}
+                  </p>
+                  <p className="text-xs text-muted-foreground truncate">{user?.email}</p>
+                </div>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <button
+                      onClick={logout}
+                      className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      aria-label="Sign out"
+                    >
+                      <SignOut className="h-4 w-4" weight="duotone" />
+                    </button>
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Sign out</p>
+                  </TooltipContent>
+                </Tooltip>
+              </div>
+
+              {/* Funding Progress */}
+              <div className="mt-4">
+                <FundingWidget raised={412} goal={500} />
+              </div>
+            </>
+          ) : (
+            <div className="mt-auto">
+                <Button
+                    onClick={() => handleNavigation('/login')}
+                    className="w-full flex items-center justify-center gap-2"
                 >
-                  <SignOut className="h-4 w-4" weight="duotone" />
-                </button>
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Sign out</p>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
-          {/* Funding Progress */}
-          <div className="mt-4">
-            <FundingWidget raised={412} goal={500} />
-          </div>
+                    <span>Sign In</span>
+                    <ArrowRight className="h-4 w-4" weight="bold" />
+                </Button>
+            </div>
+          )}
         </SidebarFooter>
       </Sidebar>
     </>

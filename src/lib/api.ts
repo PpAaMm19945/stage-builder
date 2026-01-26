@@ -2,6 +2,37 @@
 
 import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
 
+export interface WeeklyReport {
+  week_start: string;
+  week_end: string;
+  summary: {
+    total: number;
+    completed: number;
+    skipped: number;
+    transferred: number;
+    completion_rate: number;
+  };
+  by_type: {
+    catechism: number;
+    hymns: number;
+    books: number;
+    scripture: number;
+    skill: number;
+    habit: number;
+    service: number;
+    rest: number;
+  };
+  time_invested: {
+    total_minutes: number;
+    daily_average: number;
+  };
+  insights: string[];
+  next_week_preview: {
+    theme: string;
+    highlights: string[];
+  };
+}
+
 // Production Worker URL - works for both Cloudflare Pages and Lovable preview
 export const API_URL = import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev';
 
@@ -268,6 +299,18 @@ export const activityCompletions_deprecated = {
   create: (data: any) => console.warn('Deprecated activityCompletions used', data)
 };
 
+function slugify(text: string): string {
+  return text
+    .toString()
+    .toLowerCase()
+    .trim()
+    .replace(/\s+/g, '-')     // Replace spaces with -
+    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
+    .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+    .replace(/^-+/, '')       // Trim - from start of text
+    .replace(/-+$/, '');      // Trim - from end of text
+}
+
 // Books - All assets served via /api/books/* routes for consistent CORS handling
 export const books = {
   list: (params?: { stage?: string; ageMonths?: number }) => {
@@ -278,23 +321,23 @@ export const books = {
   },
 
   get: (series: string, bookId: string) =>
-    apiRequest<Book>(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}`),
+    apiRequest<Book>(`/api/books/${slugify(series)}/${slugify(bookId)}`),
 
   // Cover image URL - uses API route with CORS headers
   getCoverUrl: (series: string, bookId: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/cover`,
 
   // Page image URL - uses API route with CORS headers
   getPageUrl: (series: string, bookId: string, pageNum: number) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
 
   // PDF URL - for larger books with many pages
   getPdfUrl: (series: string, bookId: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pdf`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/pdf`,
 
   // Generic asset URL - for markdown, manifests, etc.
   getAssetUrl: (series: string, bookId: string, assetPath: string) =>
-    `${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/asset/${assetPath}`,
+    `/api/books/${slugify(series)}/${slugify(bookId)}/asset/${assetPath}`,
 };
 
 // Reading Sessions
@@ -336,35 +379,18 @@ export const feedback = {
 };
 
 // Liturgy
+// Liturgy - Deprecated/Unified into Formations
 export const liturgy = {
-  getToday: (): Promise<LiturgyTodayResponse> =>
-    apiRequest('/api/liturgy/today'),
-
-  complete: (itemId: string): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/complete', {
+  list: () => Promise.resolve([]),
+  complete: (id: string) =>
+    apiRequest<{ success: boolean }>('/api/liturgy/complete', {
       method: 'POST',
-      body: JSON.stringify({ itemId }),
+      body: JSON.stringify({ id }),
     }),
-
-  uncomplete: (itemId: string): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/uncomplete', {
+  uncomplete: (id: string) =>
+    apiRequest<{ success: boolean }>('/api/liturgy/uncomplete', {
       method: 'POST',
-      body: JSON.stringify({ itemId }),
-    }),
-
-  advance: (type: LiturgyType): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/advance', {
-      method: 'POST',
-      body: JSON.stringify({ type }),
-    }),
-
-  getSettings: (): Promise<FamilyLiturgySettings> =>
-    apiRequest('/api/liturgy/settings'),
-
-  updateSettings: (settings: Partial<FamilyLiturgySettings>): Promise<{ success: boolean }> =>
-    apiRequest('/api/liturgy/settings', {
-      method: 'PUT',
-      body: JSON.stringify(settings),
+      body: JSON.stringify({ id }),
     }),
 };
 
@@ -411,19 +437,27 @@ export const weeklyPlan = {
 
 // AI
 export const ai = {
-  chat: async (message: string, context: any, mode?: 'parent' | 'student') => {
+  chat: async (messages: any[], context: any) => {
     const token = getAuthToken();
-    const response = await fetch(`${API_URL}/api/ai/chat`, {
+    const response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         ...(token ? { Authorization: `Bearer ${token}` } : {}),
       },
-      body: JSON.stringify({ message, context, mode }),
+      body: JSON.stringify({ messages, context }),
     });
     if (!response.ok) throw new Error('Chat failed');
     return response.body;
   },
+
+  getActions: () => apiRequest<any[]>('/api/chat/actions'),
+
+  confirmAction: (actionId: string) =>
+    apiRequest<{ success: boolean }>('/api/chat/confirm', { method: 'POST', body: JSON.stringify({ actionId }) }),
+
+  rejectAction: (actionId: string) =>
+    apiRequest<{ success: boolean }>('/api/chat/reject', { method: 'POST', body: JSON.stringify({ actionId }) }),
 
   explainPlan: (slot: any, childId: string) =>
     apiRequest<any>('/api/ai/explain-plan', {
@@ -554,6 +588,11 @@ export const portfolio = {
 };
 
 export const rhythm = {
+  getToday: () => apiRequest<any>('/api/rhythm/today'), // Use new endpoint
+  getWeek: () => apiRequest<any>('/api/rhythm/week'),
+  regenerate: (options?: { frozenDays?: string[] }) =>
+    apiRequest<any>('/api/rhythm/regenerate', { method: 'POST', body: JSON.stringify(options || {}) }),
+
   readjust: (instruction: string, weekStart?: string) => {
     // Calculate Monday of current week if not provided
     const today = new Date();
@@ -572,6 +611,26 @@ export const rhythm = {
   },
 };
 
+export const progress = {
+  start: (activityId: string, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/start', { method: 'POST', body: JSON.stringify({ activityId, type, date }) }),
+
+  complete: (activityId: string, source: 'auto' | 'manual' = 'manual', type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/complete', { method: 'POST', body: JSON.stringify({ activityId, source, type, date }) }),
+
+  skip: (activityId: string, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/skip', { method: 'POST', body: JSON.stringify({ activityId, type, date }) }),
+
+  transfer: (activityId: string, toDate: string, type?: string, fromDate?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/transfer', { method: 'POST', body: JSON.stringify({ activityId, toDate, type, fromDate }) }),
+
+  save: (activityId: string, progressData: any, type?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/save', { method: 'POST', body: JSON.stringify({ activityId, progressData, type, date }) }),
+
+  get: (activityId: string) =>
+    apiRequest<{ progress: { status: string; data: any; updatedAt: string } | null }>(`/api/progress/${activityId}`),
+};
+
 export const notifications = {
   list: () => apiRequest<any[]>('/api/notifications'),
 };
@@ -586,14 +645,14 @@ export const formation = {
       method: 'POST',
       body: JSON.stringify(prefs),
     }),
+};
 
-  getDailyRhythm: () =>
-    apiRequest<{
-      date: string;
-      items: any[];
-      completions: Record<string, boolean>;
-      preferences: { activitiesEnabled: boolean; readingEnabled: boolean; liturgyEnabled: boolean };
-    }>('/api/family/daily-rhythm'),
+export const profile = {
+  get: () => apiRequest<any>('/api/profile'),
+  update: (data: Partial<any>) =>
+    apiRequest<any>('/api/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  updateGoals: (goals: string[]) =>
+    apiRequest<void>('/api/profile/goals', { method: 'POST', body: JSON.stringify({ goals }) })
 };
 
 export const work = {
@@ -655,7 +714,19 @@ export const paths = {
       `/api/paths/${pathId}/advance`,
       { method: 'POST' }
     ),
+
+  getStats: () =>
+    apiRequest<{
+      hymns: { completed: number; total: number };
+      catechism: { completed: number; total: number };
+      books: { completed: number; total: number };
+    }>('/api/library/stats'),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, liturgy, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths };
+export const reports = {
+  getWeekly: (weekStart?: string) =>
+    apiRequest<WeeklyReport>(`/api/reports/weekly${weekStart ? `/${weekStart}` : ''}`),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy };
 export default api;

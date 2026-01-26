@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { CheckCircle, XCircle, Clock, Briefcase, AlertCircle } from 'lucide-react';
+import { CheckCircle, XCircle, Clock, Briefcase, AlertCircle, Loader2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 import { WorkEntry } from '@/types';
 
 // Extended type from API response
@@ -13,6 +14,7 @@ interface PendingEntry extends WorkEntry {
 export function WorkApprovals() {
     const [entries, setEntries] = useState<PendingEntry[]>([]);
     const [loading, setLoading] = useState(true);
+    const [processingId, setProcessingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [rejectId, setRejectId] = useState<string | null>(null);
     const [rejectReason, setRejectReason] = useState('');
@@ -36,17 +38,21 @@ export function WorkApprovals() {
 
     const handleApprove = async (id: string) => {
         try {
+            setProcessingId(id);
             setError(null);
             await api.work.approve(id, 'approved');
             setEntries(prev => prev.filter(e => e.id !== id));
         } catch (err) {
             setError('Failed to approve entry. Please try again.');
+        } finally {
+            setProcessingId(null);
         }
     };
 
     const handleReject = async (id: string) => {
         if (!rejectReason) return;
         try {
+            setProcessingId(id);
             setError(null);
             await api.work.approve(id, 'rejected', rejectReason);
             setEntries(prev => prev.filter(e => e.id !== id));
@@ -54,6 +60,8 @@ export function WorkApprovals() {
             setRejectReason('');
         } catch (err) {
             setError('Failed to reject entry. Please try again.');
+        } finally {
+            setProcessingId(null);
         }
     };
 
@@ -152,41 +160,64 @@ export function WorkApprovals() {
                                     autoFocus
                                 />
                                 <div className="flex gap-2 justify-end">
-                                    <button
+                                    <Button
+                                        variant="ghost"
+                                        size="sm"
                                         onClick={() => setRejectId(null)}
-                                        className="text-xs text-gray-500 hover:text-gray-700 px-2 py-1"
+                                        disabled={!!processingId}
+                                        className="text-xs text-gray-500 hover:text-gray-700 h-7 px-2"
                                     >
                                         Cancel
-                                    </button>
-                                    <button
+                                    </Button>
+                                    <Button
                                         onClick={() => handleReject(entry.id)}
-                                        disabled={!rejectReason}
-                                        className="bg-red-600 text-white text-xs px-3 py-1 rounded hover:bg-red-700 disabled:opacity-50"
+                                        disabled={!rejectReason || !!processingId}
+                                        variant="destructive"
+                                        size="sm"
+                                        className="text-xs h-7 px-3 gap-1"
                                         aria-label={`Confirm rejection for ${entry.student_name}'s entry`}
                                     >
-                                        Confirm Reject
-                                    </button>
+                                        {processingId === entry.id ? (
+                                            <>
+                                                <Loader2 className="w-3 h-3 animate-spin" />
+                                                Processing...
+                                            </>
+                                        ) : (
+                                            'Confirm Reject'
+                                        )}
+                                    </Button>
                                 </div>
                             </div>
                         ) : (
                             <div className="flex justify-end gap-2">
-                                <button
+                                <Button
                                     onClick={() => setRejectId(entry.id)}
-                                    className="flex items-center gap-1 text-xs font-medium text-gray-500 hover:text-red-600 px-3 py-1.5 rounded-lg border border-transparent hover:bg-red-50 transition-colors"
+                                    disabled={!!processingId}
+                                    variant="ghost"
+                                    size="sm"
+                                    className="text-gray-500 hover:text-red-600 hover:bg-red-50 h-8 gap-1"
                                     aria-expanded={false}
                                     aria-label={`Reject entry from ${entry.student_name}`}
                                 >
                                     <XCircle className="w-4 h-4" />
                                     Reject
-                                </button>
-                                <button
+                                </Button>
+                                <Button
                                     onClick={() => handleApprove(entry.id)}
-                                    className="flex items-center gap-1 text-xs font-medium text-white bg-green-600 hover:bg-green-700 px-3 py-1.5 rounded-lg shadow-sm transition-colors"
+                                    disabled={!!processingId}
+                                    size="sm"
+                                    className="bg-green-600 hover:bg-green-700 h-8 gap-1 text-white"
                                     aria-label={`Approve entry from ${entry.student_name}`}
                                 >
-                                    <CheckCircle className="w-4 h-4" />
-                                    Approve
-                                </button>
+                                    {processingId === entry.id ? (
+                                        <Loader2 className="w-4 h-4 animate-spin" />
+                                    ) : (
+                                        <>
+                                            <CheckCircle className="w-4 h-4" />
+                                            Approve
+                                        </>
+                                    )}
+                                </Button>
                             </div>
                         )}
                     </div>

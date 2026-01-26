@@ -1,6 +1,6 @@
-import { useState, useMemo, useCallback } from 'react';
+import { useState, useMemo, useCallback, useEffect } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { family, books, weeklyPlan, activityCompletions, reading, liturgy, paths } from '@/lib/api';
+import { family, books, weeklyPlan, activityCompletions, reading, paths, rhythm } from '@/lib/api';
 import { TodayPathItem } from '@/types/paths';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
@@ -13,10 +13,7 @@ import {
   Baby,
   Sparkle,
   Calendar,
-  CaretDown,
-  CaretUp
 } from '@phosphor-icons/react';
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { cn } from '@/lib/utils';
 import { UpNextCard } from '@/components/dashboard/UpNextCard';
 import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
@@ -24,7 +21,7 @@ import { toast } from 'sonner';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
 import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
-import { MaterialItem, Book, LiturgyType } from '@/types';
+import { MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Info, Gear } from '@phosphor-icons/react';
 import { FamilyProgressMini } from '@/components/dashboard/FamilyProgressMini';
@@ -49,6 +46,8 @@ import { WorkApprovals } from '@/components/dashboard/WorkApprovals';
 import { useStableValue } from '@/hooks/useStableValue';
 import { Compass } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
+import { PathCompletionModal } from '@/components/paths/PathCompletionModal';
+import { EndOfDaySummary } from '@/components/dashboard/EndOfDaySummary';
 
 const EMPTY_WEEK_DATA = {};
 
@@ -60,25 +59,33 @@ export default function Dashboard() {
   // State for day navigation
   const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
   const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-  const [showFullDay, setShowFullDay] = useState(false);
 
   // State for regenerate dialog
   const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
   const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
+  const [transferAction, setTransferAction] = useState<'move' | 'skip'>('move');
 
   // State for swap sheet
   const [swapActivity, setSwapActivity] = useState<{ id: string; title: string } | null>(null);
+
+  // State for active rhythm item (lifted from DailyRhythm)
+  const [activeRhythmItem, setActiveRhythmItem] = useState<RhythmItem | null>(null);
+
+  // State for path completion celebration
+  const [completedPathInfo, setCompletedPathInfo] = useState<{
+    pathName: string;
+    totalItems: number;
+  } | null>(null);
+
+  // End of Day Summary State
+  const [showSummary, setShowSummary] = useState(false);
 
   const today = startOfDay(new Date());
   const weekStart = getWeekStart(today);
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
+  const selectedDayName = format(selectedDate, 'EEEE');
   const isToday = isSameDay(selectedDate, today);
-
-  const { data: liturgyData } = useQuery({
-    queryKey: ['liturgy-today'],
-    queryFn: liturgy.getToday,
-  });
 
   const { data: pathsToday } = useQuery({
     queryKey: ['paths-today'],
@@ -90,7 +97,7 @@ export default function Dashboard() {
   // Use keepPreviousData to avoid jarring full-page reloads
   const { data: dayData, isLoading: dayLoading, isFetching: dayFetching, error: dayError } = useQuery({
     queryKey: ['family-day', selectedDateStr],
-    queryFn: () => isToday ? family.getToday() : family.getDay(selectedDateStr),
+    queryFn: () => isToday ? rhythm.getToday() : family.getDay(selectedDateStr),
     placeholderData: (previousData) => previousData, // Keep showing previous data while fetching
     staleTime: 30000, // Consider data fresh for 30 seconds
   });
@@ -101,11 +108,21 @@ export default function Dashboard() {
     queryFn: () => family.getWeekSummary(weekStartStr),
   });
 
-  const { data: childrenData } = useQuery({
-    queryKey: ['students'],
-    queryFn: () => family.getToday().then(d => d.children),
-    enabled: isBalanceDialogOpen,
-  });
+  // End of Day Check
+  useEffect(() => {
+    const now = new Date();
+    const isEvening = now.getHours() >= 18;
+    // Only show if it's "today" (not browsing past/future) and evening
+    if (isEvening && isToday) {
+      const dateStr = format(now, 'yyyy-MM-dd');
+      const shown = localStorage.getItem('daily_summary_shown');
+      if (shown !== dateStr) {
+        // Small delay to let data load
+        const timer = setTimeout(() => setShowSummary(true), 1000);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [isToday]);
 
   // Memoize active children to prevent downstream re-renders (especially PDF generation)
   const activeChildrenRaw = useMemo(() => {
@@ -121,9 +138,9 @@ export default function Dashboard() {
 
   const youngestChild = useMemo(() => {
     return activeChildren.length > 0
-      ? [...activeChildren].sort((a: any, b: any) => 
-          (a.age_in_months ?? a.ageInMonths ?? 0) - (b.age_in_months ?? b.ageInMonths ?? 0)
-        )[0]
+      ? [...activeChildren].sort((a: any, b: any) =>
+        (a.age_in_months ?? a.ageInMonths ?? 0) - (b.age_in_months ?? b.ageInMonths ?? 0)
+      )[0]
       : null;
   }, [activeChildren]);
 
@@ -171,11 +188,8 @@ export default function Dashboard() {
     return dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [];
   }, [dayData?.familySessions]);
 
-  const pdfLiturgyRaw = liturgyData?.items || [];
-
   // Stabilize the inputs for the PDF
   const pdfActivities = useStableValue(pdfActivitiesRaw);
-  const pdfLiturgy = useStableValue(pdfLiturgyRaw);
   const pdfBook = useStableValue(todaysBook);
 
   // Memoize PDF document to prevent expensive regeneration on every render
@@ -189,14 +203,14 @@ export default function Dashboard() {
         day={{
           date: new Date().toLocaleDateString(),
           dayName: format(new Date(), 'EEEE'),
-          liturgy: pdfLiturgy,
+          liturgy: [],
           activities: pdfActivities,
           reading: pdfBook || undefined
         }}
         children={activeChildren}
       />
     );
-  }, [isToday, !!dayData, pdfLiturgy, pdfActivities, pdfBook, activeChildren]);
+  }, [isToday, !!dayData, pdfActivities, pdfBook, activeChildren]);
 
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
@@ -204,10 +218,10 @@ export default function Dashboard() {
     queryFn: () => weeklyPlan.get(),
   });
 
-  // Regenerate mutation
+  // Regenerate mutation (Switched to AI Rhythm Generator)
   const regenerateMutation = useMutation({
-    mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused'; weekStart: string }) =>
-      weeklyPlan.regenerate(prefs),
+    mutationFn: (vars: { weekStart: string; frozenDays: string[]; additionalContext?: string }) =>
+      rhythm.regenerate(vars), // Uses new AI endpoint
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['family-day'] });
       queryClient.invalidateQueries({ queryKey: ['family-today'] });
@@ -252,7 +266,12 @@ export default function Dashboard() {
       queryClient.invalidateQueries({ queryKey: ['path-subscriptions'] });
       toast.success(`Progress saved! ${data?.new_position || 1}/${data?.total_items || '?'}`);
       if (data?.is_completed) {
-        toast.success('🎉 Congratulations! You completed this path!');
+        // Show celebration modal - get path name from the active item
+        const currentPathItem = pathsToday?.items?.find((p: TodayPathItem) => p.path_id);
+        setCompletedPathInfo({
+          pathName: currentPathItem?.path_title || 'Learning Path',
+          totalItems: data?.total_items || 0,
+        });
       }
     },
     onError: (error: any) => {
@@ -263,82 +282,57 @@ export default function Dashboard() {
 
   const handleRegenerate = useCallback(() => setIsBalanceDialogOpen(true), []);
 
-  const confirmRegenerate = () => {
-    regenerateMutation.mutate({ balancePreference, weekStart: weekStartStr });
-  };
+  // Actual logic to populate frozenDays
+  const regenerationContext = useMemo(() => {
+    if (!isToday) return { frozenDays: [], missedItems: [] };
+    const now = new Date();
+    const todayDay = now.toLocaleDateString('en-US', { weekday: 'short' }); // "Mon", "Tue"
+    const daysOrder = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
+    const todayIdx = daysOrder.indexOf(todayDay);
 
-  // Liturgy Mutations
-  const completeLiturgyMutation = useMutation({
-    mutationFn: liturgy.complete,
-    onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
-      const previousData = queryClient.getQueryData(['liturgy-today']);
-      queryClient.setQueryData(['liturgy-today'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((item: any) =>
-            item.id === itemId ? { ...item, completedToday: true } : item
-          ),
-        };
-      });
-      return { previousData };
-    },
-    onError: (err, itemId, context: any) => {
-      queryClient.setQueryData(['liturgy-today'], context.previousData);
-      toast.error('Failed to mark as complete');
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-      toast.success('Marked as complete!');
-    },
-  });
+    if (todayIdx <= 0) return { frozenDays: [], missedItems: [] };
 
-  const uncompleteLiturgyMutation = useMutation({
-    mutationFn: liturgy.uncomplete,
-    onMutate: async (itemId) => {
-      await queryClient.cancelQueries({ queryKey: ['liturgy-today'] });
-      const previousData = queryClient.getQueryData(['liturgy-today']);
-      queryClient.setQueryData(['liturgy-today'], (old: any) => {
-        if (!old) return old;
-        return {
-          ...old,
-          items: old.items.map((item: any) =>
-            item.id === itemId ? { ...item, completedToday: false } : item
-          ),
-        };
-      });
-      return { previousData };
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-    },
-  });
+    const frozenDays = daysOrder.slice(0, todayIdx);
 
-  const advanceLiturgyMutation = useMutation({
-    mutationFn: liturgy.advance,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['liturgy-today'] });
-      toast.success('Advanced to next week!');
-    },
-  });
+    // Find missed items in frozen days
+    // Need to parse weeklyPlanData (Phase 3/5 structure)
+    // Assuming V2 AI structure: { days: [ { day: 'Mon', morning: [], evening: [] } ] }
+    let missed: RhythmItem[] = [];
 
-  const { mutate: completeLiturgy } = completeLiturgyMutation;
-  const { mutate: uncompleteLiturgy } = uncompleteLiturgyMutation;
-
-  const handleLiturgyToggle = useCallback((id: string, completed: boolean) => {
-    if (completed) {
-      completeLiturgy(id);
-    } else {
-      uncompleteLiturgy(id);
+    if (weeklyPlanData?.plan) { // Plan object
+      // Check format
+      const days = weeklyPlanData.plan.days || weeklyPlanData.plan; // Handle V2/Legacy
+      if (Array.isArray(days)) {
+        days.forEach((d: any) => {
+          if (frozenDays.includes(d.day)) {
+            const allItems = [...(d.morning || []), ...(d.evening || [])];
+            allItems.forEach((i: any) => {
+              if (i.status !== 'completed' && i.status !== 'skipped' && i.status !== 'transferred') {
+                missed.push(i);
+              }
+            });
+          }
+        });
+      }
     }
-  }, [completeLiturgy, uncompleteLiturgy]);
 
-  const { mutate: advanceLiturgy } = advanceLiturgyMutation;
+    return { frozenDays, missedItems: missed };
+  }, [isToday, weeklyPlanData]);
 
-  const handleLiturgyAdvance = useCallback((type: string) => {
-    advanceLiturgy(type as LiturgyType);
-  }, [advanceLiturgy]);
+  const confirmRegenerate = () => {
+    let context = '';
+    const { frozenDays, missedItems } = regenerationContext;
+
+    if (missedItems.length > 0 && transferAction === 'move') {
+      context = `Ensure the following activities are moved to tomorrow (${format(selectedDate, 'EEEE')}): ${missedItems.map(i => i.title).join(', ')}.`;
+    }
+
+    regenerateMutation.mutate({
+      weekStart: weekStartStr,
+      frozenDays,
+      additionalContext: context
+    });
+  };
 
   // Memoized handlers
   const { mutate: completeActivity } = completeActivityMutation;
@@ -368,166 +362,68 @@ export default function Dashboard() {
 
   // BUILD TIMELINE ITEMS (Moved up before conditional returns)
   const timelineItems = useMemo(() => {
-    if (!dayData) return []; // Safety check for early returns
+    const items: RhythmItem[] = [];
 
-    const rawItems: RhythmItem[] = [];
-
-    // 1. Liturgy (Morning)
-    if (isToday) {
-      const liturgyItems = liturgyData?.items || [];
-      const allLiturgyCompleted = liturgyItems.length > 0 && liturgyItems.every((i: any) => i.completedToday);
-
-      rawItems.push({
-        id: 'liturgy-morning',
-        timeSlot: '08:00',
-        title: 'Morning Liturgy',
-        description: 'Scripture, hymnal, and catechism.',
-        type: 'liturgy',
-        status: allLiturgyCompleted ? 'completed' : 'upcoming',
-        data: {
-          context_anchor: 'Morning Circle',
-          items: liturgyItems,
-          allCompleted: allLiturgyCompleted
-        }
-      });
-
-      // Add Path Items (Hymns, Catechism from active paths)
-      if (pathsToday?.items && Array.isArray(pathsToday.items)) {
-        pathsToday.items
-          .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
-          .forEach((pathItem: TodayPathItem, index: number) => {
-            rawItems.push({
-              id: `path-${pathItem.path_id}-${index}`,
-              timeSlot: pathItem.item_type === 'hymn' ? '08:15' : '08:30',
-              title: pathItem.item_title || pathItem.path_type || 'Path Item',
-              description: pathItem.path_title || '',
-              type: 'path_item',
+    // 1. Learning Path Items
+    if (isToday && pathsToday?.items && Array.isArray(pathsToday.items)) {
+      pathsToday.items
+        .filter((pathItem: TodayPathItem) => pathItem && pathItem.path_id)
+        .forEach((pathItem: TodayPathItem, index: number) => {
+          items.push({
+            id: `path-${pathItem.path_id}-${index}`,
+            timeSlot: '', // No time by default
+            title: pathItem.item_title || pathItem.path_type || 'Path Item',
+            description: `${pathItem.position || 1}/${pathItem.total || '?'} in ${pathItem.path_title}`,
+            type: 'path_item',
             status: 'upcoming',
             data: {
               ...pathItem,
-              context_anchor: 'Morning Circle',
               pathId: pathItem.path_id,
               pathName: pathItem.path_title,
               content: pathItem.item_data
             }
           });
         });
-      }
     }
 
-    // 2. Family Sessions
-    if (dayData.familySessions && Array.isArray(dayData.familySessions)) {
+    // 3. Family Activities (Rhythm V2 & V1 Fallback)
+    const rhythmData = dayData as any; // Using any for flexible V1/V2 parsing
+
+    // Handle V2 Structure (morning/evening)
+    if (rhythmData?.morning || rhythmData?.evening) {
+      const mapRhythmItem = (item: any, slot: string) => ({
+        id: item.id,
+        timeSlot: slot,
+        title: item.title,
+        description: item.rationale || item.description || '',
+        type: item.type === 'book' ? 'reading' : (item.type || 'activity'),
+        status: item.status,
+        data: item
+      });
+
+      (rhythmData.morning || []).forEach((item: any) => items.push(mapRhythmItem(item, 'Morning')));
+      (rhythmData.evening || []).forEach((item: any) => items.push(mapRhythmItem(item, 'Evening')));
+    }
+    // Legacy V1 Structure (familySessions)
+    else if (dayData?.familySessions && Array.isArray(dayData.familySessions)) {
       dayData.familySessions.forEach((session: any, index: number) => {
-        if (!session) return;
-        const activity = session.formation || session.activity;
-        if (!activity || !activity.id) return;
+        // Avoid duplicates if also in paths
+        if (items.some(i => i.id === session.formation.id)) return;
 
-        let time = '09:00';
-        if (session.timeSlot === 'afternoon') time = '14:00';
-
-        const isCompleted = session.isCompleted ||
-          (weeklyPlanData?.completions && weeklyPlanData.completions[activity.id]);
-
-        // Determine context anchor
-        const context = activity.context_anchor ||
-          (activity.formation_type === 'daily_practice' ? 'Walk By The Way' : 'Table Fellowship');
-
-        rawItems.push({
-          id: `session-${index}`,
-          timeSlot: time,
-          title: activity.title || 'Untitled Activity',
-          description: activity.description || '',
+        items.push({
+          id: session.formation.id || `activity-${index}`,
+          timeSlot: session.timeSlot || 'Day',
+          title: session.formation.title,
+          description: session.reasoning,
           type: 'activity',
-          status: isCompleted ? 'completed' : 'upcoming',
-          data: { ...activity, context_anchor: context }
+          status: session.isCompleted ? 'completed' : 'upcoming',
+          data: session.formation
         });
       });
     }
 
-    // 3. Book (Read Aloud)
-    if (isToday && todaysBook) {
-      rawItems.push({
-        id: 'book-reading',
-        timeSlot: '11:00',
-        title: 'Read Aloud Time',
-        description: todaysBook.title || 'Book',
-        type: 'book',
-        status: 'upcoming',
-        data: { ...todaysBook, context_anchor: 'Morning Circle' }
-      });
-    }
-
-    // 4. Daily Practices
-    if (isToday && dayData.dailyPractices && Array.isArray(dayData.dailyPractices)) {
-      dayData.dailyPractices.forEach((practice: any, index: number) => {
-        if (!practice || !practice.id) return;
-        rawItems.push({
-          id: `practice-${index}`,
-          timeSlot: '18:00',
-          title: practice.title || 'Daily Practice',
-          description: practice.description || '',
-          type: 'activity',
-          status: 'upcoming',
-          data: { ...practice, context_anchor: 'Walk By The Way' }
-        });
-      });
-    }
-
-    // Sort raw items by time first to ensure order within groups
-    rawItems.sort((a, b) => a.timeSlot.localeCompare(b.timeSlot));
-
-    // Group by Context Anchor
-    const groups: Record<string, RhythmItem[]> = {
-      'Morning Circle': [],
-      'Table Fellowship': [],
-      'Walk By The Way': [],
-      'Other': []
-    };
-
-    rawItems.forEach(item => {
-      const context = item.data?.context_anchor;
-      if (context && groups[context]) {
-        groups[context].push(item);
-      } else if (context) {
-        // Handle custom contexts dynamically if needed, or fallback
-        if (!groups[context]) groups[context] = [];
-        groups[context].push(item);
-      } else {
-        // Fallback mapping based on type
-        if (item.type === 'liturgy' || item.type === 'book') groups['Morning Circle'].push(item);
-        else if (item.type === 'activity') groups['Table Fellowship'].push(item); // Default for sessions
-        else groups['Walk By The Way'].push(item);
-      }
-    });
-
-    // Flatten into timelineItems with Headers
-    const flattenedItems: RhythmItem[] = [];
-    const orderedContexts = ['Morning Circle', 'Table Fellowship', 'Walk By The Way'];
-
-    // Add any custom contexts found
-    Object.keys(groups).forEach(k => {
-      if (!orderedContexts.includes(k) && k !== 'Other') orderedContexts.push(k);
-    });
-    orderedContexts.push('Other');
-
-    orderedContexts.forEach(context => {
-      const items = groups[context];
-      if (items && items.length > 0) {
-        // Add Header
-        flattenedItems.push({
-          id: `header-${context}`,
-          timeSlot: 'Header',
-          title: context,
-          type: 'section_header',
-          status: 'upcoming' // not used for header
-        });
-        // Add Items
-        items.forEach(item => flattenedItems.push(item));
-      }
-    });
-
-    return flattenedItems;
-  }, [isToday, dayData, weeklyPlanData, todaysBook, liturgyData, pathsToday]);
+    return items;
+  }, [dayData, isToday, pathsToday]);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
@@ -576,99 +472,7 @@ export default function Dashboard() {
     );
   }
 
-  // First Time User (No Materials)
-  const isFirstTimeUser = dayData.materials?.every((m: MaterialItem) => m.status === 'unknown');
-  if (isFirstTimeUser && dayData.familySessions?.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto py-12 px-4">
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent">
-          <CardHeader className="text-center space-y-2">
-            <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-2">
-              <Sparkle className="h-8 w-8 text-primary" weight="duotone" />
-            </div>
-            <CardTitle className="text-2xl">Welcome to Your Family Learning Journey!</CardTitle>
-            <CardDescription className="text-base">We're excited to help your family learn and grow together.</CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-6">
-            <Alert className="border-blue-200 bg-blue-50">
-              <Info className="h-4 w-4 text-blue-600" />
-              <AlertDescription className="text-blue-900">
-                To give you the best activity recommendations, we need to know what materials you have at home.
-              </AlertDescription>
-            </Alert>
-            <div className="flex flex-col sm:flex-row gap-3 pt-4">
-              <Button onClick={() => navigate('/settings')} size="lg" className="flex-1 gap-2">
-                <Gear className="h-4 w-4" weight="duotone" />
-                Set Up Materials
-              </Button>
-              <Button variant="outline" size="lg" onClick={() => navigate('/settings?quickstart=true')} className="flex-1">
-                Quick Start →
-              </Button>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Needs Plan State
-  if (dayData.needsPlan) {
-    return (
-      <div className="max-w-4xl mx-auto py-12 px-4">
-        <div className="space-y-4 mb-8">
-          <h2 className="text-xl font-bold text-center mb-4">Daily Liturgy</h2>
-          {(liturgyData?.items || []).filter((item: any) => item && item.id).map((item: any) => (
-            <FormationCard
-              key={item.id}
-              formation={{
-                id: item.id,
-                title: item.title || 'Liturgy Item',
-                description: item.reference || '',
-                formation_type: item.type, // types like 'catechism' work with FormationCard
-                primary_virtue: 'Wisdom',
-                context_anchor: 'Morning_Circle',
-                min_age_months: 0,
-                max_age_months: 0,
-                duration_minutes: 5,
-                guide_steps: [],
-                parent_posture: '',
-                materials: [],
-                liturgical_script: item.content,
-                is_active: 1,
-                content_source: 'liturgy'
-              }}
-              isCompleted={item.completedToday}
-              onComplete={handleLiturgyToggle}
-            />
-          ))}
-          {liturgyData?.items?.length > 0 && liturgyData.items.every((i: any) => i && i.completedToday) && (
-            <Button onClick={() => handleLiturgyAdvance('catechism')} variant="outline" className="w-full">
-              Advance Liturgy
-            </Button>
-          )}
-        </div>
-        <Card className="border-2 border-primary/20 bg-gradient-to-br from-primary/5 to-transparent mt-8">
-          <CardHeader className="text-center">
-            <CardTitle className="text-2xl">Let's Plan Your Week!</CardTitle>
-            <CardDescription>{dayData.message || "Generate a schedule to get personalized activities."}</CardDescription>
-          </CardHeader>
-          <CardContent className="flex justify-center pb-8">
-            <Button onClick={() => navigate('/early-years/planner')} size="lg" className="gap-2">
-              <Calendar className="w-5 h-5" />
-              Generate Weekly Plan
-            </Button>
-          </CardContent>
-        </Card>
-      </div>
-    );
-  }
-
-  // Build day data for week strip
-  const weekDayData = weekSummary?.days || EMPTY_WEEK_DATA;
-
-  // Get day name for swap
-  const selectedDayName = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][selectedDate.getDay()];
-
+  // Dashboard Content
   return (
     <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
       {/* Greeting */}
@@ -681,6 +485,19 @@ export default function Dashboard() {
         </p>
       </div>
 
+      {/* Materials Banner (Optional) */}
+      {dayData.materials?.every((m: MaterialItem) => m.status === 'unknown') && (
+        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 mb-6">
+          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+          <AlertDescription className="text-blue-900 dark:text-blue-200 flex items-center justify-between">
+            <span>To get the best activity recommendations, set up your materials.</span>
+            <Button variant="link" size="sm" onClick={() => navigate('/settings')} className="h-auto p-0 ml-2">
+              Setup Materials &rarr;
+            </Button>
+          </AlertDescription>
+        </Alert>
+      )}
+
       {/* Week Strip */}
       <WeekStrip
         weekStart={weekStart}
@@ -688,7 +505,7 @@ export default function Dashboard() {
         onDaySelect={setSelectedDate}
         onRegenerate={handleRegenerate}
         isRegenerating={regenerateMutation.isPending}
-        dayData={weekDayData}
+        dayData={weekSummary?.days || {}}
       />
 
       {/* Print Button */}
@@ -753,63 +570,52 @@ export default function Dashboard() {
         <UpNextCard
           item={nextItem}
           onAction={(item) => {
-            if (item.type === 'book' && todaysBook) setSelectedBook(todaysBook);
-            setShowFullDay(true);
+            setActiveRhythmItem(item);
           }}
-          onExpand={() => setShowFullDay(!showFullDay)}
+          onExpand={() => { }}
           pendingCount={pendingCount}
         />
       )}
 
       {/* Timeline */}
-      <Collapsible open={showFullDay || !isToday} onOpenChange={setShowFullDay} className="space-y-4">
+      <div className="space-y-4">
         <div className="flex items-center justify-between px-2">
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              {isToday ? `Full Schedule (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Activities (${timelineItems.length})`}
+              {isToday ? `Learning Path (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Items (${timelineItems.length})`}
             </h3>
             {dayFetching && (
               <CircleNotch className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
             )}
           </div>
-          {isToday && (
-            <CollapsibleTrigger asChild>
-              <Button variant="ghost" size="sm" className="h-8 w-8 p-0">
-                {showFullDay ? (
-                  <CaretUp className="h-4 w-4" />
-                ) : (
-                  <CaretDown className="h-4 w-4" />
-                )}
-              </Button>
-            </CollapsibleTrigger>
-          )}
         </div>
 
-        <CollapsibleContent forceMount={!isToday ? true : undefined}>
-          <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
-            <DailyRhythm
-              items={timelineItems}
-              onComplete={handleRhythmComplete}
-              onBookClick={handleBookClick}
-              onSwap={isToday ? handleSwap : undefined}
-              onLiturgyToggle={handleLiturgyToggle}
-              onLiturgyAdvance={handleLiturgyAdvance}
-            />
-          </div>
-        </CollapsibleContent>
-      </Collapsible>
+        <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
+          <DailyRhythm
+            items={timelineItems}
+            activeItem={activeRhythmItem}
+            onSelectItem={setActiveRhythmItem}
+            onComplete={handleRhythmComplete}
+            onBookClick={handleBookClick}
+            onSwap={isToday ? handleSwap : undefined}
+          />
+        </div>
+      </div>
 
       {/* Book Reader */}
-      <BookReader
-        book={selectedBook}
-        open={!!selectedBook}
-        onOpenChange={(open) => !open && setSelectedBook(null)}
-        childrenIds={dayData?.children?.map((c: any) => c.id)}
-        onComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ['todays-book'] });
-          queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
-        }}
-      />
+      {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
+      {selectedBook && (
+        <BookReader
+          book={selectedBook}
+          open={!!selectedBook}
+          onOpenChange={(open) => !open && setSelectedBook(null)}
+          childrenIds={dayData?.children?.map((c: any) => c.id)}
+          onComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ['todays-book'] });
+            queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+          }}
+        />
+      )}
 
 
 
@@ -848,6 +654,16 @@ export default function Dashboard() {
         </CardContent>
       </Card>
 
+      <EndOfDaySummary
+        date={selectedDate}
+        items={timelineItems}
+        open={showSummary}
+        onClose={() => {
+          setShowSummary(false);
+          localStorage.setItem('daily_summary_shown', format(new Date(), 'yyyy-MM-dd'));
+        }}
+      />
+
       {/* Regenerate Dialog */}
       <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
         <DialogContent>
@@ -857,6 +673,35 @@ export default function Dashboard() {
               How should we balance activities for your children{childAges.length > 0 ? ` (${childAges.join(', ')})` : ''}?
             </DialogDescription>
           </DialogHeader>
+
+          <div className="py-4 space-y-4">
+            {/* Missed Items Warning */}
+            {regenerationContext.missedItems.length > 0 && (
+              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                  I noticed {regenerationContext.missedItems.length} incomplete items from earlier this week.
+                </p>
+                <RadioGroup value={transferAction} onValueChange={(v: any) => setTransferAction(v)}>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="move" id="move" />
+                    <Label htmlFor="move">Move to tomorrow</Label>
+                  </div>
+                  <div className="flex items-center space-x-2">
+                    <RadioGroupItem value="skip" id="skip" />
+                    <Label htmlFor="skip">Skip and continue</Label>
+                  </div>
+                </RadioGroup>
+              </div>
+            )}
+
+            {regenerationContext.frozenDays.length > 0 && (
+              <p className="text-xs text-muted-foreground">
+                * {regenerationContext.frozenDays.join(', ')} are passed and will be frozen.
+              </p>
+            )}
+          </div>
+
+
 
           <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
             <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
@@ -899,6 +744,14 @@ export default function Dashboard() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
+
+      {/* Path Completion Celebration Modal */}
+      <PathCompletionModal
+        isOpen={!!completedPathInfo}
+        onClose={() => setCompletedPathInfo(null)}
+        pathName={completedPathInfo?.pathName || ''}
+        totalItems={completedPathInfo?.totalItems || 0}
+      />
     </div>
   );
 }

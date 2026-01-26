@@ -11,7 +11,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
-import { Users, User } from '@phosphor-icons/react';
+import { Users, User, CircleNotch } from '@phosphor-icons/react';
 
 interface ChildSelectionModalProps {
     open: boolean;
@@ -131,7 +131,14 @@ export function ChildSelectionModal({
                         onClick={handleConfirm}
                         disabled={noneSelected || isPending}
                     >
-                        {isPending ? 'Saving...' : 'Log Reading Session'}
+                        {isPending ? (
+                            <>
+                                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                Saving...
+                            </>
+                        ) : (
+                            'Log Reading Session'
+                        )}
                     </Button>
                 </DialogFooter>
             </DialogContent>

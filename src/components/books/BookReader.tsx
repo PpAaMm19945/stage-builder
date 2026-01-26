@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -18,15 +18,16 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple } from '@phosphor-icons/react';
+import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
-import { books, reading } from '@/lib/api';
+import { books, reading, progress } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarkdownBookSlide } from './MarkdownBookSlide';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ChildSelectionModal } from './ChildSelectionModal';
+import { BookPageImage } from './BookPageImage';
 
 interface BookReaderProps {
     book: Book | null;
@@ -34,17 +35,20 @@ interface BookReaderProps {
     onOpenChange: (open: boolean) => void;
     childrenIds?: string[];
     onComplete?: () => void;
+    activityId?: string;
 }
 
-export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }: BookReaderProps) {
+export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
     const [showPrompts, setShowPrompts] = useState(false);
     const [parsedPages, setParsedPages] = useState<string[]>([]);
-    const [loadedImages, setLoadedImages] = useState<Set<number>>(new Set());
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
+    const [showFinishDialog, setShowFinishDialog] = useState(false);
+    const [initialProgressChecked, setInitialProgressChecked] = useState(false);
+    const [restoredPage, setRestoredPage] = useState<number | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const dialogRef = useRef<HTMLDivElement>(null);
     const { user, children: authChildren } = useAuth();
@@ -60,11 +64,11 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         queryKey: ['book-content', book?.id],
         queryFn: async () => {
             if (!book?.contentPath) return null;
-            
+
             // Use the new API asset route for fetching markdown content
             const url = books.getAssetUrl(book.series, book.id, 'content.md');
             const res = await fetch(url);
-            
+
             if (!res.ok) {
                 // Try fallback location (images folder)
                 const urlFallback = books.getAssetUrl(book.series, book.id, 'images/content.md');
@@ -75,6 +79,67 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
             return res.text();
         },
         enabled: !!book && (book.renderFormat === 'markdown' || book.renderFormat === 'hybrid')
+    });
+
+
+    // Fetch progress
+    useQuery({
+        queryKey: ['book-progress', book?.id],
+        queryFn: async () => {
+            if (!book) return null;
+            const res = await progress.get(book.id);
+            if (res.progress && res.progress.status === 'in_progress' && res.progress.data?.current_page) {
+                setRestoredPage(res.progress.data.current_page);
+            }
+            setInitialProgressChecked(true);
+            return res.progress;
+        },
+        enabled: !!book && open && !initialProgressChecked
+    });
+
+    // Restore page effect
+    useEffect(() => {
+        if (restoredPage && api && restoredPage > 1 && open) {
+            // Ask user? Or just restore? 
+            // Spec says "Show 'Continue from page X?' on reopen".
+            // Implementation detail: For now, we can toast or auto-jump.
+            // Let's us toast with action to jump.
+            toast.info(`You were on page ${restoredPage}`, {
+                action: {
+                    label: 'Jump there',
+                    onClick: () => api.scrollTo(restoredPage - 1)
+                },
+                duration: 8000
+            });
+            setRestoredPage(null); // Clear after notifying
+        }
+    }, [restoredPage, api, open]);
+
+    // Save progress mutation
+    const saveProgressMutation = useMutation({
+        mutationFn: async () => {
+            if (!book) return;
+            await progress.save(book.id, {
+                current_page: current,
+                total_pages: count || 0
+            }, 'book'); // 'book' type
+        },
+        onSuccess: () => {
+            toast.success("Progress saved");
+            handleCloseComplete();
+        }
+    });
+
+    const skipMutation = useMutation({
+        mutationFn: async () => {
+            if (!book || !activityId) return;
+            await progress.skip(activityId, 'book');
+        },
+        onSuccess: () => {
+            toast.info("Book skipped");
+            queryClient.invalidateQueries({ queryKey: ['family-day'] });
+            handleCloseComplete();
+        }
     });
 
     // Completion mutation - now accepts optional override for childrenIds
@@ -94,7 +159,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
             queryClient.invalidateQueries({ queryKey: ['reading-history'] });
             if (onComplete) onComplete();
             setShowChildSelection(false);
-            handleClose();
+            handleCloseComplete();
         },
         onError: (err: any) => {
             toast.error("Failed to log session", { description: err.message });
@@ -116,7 +181,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         setCurrent(api.selectedScrollSnap() + 1);
 
         api.on("select", () => {
-            setCurrent(api.selectedScrollSnap() + 1);
+            const page = api.selectedScrollSnap() + 1;
+            setCurrent(page);
+            setPagesViewed(prev => {
+                const next = new Set(prev);
+                next.add(page);
+                return next;
+            });
         });
     }, [api]);
 
@@ -129,6 +200,25 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
+
+    // Keyboard navigation
+    useEffect(() => {
+        if (!open || !api || showChildSelection) return;
+
+        const handleKeyDown = (e: KeyboardEvent) => {
+            // Respect default prevented events (e.g. if focus is already in Carousel)
+            if (e.defaultPrevented) return;
+
+            if (e.key === 'ArrowLeft') {
+                api.scrollPrev();
+            } else if (e.key === 'ArrowRight') {
+                api.scrollNext();
+            }
+        };
+
+        window.addEventListener('keydown', handleKeyDown);
+        return () => window.removeEventListener('keydown', handleKeyDown);
+    }, [open, api, showChildSelection]);
 
     // Fetch manifest for 'images' format - use API route for consistent CORS handling
     const { data: manifestPages } = useQuery({
@@ -156,29 +246,73 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
     // Generate page URLs:
     // 1. Use manifest if available
     // 2. Use legacy indexed generation if no manifest
-    const imagePages = (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat))
-        ? (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
-            return books.getPageUrl(book.series, book.id, i + 1);
-        }))
-        : [];
+    const imagePages = useMemo(() => {
+        if (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat)) {
+             return (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
+                return books.getPageUrl(book.series, book.id, i + 1);
+            }));
+        }
+        return [];
+    }, [book, manifestPages]);
 
     // Filter out failed images from display
-    const validImagePages = imagePages.filter((_, i) => !failedImages.has(i));
+    const validImagePages = useMemo(() =>
+        imagePages.filter((_, i) => !failedImages.has(i)),
+        [imagePages, failedImages]
+    );
 
-    const handleImageLoad = (index: number) => {
-        setLoadedImages(prev => new Set([...prev, index]));
-    };
+    const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
     const handleImageError = (index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
     };
 
-    const handleClose = () => {
-        onOpenChange(false);
+    const handleCloseRequest = async () => {
+        // If finished, close handling is standard
+        if (current === count || current === totalPages) {
+            handleCloseStandard();
+            return;
+        }
+
+        // Check if "incomplete but read something"
+        // E.g. > 1 page read (excluding cover)
+        if (current > 1 && current < (count || totalPages)) {
+            setShowFinishDialog(true);
+        } else {
+            handleCloseStandard();
+        }
+    };
+
+    const handleCloseStandard = async () => {
+        // Standard logic from before (auto-complete if valid)
+        // Auto-complete trigger if activityId is present (planned activity)
+        // If > 2 pages viewed OR it's a PDF (where we can't track pages well, but user opened it)
+        const isProgressive = activityId && (pagesViewed.size >= 2 || isPdf);
+
+        if (isProgressive && !isPdf) { // Only auto current for PDF or if near end? 
+            // Actually, if they close early via X, we shouldn't auto-complete unless at end.
+            // The old logic was aggressive.
+            // New logic: If close at end -> Complete. If close middle -> Dialog.
+            // If close start (<2 pages) -> Just close.
+            // So here we likely just close.
+        }
+
+        // For PDF, we still might want auto-complete if they spent time?
+        // But let's rely on the PDF "Finish Book" button for explicit completion.
+
+        handleCloseComplete();
+    };
+
+    const handleCloseComplete = () => {
         // Reset state
         setShowPrompts(false);
-        setLoadedImages(new Set());
         setFailedImages(new Set());
+        setPagesViewed(new Set());
+        setShowFinishDialog(false);
+        setRestoredPage(null);
+        setInitialProgressChecked(false);
+
+        onOpenChange(false);
     };
 
     if (!book) return null;
@@ -221,7 +355,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
 
     return (
         <>
-            <Dialog open={open} onOpenChange={handleClose}>
+            <Dialog open={open} onOpenChange={handleCloseRequest}>
                 <DialogContent
                     ref={dialogRef}
                     className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none"
@@ -271,7 +405,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                             <Button
                                 variant="ghost"
                                 size="icon"
-                                onClick={handleClose}
+                                onClick={handleCloseRequest}
                                 className="text-white hover:bg-white/20 rounded-full"
                                 aria-label="Close reader"
                             >
@@ -319,7 +453,14 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                         }}
                                         disabled={completeMutation.isPending}
                                     >
-                                        {completeMutation.isPending ? "Saving..." : "Finish Book"}
+                                        {completeMutation.isPending ? (
+                                            <>
+                                                <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                                Saving...
+                                            </>
+                                        ) : (
+                                            "Finish Book"
+                                        )}
                                     </Button>
                                 </div>
                             </div>
@@ -360,43 +501,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
-                                        const isLoaded = loadedImages.has(index);
+                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
+                                            typeof p === 'object' && 'page' in p && p.page === index + 1
+                                        ) as { page: number; prompt: string } | undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                <div className="relative w-full h-full flex items-center justify-center p-4">
-                                                    {/* Loading skeleton */}
-                                                    {!isLoaded && (
-                                                        <div className="absolute inset-4 flex items-center justify-center">
-                                                            <Skeleton className="w-full max-w-2xl aspect-[4/3] rounded-lg bg-white/10" />
-                                                        </div>
-                                                    )}
-
-                                                    <img
-                                                        src={pageUrl}
-                                                        alt={`Page ${index + 1}`}
-                                                        className={cn(
-                                                            "max-w-full max-h-[80dvh] sm:max-h-[75vh] object-contain shadow-lg rounded-sm transition-opacity duration-300",
-                                                            !isLoaded && "opacity-0"
-                                                        )}
-                                                        loading={index < 3 ? "eager" : "lazy"}
-                                                        onLoad={() => handleImageLoad(index)}
-                                                        onError={() => handleImageError(index)}
-                                                    />
-
-                                                    {/* Overlay Prompt */}
-                                                    {showPrompts && book.readingPrompts?.some(p =>
-                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
-                                                    ) && (
-                                                            <div className="absolute bottom-8 left-0 right-0 mx-auto max-w-xl bg-black/80 backdrop-blur-sm text-white p-4 rounded-xl border border-white/10 animate-in slide-in-from-bottom-4">
-                                                                <p className="text-sm font-medium leading-relaxed">
-                                                                    💡 {(book.readingPrompts.find(p =>
-                                                                        typeof p === 'object' && 'page' in p && p.page === index + 1
-                                                                    ) as { page: number; prompt: string } | undefined)?.prompt}
-                                                                </p>
-                                                            </div>
-                                                        )}
-                                                </div>
+                                                <BookPageImage
+                                                    src={pageUrl}
+                                                    alt={`Page ${index + 1}`}
+                                                    index={index}
+                                                    onError={() => handleImageError(index)}
+                                                    prompt={prompt?.prompt}
+                                                />
                                             </CarouselItem>
                                         );
                                     })}
@@ -417,7 +534,14 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                                                 }}
                                                 disabled={completeMutation.isPending}
                                             >
-                                                {completeMutation.isPending ? "Saving..." : "Finish & Log Book"}
+                                                {completeMutation.isPending ? (
+                                                    <>
+                                                        <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                                        Saving...
+                                                    </>
+                                                ) : (
+                                                    "Finish & Log Book"
+                                                )}
                                             </Button>
                                         </div>
                                     </CarouselItem>
@@ -451,6 +575,57 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete }
                 onConfirm={(selectedIds) => completeMutation.mutate(selectedIds)}
                 isPending={completeMutation.isPending}
             />
+
+            {/* Didn't Finish Dialog */}
+            <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Finished for now?</DialogTitle>
+                        <DialogDescription>
+                            You're on page {current} of {count}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="flex flex-col gap-3 mt-4">
+                        <Button
+                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                            onClick={() => {
+                                if (needsChildSelection) {
+                                    setShowChildSelection(true);
+                                    setShowFinishDialog(false);
+                                } else {
+                                    completeMutation.mutate(undefined);
+                                }
+                            }}
+                            disabled={completeMutation.isPending}
+                        >
+                            {completeMutation.isPending ? (
+                                <>
+                                    <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                    Saving...
+                                </>
+                            ) : (
+                                "Yes, mark complete"
+                            )}
+                        </Button>
+                        <Button
+                            variant="outline"
+                            className="w-full"
+                            onClick={() => saveProgressMutation.mutate()}
+                        >
+                            No, continue later (Save page)
+                        </Button>
+                        {activityId && (
+                            <Button
+                                variant="ghost"
+                                className="w-full text-slate-500"
+                                onClick={() => skipMutation.mutate()}
+                            >
+                                Skip this book
+                            </Button>
+                        )}
+                    </div>
+                </DialogContent>
+            </Dialog>
         </>
     );
 }

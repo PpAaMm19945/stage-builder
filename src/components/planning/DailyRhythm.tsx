@@ -27,12 +27,15 @@ export interface RhythmItem {
     title: string;
     description?: string;
     type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item';
-    status: 'upcoming' | 'current' | 'completed';
+    status: 'upcoming' | 'current' | 'completed' | 'skipped' | 'transferred';
     data?: any; // The full object (Activity, Book, etc.)
+    transferred_from?: string; // Date string if transferred
 }
 
 interface DailyRhythmProps {
     items?: RhythmItem[];
+    activeItem?: RhythmItem | null;
+    onSelectItem?: (item: RhythmItem | null) => void;
     onComplete?: (item: RhythmItem, duration?: number) => void;
     onBookClick?: () => void;
     onSwap?: (item: RhythmItem) => void;
@@ -40,8 +43,22 @@ interface DailyRhythmProps {
     onLiturgyAdvance?: (type: string) => void;
 }
 
-export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, onBookClick, onSwap, onLiturgyToggle, onLiturgyAdvance }: DailyRhythmProps) {
-    const [activeItem, setActiveItem] = useState<RhythmItem | null>(null);
+export const DailyRhythm = memo(function DailyRhythm({
+    items = [],
+    activeItem: propActiveItem,
+    onSelectItem: propOnSelectItem,
+    onComplete,
+    onBookClick,
+    onSwap,
+    onLiturgyToggle,
+    onLiturgyAdvance
+}: DailyRhythmProps) {
+    // Internal state if not controlled
+    const [internalActiveItem, setInternalActiveItem] = useState<RhythmItem | null>(null);
+
+    // Derived state
+    const activeItem = propActiveItem !== undefined ? propActiveItem : internalActiveItem;
+    const setActiveItem = propOnSelectItem || setInternalActiveItem;
 
     const timelineItems = items.length > 0 ? items : [];
 
@@ -57,7 +74,7 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
         if (item.type !== 'section_header') {
             setActiveItem(item);
         }
-    }, []);
+    }, [setActiveItem]);
 
     const handleSheetComplete = (duration?: number) => {
         if (activeItem && onComplete) {
@@ -68,8 +85,6 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
 
     return (
         <div className="space-y-4 relative">
-            <div className="absolute left-[27px] top-4 bottom-4 w-0.5 bg-border/50 -z-10" />
-
             {timelineItems.map((item) => (
                 <RhythmItemRow
                     key={item.id}
@@ -122,10 +137,10 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                             )}
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.lyrics || 
-                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.lyrics ||
+                                                        activeItem.data.content?.content ||
                                                         activeItem.data.content?.liturgical_script ||
                                                         activeItem.description
                                                     )
@@ -146,16 +161,18 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                             </div>
                                             <div className="bg-muted/30 rounded-lg p-5 space-y-3">
                                                 <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
-                                            <div
-                                                className="prose prose-sm dark:prose-invert"
-                                                dangerouslySetInnerHTML={{ 
-                                                    __html: sanitizeHtml(
-                                                        activeItem.data.content?.content || 
-                                                        activeItem.data.content?.liturgical_script ||
-                                                        activeItem.description
-                                                    )
-                                                }}
-                                            />
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.item_data?.liturgical_script ||
+                                                            activeItem.data.item_data?.description ||
+                                                            activeItem.data.content?.content ||
+                                                            activeItem.data.content?.liturgical_script ||
+                                                            activeItem.description
+                                                        )
+                                                    }}
+                                                />
                                             </div>
                                             <p className="text-sm text-muted-foreground text-center">
                                                 📖 Recite together as a family
@@ -169,9 +186,9 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                             <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto text-left"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.content || 
+                                                        activeItem.data.content?.content ||
                                                         activeItem.data.content?.description ||
                                                         activeItem.description
                                                     )
@@ -207,9 +224,9 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                             <h3 className="text-xl font-display font-bold text-center">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.description || 
+                                                        activeItem.data.content?.description ||
                                                         activeItem.data.content?.content ||
                                                         activeItem.description
                                                     )
@@ -230,10 +247,10 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                             <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
                                             <div
                                                 className="prose prose-sm dark:prose-invert mx-auto"
-                                                dangerouslySetInnerHTML={{ 
+                                                dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
-                                                        activeItem.data.content?.content || 
-                                                        activeItem.data.content?.description || 
+                                                        activeItem.data.content?.content ||
+                                                        activeItem.data.content?.description ||
                                                         activeItem.description
                                                     )
                                                 }}
@@ -245,6 +262,92 @@ export const DailyRhythm = memo(function DailyRhythm({ items = [], onComplete, o
                                     <div className="pt-4">
                                         <Button onClick={() => handleSheetComplete()} size="lg" className="w-full">
                                             Mark Complete
+                                        </Button>
+                                    </div>
+                                </div>
+                            )}
+
+                            {/* Liturgy Item (Unified) */}
+                            {activeItem?.type === 'liturgy' && !activeItem.data?.items && activeItem.data?.itemType && (
+                                <div className="space-y-6 py-4">
+                                    {/* Catechism */}
+                                    {activeItem.data.itemType === 'catechism' && (
+                                        <div className="space-y-4">
+                                            <div className="bg-primary/5 border border-primary/10 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Question</p>
+                                                {/* Use description as question, since index.ts puts question in description */}
+                                                <p className="text-lg font-semibold">{activeItem.description}</p>
+                                            </div>
+                                            <div className="bg-muted/30 rounded-lg p-5 space-y-3">
+                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
+                                                {/* Use liturgical_script as answer */}
+                                                <div
+                                                    className="prose prose-sm dark:prose-invert"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.liturgical_script ||
+                                                            activeItem.data.content
+                                                        )
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground text-center">
+                                                📖 Recite together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Hymn */}
+                                    {activeItem.data.itemType === 'hymn' && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-2xl font-display font-bold">{activeItem.title}</h3>
+                                            <div
+                                                className="prose prose-sm dark:prose-invert mx-auto whitespace-pre-line text-left bg-muted/20 p-4 rounded-lg"
+                                                dangerouslySetInnerHTML={{
+                                                    __html: sanitizeHtml(
+                                                        activeItem.data.liturgical_script ||
+                                                        activeItem.data.content
+                                                    )
+                                                }}
+                                            />
+                                            {activeItem.data.audio_url && (
+                                                <div className="mt-4">
+                                                    <audio controls src={activeItem.data.audio_url} className="w-full" />
+                                                </div>
+                                            )}
+                                            <p className="text-sm text-muted-foreground">
+                                                🎵 Sing together as a family
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    {/* Scripture */}
+                                    {activeItem.data.itemType === 'scripture' && (
+                                        <div className="text-center space-y-4">
+                                            <h3 className="text-xl font-display font-bold">{activeItem.title}</h3>
+                                            <div className="bg-amber-50 dark:bg-amber-950/30 border border-amber-100 dark:border-amber-900 rounded-xl p-6 shadow-sm">
+                                                <div
+                                                    className="prose prose-lg dark:prose-invert mx-auto font-serif italic text-amber-900 dark:text-amber-100"
+                                                    dangerouslySetInnerHTML={{
+                                                        __html: sanitizeHtml(
+                                                            activeItem.data.description ||
+                                                            activeItem.data.liturgical_script
+                                                        )
+                                                    }}
+                                                />
+                                            </div>
+                                            <p className="text-sm text-muted-foreground">
+                                                📜 Read and meditate together
+                                            </p>
+                                        </div>
+                                    )}
+
+                                    <div className="pt-4">
+                                        <Button onClick={() => {
+                                            handleSheetComplete();
+                                            if (onLiturgyAdvance) onLiturgyAdvance(activeItem.data.itemType);
+                                        }} size="lg" className="w-full">
+                                            Done - Load Next
                                         </Button>
                                     </div>
                                 </div>

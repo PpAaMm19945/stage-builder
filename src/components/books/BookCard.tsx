@@ -1,4 +1,4 @@
-import { useState, memo, useEffect } from 'react';
+import { useState, memo } from 'react';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -49,12 +49,12 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
 
     // Determine aspect ratio based on book type
     // Picture books (landscape) use 4:3, standard books use 2:3 (portrait)
-    const isLandscape = landscape || 
-        book.renderFormat === 'image' || 
+    const isLandscape = landscape ||
+        book.renderFormat === 'image' ||
         book.renderFormat === 'images' ||
         book.series?.toLowerCase().includes('picture') ||
         book.series?.toLowerCase().includes('first');
-    
+
     const aspectClass = isLandscape ? 'aspect-[4/3]' : 'aspect-[2/3]';
 
     const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -67,18 +67,9 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
     // Netflix-style fixed-height rows with variable width cards
     // Height is fixed per row type; width derives naturally from aspect ratio
     // This prevents horizontal overflow issues while maintaining clean alignment
-    const heightClass = isLandscape 
+    const heightClass = isLandscape
         ? 'h-[120px] sm:h-[150px] md:h-[180px]'  // Picture books: shorter on mobile
         : 'h-[150px] sm:h-[190px] md:h-[240px]'; // Portrait books: taller for visibility
-    
-    // Debug logging for cover URLs
-    useEffect(() => {
-        console.log('[BookCard] Cover request:', {
-            series: book.series,
-            id: book.id,
-            coverUrl
-        });
-    }, [book.series, book.id, coverUrl]);
 
     return (
         <div
@@ -121,9 +112,8 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
                     src={coverUrl}
                     alt={`Cover of ${displayTitle}`}
                     loading="lazy"
-                    className={`h-full w-full object-cover transition-all duration-300 group-hover:brightness-105 ${
-                        imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-                    }`}
+                    className={`h-full w-full object-cover transition-all duration-300 group-hover:brightness-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+                        }`}
                     onLoad={() => setImageLoaded(true)}
                     onError={() => {
                         setImageError(true);
@@ -150,7 +140,20 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
                         {displaySeries}
                     </p>
                 )}
+
             </div>
+
+            {/* Why Today Rationale (Phase 3H) */}
+            {(book as any).rationale && (
+                <div className="bg-primary/5 rounded-md p-2 mt-1 border border-primary/10">
+                    <p className="text-[10px] font-bold text-primary uppercase tracking-wider mb-0.5">
+                        Why Today
+                    </p>
+                    <p className="text-xs text-muted-foreground leading-snug line-clamp-3">
+                        {(book as any).rationale}
+                    </p>
+                </div>
+            )}
         </div>
     );
 });
