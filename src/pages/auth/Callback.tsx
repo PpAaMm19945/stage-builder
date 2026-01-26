@@ -13,9 +13,10 @@ export default function AuthCallback() {
   useEffect(() => {
     const token = searchParams.get('token');
     const errorParam = searchParams.get('error');
+    const messageParam = searchParams.get('message');
 
     if (errorParam) {
-      setError(errorParam);
+      setError(messageParam || errorParam);
       return;
     }
 
@@ -49,7 +50,7 @@ export default function AuthCallback() {
             onClick={() => navigate('/login', { replace: true })}
             className="text-primary hover:underline"
           >
-            Return to login
+            {searchParams.get('error') === 'temporary' ? 'Try Again' : 'Return to login'}
           </button>
         </div>
       </div>

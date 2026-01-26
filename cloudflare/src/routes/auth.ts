@@ -3,6 +3,7 @@ import { Env, User, JWTPayload } from '../types';
 import { signJWT, verifyJWT } from '../lib/auth';
 import { generateId, generateInviteCode } from '../lib/utils';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
+import { withD1Retry } from '../lib/d1-retry';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -80,7 +81,9 @@ app.get('/auth/google/callback', async (c) => {
 
         // Find or Create User
         // Note: DB is D1
-        let user = await c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<User>();
+        let user = await withD1Retry(() =>
+            c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<User>()
+        );
 
         if (!user) {
             // New user - Create User & Household
@@ -89,20 +92,28 @@ app.get('/auth/google/callback', async (c) => {
             const inviteCode = generateInviteCode();
 
             // Transaction? No D1 transaction support in simple mode, do sequential
-            await c.env.DB.prepare('INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)')
-                .bind(householdId, `${name}'s Family`, inviteCode)
-                .run();
+            await withD1Retry(() =>
+                c.env.DB.prepare('INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)')
+                    .bind(householdId, `${name}'s Family`, inviteCode)
+                    .run()
+            );
 
-            await c.env.DB.prepare('INSERT INTO users (id, email, name, role, household_id, provider, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                .bind(userId, email, name, 'parent', householdId, 'google', avatarUrl)
-                .run();
+            await withD1Retry(() =>
+                c.env.DB.prepare('INSERT INTO users (id, email, name, role, household_id, provider, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
+                    .bind(userId, email, name, 'parent', householdId, 'google', avatarUrl)
+                    .run()
+            );
 
-            user = await c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first<User>();
+            user = await withD1Retry(() =>
+                c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first<User>()
+            );
         } else {
             // Update avatar/name logic if needed
-            await c.env.DB.prepare('UPDATE users SET avatar_url = ?, name = ?, updated_at = datetime("now") WHERE id = ?')
-                .bind(avatarUrl, name, user.id)
-                .run();
+            await withD1Retry(() =>
+                c.env.DB.prepare('UPDATE users SET avatar_url = ?, name = ?, updated_at = datetime("now") WHERE id = ?')
+                    .bind(avatarUrl, name, user!.id)
+                    .run()
+            );
         }
 
         if (!user) throw new Error('User creation failed');
@@ -130,6 +141,13 @@ app.get('/auth/google/callback', async (c) => {
 
     } catch (error: any) {
         console.error('Auth Error:', error);
+
+        // Check for D1-specific errors and provide retry guidance
+        if (error.message?.includes('D1_ERROR') || error.message?.includes('Network')) {
+            const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+            return c.redirect(`${frontendUrl}/login?error=temporary&message=Database temporarily unavailable. Please try again.`);
+        }
+
         return c.text(`Authentication Failed: ${error.message}`, 500);
     }
 });
