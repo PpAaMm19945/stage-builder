@@ -1,6 +1,6 @@
 import { Button } from '@/components/ui/button';
 import { Play, Pause } from '@phosphor-icons/react';
-import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
+import { useAudioControls } from '@/contexts/AudioPlayerContext';
 import { Hymn } from './HymnCard';
 
 interface PlayHymnButtonProps {
@@ -11,7 +11,7 @@ interface PlayHymnButtonProps {
 }
 
 export function PlayHymnButton({ hymn, variant = "default", size = "icon", className }: PlayHymnButtonProps) {
-    const { playTrack, currentTrack, isPlaying, togglePlay } = useAudioPlayer();
+    const { playTrack, currentTrack, isPlaying, togglePlay } = useAudioControls();
 
     if (!hymn.audio_url) return null;
 

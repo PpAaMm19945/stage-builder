@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState, useRef, useEffect, ReactNode, useCallback } from 'react';
+import React, { createContext, useContext, useState, useRef, useEffect, ReactNode, useCallback, useMemo } from 'react';
 
 export interface Track {
   url: string;
@@ -7,12 +7,11 @@ export interface Track {
   duration?: number;
 }
 
-interface AudioPlayerContextType {
+// Stable state (controls, track info)
+interface AudioPlayerStateContextType {
   currentTrack: Track | null;
   isPlaying: boolean;
   queue: Track[];
-  currentTime: number;
-  duration: number;
   isMuted: boolean;
   playTrack: (track: Track, queue?: Track[]) => void;
   togglePlay: () => void;
@@ -23,7 +22,17 @@ interface AudioPlayerContextType {
   closePlayer: () => void;
 }
 
-const AudioPlayerContext = createContext<AudioPlayerContextType | undefined>(undefined);
+// Volatile state (time, duration)
+interface AudioPlayerTimeContextType {
+  currentTime: number;
+  duration: number;
+}
+
+// Combined for backward compatibility
+type AudioPlayerContextType = AudioPlayerStateContextType & AudioPlayerTimeContextType;
+
+const AudioPlayerStateContext = createContext<AudioPlayerStateContextType | undefined>(undefined);
+const AudioPlayerTimeContext = createContext<AudioPlayerTimeContextType | undefined>(undefined);
 
 export function AudioPlayerProvider({ children }: { children: ReactNode }) {
   const [currentTrack, setCurrentTrack] = useState<Track | null>(null);
@@ -126,32 +135,41 @@ export function AudioPlayerProvider({ children }: { children: ReactNode }) {
       if (dur && !isNaN(dur)) setDuration(dur);
   }, [isPlaying]);
 
+  // Memoize stable state
+  const stateValue = useMemo(() => ({
+    currentTrack,
+    isPlaying,
+    queue,
+    isMuted,
+    playTrack,
+    togglePlay,
+    playNext,
+    playPrevious,
+    seek,
+    toggleMute,
+    closePlayer
+  }), [currentTrack, isPlaying, queue, isMuted, playTrack, togglePlay, playNext, playPrevious, seek, toggleMute, closePlayer]);
+
+  // Memoize volatile state
+  const timeValue = useMemo(() => ({
+    currentTime,
+    duration
+  }), [currentTime, duration]);
+
   return (
-    <AudioPlayerContext.Provider value={{
-      currentTrack,
-      isPlaying,
-      queue,
-      currentTime,
-      duration,
-      isMuted,
-      playTrack,
-      togglePlay,
-      playNext,
-      playPrevious,
-      seek,
-      toggleMute,
-      closePlayer
-    }}>
-      {children}
-      <AudioLogicSync
-        registerRef={registerAudioRef}
-        onUpdate={updateState}
-        onEnded={playNext}
-        currentTrack={currentTrack}
-        isPlaying={isPlaying}
-        isMuted={isMuted}
-      />
-    </AudioPlayerContext.Provider>
+    <AudioPlayerStateContext.Provider value={stateValue}>
+      <AudioPlayerTimeContext.Provider value={timeValue}>
+        {children}
+        <AudioLogicSync
+            registerRef={registerAudioRef}
+            onUpdate={updateState}
+            onEnded={playNext}
+            currentTrack={currentTrack}
+            isPlaying={isPlaying}
+            isMuted={isMuted}
+        />
+      </AudioPlayerTimeContext.Provider>
+    </AudioPlayerStateContext.Provider>
   );
 }
 
@@ -233,10 +251,25 @@ function AudioLogicSync({
 }
 
 
-export function useAudioPlayer() {
-  const context = useContext(AudioPlayerContext);
+export function useAudioControls() {
+  const context = useContext(AudioPlayerStateContext);
   if (context === undefined) {
-    throw new Error('useAudioPlayer must be used within an AudioPlayerProvider');
+    throw new Error('useAudioControls must be used within an AudioPlayerProvider');
   }
   return context;
+}
+
+export function useAudioTime() {
+  const context = useContext(AudioPlayerTimeContext);
+  if (context === undefined) {
+    throw new Error('useAudioTime must be used within an AudioPlayerProvider');
+  }
+  return context;
+}
+
+export function useAudioPlayer() {
+  const controls = useAudioControls();
+  const time = useAudioTime();
+  // We combine them to match the original interface
+  return useMemo(() => ({ ...controls, ...time }), [controls, time]);
 }
