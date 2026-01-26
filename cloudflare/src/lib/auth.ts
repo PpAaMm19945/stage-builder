@@ -1,13 +1,47 @@
 import { JWTPayload } from '../types';
 
+function arrayBufferToBase64Url(buffer: ArrayBuffer | Uint8Array): string {
+    const bytes = buffer instanceof Uint8Array ? buffer : new Uint8Array(buffer);
+    let binary = '';
+    for (let i = 0; i < bytes.byteLength; i++) {
+        binary += String.fromCharCode(bytes[i]);
+    }
+    return btoa(binary).replace(/\+/g, '-').replace(/\//g, '_').replace(/=/g, '');
+}
+
+function base64UrlToArrayBuffer(str: string): Uint8Array {
+    str = str.replace(/-/g, '+').replace(/_/g, '/');
+    while (str.length % 4) {
+        str += '=';
+    }
+    const binary = atob(str);
+    const bytes = new Uint8Array(binary.length);
+    for (let i = 0; i < binary.length; i++) {
+        bytes[i] = binary.charCodeAt(i);
+    }
+    return bytes;
+}
+
+function encodeJSON(data: any): string {
+    const str = JSON.stringify(data);
+    const encoder = new TextEncoder();
+    return arrayBufferToBase64Url(encoder.encode(str));
+}
+
+function decodeJSON<T>(str: string): T {
+    const bytes = base64UrlToArrayBuffer(str);
+    const decoder = new TextDecoder();
+    return JSON.parse(decoder.decode(bytes));
+}
+
 // JWT utilities using Web Crypto
 export async function signJWT(payload: Omit<JWTPayload, 'iat'>, secret: string): Promise<string> {
     const header = { alg: 'HS256', typ: 'JWT' };
     const iat = Math.floor(Date.now() / 1000);
     const fullPayload = { ...payload, iat };
 
-    const encodedHeader = btoa(JSON.stringify(header)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
-    const encodedPayload = btoa(JSON.stringify(fullPayload)).replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const encodedHeader = encodeJSON(header);
+    const encodedPayload = encodeJSON(fullPayload);
 
     const key = await crypto.subtle.importKey(
         'raw',
@@ -23,8 +57,7 @@ export async function signJWT(payload: Omit<JWTPayload, 'iat'>, secret: string):
         new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
     );
 
-    const encodedSignature = btoa(String.fromCharCode(...new Uint8Array(signature)))
-        .replace(/=/g, '').replace(/\+/g, '-').replace(/\//g, '_');
+    const encodedSignature = arrayBufferToBase64Url(signature);
 
     return `${encodedHeader}.${encodedPayload}.${encodedSignature}`;
 }
@@ -42,10 +75,7 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
             ['verify']
         );
 
-        const signatureData = Uint8Array.from(
-            atob(encodedSignature.replace(/-/g, '+').replace(/_/g, '/')),
-            c => c.charCodeAt(0)
-        );
+        const signatureData = base64UrlToArrayBuffer(encodedSignature);
 
         const valid = await crypto.subtle.verify(
             'HMAC',
@@ -56,9 +86,7 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
 
         if (!valid) return null;
 
-        const payload: JWTPayload = JSON.parse(
-            atob(encodedPayload.replace(/-/g, '+').replace(/_/g, '/'))
-        );
+        const payload = decodeJSON<JWTPayload>(encodedPayload);
 
         if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
             return null;
@@ -66,6 +94,7 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
 
         return payload;
     } catch (e) {
+        console.error('JWT Verification Error:', e);
         return null;
     }
 }
