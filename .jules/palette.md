@@ -17,3 +17,7 @@
 ## 2026-05-25 - External Redirect Loading States
 **Learning:** Even when redirecting to an external URL (like Google OAuth), a loading state is critical. Without it, the delay between click and browser navigation makes the app feel unresponsive or broken.
 **Action:** Always wrap external redirects (window.location.href) with a loading state, disabling the button to prevent double-clicks and reassure the user.
+
+## 2026-06-03 - Custom Checkbox Card Accessibility
+**Learning:** Wrapping a custom "card-like" checkbox in a `div` with an `onClick` handler creates an accessibility gap where screen readers see "clickable text" but don't understand it controls a checkbox.
+**Action:** Use a `<label>` element as the card wrapper. Associate it with the checkbox input using `htmlFor` and a unique `id`. This gives the semantic "click label to toggle input" behavior natively, removing the need for manual `onClick` handlers and ensuring compatibility with assistive tech.
