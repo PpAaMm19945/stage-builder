@@ -79,20 +79,21 @@ export function TimeModelEditor() {
                     <Label className="text-base">School Days</Label>
                     <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                         {DAYS.map(day => (
-                            <div
+                            <label
                                 key={day.id}
+                                htmlFor={`day-${day.id}`}
                                 className={`
                   flex items-center gap-2 p-2 rounded border cursor-pointer transition-colors
                   ${model.availableDays?.includes(day.id) ? 'bg-primary/10 border-primary/30' : 'bg-muted/30'}
                 `}
-                                onClick={() => handleDayToggle(day.id)}
                             >
                                 <Checkbox
+                                    id={`day-${day.id}`}
                                     checked={model.availableDays?.includes(day.id)}
                                     onCheckedChange={() => handleDayToggle(day.id)}
                                 />
                                 <span className="text-sm font-medium">{day.label}</span>
-                            </div>
+                            </label>
                         ))}
                     </div>
                     <p className="text-xs text-muted-foreground">Select days you want activities scheduled.</p>
@@ -112,6 +113,7 @@ export function TimeModelEditor() {
                             max={180}
                             step={15}
                             className="py-4"
+                            aria-label="Time per day"
                         />
                         <p className="text-xs text-muted-foreground">Approximate total time for all activities combined.</p>
                     </div>
@@ -129,6 +131,7 @@ export function TimeModelEditor() {
                                     variant={model.maxSessionsPerDay === num ? 'default' : 'outline'}
                                     onClick={() => setModel(prev => ({ ...prev, maxSessionsPerDay: num }))}
                                     className="h-8 w-8 p-0"
+                                    aria-pressed={model.maxSessionsPerDay === num}
                                 >
                                     {num}
                                 </Button>
