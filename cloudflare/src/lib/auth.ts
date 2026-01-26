@@ -63,9 +63,25 @@ export async function signJWT(payload: Omit<JWTPayload, 'iat'>, secret: string):
 }
 
 export async function verifyJWT(token: string, secret: string): Promise<JWTPayload | null> {
+    console.log('[verifyJWT] Starting verification:', {
+        tokenLength: token?.length,
+        hasSecret: !!secret,
+        secretLength: secret?.length
+    });
+
     try {
         const [encodedHeader, encodedPayload, encodedSignature] = token.split('.');
-        if (!encodedHeader || !encodedPayload || !encodedSignature) return null;
+
+        console.log('[verifyJWT] Token parts:', {
+            hasHeader: !!encodedHeader,
+            hasPayload: !!encodedPayload,
+            hasSignature: !!encodedSignature
+        });
+
+        if (!encodedHeader || !encodedPayload || !encodedSignature) {
+            console.log('[verifyJWT] Missing token parts');
+            return null;
+        }
 
         const key = await crypto.subtle.importKey(
             'raw',
@@ -84,14 +100,27 @@ export async function verifyJWT(token: string, secret: string): Promise<JWTPaylo
             new TextEncoder().encode(`${encodedHeader}.${encodedPayload}`)
         );
 
-        if (!valid) return null;
+        console.log('[verifyJWT] Signature valid:', valid);
 
-        const payload = decodeJSON<JWTPayload>(encodedPayload);
-
-        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+        if (!valid) {
+            console.log('[verifyJWT] Signature verification failed');
             return null;
         }
 
+        const payload = decodeJSON<JWTPayload>(encodedPayload);
+
+        console.log('[verifyJWT] Payload decoded:', {
+            sub: payload.sub,
+            exp: payload.exp,
+            expired: payload.exp && payload.exp < Math.floor(Date.now() / 1000)
+        });
+
+        if (payload.exp && payload.exp < Math.floor(Date.now() / 1000)) {
+            console.log('[verifyJWT] Token expired');
+            return null;
+        }
+
+        console.log('[verifyJWT] Verification successful');
         return payload;
     } catch (e) {
         console.error('JWT Verification Error:', e);
