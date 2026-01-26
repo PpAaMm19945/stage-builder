@@ -41,6 +41,11 @@ app.post('/api/chat/confirm', async (c) => {
         const action = await c.env.DB.prepare('SELECT * FROM ai_action_log WHERE id = ?').bind(actionId).first<any>();
         if (!action) return c.json({ error: 'Action not found' }, 404);
 
+        // Security: Verify ownership
+        if (action.family_id !== user.household_id) {
+            return c.json({ error: 'Unauthorized' }, 403);
+        }
+
         // Execute action logic (simplified switching)
         const data = JSON.parse(action.action_data);
 
@@ -67,6 +72,16 @@ app.post('/api/chat/reject', async (c) => {
     try {
         const user = requireHouseholdMember(c);
         const { actionId } = await c.req.json();
+
+        // Retrieve action
+        const action = await c.env.DB.prepare('SELECT * FROM ai_action_log WHERE id = ?').bind(actionId).first<any>();
+        if (!action) return c.json({ error: 'Action not found' }, 404);
+
+        // Security: Verify ownership
+        if (action.family_id !== user.household_id) {
+            return c.json({ error: 'Unauthorized' }, 403);
+        }
+
         await c.env.DB.prepare(
             'UPDATE ai_action_log SET status = "rejected", confirmed_at = datetime("now") WHERE id = ?'
         ).bind(actionId).run();

@@ -42,3 +42,8 @@
 **Vulnerability:** The `POST /api/work/log` endpoint allowed any authenticated user to log work entries for any apprenticeship ID, regardless of ownership. This Insecure Direct Object Reference (IDOR) could allow students to log work for others or parents to log work for unrelated students.
 **Learning:** Relying on the secrecy of IDs (even UUIDs) is not a substitute for authorization. If an object ID is provided in a request, the backend MUST verify that the current user has permission to act on that specific object.
 **Prevention:** Always perform an ownership check when accessing resources by ID. Query the database to ensure the resource belongs to the user (or their household) before performing any action.
+
+## 2026-06-25 - IDOR in AI Action Endpoints
+**Vulnerability:** The `POST /api/chat/confirm` and `POST /api/chat/reject` endpoints fetched an action by ID but failed to verify that the `family_id` of the action matched the authenticated user's `household_id`. Additionally, the `reject` endpoint performed a blind update without checking existence or ownership first.
+**Learning:** Checking for record existence (`!action`) is not enough. You must always verify that the record *belongs* to the actor. Also, blind updates (`UPDATE ... WHERE id = ?`) are dangerous because they bypass ownership checks unless the `WHERE` clause explicitly includes the owner ID (e.g. `WHERE id = ? AND family_id = ?`).
+**Prevention:** Always implement an explicit ownership check: `if (resource.owner_id !== user.id) throw Forbidden`. For updates, fetch the record first to verify, or include the ownership condition in the UPDATE query itself.
