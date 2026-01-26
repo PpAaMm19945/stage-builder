@@ -95,12 +95,38 @@ app.use('/api/*', async (c, next) => {
   const authHeader = c.req.header('Authorization');
   const token = authHeader?.replace('Bearer ', '') || c.req.query('token');
 
+  console.log('[Middleware] Auth check:', {
+    hasHeader: !!authHeader,
+    hasToken: !!token,
+    tokenLength: token?.length,
+    hasSecret: !!c.env.JWT_SECRET,
+    secretLength: c.env.JWT_SECRET?.length
+  });
+
+  if (!c.env.JWT_SECRET) {
+    console.error('[CRITICAL] JWT_SECRET is not set!');
+  }
+
   if (token) {
     const payload = await verifyJWT(token, c.env.JWT_SECRET);
+
+    console.log('[Middleware] JWT verification result:', {
+      payloadExists: !!payload,
+      sub: payload?.sub,
+      exp: payload?.exp,
+      expiredCheck: payload?.exp ? payload.exp < Math.floor(Date.now() / 1000) : 'N/A'
+    });
+
     if (payload) {
       const user = await c.env.DB.prepare(
         'SELECT * FROM users WHERE id = ?'
       ).bind(payload.sub).first<User>();
+
+      console.log('[Middleware] User lookup:', {
+        userFound: !!user,
+        userId: user?.id
+      });
+
       c.set('user', user);
     }
   }
