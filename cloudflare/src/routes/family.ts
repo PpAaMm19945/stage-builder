@@ -716,4 +716,61 @@ app.post('/api/rhythm/regenerate', async (c) => {
     }
 });
 
+// ============ LEGACY / COMPATIBILITY ROUTES ============
+
+// Alias for rhythm/today -> family/today
+app.get('/api/rhythm/today', async (c) => {
+    // Re-use the logic from family/today or redirect
+    return app.request('/api/family/today', c.req.raw.clone());
+});
+
+// Alias for weekly-plan -> rhythm/week
+app.get('/api/family/weekly-plan', async (c) => {
+    // If the frontend expects a specific format, we might need to adjust, 
+    // but 'rhythm/week' seems to be the modern equivalent.
+    // However, let's explicitly query to ensure we match the expectation if it's different.
+    // For now, redirecting/aliasing to rhythm/week is the safest V2 bet.
+    return app.request('/api/rhythm/week', c.req.raw.clone());
+});
+
+// Implement week-summary (missing)
+app.get('/api/family/week-summary', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const weekStart = c.req.query('weekStart') || getSmartWeekStart();
+
+        // Try getting from weekly_plans_v2 first (newest)
+        const plan = await c.env.DB.prepare('SELECT * FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first<any>();
+
+        if (plan) {
+            const planData = JSON.parse(plan.plan_data);
+            // summarize
+            return c.json({
+                weekStart,
+                focus: planData.focus || 'General',
+                totalActivities: planData.schedule?.length || 0,
+                // Add other summary fields as needed by frontend
+            });
+        }
+
+        // Fallback to old weekly_plans if V2 not found
+        const oldPlan = await c.env.DB.prepare('SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+            .bind(user.id, weekStart).first<any>();
+
+        if (oldPlan) {
+            return c.json({
+                weekStart,
+                isOldPlan: true,
+                summary: "Legacy plan found"
+            });
+        }
+
+        return c.json({ weekStart, empty: true });
+
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 export default app;
