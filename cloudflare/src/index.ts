@@ -75,18 +75,6 @@ app.use('*', cors({
 
 
 
-// Mount Auth Routes
-app.route('/', authRoutes);
-app.route('/', profileRoutes);
-app.route('/', familyRoutes);
-app.route('/', curriculumRoutes);
-
-app.route('/', workRoutes);
-app.route('/', analyticsRoutes);
-app.route('/', exportRoutes);
-app.route('/', reportsRoutes);
-app.route('/', adminRoutes);
-
 // Auth middleware
 app.use('/api/*', async (c, next) => {
   // Prevent caching of sensitive API responses
@@ -133,6 +121,20 @@ app.use('/api/*', async (c, next) => {
 
   await next();
 });
+
+// Mount Auth Routes
+app.route('/', authRoutes);
+app.route('/', profileRoutes);
+app.route('/', familyRoutes);
+app.route('/', curriculumRoutes);
+
+app.route('/', workRoutes);
+app.route('/', analyticsRoutes);
+app.route('/', exportRoutes);
+app.route('/', reportsRoutes);
+app.route('/', adminRoutes);
+
+
 
 
 // ============ FORMATION PREFERENCES ROUTES ============
