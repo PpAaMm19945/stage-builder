@@ -47,3 +47,8 @@
 **Vulnerability:** The `POST /api/chat/confirm` and `POST /api/chat/reject` endpoints fetched an action by ID but failed to verify that the `family_id` of the action matched the authenticated user's `household_id`. Additionally, the `reject` endpoint performed a blind update without checking existence or ownership first.
 **Learning:** Checking for record existence (`!action`) is not enough. You must always verify that the record *belongs* to the actor. Also, blind updates (`UPDATE ... WHERE id = ?`) are dangerous because they bypass ownership checks unless the `WHERE` clause explicitly includes the owner ID (e.g. `WHERE id = ? AND family_id = ?`).
 **Prevention:** Always implement an explicit ownership check: `if (resource.owner_id !== user.id) throw Forbidden`. For updates, fetch the record first to verify, or include the ownership condition in the UPDATE query itself.
+
+## 2026-01-20 - Sensitive Query Parameters (Admin Reindex)
+**Vulnerability:** The Admin Reindex endpoint (`/api/admin/reindex`) accepted the `ADMIN_SECRET` via a query parameter (`?secret=...`).
+**Learning:** Recurrence of the "credentials in URL" pattern. It seems developers default to query params for "easy" curl/script usage.
+**Prevention:** Enforce header-based auth (`Authorization: Bearer ...`) across all admin endpoints. Review existing endpoints for similar patterns.
