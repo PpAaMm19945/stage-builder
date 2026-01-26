@@ -161,7 +161,18 @@ app.get('/api/auth/me', async (c) => {
         return c.json({ user: null }, 401);
     }
 
-    return c.json({ user });
+    // Fetch children for the household
+    let children: any[] = [];
+    if (user.household_id) {
+        children = await withD1Retry(async () => {
+            const { results } = await c.env.DB.prepare(
+                'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
+            ).bind(user.household_id).all();
+            return results || [];
+        });
+    }
+
+    return c.json({ user, children });
 });
 
 export default app;
