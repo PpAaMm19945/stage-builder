@@ -361,7 +361,7 @@ export default function Dashboard() {
   }, []);
 
   // BUILD TIMELINE ITEMS (Moved up before conditional returns)
-  const timelineItems = useMemo(() => {
+  const timelineItemsRaw = useMemo(() => {
     const items: RhythmItem[] = [];
 
     // 1. Learning Path Items
@@ -424,6 +424,9 @@ export default function Dashboard() {
 
     return items;
   }, [dayData, isToday, pathsToday]);
+
+  // Make timelineItems stable based on content to prevent unnecessary re-renders of DailyRhythm
+  const timelineItems = useStableValue(timelineItemsRaw);
 
   const nextItem = useMemo(() => timelineItems.find(i => i.status !== 'completed' && i.type !== 'section_header') || null, [timelineItems]);
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
