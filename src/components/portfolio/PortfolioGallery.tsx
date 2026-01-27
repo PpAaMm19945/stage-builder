@@ -251,7 +251,7 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
                                     )}
                                 </div>
                             </CardContent>
-                            <CardFooter className="p-4 pt-0 flex justify-end opacity-0 group-hover:opacity-100 transition-opacity">
+                            <CardFooter className="p-4 pt-0 flex justify-end opacity-0 group-hover:opacity-100 focus-within:opacity-100 transition-opacity">
                                 <Button variant="ghost" size="sm" onClick={() => handleDelete(item.id)} className="text-destructive hover:text-destructive hover:bg-destructive/10">
                                     <Trash className="h-4 w-4 mr-1" /> Delete
                                 </Button>

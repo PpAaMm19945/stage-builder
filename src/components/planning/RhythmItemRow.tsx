@@ -154,7 +154,7 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
                                     <Button
                                         variant="ghost"
                                         size="icon"
-                                        className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 transition-opacity"
+                                        className="h-7 w-7 text-muted-foreground hover:text-primary opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity"
                                         onClick={handleSwap}
                                         title="Swap activity"
                                         aria-label="Swap activity"

@@ -129,7 +129,8 @@ export function CommentSection({ contentType, contentId, className }: CommentSec
                                     {user && user.id === comment.userId && (
                                         <button
                                             onClick={() => deleteCommentMutation.mutate(comment.id)}
-                                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 transition-opacity p-1"
+                                            className="text-muted-foreground hover:text-destructive opacity-0 group-hover:opacity-100 focus-visible:opacity-100 transition-opacity p-1"
+                                            aria-label="Delete comment"
                                         >
                                             <Trash className="h-4 w-4" />
                                         </button>
