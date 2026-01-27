@@ -25,3 +25,7 @@
 ## 2026-06-15 - Tooltips in Modals
 **Learning:** Tooltips inside Radix Dialogs (z-50) often get obscured if they don't have a higher z-index, even if using Portals, depending on stacking contexts.
 **Action:** When adding Tooltips to elements inside a Dialog/Sheet, explicitly add `z-[60]` (or higher than the modal) to `TooltipContent` to ensure visibility.
+
+## 2026-06-20 - Overlay Label Pattern for Interactive Lists
+**Learning:** For list items containing a checkbox where the entire row should be clickable, adding an `onClick` handler to the container creates redundancy and accessibility issues.
+**Action:** Use the Overlay Label pattern: 1) Make the container `relative`. 2) Add an empty `<Label>` with `absolute inset-0` and `sr-only` text describing the action. 3) Associate it via `htmlFor`. 4) Set visible text/images to `pointer-events-none` so clicks pass through to the label. This ensures semantic interaction and a large hit area without JavaScript handlers. Ensure the checkbox itself is `relative` (z-10) so it remains directly interactive if needed.

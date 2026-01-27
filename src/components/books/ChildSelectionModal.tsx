@@ -88,19 +88,19 @@ export function ChildSelectionModal({
                     {children.map(child => (
                         <div
                             key={child.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
-                            onClick={() => handleToggleChild(child.id)}
+                            className="relative flex items-center space-x-3 p-3 rounded-lg hover:bg-accent transition-colors"
                         >
                             <Checkbox
                                 id={child.id}
                                 checked={selectedIds.has(child.id)}
                                 onCheckedChange={() => handleToggleChild(child.id)}
+                                className="z-10 relative"
                             />
-                            <div className="flex items-center gap-2 flex-1">
+                            <div className="flex items-center gap-2 flex-1 pointer-events-none z-10" aria-hidden="true">
                                 {child.avatarUrl ? (
                                     <img
                                         src={child.avatarUrl}
-                                        alt={child.name}
+                                        alt=""
                                         className="w-8 h-8 rounded-full object-cover"
                                     />
                                 ) : (
@@ -108,13 +108,18 @@ export function ChildSelectionModal({
                                         <User className="h-4 w-4 text-primary" weight="duotone" />
                                     </div>
                                 )}
-                                <Label
-                                    htmlFor={child.id}
-                                    className="cursor-pointer font-medium"
-                                >
+                                <span className="font-medium text-foreground">
                                     {child.name}
-                                </Label>
+                                </span>
                             </div>
+
+                            {/* Overlay Label for full-card clickability and accessibility */}
+                            <Label
+                                htmlFor={child.id}
+                                className="absolute inset-0 z-0 cursor-pointer rounded-lg"
+                            >
+                                <span className="sr-only">Select {child.name}</span>
+                            </Label>
                         </div>
                     ))}
                 </div>
