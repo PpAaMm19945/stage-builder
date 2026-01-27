@@ -71,6 +71,7 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
         SELECT id, title, description, primary_virtue as domain, materials
         FROM formations
         WHERE is_active = 1 
+        AND formation_type IN ('skill', 'habit', 'service')
         AND (${conditions})
         LIMIT 7
     `;

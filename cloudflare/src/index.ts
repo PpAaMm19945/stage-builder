@@ -988,4 +988,48 @@ app.get('/api/library/stats', async (c) => {
 
 
 
-export default app;
+// ============================================
+// CRON JOBS & SCHEDULED TASKS
+// ============================================
+
+export default {
+  fetch: app.fetch,
+  async scheduled(event: ScheduledEvent, env: Env, ctx: ExecutionContext) {
+    console.log('[Cron] Scheduled event triggered at', new Date().toISOString());
+
+    // Check if it's Sunday (0) and around 6 PM (18)
+    // Note: Use cron string "0 18 * * 0" in wrangler.toml
+    const now = new Date();
+    // Use UTC check or loose check if triggering strictly via cron
+
+    // For now, we assume the cron trigger is "Sunday Prep"
+    // We will generate a notification for all families
+    // In a real app, we batch this. 
+    // Here, we'll pick the first 5 active families as a demo.
+
+    try {
+      const { results } = await env.DB.prepare(
+        'SELECT id, head_of_household FROM family_profiles LIMIT 5' // simplistic
+      ).all();
+
+      for (const family of results) {
+        const id = crypto.randomUUID();
+        const message = "Ready to plan the week ahead? I can draft a schedule tailored to your focus.";
+
+        // Insert into ai_action_log as a 'system_notification' or 'initiated_chat'
+        // We'll use a special action type that the frontend recognizes as a "Toast" or "Chat Bubble"
+        await env.DB.prepare(`
+                INSERT INTO ai_action_log (id, family_id, action_type, action_data, reason, status, created_at)
+                VALUES (?, ?, 'proactive_notification', ?, ?, 'pending', datetime('now'))
+             `).bind(
+          id,
+          family.id,
+          JSON.stringify({ message, title: "Sunday Prep" }),
+          "Sunday Weekly Planning Routine"
+        ).run();
+      }
+    } catch (e) {
+      console.error('[Cron] Error running Sunday Prep:', e);
+    }
+  }
+};

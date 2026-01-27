@@ -1,20 +1,39 @@
 import { Hono } from 'hono';
 import { Env, User } from '../types';
 import { requireHouseholdMember } from '../lib/middleware';
-import { FrontdeskOfficer } from '../ai/frontdesk';
+import { Cortex } from '../ai/cortex';
+import { ContextBuilder } from '../ai/context';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 app.post('/api/chat', async (c) => {
     try {
         const user = requireHouseholdMember(c);
-        const { messages, context } = await c.req.json();
+        const { messages, context: clientContext } = await c.req.json();
 
-        const officer = new FrontdeskOfficer(c.env);
-        const stream = await officer.chat(messages, { ...context, userId: user.id });
+        // Build Rich Server Context
+        const contextBuilder = new ContextBuilder(c.env.DB);
+        const serverContext = await contextBuilder.buildUserContext(user.id, user.household_id || 'unknown');
+
+        // Merge client context (e.g. current page) with server context
+        const fullContext = {
+            ...clientContext,
+            ...serverContext,
+            userState: user
+        };
+
+        // Use Cortex Orchestrator
+        const cortex = new Cortex(c.env);
+        const lastMessage = messages[messages.length - 1].content;
+
+        const stream = await cortex.chat(lastMessage, messages, fullContext);
 
         return new Response(stream, {
-            headers: { 'Content-Type': 'text/event-stream' }
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive'
+            }
         });
     } catch (e: any) {
         console.error("Chat error", e);

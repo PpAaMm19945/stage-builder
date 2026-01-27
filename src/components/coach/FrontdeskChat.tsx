@@ -10,9 +10,16 @@ import { PaperPlaneRight, CircleNotch, Robot, User, Check, X } from '@phosphor-i
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
+import { ActionCard } from './ActionCard';
+import { PlanProposalCard } from './PlanProposalCard';
+
 interface Message {
     role: 'user' | 'assistant' | 'system';
     content: string;
+    actionCard?: {
+        type: string;
+        data: any;
+    };
 }
 
 interface ActionPayload {
@@ -55,6 +62,8 @@ export function FrontdeskChat() {
         }
     });
 
+    const [thinkingText, setThinkingText] = useState<string | null>(null);
+
     const handleSend = async () => {
         if (!input.trim()) return;
 
@@ -62,52 +71,123 @@ export function FrontdeskChat() {
         setMessages(prev => [...prev, userMsg]);
         setInput('');
         setIsLoading(true);
+        setThinkingText("Connecting to Cortex...");
 
         try {
             const stream = await ai.chat([...messages, userMsg], { page: 'dashboard' });
+            if (!stream) throw new Error("No stream returned");
+
             const reader = stream.getReader();
             const decoder = new TextDecoder();
 
             let aiMsg: Message = { role: 'assistant', content: '' };
-            setMessages(prev => [...prev, aiMsg]);
+            // Don't add empty message yet, wait for first real content
+            let messageAdded = false;
 
             while (true) {
                 const { done, value } = await reader.read();
-                if (done) {
-                    console.log('[Chat] Stream done');
-                    break;
-                }
+                if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
-                console.log('[Chat] Chunk received:', chunk);
+                const lines = chunk.split('\n');
 
-                // Handle [ACTION] markers or text
-                // If chunk contains [ACTION_PENDING], parse the JSON
-                if (chunk.includes('[ACTION_PENDING]')) {
-                    const parts = chunk.split('[ACTION_PENDING]');
-                    if (parts[0]) {
-                        aiMsg.content += parts[0];
-                        setMessages(prev => {
-                            const newMsgs = [...prev];
-                            newMsgs[newMsgs.length - 1] = { ...aiMsg };
-                            return newMsgs;
-                        });
+                for (const line of lines) {
+                    if (line.startsWith('event: thought')) {
+                        // Next line(s) will be data: "Thought text"
+                        continue;
                     }
-                    if (parts[1]) {
+
+                    if (line.startsWith('data: ')) {
+                        const data = line.slice(6);
+                        if (data === '[DONE]') continue;
+
+                        // 1. Handle Thoughts
+                        // If the previous event was thought, or if it looks like a thought string
+                        // The backend sends: event: thought \n data: "thinking..."
+                        // But our simple splitter might separate them. 
+                        // Let's assume standard SSE: data lines follow events.
+                        // Actually, our backend sends: `event: thought\ndata: "..."` in one flush usually
+                        // We need to check if we are in "thought mode" or regex match.
+
+                        // Heuristic: If it's a quoted string that looks like a thought
+                        if (data.startsWith('"') && data.endsWith('"') && (input.includes('plan') || thinkingText)) {
+                            // It's likely a thought line if we haven't started shedding content
+                            // Update thinking text
+                            setThinkingText(JSON.parse(data));
+                            continue;
+                        }
+
+                        // 2. Clear Thinking on first content
+                        if (!messageAdded && (data.startsWith('{') || data.length > 0)) {
+                            setThinkingText(null);
+                            setMessages(prev => [...prev, aiMsg]);
+                            messageAdded = true;
+                        }
+
+                        // 3. Handle [DATA_BLOCK] (Search Results)
+                        if (data.includes('[DATA_BLOCK]')) {
+                            const parts = data.split('[DATA_BLOCK]');
+                            if (parts[1]) {
+                                try {
+                                    const resultData = JSON.parse(parts[1]);
+                                    // Determine type from payload (e.g. SEARCH_BOOKS)
+                                    aiMsg.actionCard = {
+                                        type: resultData.type,
+                                        data: resultData.data
+                                    };
+
+                                    // Also append a text summary for history/fallback
+                                    aiMsg.content += resultData.reason || "";
+
+                                    setMessages(prev => {
+                                        const newMsgs = [...prev];
+                                        newMsgs[newMsgs.length - 1] = { ...aiMsg };
+                                        return newMsgs;
+                                    });
+                                } catch (e) { console.error("Data block parse error", e); }
+                            }
+                            continue;
+                        }
+
+                        // 4. Handle [ACTION_PENDING]
+                        if (data.includes('[ACTION_PENDING]')) {
+                            const parts = data.split('[ACTION_PENDING]');
+                            if (parts[1]) {
+                                const actionData = JSON.parse(parts[1]);
+                                setPendingAction(actionData);
+                            }
+                            continue;
+                        }
+
+                        // 5. Standard Content
                         try {
-                            const actionData = JSON.parse(parts[1]);
-                            setPendingAction(actionData);
+                            // Backend sends `data: {"response": "text"}` for Gemini
+                            // OR `data: text` for Llama sometimes?
+                            // Cortex normalizes to: `data: {"response": "..."}` for Gemini
+                            // But Llama might send raw text.
+
+                            let text = data;
+                            if (data.startsWith('{')) {
+                                const parsed = JSON.parse(data);
+                                if (parsed.response) text = parsed.response;
+                            }
+
+                            aiMsg.content += text;
+                            setMessages(prev => {
+                                const newMsgs = [...prev];
+                                newMsgs[newMsgs.length - 1] = { ...aiMsg };
+                                return newMsgs;
+                            });
                         } catch (e) {
-                            console.error("Failed to parse action", e);
+                            // raw text append
+                            aiMsg.content += data;
+                            setMessages(prev => {
+                                const newMsgs = [...prev];
+                                newMsgs[newMsgs.length - 1] = { ...aiMsg };
+                                return newMsgs;
+                            });
                         }
                     }
-                } else {
-                    aiMsg.content += chunk;
-                    setMessages(prev => {
-                        const newMsgs = [...prev];
-                        newMsgs[newMsgs.length - 1] = { ...aiMsg };
-                        return newMsgs;
-                    });
                 }
             }
         } catch (err) {
@@ -115,11 +195,12 @@ export function FrontdeskChat() {
             toast.error("Failed to send message: " + (err instanceof Error ? err.message : String(err)));
         } finally {
             setIsLoading(false);
+            setThinkingText(null);
         }
     };
 
     return (
-        <Card className="h-[600px] flex flex-col">
+        <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
             <CardHeader className="pb-3 border-b">
                 <CardTitle className="flex items-center gap-2 text-lg">
                     <Robot className="w-5 h-5 text-primary" />
@@ -152,11 +233,24 @@ export function FrontdeskChat() {
                         </div>
                     ))}
 
+                    {/* Render Action Card separately if it belongs to the last message (or any message) */}
+                    {messages.map((msg, i) => msg.actionCard && (
+                        <div key={`action-${i}`} className="flex justify-start mb-4 pl-11">
+                            {msg.actionCard.type === 'PLAN_PROPOSAL' ? (
+                                <PlanProposalCard type={msg.actionCard.type} data={msg.actionCard.data} />
+                            ) : (
+                                <ActionCard type={msg.actionCard.type} data={msg.actionCard.data} />
+                            )}
+                        </div>
+                    ))}
+
                     {isLoading && (
                         <div className="flex justify-start">
                             <div className="bg-muted rounded-2xl px-4 py-2 flex items-center gap-2">
-                                <CircleNotch className="w-4 h-4 animate-spin" />
-                                <span className="text-xs text-muted-foreground">Thinking...</span>
+                                <CircleNotch className="w-4 h-4 animate-spin text-primary" />
+                                <span className="text-xs text-muted-foreground animate-pulse">
+                                    {thinkingText || "Thinking..."}
+                                </span>
                             </div>
                         </div>
                     )}
