@@ -18,6 +18,11 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch } from '@phosphor-icons/react';
 import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -43,7 +48,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
     const [showPrompts, setShowPrompts] = useState(false);
-    const [parsedPages, setParsedPages] = useState<string[]>([]);
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
     const [showFinishDialog, setShowFinishDialog] = useState(false);
@@ -166,12 +170,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         }
     });
 
-    useEffect(() => {
+    // ⚡ Bolt: Memoize markdown parsing to prevent extra render cycle
+    const parsedPages = useMemo(() => {
         if (markdownContent) {
             // Split by "---" for pages
-            const pages = markdownContent.split(/\n---\n/);
-            setParsedPages(pages);
+            return markdownContent.split(/\n---\n/);
         }
+        return [];
     }, [markdownContent]);
 
     useEffect(() => {
@@ -559,8 +564,23 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     aria-hidden="true"
                                 />
 
-                                <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
-                                <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="right" className="z-[60]">
+                                        <p>Previous Page <span className="text-xs text-muted-foreground ml-1">←</span></p>
+                                    </TooltipContent>
+                                </Tooltip>
+
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                    </TooltipTrigger>
+                                    <TooltipContent side="left" className="z-[60]">
+                                        <p>Next Page <span className="text-xs text-muted-foreground ml-1">→</span></p>
+                                    </TooltipContent>
+                                </Tooltip>
                             </Carousel>
                         )}
                     </div>

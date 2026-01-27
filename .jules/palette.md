@@ -21,3 +21,7 @@
 ## 2026-06-03 - Custom Checkbox Card Accessibility
 **Learning:** Wrapping a custom "card-like" checkbox in a `div` with an `onClick` handler creates an accessibility gap where screen readers see "clickable text" but don't understand it controls a checkbox.
 **Action:** Use a `<label>` element as the card wrapper. Associate it with the checkbox input using `htmlFor` and a unique `id`. This gives the semantic "click label to toggle input" behavior natively, removing the need for manual `onClick` handlers and ensuring compatibility with assistive tech.
+
+## 2026-06-15 - Tooltips in Modals
+**Learning:** Tooltips inside Radix Dialogs (z-50) often get obscured if they don't have a higher z-index, even if using Portals, depending on stacking contexts.
+**Action:** When adding Tooltips to elements inside a Dialog/Sheet, explicitly add `z-[60]` (or higher than the modal) to `TooltipContent` to ensure visibility.

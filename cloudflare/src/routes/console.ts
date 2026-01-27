@@ -5,7 +5,7 @@ import { safeCompare, escapeHtml } from '../lib/security';
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
 app.get('/', async (c) => {
-    const key = c.req.query('key');
+    // REMOVED: const key = c.req.query('key');
     const secret = c.env.ADMIN_SECRET;
     const nonce = c.get('nonce');
 
@@ -13,15 +13,35 @@ app.get('/', async (c) => {
         return c.text('Admin secret not configured', 500);
     }
 
-    // Use constant-time comparison
-    if (!(await safeCompare(key, secret))) {
+    let authorized = false;
+    const authHeader = c.req.header('Authorization');
+
+    if (authHeader && authHeader.startsWith('Basic ')) {
+        const base64 = authHeader.substring(6);
+        try {
+            const decoded = atob(base64); // "user:password"
+            const [username, password] = decoded.split(':');
+
+            // Allow any username, check password against secret
+            // Use constant-time comparison for password
+            if (await safeCompare(password, secret)) {
+                authorized = true;
+            }
+        } catch (e) {
+            // Invalid base64 or format
+        }
+    }
+
+    if (!authorized) {
+        // Return 401 with WWW-Authenticate header to trigger browser prompt
+        c.header('WWW-Authenticate', 'Basic realm="Teacher\'s Aide Console"');
         return c.html(`
       <html>
         <head><title>Unauthorized</title><style>body{background:#111;color:#fff;display:flex;justify-content:center;align-items:center;height:100vh;font-family:sans-serif;}</style></head>
         <body>
           <div style="text-align:center">
             <h1>401 Unauthorized</h1>
-            <p>Access requires a valid key parameter.</p>
+            <p>Access requires valid credentials.</p>
           </div>
         </body>
       </html>
