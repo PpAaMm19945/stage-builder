@@ -25,3 +25,7 @@
 ## 2026-06-15 - Tooltips in Modals
 **Learning:** Tooltips inside Radix Dialogs (z-50) often get obscured if they don't have a higher z-index, even if using Portals, depending on stacking contexts.
 **Action:** When adding Tooltips to elements inside a Dialog/Sheet, explicitly add `z-[60]` (or higher than the modal) to `TooltipContent` to ensure visibility.
+
+## 2026-06-25 - Sidebar Focus Consistency
+**Learning:** Custom interactive elements within the `Sidebar` (like logos or user profile buttons) often lack the specific `focus-visible` styles provided by `SidebarMenuButton`, leading to inconsistent keyboard navigation feedback.
+**Action:** When adding custom buttons to the sidebar, explicitly apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring` to match the design system's sidebar tokens.
