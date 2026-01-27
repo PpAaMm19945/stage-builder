@@ -88,7 +88,7 @@ export function AppSidebar() {
           <div className="flex items-center justify-between w-full">
             <button
               onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
-              className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50"
+              className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
                 <Path className="h-5 w-5 text-primary-foreground" weight="duotone" />
@@ -205,7 +205,7 @@ export function AppSidebar() {
                   <TooltipTrigger asChild>
                     <button
                       onClick={logout}
-                      className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
+                      className="p-1.5 rounded-md text-muted-foreground hover:bg-muted hover:text-foreground transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
                       aria-label="Sign out"
                     >
                       <SignOut className="h-4 w-4" weight="duotone" />
