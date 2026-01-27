@@ -48,6 +48,10 @@
 **Learning:** Checking for record existence (`!action`) is not enough. You must always verify that the record *belongs* to the actor. Also, blind updates (`UPDATE ... WHERE id = ?`) are dangerous because they bypass ownership checks unless the `WHERE` clause explicitly includes the owner ID (e.g. `WHERE id = ? AND family_id = ?`).
 **Prevention:** Always implement an explicit ownership check: `if (resource.owner_id !== user.id) throw Forbidden`. For updates, fetch the record first to verify, or include the ownership condition in the UPDATE query itself.
 
+## 2026-01-20 - Sensitive Query Parameters (Admin Reindex)
+**Vulnerability:** The Admin Reindex endpoint (`/api/admin/reindex`) accepted the `ADMIN_SECRET` via a query parameter (`?secret=...`).
+**Learning:** Recurrence of the "credentials in URL" pattern. It seems developers default to query params for "easy" curl/script usage.
+**Prevention:** Enforce header-based auth (`Authorization: Bearer ...`) across all admin endpoints. Review existing endpoints for similar patterns.
 ## 2026-06-26 - Credentials in URL Parameters (Admin Console)
 **Vulnerability:** The Admin Console (`cloudflare/src/routes/console.ts`) accepted the `ADMIN_SECRET` via a `key` query parameter (`?key=...`). This allows the secret to be leaked in browser history, proxy logs, and server logs.
 **Learning:** Even "internal" web dashboards often get deployed to public-facing URLs. Relying on query parameters for authentication is a persistent anti-pattern because it feels "easy" for browser access but is fundamentally insecure.

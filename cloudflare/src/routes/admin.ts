@@ -19,12 +19,11 @@ function slugify(text: string): string {
 // Reindex R2 bucket to generate manifest.json
 app.get('/api/admin/reindex', async (c) => {
   const secret = c.env.ADMIN_SECRET;
-  const url = new URL(c.req.url);
-  const querySecret = url.searchParams.get('secret');
   const authHeader = c.req.header('Authorization');
   const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
 
-  const isAuthorized = (await safeCompare(headerToken, secret)) || (await safeCompare(querySecret, secret));
+  // Security: Only accept secret via Authorization header, not query params
+  const isAuthorized = await safeCompare(headerToken, secret);
 
   if (!isAuthorized) {
     return c.json({ error: 'Unauthorized' }, 401);
