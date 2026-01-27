@@ -3,7 +3,7 @@ import { Env, User, JWTPayload } from '../types';
 import { signJWT, verifyJWT } from '../lib/auth';
 import { generateId, generateInviteCode } from '../lib/utils';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
-import { withD1Retry } from '../lib/d1-retry';
+import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -80,10 +80,7 @@ app.get('/auth/google/callback', async (c) => {
         if (!email) throw new Error('No email provided by Google');
 
         // Find or Create User
-        // Note: DB is D1
-        let user = await withD1Retry(() =>
-            c.env.DB.prepare('SELECT * FROM users WHERE email = ?').bind(email).first<User>()
-        );
+        let user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE email = ?', [email]);
 
         if (!user) {
             // New user - Create User & Household
@@ -91,36 +88,26 @@ app.get('/auth/google/callback', async (c) => {
             const householdId = generateId('house');
             const inviteCode = generateInviteCode();
 
-            // Transaction? No D1 transaction support in simple mode, do sequential
-            await withD1Retry(() =>
-                c.env.DB.prepare('INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)')
-                    .bind(householdId, `${name}'s Family`, inviteCode)
-                    .run()
+            await safeRun(c.env.DB,
+                'INSERT INTO households (id, name, invite_code) VALUES (?, ?, ?)',
+                [householdId, `${name}'s Family`, inviteCode]
             );
 
-            await withD1Retry(() =>
-                c.env.DB.prepare('INSERT INTO users (id, email, name, role, household_id, provider, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)')
-                    .bind(userId, email, name, 'parent', householdId, 'google', avatarUrl)
-                    .run()
+            await safeRun(c.env.DB,
+                'INSERT INTO users (id, email, name, role, household_id, provider, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [userId, email, name, 'parent', householdId, 'google', avatarUrl]
             );
 
-            user = await withD1Retry(() =>
-                c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(userId).first<User>()
-            );
+            user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE id = ?', [userId]);
         } else {
             // Update avatar/name logic if needed
-            await withD1Retry(() =>
-                c.env.DB.prepare('UPDATE users SET avatar_url = ?, name = ?, updated_at = datetime("now") WHERE id = ?')
-                    .bind(avatarUrl, name, user!.id)
-                    .run()
+            await safeRun(c.env.DB,
+                'UPDATE users SET avatar_url = ?, name = ?, updated_at = datetime("now") WHERE id = ?',
+                [avatarUrl, name, user.id]
             );
         }
 
         if (!user) throw new Error('User creation failed');
-
-        // Check if this is a student login (if we support students logging in via Google later)
-        // For now, assume Google login is mostly parents or hybrid. 
-        // The table schema supports students.
 
         // Create JWT
         const payload: Omit<JWTPayload, 'iat'> = {
@@ -164,16 +151,16 @@ app.get('/api/auth/me', async (c) => {
     // Fetch children for the household
     let children: any[] = [];
     if (user.household_id) {
-        children = await withD1Retry(async () => {
-            const { results } = await c.env.DB.prepare(
-                'SELECT * FROM students WHERE household_id = ? ORDER BY created_at'
-            ).bind(user.household_id).all();
-            return results || [];
-        });
+        const query = await safeQuery(c.env.DB,
+            'SELECT * FROM students WHERE household_id = ? ORDER BY created_at',
+            [user.household_id]
+        );
+        children = query.results || [];
     }
 
     return c.json({ user, children });
 });
+
 // DEBUG ENDPOINT
 app.get('/api/debug/auth', async (c) => {
     const authHeader = c.req.header('Authorization');
@@ -198,9 +185,7 @@ app.get('/api/debug/auth', async (c) => {
             if (verificationLibResult) {
                 // 2. Try DB lookup
                 try {
-                    userLookup = await withD1Retry(() =>
-                        c.env.DB.prepare('SELECT * FROM users WHERE id = ?').bind(verificationLibResult!.sub).first()
-                    );
+                    userLookup = await safeQueryFirst(c.env.DB, 'SELECT * FROM users WHERE id = ?', [verificationLibResult.sub]);
                 } catch (e: any) { userLookup = { error: e.message } }
             } else {
                 manualVerify = 'Library returned null';

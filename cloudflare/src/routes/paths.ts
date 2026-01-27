@@ -1,7 +1,7 @@
 import { Hono } from 'hono';
 import { Env, User } from '../types';
 import { requireAuth, requireParent } from '../lib/middleware';
-import { withD1Retry } from '../lib/d1-retry';
+import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -48,9 +48,9 @@ app.get('/api/paths', async (c) => {
     try {
         // Cache path definitions
         c.header('Cache-Control', 'public, max-age=3600');
-        const { results } = await c.env.DB.prepare(
+        const { results } = await safeQuery(c.env.DB,
             'SELECT * FROM learning_paths WHERE is_active = 1 ORDER BY sort_order'
-        ).all();
+        );
         return c.json(results);
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
@@ -61,19 +61,15 @@ app.get('/api/paths', async (c) => {
 app.get('/api/paths/subscriptions', async (c) => {
     try {
         const user = requireAuth(c);
-        const { results } = await c.env.DB.prepare(`
+        const { results } = await safeQuery(c.env.DB, `
             SELECT s.*, p.title as path_title, p.path_type, p.total_items
             FROM family_path_subscriptions s
             JOIN learning_paths p ON s.path_id = p.id
             WHERE s.parent_id = ?
-        `).bind(user.id).all();
+        `, [user.id]);
 
-        // Hydrate with full path object if needed, or just enough for UI
-        // Frontend expects 'path' object nested? 
-        // Types say: path?: LearningPath
-
-        // Let's fetch paths map
-        const paths = await c.env.DB.prepare('SELECT * FROM learning_paths').all();
+        // Hydrate with full path object if needed
+        const paths = await safeQuery(c.env.DB, 'SELECT * FROM learning_paths');
         const pathMap = new Map(paths.results.map((p: any) => [p.id, p]));
 
         const subs = results.map((s: any) => ({
@@ -95,20 +91,21 @@ app.post('/api/paths/:id/subscribe', async (c) => {
         const pathId = c.req.param('id');
 
         // Verify path exists
-        const path = await c.env.DB.prepare('SELECT * FROM learning_paths WHERE id = ?').bind(pathId).first();
+        const path = await safeQueryFirst(c.env.DB, 'SELECT * FROM learning_paths WHERE id = ?', [pathId]);
         if (!path) return c.json({ error: 'Path not found' }, 404);
 
         const id = crypto.randomUUID();
 
-        await c.env.DB.prepare(`
+        await safeRun(c.env.DB, `
             INSERT INTO family_path_subscriptions (id, parent_id, path_id, started_at)
             VALUES (?, ?, ?, datetime('now'))
             ON CONFLICT(parent_id, path_id) DO UPDATE SET is_paused = 0, completed_at = NULL
-        `).bind(id, user.id, pathId).run();
+        `, [id, user.id, pathId]);
 
-        const subscription = await c.env.DB.prepare(
-            'SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?'
-        ).bind(user.id, pathId).first();
+        const subscription = await safeQueryFirst(c.env.DB,
+            'SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?',
+            [user.id, pathId]
+        );
 
         return c.json({ success: true, subscription: { ...subscription, is_paused: !!(subscription as any).is_paused, path } });
     } catch (e: any) {
@@ -121,9 +118,10 @@ app.delete('/api/paths/:id/unsubscribe', async (c) => {
     try {
         const user = requireParent(c);
         const pathId = c.req.param('id');
-        await c.env.DB.prepare(
-            'DELETE FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?'
-        ).bind(user.id, pathId).run();
+        await safeRun(c.env.DB,
+            'DELETE FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?',
+            [user.id, pathId]
+        );
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
@@ -135,9 +133,10 @@ app.post('/api/paths/:id/pause', async (c) => {
     try {
         const user = requireParent(c);
         const pathId = c.req.param('id');
-        await c.env.DB.prepare(
-            'UPDATE family_path_subscriptions SET is_paused = 1 WHERE parent_id = ? AND path_id = ?'
-        ).bind(user.id, pathId).run();
+        await safeRun(c.env.DB,
+            'UPDATE family_path_subscriptions SET is_paused = 1 WHERE parent_id = ? AND path_id = ?',
+            [user.id, pathId]
+        );
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
@@ -149,9 +148,10 @@ app.post('/api/paths/:id/resume', async (c) => {
     try {
         const user = requireParent(c);
         const pathId = c.req.param('id');
-        await c.env.DB.prepare(
-            'UPDATE family_path_subscriptions SET is_paused = 0 WHERE parent_id = ? AND path_id = ?'
-        ).bind(user.id, pathId).run();
+        await safeRun(c.env.DB,
+            'UPDATE family_path_subscriptions SET is_paused = 0 WHERE parent_id = ? AND path_id = ?',
+            [user.id, pathId]
+        );
         return c.json({ success: true });
     } catch (e: any) {
         return c.json({ error: e.message }, 500);
@@ -164,16 +164,17 @@ app.post('/api/paths/:id/advance', async (c) => {
         const user = requireParent(c);
         const pathId = c.req.param('id');
 
-        const sub = await c.env.DB.prepare(
-            'SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?'
-        ).bind(user.id, pathId).first<any>();
+        const sub = await safeQueryFirst<any>(c.env.DB,
+            'SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?',
+            [user.id, pathId]
+        );
 
         if (!sub) return c.json({ error: 'Subscription not found' }, 404);
 
         const newPos = sub.current_position + 1;
 
         // Check if completed
-        const path = await c.env.DB.prepare('SELECT total_items FROM learning_paths WHERE id = ?').bind(pathId).first<any>();
+        const path = await safeQueryFirst<any>(c.env.DB, 'SELECT total_items FROM learning_paths WHERE id = ?', [pathId]);
         const total = path?.total_items || 1000; // fallback
 
         let completedAt = null;
@@ -181,9 +182,10 @@ app.post('/api/paths/:id/advance', async (c) => {
             completedAt = new Date().toISOString();
         }
 
-        await c.env.DB.prepare(
-            'UPDATE family_path_subscriptions SET current_position = ?, completed_at = ? WHERE id = ?'
-        ).bind(newPos, completedAt, sub.id).run();
+        await safeRun(c.env.DB,
+            'UPDATE family_path_subscriptions SET current_position = ?, completed_at = ? WHERE id = ?',
+            [newPos, completedAt, sub.id]
+        );
 
         return c.json({
             success: true,
@@ -202,12 +204,12 @@ app.get('/api/paths/today', async (c) => {
         const user = requireAuth(c);
 
         // 1. Get active subscriptions
-        const { results: subscriptions } = await c.env.DB.prepare(`
+        const { results: subscriptions } = await safeQuery(c.env.DB, `
             SELECT s.*, p.content_filter, p.path_type, p.title as path_title, p.total_items
             FROM family_path_subscriptions s
             JOIN learning_paths p ON s.path_id = p.id
             WHERE s.parent_id = ? AND s.is_paused = 0 AND s.completed_at IS NULL
-        `).bind(user.id).all();
+        `, [user.id]);
 
         const todayItems: any[] = [];
         const activePaths: any[] = []; // Hydrate for return
@@ -224,26 +226,6 @@ app.get('/api/paths/today', async (c) => {
                 query += " AND cluster_tag = ?";
                 params.push(filter.cluster_tag);
             }
-            if (filter.domain) {
-                query += " AND primary_virtue = ?"; // Approximate mapping domain -> virtue? Or strictly 'domain' field if added? Formations has primary_virtue. But older schema had domain.
-                // Wait, formations table has 'primary_virtue' and 'biblical_faculty'. No 'domain'.
-                // If filter uses 'domain', we assume it maps to 'primary_virtue' for now, or check cluster_tag
-                // Actually, let's look at seeds. 'African History' uses {"domain": "history"}
-                // 'history' is NOT a virtue.
-                // Ah, formations has `formation_type`.
-                // Maybe 'domain' in filter means 'formation_type'?
-                // Or maybe we should ignore unknown filters.
-                // Let's stick to what we know: cluster_tag matches well.
-            }
-            /* 
-              Seeds:
-              hymn -> cluster_tag: hymn
-              catechism -> cluster_tag: catechism
-              liturgy -> cluster_tag: liturgy
-              history_young -> domain: history, format: picture_book. 
-              toddler -> age_tier: infant.
-              reading -> skill: reading.
-            */
 
             // Refined Logic based on seeds
             if (filter.domain === 'history') {
@@ -257,12 +239,10 @@ app.get('/api/paths/today', async (c) => {
             }
 
             // Order by sequence_number or created_at or title
-            // Liturgy items have sequence_number. Others might not?
-            // HACK: Use sequence_number if present, else title
             query += " ORDER BY COALESCE(sequence_number, 999999), title LIMIT 1 OFFSET ?";
             params.push(position - 1);
 
-            const item = await c.env.DB.prepare(query).bind(...params).first();
+            const item = await safeQueryFirst(c.env.DB, query, params);
 
             if (item) {
                 // Determine item_type for frontend
@@ -311,39 +291,32 @@ app.get('/api/library/stats', async (c) => {
         const user = requireAuth(c);
         // Count completions
         // Liturgy completions for Hymns and Catechism
-        const hymnCount = await c.env.DB.prepare(`
+        const hymnCount = await safeQueryFirst<any>(c.env.DB, `
             SELECT COUNT(DISTINCT liturgy_item_id) as count 
             FROM liturgy_completions lc
             JOIN formations f ON lc.liturgy_item_id = f.id
             WHERE lc.parent_id = ? AND f.cluster_tag = 'hymn'
-        `).bind(user.id).first<any>();
+        `, [user.id]);
 
-        const catechismCount = await c.env.DB.prepare(`
+        const catechismCount = await safeQueryFirst<any>(c.env.DB, `
             SELECT COUNT(DISTINCT liturgy_item_id) as count 
             FROM liturgy_completions lc
             JOIN formations f ON lc.liturgy_item_id = f.id
             WHERE lc.parent_id = ? AND f.cluster_tag = 'catechism'
-        `).bind(user.id).first<any>();
+        `, [user.id]);
 
-        // Reading sessions (Books)
-        // Check reading_sessions table?
-        // Wait, reading_sessions table exists? 
-        // I didn't see it in fresh_schema.sql.
-        // evidences table handles reading?
-        // formations(type=reading) -> evidences.
-
-        const bookCount = await c.env.DB.prepare(`
+        const bookCount = await safeQueryFirst<any>(c.env.DB, `
             SELECT COUNT(DISTINCT formation_id) as count
             FROM evidences e
             JOIN formations f ON e.formation_id = f.id
             WHERE e.parent_id = ? AND f.formation_type = 'reading'
-        `).bind(user.id).first<any>();
+        `, [user.id]);
 
 
         // Get Totals
-        const totalHymns = await c.env.DB.prepare("SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'hymn' AND is_active=1").first<any>();
-        const totalCatechism = await c.env.DB.prepare("SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'catechism' AND is_active=1").first<any>();
-        const totalBooks = await c.env.DB.prepare("SELECT COUNT(*) as count FROM formations WHERE formation_type = 'reading' AND is_active=1").first<any>();
+        const totalHymns = await safeQueryFirst<any>(c.env.DB, "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'hymn' AND is_active=1");
+        const totalCatechism = await safeQueryFirst<any>(c.env.DB, "SELECT COUNT(*) as count FROM formations WHERE cluster_tag = 'catechism' AND is_active=1");
+        const totalBooks = await safeQueryFirst<any>(c.env.DB, "SELECT COUNT(*) as count FROM formations WHERE formation_type = 'reading' AND is_active=1");
 
         return c.json({
             hymns: { completed: hymnCount?.count || 0, total: totalHymns?.count || 0 },

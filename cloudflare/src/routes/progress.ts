@@ -1,114 +1,234 @@
 import { Hono } from 'hono';
 import { Env, User } from '../types';
-import { requireHouseholdMember } from '../lib/middleware';
+import { requireAuth } from '../lib/middleware';
+import { generateId } from '../lib/utils';
+import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
-app.post('/api/progress/start', async (c) => {
+// ============ OBSERVATIONS & PROGRESS ROUTES ============
+
+// Record an observation
+app.post('/api/observations', async (c) => {
     try {
-        const user = requireHouseholdMember(c);
-        const { activityId, type, date } = await c.req.json();
+        const user = requireAuth(c);
+        const body = await c.req.json();
+        const { studentId, activityId, masteryLevel, parentNotes, tier } = body;
 
-        await c.env.DB.prepare(`
-            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status, started_at)
-            VALUES (?, ?, ?, ?, ?, 'in_progress', datetime('now'))
-        `).bind(
-            crypto.randomUUID(), user.household_id, type || 'unknown', activityId, date || new Date().toISOString().split('T')[0]
-        ).run();
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
-});
+        // Verify student ownership (Use household_id)
+        const student = await safeQueryFirst(c.env.DB,
+            'SELECT * FROM students WHERE id = ? AND household_id = ?',
+            [studentId, user.household_id]
+        );
 
-app.post('/api/progress/complete', async (c) => {
-    try {
-        const user = requireHouseholdMember(c);
-        const { activityId, type, date, source } = await c.req.json();
-
-        await c.env.DB.prepare(`
-            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status, completed_at, completion_source)
-            VALUES (?, ?, ?, ?, ?, 'completed', datetime('now'), ?)
-        `).bind(
-            crypto.randomUUID(), user.household_id, type || 'unknown', activityId, date || new Date().toISOString().split('T')[0], source || 'manual'
-        ).run();
-
-        // Sync to legacy evidences for dashboard compatibility
-        const students = await c.env.DB.prepare('SELECT id FROM students WHERE household_id = ?').bind(user.household_id).all<any>();
-        if (students.results && students.results.length > 0) {
-            const stmt = c.env.DB.prepare(`INSERT INTO evidences (id, student_id, formation_id, captured_at, habit_stage) VALUES (?, ?, ?, datetime('now'), 'rooting')`);
-            const batch = students.results.map((s: any) => stmt.bind(crypto.randomUUID(), s.id, activityId));
-            await c.env.DB.batch(batch);
+        if (!student) {
+            return c.json({ error: 'Student not found' }, 404);
         }
 
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
+        // Verify activity exists
+        const activity = await safeQueryFirst<any>(c.env.DB, 'SELECT * FROM formations WHERE id = ?', [activityId]);
+
+        if (!activity) {
+            return c.json({ error: 'Activity not found' }, 404);
+        }
+
+        // Daily practices check
+        if (activity.formation_type === 'daily_practice' && activity.assessment_prohibited === 1) {
+            return c.json({ error: 'Observations cannot be recorded for daily practices' }, 400);
+        }
+
+        const observationId = generateId('ev'); // Use 'ev' for evidence
+
+        // Map masteryLevel to habit_stage
+        let habitStage = 'Seeding';
+        if (masteryLevel) {
+            const lower = masteryLevel.toLowerCase();
+            if (lower.includes('fruit') || lower.includes('mastered')) habitStage = 'Fruiting';
+            else if (lower.includes('root') || lower.includes('growing')) habitStage = 'Rooting';
+            else if (lower.includes('seed') || lower.includes('started')) habitStage = 'Seeding';
+            const valid = ['Seeding', 'Rooting', 'Fruiting'];
+            const exact = valid.find(v => v.toLowerCase() === lower);
+            if (exact) habitStage = exact;
+        }
+
+        await safeRun(c.env.DB,
+            'INSERT INTO evidences (id, student_id, parent_id, formation_id, habit_stage, notes) VALUES (?, ?, ?, ?, ?, ?)',
+            [observationId, studentId, user.id, activityId, habitStage, parentNotes || null]
+        );
+
+        const observation = await safeQueryFirst(c.env.DB, 'SELECT * FROM evidences WHERE id = ?', [observationId]);
+
+        return c.json(observation, 201);
+    } catch (error: any) {
+        return c.json({ error: error.message || 'Failed to record observation' }, 400);
+    }
 });
 
-app.post('/api/progress/skip', async (c) => {
+// Get observations for a student
+app.get('/api/students/:studentId/observations', async (c) => {
     try {
-        const user = requireHouseholdMember(c);
-        const { activityId, type, date } = await c.req.json();
-        await c.env.DB.prepare(`
-            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status)
-            VALUES (?, ?, ?, ?, ?, 'skipped')
-        `).bind(
-            crypto.randomUUID(), user.household_id, type || 'unknown', activityId, date || new Date().toISOString().split('T')[0]
-        ).run();
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
+        const user = requireAuth(c);
+        const studentId = c.req.param('studentId');
+        const domain = c.req.query('domain');
+        const limit = c.req.query('limit') || '50';
+
+        // Verify student ownership (Use household_id)
+        const student = await safeQueryFirst(c.env.DB,
+            'SELECT * FROM students WHERE id = ? AND household_id = ?',
+            [studentId, user.household_id]
+        );
+
+        if (!student) {
+            return c.json({ error: 'Student not found' }, 404);
+        }
+
+        let query = `
+      SELECT e.id, e.student_id, e.formation_id as activity_id, e.stage as mastery_level, e.note as parent_notes, e.created_at as completed_at,
+             f.title, f.primary_virtue as domain, f.description
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id = ?
+    `;
+        const params: any[] = [studentId];
+
+        if (domain) {
+            query += ' AND f.primary_virtue = ?';
+            params.push(domain);
+        }
+
+        query += ' ORDER BY e.created_at DESC LIMIT ?';
+        params.push(parseInt(limit));
+
+        const { results } = await safeQuery(c.env.DB, query, params);
+
+        return c.json(results);
+    } catch (error: any) {
+        return c.json({ error: error.message || 'Unauthorized' }, 401);
+    }
 });
 
-app.post('/api/progress/transfer', async (c) => {
+// Get progress summary for a student
+app.get('/api/students/:studentId/progress', async (c) => {
     try {
-        const user = requireHouseholdMember(c);
-        const { activityId, type, fromDate, toDate } = await c.req.json();
-        await c.env.DB.prepare(`
-            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status, transferred_to)
-            VALUES (?, ?, ?, ?, ?, 'transferred', ?)
-        `).bind(
-            crypto.randomUUID(), user.household_id, type || 'unknown', activityId, fromDate, toDate
-        ).run();
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
-});
+        const user = requireAuth(c);
+        const studentId = c.req.param('studentId');
 
-app.post('/api/progress/save', async (c) => {
-    try {
-        const user = requireHouseholdMember(c);
-        const { activityId, type, date, progressData } = await c.req.json();
+        // Verify student ownership (Use household_id)
+        const student = await safeQueryFirst(c.env.DB,
+            'SELECT * FROM students WHERE id = ? AND household_id = ?',
+            [studentId, user.household_id]
+        );
 
-        // Check if there's an existing in_progress record for today to update, or just insert new log?
-        // Log approach: Insert new state.
-        await c.env.DB.prepare(`
-            INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status, updated_at, progress_data)
-            VALUES (?, ?, ?, ?, ?, 'in_progress', datetime('now'), ?)
-        `).bind(
-            crypto.randomUUID(), user.household_id, type || 'unknown', activityId, date || new Date().toISOString().split('T')[0], JSON.stringify(progressData)
-        ).run();
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
-});
+        if (!student) {
+            return c.json({ error: 'Student not found' }, 404);
+        }
 
-app.get('/api/progress/:contentId', async (c) => {
-    try {
-        const user = requireHouseholdMember(c);
-        const contentId = c.req.param('contentId');
-        // Get latest progress
-        const result = await c.env.DB.prepare(`
-       SELECT * FROM activity_progress 
-       WHERE family_id = ? AND content_id = ? 
-       ORDER BY updated_at DESC, created_at DESC LIMIT 1
-    `).bind(user.household_id, contentId).first<any>();
+        // Get formation preferences
+        const prefs = await safeQueryFirst<any>(c.env.DB,
+            'SELECT * FROM family_preferences WHERE parent_id = ?',
+            [user.id]
+        );
 
-        if (!result) return c.json({ progress: null });
+        const enabledStreams: string[] = [];
+        if (!prefs || prefs.activities_enabled) enabledStreams.push('activity');
+        if (!prefs || prefs.reading_enabled) enabledStreams.push('reading');
+        if (!prefs || prefs.liturgy_enabled) enabledStreams.push('liturgy');
+
+        // ACTIVITY PROGRESS
+        const { results: byDomain } = await safeQuery(c.env.DB, `
+      SELECT f.primary_virtue as domain, e.stage as mastery_level, COUNT(*) as count
+      FROM evidences e
+      JOIN formations f ON e.formation_id = f.id
+      WHERE e.student_id = ?
+      GROUP BY f.primary_virtue, e.stage
+    `, [studentId]);
+
+        // Recent activity
+        const { results: recentActivity } = await safeQuery(c.env.DB, `
+      SELECT DATE(e.created_at) as date, COUNT(*) as count
+      FROM evidences e
+      WHERE e.student_id = ? AND e.created_at > datetime('now', '-7 days')
+      GROUP BY DATE(e.created_at)
+      ORDER BY date
+    `, [studentId]);
+
+        // Total
+        const totalResult = await safeQueryFirst<any>(c.env.DB, `
+      SELECT COUNT(DISTINCT formation_id) as total FROM evidences WHERE student_id = ?
+    `, [studentId]);
+
+        const activityProgress = {
+            totalCompleted: totalResult?.total || 0,
+            byDomain,
+            recentActivity
+        };
+
+        // READING PROGRESS
+        const readingStats = await safeQueryFirst<any>(c.env.DB, `
+      SELECT 
+        COUNT(*) as sessions_count,
+        COUNT(DISTINCT book_id) as distinct_books
+      FROM reading_sessions 
+      WHERE parent_id = ? 
+        AND (children_present IS NULL OR children_present LIKE ?)
+    `, [user.id, `%${studentId}%`]);
+
+        const readingProgress = {
+            sessionsCount: readingStats?.sessions_count || 0,
+            distinctBooks: readingStats?.distinct_books || 0
+        };
+
+        // LITURGY PROGRESS
+        const liturgyDaysResult = await safeQueryFirst<any>(c.env.DB, `
+      SELECT COUNT(DISTINCT completed_date) as days_practiced
+      FROM liturgy_completions
+      WHERE parent_id = ?
+    `, [user.id]);
+
+        // Streak
+        const { results: recentDays } = await safeQuery(c.env.DB, `
+      SELECT DISTINCT completed_date
+      FROM liturgy_completions
+      WHERE parent_id = ?
+      ORDER BY completed_date DESC
+      LIMIT 30
+    `, [user.id]);
+
+        let currentStreak = 0;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+
+        for (let i = 0; i < 30; i++) {
+            const checkDate = new Date(today);
+            checkDate.setDate(checkDate.getDate() - i);
+            const dateStr = checkDate.toISOString().split('T')[0];
+
+            if (recentDays.some((d: any) => d.completed_date === dateStr)) {
+                currentStreak++;
+            } else if (i > 0) {
+                // Allow missing today (streak still counts if yesterday was completed)
+                break;
+            }
+        }
+
+        const liturgyProgress = {
+            daysPracticed: liturgyDaysResult?.days_practiced || 0,
+            currentStreak
+        };
 
         return c.json({
-            progress: {
-                status: result.status,
-                data: result.progress_data ? JSON.parse(result.progress_data) : null,
-                updatedAt: result.updated_at || result.created_at
-            }
+            student,
+            enabledStreams,
+            totalCompleted: activityProgress.totalCompleted,
+            byDomain: activityProgress.byDomain,
+            recentActivity: activityProgress.recentActivity,
+            activityProgress,
+            readingProgress,
+            liturgyProgress
         });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
+    } catch (error: any) {
+        return c.json({ error: error.message || 'Unauthorized' }, 401);
+    }
 });
 
 export default app;
