@@ -50,7 +50,7 @@ export const WeekStrip = memo(function WeekStrip({
     isRegenerating = false,
     dayData = {},
 }: WeekStripProps) {
-    const today = startOfDay(new Date());
+    const today = useMemo(() => startOfDay(new Date()), []);
 
     // Generate the 5 weekdays
     const days = useMemo(() => {

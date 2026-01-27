@@ -80,8 +80,8 @@ export default function Dashboard() {
   // End of Day Summary State
   const [showSummary, setShowSummary] = useState(false);
 
-  const today = startOfDay(new Date());
-  const weekStart = getWeekStart(today);
+  const today = useMemo(() => startOfDay(new Date()), []);
+  const weekStart = useMemo(() => getWeekStart(today), [today]);
   const weekStartStr = format(weekStart, 'yyyy-MM-dd');
   const selectedDateStr = format(selectedDate, 'yyyy-MM-dd');
   const selectedDayName = format(selectedDate, 'EEEE');
@@ -508,7 +508,7 @@ export default function Dashboard() {
         onDaySelect={setSelectedDate}
         onRegenerate={handleRegenerate}
         isRegenerating={regenerateMutation.isPending}
-        dayData={weekSummary?.days || {}}
+        dayData={weekSummary?.days || EMPTY_WEEK_DATA}
       />
 
       {/* Print Button */}
