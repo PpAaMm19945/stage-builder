@@ -44,13 +44,11 @@ app.get('/', async (c) => {
 });
 
 // CORS middleware - allows Cloudflare Pages and Lovable preview
-// CORS middleware - allows Cloudflare Pages and Lovable preview
 app.use('*', corsMiddleware);
 
 
 
 
-// Auth middleware
 // Auth middleware
 app.use('/api/*', authMiddleware);
 
@@ -69,6 +67,9 @@ app.route('/', exportRoutes);
 app.route('/', reportsRoutes);
 app.route('/', adminRoutes);
 app.route('/', pathsRoutes);
+
+// Global error handler with CORS
+app.onError(errorHandler);
 
 
 
