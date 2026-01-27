@@ -84,6 +84,7 @@ app.use('/api/*', async (c, next) => {
   const authHeader = c.req.header('Authorization');
   const token = authHeader?.replace('Bearer ', '') || c.req.query('token');
 
+  /*
   console.log('[Middleware] Auth check:', {
     hasHeader: !!authHeader,
     hasToken: !!token,
@@ -91,6 +92,7 @@ app.use('/api/*', async (c, next) => {
     hasSecret: !!c.env.JWT_SECRET,
     secretLength: c.env.JWT_SECRET?.length
   });
+  */
 
   if (!c.env.JWT_SECRET) {
     console.error('[CRITICAL] JWT_SECRET is not set!');
@@ -99,22 +101,26 @@ app.use('/api/*', async (c, next) => {
   if (token) {
     const payload = await verifyJWT(token, c.env.JWT_SECRET);
 
+    /*
     console.log('[Middleware] JWT verification result:', {
       payloadExists: !!payload,
       sub: payload?.sub,
       exp: payload?.exp,
       expiredCheck: payload?.exp ? payload.exp < Math.floor(Date.now() / 1000) : 'N/A'
     });
+    */
 
     if (payload) {
       const user = await c.env.DB.prepare(
         'SELECT * FROM users WHERE id = ?'
       ).bind(payload.sub).first<User>();
 
+      /*
       console.log('[Middleware] User lookup:', {
         userFound: !!user,
         userId: user?.id
       });
+      */
 
       c.set('user', user);
     }
@@ -2162,209 +2168,7 @@ app.post('/api/paths/:pathId/advance', async (c) => {
 });
 
 // Get today's content from all active paths
-app.get('/api/paths/today', async (c) => {
-  try {
-    const user = requireAuth(c);
-
-    // Get all active subscriptions
-    const subscriptionsResult = await c.env.DB.prepare(`
-      SELECT 
-        fps.*,
-        lp.id as path_id,
-        lp.title as path_title,
-        lp.path_type,
-        lp.content_filter,
-        lp.pace,
-        lp.total_items
-      FROM family_path_subscriptions fps
-      JOIN learning_paths lp ON fps.path_id = lp.id
-      WHERE fps.parent_id = ? AND fps.is_paused = 0 AND fps.completed_at IS NULL
-    `).bind(user.id).all();
-
-    const subscriptions = subscriptionsResult.results || [];
-    const items: any[] = [];
-
-    // For each active subscription, get today's item
-    for (const sub of subscriptions) {
-      const pathType = (sub as any).path_type;
-      const position = (sub as any).current_position || 1;
-      const total = (sub as any).total_items;
-
-      let item = null;
-
-      // Fetch content based on path type
-      if (pathType === 'hymn_journey') {
-        // Get hymn at current position
-        const hymn = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('hymn', position - 1).first();
-        if (hymn) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'hymn',
-            item_id: (hymn as any).id,
-            item_title: (hymn as any).title,
-            item_data: hymn,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'catechism') {
-        // Get catechism at current position
-        const catechism = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('catechism', position - 1).first();
-        if (catechism) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'catechism',
-            item_id: (catechism as any).id,
-            item_title: (catechism as any).title,
-            item_data: catechism,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'toddler_dev') {
-        // Get toddler formation at current position
-        const formation = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('toddler', position - 1).first();
-        if (formation) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'activity',
-            item_id: (formation as any).id,
-            item_title: (formation as any).title,
-            item_data: formation,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'early_reading') {
-        // Get reading formation at current position
-        const formation = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('reading', position - 1).first();
-        if (formation) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'activity',
-            item_id: (formation as any).id,
-            item_title: (formation as any).title,
-            item_data: formation,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'history_young') {
-        // Get young history story at current position
-        const story = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? AND formation_type = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('african_history_young', 'story', position - 1).first();
-        if (story) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'story',
-            item_id: (story as any).id,
-            item_title: (story as any).title,
-            item_data: story,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'history_full') {
-        // Get full history story at current position
-        const story = await c.env.DB.prepare(
-          'SELECT * FROM formations WHERE cluster_tag = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('african_history', position - 1).first();
-        if (story) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'story',
-            item_id: (story as any).id,
-            item_title: (story as any).title,
-            item_data: story,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'pastor_curtis') {
-        // Get Pastor Curtis book at current position
-        const book = await c.env.DB.prepare(
-          'SELECT * FROM books WHERE series = ? ORDER BY ROWID LIMIT 1 OFFSET ?'
-        ).bind('pastor_curtis_knapp', position - 1).first();
-        if (book) {
-          item = {
-            path_id: (sub as any).path_id,
-            path_title: (sub as any).path_title,
-            path_type: pathType,
-            item_type: 'book',
-            item_id: (book as any).id,
-            item_title: (book as any).title,
-            item_data: book,
-            position,
-            total,
-          };
-        }
-      } else if (pathType === 'liturgy') {
-        // Combine weekly liturgy items
-        item = {
-          path_id: (sub as any).path_id,
-          path_title: (sub as any).path_title,
-          path_type: pathType,
-          item_type: 'liturgy',
-          item_id: `liturgy-week-${position}`,
-          item_title: `Week ${position} Liturgy`,
-          item_data: { week: position },
-          position,
-          total,
-        };
-      }
-
-      if (item) {
-        items.push(item);
-      }
-    }
-
-    // Build active_paths response
-    const active_paths = subscriptions.map((sub: any) => ({
-      id: sub.path_id,
-      title: sub.path_title || sub.path_type || 'Untitled Path',
-      path_type: sub.path_type,
-      total_items: sub.total_items,
-      subscription: {
-        id: sub.id,
-        parent_id: sub.parent_id,
-        path_id: sub.path_id,
-        started_at: sub.started_at,
-        current_position: sub.current_position,
-        is_paused: Boolean(sub.is_paused),
-        completed_at: sub.completed_at,
-      },
-      progress_percent: sub.total_items
-        ? Math.round((sub.current_position / sub.total_items) * 100)
-        : 0,
-    }));
-
-    return c.json({ items, active_paths });
-  } catch (error: any) {
-    console.error('Error getting today\'s paths:', error);
-    return c.json({ items: [], active_paths: [] });
-  }
-});
+// Duplicate /api/paths/today handler removed. It is handled in routes/paths.ts
 
 // GET /api/library/stats - Get library completion stats for the authenticated family
 app.get('/api/library/stats', async (c) => {

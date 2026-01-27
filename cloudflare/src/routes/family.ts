@@ -290,177 +290,181 @@ async function getDailyPractices(db: any) {
     }));
 }
 
+import { withD1Retry } from '../lib/d1-retry';
+
 // Shared helper for getting today's family dashboard data
 async function getFamilyToday(c: any) {
-    try {
-        const user = requireHouseholdMember(c);
+    return withD1Retry(c, async (db) => {
+        try {
+            const user = requireHouseholdMember(c);
 
-        // Get all children for the household
-        let children: any[] = [];
-        if (user.household_id) {
-            children = (await c.env.DB.prepare(
-                'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
-            ).bind(user.household_id).all()).results || [];
-        }
+            // Get all children for the household
+            let children: any[] = [];
+            if (user.household_id) {
+                children = (await c.env.DB.prepare(
+                    'SELECT * FROM students WHERE household_id = ? ORDER BY date_of_birth DESC'
+                ).bind(user.household_id).all()).results || [];
+            }
 
-        if (children.length === 0) {
-            return c.json({
-                date: new Date().toISOString().split('T')[0],
-                children: [],
-                familySessions: [],
-                materials: [],
-                totalDuration: 0,
-                coreKitCoverage: 0
-            });
-        }
+            if (children.length === 0) {
+                return c.json({
+                    date: new Date().toISOString().split('T')[0],
+                    children: [],
+                    familySessions: [],
+                    materials: [],
+                    totalDuration: 0,
+                    coreKitCoverage: 0
+                });
+            }
 
-        // 1. Get today's day of week
-        const today = new Date();
-        const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][today.getDay()];
+            // 1. Get today's day of week
+            const today = new Date();
+            const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][today.getDay()];
 
-        // 2. Check if today is an available day
-        // Get available days from family_preferences.overrides_json or use defaults
-        const prefs = await c.env.DB.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?')
-            .bind(user.id).first();
-        const overrides = prefs ? JSON.parse((prefs as any).overrides_json || '{}') : {};
-        const availableDays = overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+            // 2. Check if today is an available day
+            // Get available days from family_preferences.overrides_json or use defaults
+            const prefs = await c.env.DB.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?')
+                .bind(user.id).first();
+            const overrides = prefs ? JSON.parse((prefs as any).overrides_json || '{}') : {};
+            const availableDays = overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
-        // 3. If not an available day, return REST DAY response
-        if (!availableDays.includes(dayOfWeek)) {
-            const dailyPractices = await getDailyPractices(c.env.DB);
+            // 3. If not an available day, return REST DAY response
+            if (!availableDays.includes(dayOfWeek)) {
+                const dailyPractices = await getDailyPractices(c.env.DB);
 
-            return c.json({
-                date: new Date().toISOString().split('T')[0],
-                children,
-                restDay: true,
-                message: "Today is a rest day! Here are some gentle practices you can do if you'd like.",
-                familySessions: [],
-                dailyPractices,
-                materials: [],
-                totalDuration: 0,
-                coreKitCoverage: 0
-            });
-        }
+                return c.json({
+                    date: new Date().toISOString().split('T')[0],
+                    children,
+                    restDay: true,
+                    message: "Today is a rest day! Here are some gentle practices you can do if you'd like.",
+                    familySessions: [],
+                    dailyPractices,
+                    materials: [],
+                    totalDuration: 0,
+                    coreKitCoverage: 0
+                });
+            }
 
-        // 4. Get this week's plan from V2 (Unified Schema)
-        const weekStart = getSmartWeekStart();
-        let plan = await c.env.DB.prepare('SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
-            .bind(user.household_id, weekStart).first();
+            // 4. Get this week's plan from V2 (Unified Schema)
+            const weekStart = getSmartWeekStart();
+            let plan = await c.env.DB.prepare('SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+                .bind(user.household_id, weekStart).first();
 
-        // Fallback to legacy plan if V2 not found
-        if (!plan) {
-            plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
-                .bind(user.id, weekStart).first();
-        }
+            // Fallback to legacy plan if V2 not found
+            if (!plan) {
+                plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+                    .bind(user.id, weekStart).first();
+            }
 
-        // 5. If no plan exists, prompt to generate
-        if (!plan) {
-            const dailyPractices = await getDailyPractices(c.env.DB);
+            // 5. If no plan exists, prompt to generate
+            if (!plan) {
+                const dailyPractices = await getDailyPractices(c.env.DB);
 
-            return c.json({
-                date: new Date().toISOString().split('T')[0],
-                children,
-                needsPlan: true,
-                message: "Let's plan your week! Generate a schedule to get personalized activities.",
-                familySessions: [],
-                dailyPractices,
-                materials: [],
-                totalDuration: 0,
-                coreKitCoverage: 0
-            });
-        }
+                return c.json({
+                    date: new Date().toISOString().split('T')[0],
+                    children,
+                    needsPlan: true,
+                    message: "Let's plan your week! Generate a schedule to get personalized activities.",
+                    familySessions: [],
+                    dailyPractices,
+                    materials: [],
+                    totalDuration: 0,
+                    coreKitCoverage: 0
+                });
+            }
 
-        // 6. Return today's activities from the plan
-        const planData = JSON.parse((plan as any).plan_json);
-        // Safely access slots, default to empty if undefined
-        const todaysSlots = (planData.slots || []).filter((s: any) => s.day === dayOfWeek);
+            // 6. Return today's activities from the plan
+            const planData = JSON.parse((plan as any).plan_json);
+            // Safely access slots, default to empty if undefined
+            const todaysSlots = (planData.slots || []).filter((s: any) => s.day === dayOfWeek);
 
-        // Hydrate formations
-        const activityIds = todaysSlots.map((s: any) => s.activityId); // Retain 'activityId' in slots for back-compat
-        let familySessions: any[] = [];
-        let materialsList: any[] = [];
+            // Hydrate formations
+            const activityIds = todaysSlots.map((s: any) => s.activityId); // Retain 'activityId' in slots for back-compat
+            let familySessions: any[] = [];
+            let materialsList: any[] = [];
 
-        if (activityIds.length > 0) {
-            const placeholders = activityIds.map(() => '?').join(',');
-            const { results: formations } = await c.env.DB.prepare(`
+            if (activityIds.length > 0) {
+                const placeholders = activityIds.map(() => '?').join(',');
+                const { results: formations } = await c.env.DB.prepare(`
             SELECT * FROM formations WHERE id IN (${placeholders})
         `).bind(...activityIds).all();
 
-            const formationMap = new Map(formations.map((f: any) => [f.id, f]));
+                const formationMap = new Map(formations.map((f: any) => [f.id, f]));
 
-            familySessions = todaysSlots.map((slot: any) => {
-                const formation: any = formationMap.get(slot.activityId);
-                if (!formation) return null;
+                familySessions = todaysSlots.map((slot: any) => {
+                    const formation: any = formationMap.get(slot.activityId);
+                    if (!formation) return null;
 
-                const tiers = JSON.parse(formation.tiered_expectations || '[]');
-                const childTiers = children.map((child: any) => {
-                    const age = child.age_in_months;
-                    let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
-                    if (!tier) {
-                        if (age < tiers[0]?.age_min) tier = tiers[0];
-                        else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
-                    }
-                    return {
-                        childId: child.id,
-                        childName: child.name,
-                        tier: tier?.tier || 'Standard',
-                        expectation: tier?.expectation || 'Participate with support',
-                        childAge: age
-                    };
-                });
-
-                return {
-                    formation: {
-                        ...formation,
-                        materials: JSON.parse(formation.materials || '[]'),
-                        guide_steps: JSON.parse(formation.guide_steps || '[]'),
-                        success_indicators: JSON.parse(formation.success_indicators || '[]'),
-                        tips: JSON.parse(formation.tips || '[]'),
-                    },
-                    childTiers,
-                    messLevel: formation.mess_level,
-                    prepMinutes: 5, // Default or add to schema if needed
-                    materialsAvailable: true,
-                    reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
-                    timeSlot: slot.timeSlot,
-                    day: slot.day
-                };
-            }).filter(Boolean);
-
-            // Collect materials
-            const neededMaterials = new Set<string>();
-            familySessions.forEach((session: any) => {
-                session.formation.materials.forEach((m: string) => neededMaterials.add(m));
-            });
-
-            if (neededMaterials.size > 0) {
-                neededMaterials.forEach(m => {
-                    materialsList.push({
-                        name: m,
-                        status: 'unknown'
+                    const tiers = JSON.parse(formation.tiered_expectations || '[]');
+                    const childTiers = children.map((child: any) => {
+                        const age = child.age_in_months;
+                        let tier = tiers.find((t: any) => age >= t.age_min && age <= t.age_max);
+                        if (!tier) {
+                            if (age < tiers[0]?.age_min) tier = tiers[0];
+                            else if (age > tiers[tiers.length - 1]?.age_max) tier = tiers[tiers.length - 1];
+                        }
+                        return {
+                            childId: child.id,
+                            childName: child.name,
+                            tier: tier?.tier || 'Standard',
+                            expectation: tier?.expectation || 'Participate with support',
+                            childAge: age
+                        };
                     });
+
+                    return {
+                        formation: {
+                            ...formation,
+                            materials: JSON.parse(formation.materials || '[]'),
+                            guide_steps: JSON.parse(formation.guide_steps || '[]'),
+                            success_indicators: JSON.parse(formation.success_indicators || '[]'),
+                            tips: JSON.parse(formation.tips || '[]'),
+                        },
+                        childTiers,
+                        messLevel: formation.mess_level,
+                        prepMinutes: 5, // Default or add to schema if needed
+                        materialsAvailable: true,
+                        reasoning: slot.reasoning || `Planned for ${slot.timeSlot}`,
+                        timeSlot: slot.timeSlot,
+                        day: slot.day
+                    };
+                }).filter(Boolean);
+
+                // Collect materials
+                const neededMaterials = new Set<string>();
+                familySessions.forEach((session: any) => {
+                    session.formation.materials.forEach((m: string) => neededMaterials.add(m));
                 });
+
+                if (neededMaterials.size > 0) {
+                    neededMaterials.forEach(m => {
+                        materialsList.push({
+                            name: m,
+                            status: 'unknown'
+                        });
+                    });
+                }
             }
+
+            // Compute metrics
+            const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.formation.duration_minutes || 15), 0);
+            const coreKitCount = familySessions.filter((s: any) => s.formation.uses_core_kit).length;
+            const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
+
+            return c.json({
+                date: new Date().toISOString().split('T')[0],
+                children,
+                familySessions,
+                materials: materialsList,
+                totalDuration,
+                coreKitCoverage
+            });
+        } catch (error: any) {
+            console.error('Family today error:', error);
+            const status = error.message === 'Unauthorized' ? 401 : 500;
+            return c.json({ error: error.message || 'Internal Server Error' }, status);
         }
-
-        // Compute metrics
-        const totalDuration = familySessions.reduce((acc: number, s: any) => acc + (s.formation.duration_minutes || 15), 0);
-        const coreKitCount = familySessions.filter((s: any) => s.formation.uses_core_kit).length;
-        const coreKitCoverage = familySessions.length > 0 ? (coreKitCount / familySessions.length) * 100 : 0;
-
-        return c.json({
-            date: new Date().toISOString().split('T')[0],
-            children,
-            familySessions,
-            materials: materialsList,
-            totalDuration,
-            coreKitCoverage
-        });
-    } catch (error: any) {
-        console.error('Family today error:', error);
-        const status = error.message === 'Unauthorized' ? 401 : 500;
-        return c.json({ error: error.message || 'Internal Server Error' }, status);
-    }
+    });
 }
 
 // Get family dashboard data - UNIFIED PLANNER VERSION
