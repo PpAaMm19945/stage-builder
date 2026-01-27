@@ -21,6 +21,7 @@ import analyticsRoutes from './routes/analytics';
 import exportRoutes from './routes/export';
 import reportsRoutes from './routes/reports';
 import adminRoutes from './routes/admin';
+import pathsRoutes from './routes/paths';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
@@ -133,6 +134,7 @@ app.route('/', analyticsRoutes);
 app.route('/', exportRoutes);
 app.route('/', reportsRoutes);
 app.route('/', adminRoutes);
+app.route('/', pathsRoutes);
 
 
 

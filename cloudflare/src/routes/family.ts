@@ -142,8 +142,15 @@ app.get('/api/family/tomorrow-preview', async (c) => {
 
         // Get plan
         const weekStart = getSmartWeekStart();
-        const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
-            .bind(user.id, weekStart).first();
+
+        // Try V2 first
+        let plan = await c.env.DB.prepare('SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first();
+
+        if (!plan) {
+            plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+                .bind(user.id, weekStart).first();
+        }
 
         if (!plan) {
             return c.json({
@@ -283,8 +290,8 @@ async function getDailyPractices(db: any) {
     }));
 }
 
-// Get family dashboard data - UNIFIED PLANNER VERSION
-app.get('/api/family/today', async (c) => {
+// Shared helper for getting today's family dashboard data
+async function getFamilyToday(c: any) {
     try {
         const user = requireHouseholdMember(c);
 
@@ -335,10 +342,16 @@ app.get('/api/family/today', async (c) => {
             });
         }
 
-        // 4. Get this week's plan
+        // 4. Get this week's plan from V2 (Unified Schema)
         const weekStart = getSmartWeekStart();
-        const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
-            .bind(user.id, weekStart).first();
+        let plan = await c.env.DB.prepare('SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first();
+
+        // Fallback to legacy plan if V2 not found
+        if (!plan) {
+            plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+                .bind(user.id, weekStart).first();
+        }
 
         // 5. If no plan exists, prompt to generate
         if (!plan) {
@@ -359,7 +372,8 @@ app.get('/api/family/today', async (c) => {
 
         // 6. Return today's activities from the plan
         const planData = JSON.parse((plan as any).plan_json);
-        const todaysSlots = planData.slots.filter((s: any) => s.day === dayOfWeek);
+        // Safely access slots, default to empty if undefined
+        const todaysSlots = (planData.slots || []).filter((s: any) => s.day === dayOfWeek);
 
         // Hydrate formations
         const activityIds = todaysSlots.map((s: any) => s.activityId); // Retain 'activityId' in slots for back-compat
@@ -447,6 +461,11 @@ app.get('/api/family/today', async (c) => {
         const status = error.message === 'Unauthorized' ? 401 : 500;
         return c.json({ error: error.message || 'Internal Server Error' }, status);
     }
+}
+
+// Get family dashboard data - UNIFIED PLANNER VERSION
+app.get('/api/family/today', async (c) => {
+    return getFamilyToday(c);
 });
 
 // Get activities for a specific date (for day navigation on dashboard)
@@ -480,10 +499,11 @@ app.get('/api/family/day/:date', async (c) => {
         // Get day of week for the target date
         const dayOfWeek = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'][targetDate.getDay()];
 
-        // Check if this is an available day
-        const timeModel = await c.env.DB.prepare('SELECT available_days FROM weekly_time_model WHERE parent_id = ?')
+        // Check if this is an available day using family_preferences
+        const prefs = await c.env.DB.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?')
             .bind(user.id).first();
-        const availableDays = JSON.parse((timeModel as any)?.available_days || '["Mon","Tue","Wed","Thu","Fri"]');
+        const overrides = prefs ? JSON.parse((prefs as any).overrides_json || '{}') : {};
+        const availableDays = overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
 
         if (!availableDays.includes(dayOfWeek)) {
             return c.json({
@@ -500,8 +520,16 @@ app.get('/api/family/day/:date', async (c) => {
 
         // Get the week start for the target date
         const weekStart = getSmartWeekStart(dateParam);
-        const plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
-            .bind(user.id, weekStart).first();
+
+        // Try V2 plan first
+        let plan = await c.env.DB.prepare('SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first();
+
+        // Fallback to legacy
+        if (!plan) {
+            plan = await c.env.DB.prepare('SELECT plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+                .bind(user.id, weekStart).first();
+        }
 
         if (!plan) {
             return c.json({
@@ -601,9 +629,16 @@ app.post('/api/family/swap-persist', async (c) => {
             return c.json({ error: 'newActivityId, day, and weekStart are required' }, 400);
         }
 
-        // Get the current plan
-        const plan = await c.env.DB.prepare('SELECT id, plan_json FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
-            .bind(user.id, weekStart).first();
+        // Get the current plan (Check V2 first)
+        let plan = await c.env.DB.prepare('SELECT id, plan_data as plan_json, "v2" as version FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first();
+
+        let isV2 = true;
+        if (!plan) {
+            plan = await c.env.DB.prepare('SELECT id, plan_json, "v1" as version FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+                .bind(user.id, weekStart).first();
+            isV2 = false;
+        }
 
         if (!plan) {
             return c.json({ error: 'No plan found for this week' }, 404);
@@ -638,8 +673,13 @@ app.post('/api/family/swap-persist', async (c) => {
         }
 
         // Save the updated plan
-        await c.env.DB.prepare('UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?')
-            .bind(JSON.stringify(planData), (plan as any).id).run();
+        if (isV2) {
+            await c.env.DB.prepare('UPDATE weekly_plans_v2 SET plan_data = ?, regenerated_at = datetime("now") WHERE id = ?')
+                .bind(JSON.stringify(planData), (plan as any).id).run();
+        } else {
+            await c.env.DB.prepare('UPDATE weekly_plans SET plan_json = ?, updated_at = datetime("now") WHERE id = ?')
+                .bind(JSON.stringify(planData), (plan as any).id).run();
+        }
 
         // Get the new formation for response
         const newFormation = await c.env.DB.prepare('SELECT * FROM formations WHERE id = ?')
@@ -719,18 +759,49 @@ app.post('/api/rhythm/regenerate', async (c) => {
 // ============ LEGACY / COMPATIBILITY ROUTES ============
 
 // Alias for rhythm/today -> family/today
+// Alias for rhythm/today -> family/today
 app.get('/api/rhythm/today', async (c) => {
-    // Re-use the logic from family/today or redirect
-    return app.request('/api/family/today', c.req.raw.clone());
+    // Direct call to helper instead of app.request context switch
+    return getFamilyToday(c);
 });
 
 // Alias for weekly-plan -> rhythm/week
+// Alias for weekly-plan -> rhythm/week
 app.get('/api/family/weekly-plan', async (c) => {
-    // If the frontend expects a specific format, we might need to adjust, 
-    // but 'rhythm/week' seems to be the modern equivalent.
-    // However, let's explicitly query to ensure we match the expectation if it's different.
-    // For now, redirecting/aliasing to rhythm/week is the safest V2 bet.
-    return app.request('/api/rhythm/week', c.req.raw.clone());
+    try {
+        const user = requireHouseholdMember(c);
+        const weekStart = getSmartWeekStart();
+
+        // Try V2 schema first
+        const planV2 = await c.env.DB.prepare('SELECT * FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?')
+            .bind(user.household_id, weekStart).first();
+
+        if (planV2) {
+            return c.json({
+                ...planV2,
+                plan_data: JSON.parse((planV2 as any).plan_data)
+            });
+        }
+
+        // Fallback to V1 schema
+        const planV1 = await c.env.DB.prepare('SELECT * FROM weekly_plans WHERE parent_id = ? AND week_start = ?')
+            .bind(user.id, weekStart).first();
+
+        if (planV1) {
+            return c.json({
+                id: (planV1 as any).id,
+                week_start: (planV1 as any).week_start,
+                plan_data: JSON.parse((planV1 as any).plan_json),
+                isLegacy: true
+            });
+        }
+
+        return c.json({ needsPlan: true });
+    } catch (error: any) {
+        console.error('Weekly plan error:', error);
+        const status = error.message === 'Unauthorized' ? 401 : 500;
+        return c.json({ error: error.message || 'Internal Server Error' }, status);
+    }
 });
 
 // Implement week-summary (missing)
