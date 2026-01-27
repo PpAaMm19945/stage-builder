@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, memo } from 'react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { cn } from '@/lib/utils';
 
@@ -6,12 +6,13 @@ interface BookPageImageProps {
     src: string;
     alt: string;
     index: number;
-    onError?: () => void;
+    onError?: (index: number) => void;
     prompt?: string;
     className?: string;
 }
 
-export function BookPageImage({ src, alt, index, onError, prompt, className }: BookPageImageProps) {
+// ⚡ Bolt: Memoized to prevent re-renders when parent state (like current page) changes
+export const BookPageImage = memo(function BookPageImage({ src, alt, index, onError, prompt, className }: BookPageImageProps) {
     const [isLoaded, setIsLoaded] = useState(false);
 
     return (
@@ -33,7 +34,7 @@ export function BookPageImage({ src, alt, index, onError, prompt, className }: B
                 )}
                 loading={index < 3 ? "eager" : "lazy"}
                 onLoad={() => setIsLoaded(true)}
-                onError={onError}
+                onError={() => onError?.(index)}
             />
 
             {/* Overlay Prompt */}
@@ -46,4 +47,4 @@ export function BookPageImage({ src, alt, index, onError, prompt, className }: B
             )}
         </div>
     );
-}
+});
