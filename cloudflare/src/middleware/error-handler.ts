@@ -1,7 +1,7 @@
 import { Context } from 'hono';
-import { Env } from '../types';
+import { Env, User } from '../types';
 
-export const errorHandler = (err: Error, c: Context<{ Bindings: Env }>) => {
+export const errorHandler = (err: Error, c: Context<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>) => {
     console.error('[Global Error]', err);
     const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
 
