@@ -169,8 +169,7 @@ app.get('/api/debug/auth', async (c) => {
     const secret = c.env.JWT_SECRET;
     const secretStatus = {
         exists: !!secret,
-        length: secret?.length,
-        preview: secret ? secret.substring(0, 3) + '...' : 'null'
+        // Security: Do not expose length or preview in production
     };
 
     let verificationLibResult = null;

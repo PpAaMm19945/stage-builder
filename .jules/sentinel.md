@@ -56,3 +56,8 @@
 **Vulnerability:** The Admin Console (`cloudflare/src/routes/console.ts`) accepted the `ADMIN_SECRET` via a `key` query parameter (`?key=...`). This allows the secret to be leaked in browser history, proxy logs, and server logs.
 **Learning:** Even "internal" web dashboards often get deployed to public-facing URLs. Relying on query parameters for authentication is a persistent anti-pattern because it feels "easy" for browser access but is fundamentally insecure.
 **Prevention:** Use HTTP Basic Auth (`Authorization: Basic ...`) for browser-accessible protected pages. It is supported by all browsers (via popup) and keeps credentials in headers, not URLs.
+
+## 2026-06-30 - Information Disclosure in Debug Endpoints
+**Vulnerability:** The `GET /api/debug/auth` endpoint returned metadata about the `JWT_SECRET`, including its length and a 3-character preview. While intended for debugging, this exposes sensitive information about the secret's structure and existence to unauthenticated users (if the endpoint is public) or lower-privilege users.
+**Learning:** Debug endpoints are often overlooked in security reviews. "Metadata" about a secret (length, partial value) is still sensitive information that can aid attackers in brute-force or identification attacks.
+**Prevention:** Never return partial secrets or length in production. If a "check" is needed, return a simple boolean `configured: true` or `exists: true` without any details.
