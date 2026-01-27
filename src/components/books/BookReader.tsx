@@ -43,7 +43,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
     const [showPrompts, setShowPrompts] = useState(false);
-    const [parsedPages, setParsedPages] = useState<string[]>([]);
     const [failedImages, setFailedImages] = useState<Set<number>>(new Set());
     const [showChildSelection, setShowChildSelection] = useState(false);
     const [showFinishDialog, setShowFinishDialog] = useState(false);
@@ -166,12 +165,13 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         }
     });
 
-    useEffect(() => {
+    // ⚡ Bolt: Memoize markdown parsing to prevent extra render cycle
+    const parsedPages = useMemo(() => {
         if (markdownContent) {
             // Split by "---" for pages
-            const pages = markdownContent.split(/\n---\n/);
-            setParsedPages(pages);
+            return markdownContent.split(/\n---\n/);
         }
+        return [];
     }, [markdownContent]);
 
     useEffect(() => {
