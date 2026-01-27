@@ -635,6 +635,63 @@ app.post('/api/rhythm/regenerate', async (c) => {
     }
 });
 
+// Get weekly materials (Aggregated)
+app.get('/api/family/materials', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const weekStart = getSmartWeekStart();
+
+        // 1. Get Plan
+        const plan = await safeQueryFirst<any>(c.env.DB,
+            'SELECT plan_data as plan_json FROM weekly_plans_v2 WHERE family_id = ? AND week_start = ?',
+            [user.household_id, weekStart]
+        );
+
+        if (!plan) return c.json({ materials: [] });
+
+        const planData = JSON.parse(plan.plan_json);
+        const slots = planData.slots || [];
+        const activityIds = [...new Set(slots.map((s: any) => s.activityId))];
+
+        if (activityIds.length === 0) return c.json({ materials: [] });
+
+        // 2. Get Formations
+        const placeholders = activityIds.map(() => '?').join(',');
+        const { results: formations } = await safeQuery(c.env.DB,
+            `SELECT id, materials FROM formations WHERE id IN (${placeholders})`,
+            activityIds
+        );
+
+        // 3. Aggregate
+        const materialCounts: Record<string, number> = {};
+
+        formations.forEach((f: any) => {
+            try {
+                const list = JSON.parse(f.materials || '[]');
+                list.forEach((m: string) => {
+                    // Simple normalization
+                    const name = m.trim();
+                    materialCounts[name] = (materialCounts[name] || 0) + 1;
+                });
+            } catch (e) { }
+        });
+
+        // 4. Format
+        const materials = Object.entries(materialCounts).map(([name, count]) => ({
+            id: generateId('mat'),
+            name,
+            count,
+            weekStart,
+            status: 'pending' // TODO: check inventory if exists
+        }));
+
+        return c.json({ materials });
+
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 // ============ LEGACY / COMPATIBILITY ROUTES ============
 
 // Alias for rhythm/today -> family/today
