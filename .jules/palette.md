@@ -25,3 +25,7 @@
 ## 2026-06-15 - Tooltips in Modals
 **Learning:** Tooltips inside Radix Dialogs (z-50) often get obscured if they don't have a higher z-index, even if using Portals, depending on stacking contexts.
 **Action:** When adding Tooltips to elements inside a Dialog/Sheet, explicitly add `z-[60]` (or higher than the modal) to `TooltipContent` to ensure visibility.
+
+## 2026-06-25 - Global UI Infrastructure Verification
+**Learning:** Adding local feedback (like toasts) revealed that the global provider (`<Toaster />`) was completely missing from the root layout, silently breaking notifications across the entire app.
+**Action:** When implementing features that rely on global context (Toasts, Dialogs, Themes), verify the provider exists in `App.tsx` or the root layout, rather than assuming the infrastructure is already in place.
