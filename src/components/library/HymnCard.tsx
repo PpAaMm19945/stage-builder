@@ -18,10 +18,21 @@ interface HymnCardProps {
 }
 
 export const HymnCard = memo(function HymnCard({ hymn, onClick }: HymnCardProps) {
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            onClick(hymn);
+        }
+    };
+
     return (
         <Card
-            className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group"
+            className="cursor-pointer hover:border-primary/50 transition-all hover:shadow-md group focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
             onClick={() => onClick(hymn)}
+            role="button"
+            tabIndex={0}
+            aria-label={`View hymn ${hymn.sequence_number}: ${hymn.title}`}
+            onKeyDown={handleKeyDown}
         >
             <CardContent className="p-4 flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-primary/10 flex items-center justify-center shrink-0 group-hover:bg-primary/20 transition-colors relative">
