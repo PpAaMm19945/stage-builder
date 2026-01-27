@@ -661,6 +661,11 @@ app.put('/api/books/upload', async (c) => {
     const path = c.req.query('path');
     if (!path) return c.json({ error: 'Path required' }, 400);
 
+    // Security: Prevent arbitrary file writes and directory traversal
+    if (!path.startsWith('books/') || !isValidPathSegment(path)) {
+        return c.json({ error: 'Invalid path. Must start with books/ and not contain traversal characters.' }, 403);
+    }
+
     try {
         const body = await c.req.arrayBuffer();
         await c.env.BOOKS_BUCKET.put(path, body);
