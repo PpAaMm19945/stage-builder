@@ -108,4 +108,30 @@ app.post('/api/chat/reject', async (c) => {
     } catch (e: any) { return c.json({ error: e.message }, 500); }
 });
 
+app.get('/api/ai/interactions', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const { results } = await c.env.DB.prepare(
+            'SELECT * FROM ai_logs WHERE parent_id = ? ORDER BY created_at DESC LIMIT 50'
+        ).bind(user.id).all();
+
+        // Map to camelCase
+        const logs = results.map((log: any) => ({
+            id: log.id,
+            parentId: log.parent_id,
+            studentId: log.student_id,
+            interactionType: log.interaction_type,
+            question: log.question,
+            answer: log.answer,
+            context: log.context_json ? JSON.parse(log.context_json) : undefined,
+            createdAt: log.created_at
+        }));
+
+        return c.json(logs);
+    } catch (e: any) {
+        console.error("Error fetching AI logs", e);
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 export default app;
