@@ -6,6 +6,11 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { CalendarBlank, CaretDown, CaretUp, WarningCircle, ArrowsClockwise, X } from '@phosphor-icons/react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { api } from '@/lib/api';
 import { useToast } from '@/hooks/use-toast';
 import { format, addDays } from 'date-fns';
@@ -72,9 +77,22 @@ export function TomorrowPreview() {
                     <CalendarBlank className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-medium">Tomorrow's Plan</CardTitle>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
-                    <CaretUp className="h-4 w-4" />
-                </Button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            className="h-6 w-6"
+                            onClick={() => setIsOpen(false)}
+                            aria-label="Close preview"
+                        >
+                            <CaretUp className="h-4 w-4" />
+                        </Button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>Close preview</p>
+                    </TooltipContent>
+                </Tooltip>
             </CardHeader>
             <CardContent className="p-4 space-y-4">
                 {isLoading ? (
@@ -105,16 +123,23 @@ export function TomorrowPreview() {
                                             </div>
                                             <p className="text-xs text-muted-foreground line-clamp-2">{activity.description}</p>
                                         </div>
-                                        <Button
-                                            variant="ghost"
-                                            size="icon"
-                                            className="h-6 w-6 text-muted-foreground hover:text-destructive"
-                                            onClick={() => skipMutation.mutate(activity.id)}
-                                            disabled={skipMutation.isPending}
-                                            title="Skip this activity"
-                                        >
-                                            <X className="h-4 w-4" />
-                                        </Button>
+                                        <Tooltip>
+                                            <TooltipTrigger asChild>
+                                                <Button
+                                                    variant="ghost"
+                                                    size="icon"
+                                                    className="h-6 w-6 text-muted-foreground hover:text-destructive"
+                                                    onClick={() => skipMutation.mutate(activity.id)}
+                                                    disabled={skipMutation.isPending}
+                                                    aria-label="Skip this activity"
+                                                >
+                                                    <X className="h-4 w-4" />
+                                                </Button>
+                                            </TooltipTrigger>
+                                            <TooltipContent>
+                                                <p>Skip this activity</p>
+                                            </TooltipContent>
+                                        </Tooltip>
                                     </div>
                                 ))}
                             </div>
