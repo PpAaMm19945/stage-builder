@@ -181,21 +181,6 @@ export default function Dashboard() {
     return pool[seed % pool.length];
   }, [recommendedBooks, readingHistory, youngestChild]);
 
-  // Stable keys for PDF generation
-  // We extract and stabilize only the data needed for the PDF.
-  // This prevents expensive PDF regeneration when unrelated dayData fields change (like 'message' or completion status).
-  const pdfActivitiesRaw = useMemo(() => {
-    return dayData?.familySessions?.map((s: any) => s.formation || s.activity).filter(Boolean) || [];
-  }, [dayData?.familySessions]);
-
-  // Stabilize the inputs for the PDF
-  const pdfActivities = useStableValue(pdfActivitiesRaw);
-  const pdfBook = useStableValue(todaysBook);
-
-  // Memoize PDF document to prevent expensive regeneration on every render
-  // This must be declared here to avoid hook ordering issues with early returns
-
-
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
     queryKey: ['family-weekly-plan'],
@@ -416,52 +401,53 @@ export default function Dashboard() {
   const pendingCount = useMemo(() => timelineItems.filter(i => i.status !== 'completed' && i.type !== 'section_header').length, [timelineItems]);
 
 
-  // Loading State
-  // Loading State - only show full spinner on initial load (no cached data)
-  if (dayLoading && !dayData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px]">
-        <CircleNotch className="h-8 w-8 animate-spin text-primary" />
-        <p className="mt-4 text-muted-foreground">Planning your family's day...</p>
-      </div>
-    );
-  }
-
-  // Error State
-  if (dayError || !dayData) {
-    return (
-      <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
-        <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
-          <WarningCircle className="h-6 w-6 text-destructive" />
+  const renderContent = () => {
+    // Loading State
+    // Loading State - only show full spinner on initial load (no cached data)
+    if (dayLoading && !dayData) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[400px]">
+          <CircleNotch className="h-8 w-8 animate-spin text-primary" />
+          <p className="mt-4 text-muted-foreground">Planning your family's day...</p>
         </div>
-        <h3 className="text-lg font-semibold">Unable to load dashboard</h3>
-        <p className="text-muted-foreground mb-4">We couldn't get today's plan. Please try again.</p>
-        <Button onClick={() => window.location.reload()}>Retry</Button>
-      </div>
-    );
-  }
+      );
+    }
 
-  // No Children State (using activeChildren to exclude graduates)
-  if (activeChildren.length === 0) {
-    return (
-      <div className="max-w-2xl mx-auto text-center py-12">
-        <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
-          <Baby className="h-8 w-8 text-primary" weight="duotone" />
+    // Error State
+    if (dayError || !dayData) {
+      return (
+        <div className="flex flex-col items-center justify-center min-h-[400px] text-center">
+          <div className="h-12 w-12 rounded-full bg-destructive/10 flex items-center justify-center mb-4">
+            <WarningCircle className="h-6 w-6 text-destructive" />
+          </div>
+          <h3 className="text-lg font-semibold">Unable to load dashboard</h3>
+          <p className="text-muted-foreground mb-4">We couldn't get today's plan. Please try again.</p>
+          <Button onClick={() => window.location.reload()}>Retry</Button>
         </div>
-        <h2 className="text-2xl font-bold mb-2">Welcome to SchoolOS!</h2>
-        <p className="text-muted-foreground mb-8">
-          To get started with your personalized family learning plan, please add your first child.
-        </p>
-        <Button onClick={() => navigate('/settings')} size="lg">
-          Add Your First Child
-        </Button>
-      </div>
-    );
-  }
+      );
+    }
 
-  // Dashboard Content
-  return (
-    <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
+    // No Children State (using activeChildren to exclude graduates)
+    if (activeChildren.length === 0) {
+      return (
+        <div className="max-w-2xl mx-auto text-center py-12">
+          <div className="h-16 w-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-6">
+            <Baby className="h-8 w-8 text-primary" weight="duotone" />
+          </div>
+          <h2 className="text-2xl font-bold mb-2">Welcome to SchoolOS!</h2>
+          <p className="text-muted-foreground mb-8">
+            To get started with your personalized family learning plan, please add your first child.
+          </p>
+          <Button onClick={() => navigate('/settings')} size="lg">
+            Add Your First Child
+          </Button>
+        </div>
+      );
+    }
+
+    // Dashboard Content
+    return (
+      <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
       {/* Greeting */}
       <div className="py-6 space-y-2 text-center sm:text-left">
         <h1 className="text-3xl font-display font-semibold text-foreground">
@@ -720,13 +706,16 @@ export default function Dashboard() {
         </DialogContent>
       </Dialog>
 
-      {/* Path Completion Celebration Modal */}
-      <PathCompletionModal
-        isOpen={!!completedPathInfo}
-        onClose={() => setCompletedPathInfo(null)}
-        pathName={completedPathInfo?.pathName || ''}
-        totalItems={completedPathInfo?.totalItems || 0}
-      />
-    </div>
-  );
+        {/* Path Completion Celebration Modal */}
+        <PathCompletionModal
+          isOpen={!!completedPathInfo}
+          onClose={() => setCompletedPathInfo(null)}
+          pathName={completedPathInfo?.pathName || ''}
+          totalItems={completedPathInfo?.totalItems || 0}
+        />
+      </div>
+    );
+  };
+
+  return renderContent();
 }
