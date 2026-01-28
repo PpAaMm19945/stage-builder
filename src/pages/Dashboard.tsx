@@ -1,4 +1,4 @@
-import { useState, useMemo, useCallback, useEffect } from 'react';
+import { useState, useMemo, useCallback, useEffect, lazy, Suspense } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { family, books, weeklyPlan, activityCompletions, reading, paths, rhythm } from '@/lib/api';
 import { TodayPathItem } from '@/types/paths';
@@ -29,7 +29,8 @@ import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { TimeSpentWidget } from '@/components/dashboard/TimeSpentWidget';
 import { BookReader } from '@/components/books/BookReader';
-import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
+// Lazy load PDF button to avoid React duplication issues
+const DownloadPrintButton = lazy(() => import('@/components/ui/DownloadPrintButton').then(module => ({ default: module.DownloadPrintButton })));
 import { DailyPlanDocument } from '@/components/pdf/documents';
 import {
   Dialog,
@@ -514,14 +515,16 @@ export default function Dashboard() {
       {/* Print Button */}
       {isToday && dayData && (
         <div className="flex justify-end px-2">
-          <DownloadPrintButton
-            document={pdfDocument}
-            fileName={`daily_plan_${selectedDateStr}.pdf`}
-            label="Print Plan"
-            size="sm"
-            variant="ghost"
-            className="gap-2 text-muted-foreground hover:text-foreground"
-          />
+          <Suspense fallback={null}>
+            <DownloadPrintButton
+              document={pdfDocument}
+              fileName={`daily_plan_${selectedDateStr}.pdf`}
+              label="Print Plan"
+              size="sm"
+              variant="ghost"
+              className="gap-2 text-muted-foreground hover:text-foreground"
+            />
+          </Suspense>
         </div>
       )}
 
