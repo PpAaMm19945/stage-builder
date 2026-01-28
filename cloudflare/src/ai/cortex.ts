@@ -44,22 +44,60 @@ export class Cortex {
             return this.streamLlamaResponse(message, context);
         }
 
-        // If Action, return a structured Action Card immediately
-        // We wrap this in a stream to match the interface
+        // For ADJUST_SCHEDULE, return an action pending for user confirmation
+        if (route.intent === 'ADJUST_SCHEDULE') {
+            return new ReadableStream({
+                start(controller) {
+                    const actionPayload = {
+                        type: route.intent,
+                        data: { query: route.searchQuery, filters: route.filters },
+                        reason: "I can help you adjust your schedule."
+                    };
+                    controller.enqueue(encoder.encode(`event: thought\ndata: "Understanding schedule request..."\n\n`));
+                    const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
+                    controller.enqueue(encoder.encode(`data: ${jsonBlock}\n\n`));
+                    controller.close();
+                }
+            });
+        }
+
+        // For SEARCH_BOOKS and SEARCH_ACTIVITIES, actually execute the tools
+        const db = this.env.DB;
+        const searchQuery = route.searchQuery || '';
+        const ageMonths = context.children?.[0]?.age_in_months;
+
         return new ReadableStream({
-            start(controller) {
-                const actionPayload = {
-                    type: route.intent, // e.g., SEARCH_BOOKS
-                    data: { query: route.searchQuery, filters: route.filters },
-                    reason: "I can help you find that."
+            async start(controller) {
+                // Send thinking event
+                const intentLabel = route.intent === 'SEARCH_BOOKS' ? 'Searching library...' : 'Finding activities...';
+                controller.enqueue(encoder.encode(`event: thought\ndata: "${intentLabel}"\n\n`));
+
+                let results: any[] = [];
+                try {
+                    if (route.intent === 'SEARCH_BOOKS') {
+                        results = await searchBooks(db, searchQuery, ageMonths);
+                    } else if (route.intent === 'SEARCH_ACTIVITIES') {
+                        results = await searchActivities(db, searchQuery);
+                    }
+                } catch (e) {
+                    console.error('[Cortex] Tool execution failed:', e);
+                }
+
+                // Build response payload with actual results
+                const payload = {
+                    type: route.intent,
+                    data: {
+                        query: searchQuery,
+                        results,
+                        filters: route.filters
+                    },
+                    reason: results.length > 0
+                        ? `Found ${results.length} ${route.intent === 'SEARCH_BOOKS' ? 'books' : 'activities'} matching "${searchQuery}"`
+                        : `No results found for "${searchQuery}". Try different keywords.`
                 };
 
-                // Send "Thinking" event first (UI support)
-                controller.enqueue(encoder.encode(`event: thought\ndata: "Identifying intent: ${route.intent}"\n\n`));
-
-                // Send Action Payload
-                const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
-                controller.enqueue(encoder.encode(`data: ${jsonBlock}\n\n`));
+                // Send as DATA_BLOCK (for display) rather than ACTION_PENDING (which requires confirmation)
+                controller.enqueue(encoder.encode(`data: [DATA_BLOCK]${JSON.stringify(payload)}[DATA_BLOCK]\n\n`));
                 controller.close();
             }
         });

@@ -3,12 +3,23 @@ import { Env, User } from '../types';
 import { requireHouseholdMember } from '../lib/middleware';
 import { Cortex } from '../ai/cortex';
 import { ContextBuilder } from '../ai/context';
+import { checkRateLimit } from '../middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 app.post('/api/chat', async (c) => {
     try {
         const user = requireHouseholdMember(c);
+
+        // Rate limiting: 20 messages per minute per user
+        const rateCheck = checkRateLimit(user.id, 20, 60000);
+        if (!rateCheck.allowed) {
+            return c.json({
+                error: 'Rate limit exceeded. Please wait a moment before sending more messages.',
+                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
         const { messages, context: clientContext } = await c.req.json();
 
         // Build Rich Server Context
@@ -32,7 +43,9 @@ app.post('/api/chat', async (c) => {
             headers: {
                 'Content-Type': 'text/event-stream',
                 'Cache-Control': 'no-cache',
-                'Connection': 'keep-alive'
+                'Connection': 'keep-alive',
+                'X-RateLimit-Remaining': String(rateCheck.remaining),
+                'X-RateLimit-Reset': String(Math.ceil(rateCheck.resetAt / 1000))
             }
         });
     } catch (e: any) {

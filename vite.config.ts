@@ -25,5 +25,18 @@ export default defineConfig(({ mode }) => ({
     commonjsOptions: {
       include: [/node_modules/],
     },
+    rollupOptions: {
+      output: {
+        manualChunks: {
+          // Heavy PDF library - only load when generating PDFs
+          'pdf-renderer': ['@react-pdf/renderer'],
+          // Charts - only needed on dashboard/reports
+          'charts': ['recharts'],
+          // Markdown rendering - only for chat and book content
+          'markdown': ['react-markdown'],
+        },
+      },
+    },
   },
 }));
+
