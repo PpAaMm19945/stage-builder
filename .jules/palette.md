@@ -29,3 +29,7 @@
 ## 2026-06-25 - Sidebar Focus Consistency
 **Learning:** Custom interactive elements within the `Sidebar` (like logos or user profile buttons) often lack the specific `focus-visible` styles provided by `SidebarMenuButton`, leading to inconsistent keyboard navigation feedback.
 **Action:** When adding custom buttons to the sidebar, explicitly apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring` to match the design system's sidebar tokens.
+
+## 2026-07-10 - List Item Keyboard Accessibility
+**Learning:** `div` elements with `onClick` handlers are invisible to keyboard users, breaking the experience for anyone tabbing through a list of actions.
+**Action:** Add `role="button"`, `tabIndex={0}`, and `onKeyDown` (for Enter/Space) to interactive list rows. Also ensure `focus-visible` styles are applied so users know where they are.
