@@ -71,10 +71,6 @@ export default function Planner() {
         queryFn: () => weeklyPlan.get(weekStartStr),
     });
 
-    if (error) {
-        return <ErrorState message="We couldn't load your weekly plan." onRetry={() => refetch()} />;
-    }
-
     // Regenerate Mutation
     const regenerateMutation = useMutation({
         mutationFn: (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused'; weekStart: string }) =>
@@ -88,6 +84,10 @@ export default function Planner() {
             toast.error('Failed to regenerate', { description: err.message });
         }
     });
+
+    if (error) {
+        return <ErrorState message="We couldn't load your weekly plan." onRetry={() => refetch()} />;
+    }
 
     const handleRegenerateClick = () => {
         setIsBalanceDialogOpen(true);
