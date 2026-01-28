@@ -29,3 +29,7 @@
 ## 2026-06-25 - Sidebar Focus Consistency
 **Learning:** Custom interactive elements within the `Sidebar` (like logos or user profile buttons) often lack the specific `focus-visible` styles provided by `SidebarMenuButton`, leading to inconsistent keyboard navigation feedback.
 **Action:** When adding custom buttons to the sidebar, explicitly apply `focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring` to match the design system's sidebar tokens.
+
+## 2026-07-02 - Skip to Content Links
+**Learning:** Complex layouts with sidebars and sticky headers can make keyboard navigation tedious. Users must tab through every navigation item before reaching the main content.
+**Action:** Always include a "Skip to content" link as the first focusable element in the DOM. Ensure it is visible when focused (`focus:not-sr-only`) and targets the main content container via ID, with `tabIndex={-1}` on the target to ensure focus is programmatically moved.
