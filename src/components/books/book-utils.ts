@@ -27,6 +27,8 @@ export function isLandscapeSeries(series: string): boolean {
     const s = series.toLowerCase();
     // Heuristic keyword match (more robust than enumerating every series)
     return (
+        s.includes('picture') ||
+        s.includes('landscape') ||
         s.includes('my_first_books') ||
         s.includes('my first books') ||
         s.includes('african_men_of_faith') ||
