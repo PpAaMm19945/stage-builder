@@ -8,6 +8,8 @@ import { ChatPanel } from './ChatPanel';
 
 interface ChatSidebarProps {
     className?: string;
+    isOpen?: boolean;
+    onClose?: () => void;
 }
 
 /**
@@ -15,18 +17,20 @@ interface ChatSidebarProps {
  * - Desktop (>1024px): Fixed right sidebar
  * - Tablet/Mobile: Bottom sheet overlay with floating toggle button
  */
-export function ChatSidebar({ className }: ChatSidebarProps) {
-    const [isOpen, setIsOpen] = useState(false);
+export function ChatSidebar({ className, isOpen = true, onClose }: ChatSidebarProps) {
+    const [isSheetOpen, setIsSheetOpen] = useState(false);
     const isMobile = useIsMobile(1024); // Use tablet/mobile below 1024px
 
     // Desktop: Fixed sidebar
     if (!isMobile) {
+        if (!isOpen) return null;
+
         return (
             <aside className={cn(
                 "w-[400px] h-full border-l bg-background shrink-0",
                 className
             )}>
-                <ChatPanel className="h-full" />
+                <ChatPanel className="h-full" onClose={onClose} />
             </aside>
         );
     }
@@ -34,7 +38,7 @@ export function ChatSidebar({ className }: ChatSidebarProps) {
     // Mobile/Tablet: Sheet overlay with floating button
     return (
         <>
-            <Sheet open={isOpen} onOpenChange={setIsOpen}>
+            <Sheet open={isSheetOpen} onOpenChange={setIsSheetOpen}>
                 <SheetTrigger asChild>
                     <Button
                         size="lg"
@@ -42,7 +46,7 @@ export function ChatSidebar({ className }: ChatSidebarProps) {
                             "fixed bottom-6 right-6 z-50 rounded-full shadow-xl",
                             "w-14 h-14 p-0",
                             "bg-primary hover:bg-primary/90",
-                            isOpen && "hidden"
+                            isSheetOpen && "hidden"
                         )}
                         aria-label="Open chat"
                     >

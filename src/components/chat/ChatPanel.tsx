@@ -5,7 +5,7 @@ import { sanitizeMessage, validateMessage } from '@/lib/chat-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PaperPlaneRight, Robot, User } from '@phosphor-icons/react';
+import { PaperPlaneRight, Robot, User, X } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -26,13 +26,14 @@ import { Book } from '@/types';
 
 interface ChatPanelProps {
     className?: string;
+    onClose?: () => void;
 }
 
 /**
  * Main chat panel component with rich message support and BookReader integration.
  * Uses ephemeral state (no persistence) with action logging.
  */
-export function ChatPanel({ className }: ChatPanelProps) {
+export function ChatPanel({ className, onClose }: ChatPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [input, setInput] = useState('');
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
@@ -184,11 +185,16 @@ export function ChatPanel({ className }: ChatPanelProps) {
     return (
         <>
             <Card className={cn("h-full flex flex-col border-0 shadow-none bg-transparent", className)}>
-                <CardHeader className="pb-3 border-b shrink-0">
+                <CardHeader className="h-14 flex flex-row items-center justify-between p-0 px-4 border-b border-border/50 space-y-0 shrink-0">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <Robot className="w-5 h-5 text-primary" />
                         Frontdesk Officer
                     </CardTitle>
+                    {onClose && (
+                        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                            <X className="w-4 h-4" />
+                        </Button>
+                    )}
                 </CardHeader>
 
                 <CardContent className="flex-1 p-0 overflow-hidden relative">

@@ -8,10 +8,13 @@ import { ThemeToggle } from '@/components/theme/ThemeToggle';
 import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
 import { ChatSidebar } from '@/components/chat';
 import { checkWeeklyReportNotification } from '@/hooks/useNotifications';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
+import { Button } from '@/components/ui/button';
+import { ChatCircle } from '@phosphor-icons/react';
 
 export function MainLayout() {
   const { isAuthenticated, isLoading } = useAuth();
+  const [isChatOpen, setIsChatOpen] = useState(true);
 
   useEffect(() => {
     if (isAuthenticated) {
@@ -29,16 +32,29 @@ export function MainLayout() {
 
   return (
     <SidebarProvider>
-      <div className="flex min-h-screen w-full bg-background overflow-x-hidden">
+      <div className="flex h-screen w-full bg-background overflow-hidden">
         <AppSidebar />
 
         {/* Main content area - flex-1 to take remaining space */}
-        <main className="flex-1 flex flex-col min-w-0">
-          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6">
+        <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+          <header className="sticky top-0 z-10 flex h-14 items-center gap-4 border-b border-border/50 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 px-4 md:px-6 shrink-0">
             <SidebarTrigger className="-ml-2" />
 
             {/* Spacer to push items right */}
             <div className="flex-1" />
+
+            {/* Chat Toggle */}
+            {isAuthenticated && (
+              <Button
+                variant={isChatOpen ? "secondary" : "ghost"}
+                size="icon"
+                onClick={() => setIsChatOpen(!isChatOpen)}
+                className="hidden lg:flex"
+                aria-label="Toggle chat"
+              >
+                <ChatCircle className="h-5 w-5" weight={isChatOpen ? "fill" : "regular"} />
+              </Button>
+            )}
 
             {/* Theme Toggle */}
             <ThemeToggle />
@@ -50,7 +66,7 @@ export function MainLayout() {
           </div>
 
           {/* Footer with legal links */}
-          <footer className="py-6 text-center text-xs text-muted-foreground">
+          <footer className="py-6 text-center text-xs text-muted-foreground shrink-0">
             <Link to="/privacy" className="hover:underline">Privacy Policy</Link>
             {' · '}
             <Link to="/terms" className="hover:underline">Terms of Service</Link>
@@ -61,7 +77,11 @@ export function MainLayout() {
 
         {/* Chat Sidebar - Right side on desktop, floating on mobile */}
         {isAuthenticated && (
-          <ChatSidebar className="hidden lg:flex" />
+          <ChatSidebar
+            className="hidden lg:flex"
+            isOpen={isChatOpen}
+            onClose={() => setIsChatOpen(false)}
+          />
         )}
 
         {/* Floating Feedback Button - Only for authenticated users */}
