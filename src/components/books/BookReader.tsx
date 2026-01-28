@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -268,9 +268,21 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
 
     const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
-    const handleImageError = (index: number) => {
+    // ⚡ Bolt: Optimize prompt lookup from O(N) to O(1)
+    const promptsByPage = useMemo(() => {
+        if (!book?.readingPrompts) return new Map<number, string>();
+        const map = new Map<number, string>();
+        book.readingPrompts.forEach(p => {
+            if (typeof p === 'object' && 'page' in p) {
+                map.set(p.page - 1, p.prompt); // 0-based index
+            }
+        });
+        return map;
+    }, [book?.readingPrompts]);
+
+    const handleImageError = useCallback((index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
-    };
+    }, []);
 
     const handleCloseRequest = async () => {
         // If finished, close handling is standard
@@ -506,9 +518,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
-                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
-                                            typeof p === 'object' && 'page' in p && p.page === index + 1
-                                        ) as { page: number; prompt: string } | undefined;
+                                        const promptText = showPrompts ? promptsByPage.get(index) : undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
@@ -516,8 +526,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                     src={pageUrl}
                                                     alt={`Page ${index + 1}`}
                                                     index={index}
-                                                    onError={() => handleImageError(index)}
-                                                    prompt={prompt?.prompt}
+                                                    onError={handleImageError}
+                                                    prompt={promptText}
                                                 />
                                             </CarouselItem>
                                         );
