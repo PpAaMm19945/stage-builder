@@ -169,7 +169,7 @@ export function FrontdeskChat() {
                             let text = data;
                             if (data.startsWith('{')) {
                                 const parsed = JSON.parse(data);
-                                if (parsed.response) text = parsed.response;
+                                if (typeof parsed.response === 'string') text = parsed.response;
                             }
 
                             aiMsg.content += text;
