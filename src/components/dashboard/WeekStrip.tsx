@@ -50,16 +50,24 @@ export const WeekStrip = memo(function WeekStrip({
     isRegenerating = false,
     dayData = {},
 }: WeekStripProps) {
-    const today = startOfDay(new Date());
+    // ⚡ Performance: Memoize today to prevent creating a new reference on every render
+    const today = useMemo(() => startOfDay(new Date()), []);
+
+    // ⚡ Performance: Extract primitives to avoid unstable Date object dependencies
+    const weekStartTime = weekStart.valueOf();
+    const selectedDayTime = selectedDay.valueOf();
 
     // Generate the 5 weekdays
     const days = useMemo(() => {
+        const currentWeekStart = new Date(weekStartTime);
+        const currentSelectedDay = new Date(selectedDayTime);
+
         return [0, 1, 2, 3, 4].map((offset) => {
-            const date = addDays(weekStart, offset);
+            const date = addDays(currentWeekStart, offset);
             const dateStr = format(date, 'yyyy-MM-dd');
             const data = dayData[dateStr] || { completed: 0, total: 0, domains: [] };
             const isToday = isSameDay(date, today);
-            const isSelected = isSameDay(date, selectedDay);
+            const isSelected = isSameDay(date, currentSelectedDay);
             const isPastDay = isPast(date) && !isToday;
 
             let status: 'future' | 'today' | 'completed' | 'partial' | 'none' = 'future';
@@ -99,7 +107,7 @@ export const WeekStrip = memo(function WeekStrip({
                 ariaLabel: label,
             };
         });
-    }, [weekStart, selectedDay, today, dayData]);
+    }, [weekStartTime, selectedDayTime, today, dayData]);
 
     const weekLabel = `Week of ${format(weekStart, 'MMM d')} - ${format(addDays(weekStart, 4), 'd')}`;
 
