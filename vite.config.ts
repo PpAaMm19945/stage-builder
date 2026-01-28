@@ -46,14 +46,9 @@ export default defineConfig(({ mode }) => ({
             return 'charts';
           }
 
-          // Markdown rendering - for chat and book content
-          if (id.includes('react-markdown') ||
-            id.includes('remark-') ||
-            id.includes('unified') ||
-            id.includes('hast-') ||
-            id.includes('mdast-')) {
-            return 'markdown';
-          }
+          // NOTE: react-markdown was removed from chunking because it uses React hooks
+          // internally. When bundled separately, it duplicates React causing error #310.
+          // Keep it in the main bundle where React is properly shared.
         },
       },
     },
