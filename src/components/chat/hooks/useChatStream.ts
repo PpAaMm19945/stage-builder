@@ -144,22 +144,60 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                             chatState.startStreaming();
                         }
 
+                        // Helper to extract response text from JSON fragment
+                        const extractResponse = (jsonStr: string): string => {
+                            try {
+                                const parsed = JSON.parse(jsonStr);
+                                if (parsed.response && typeof parsed.response === 'string') {
+                                    return parsed.response;
+                                }
+                            } catch { /* ignore */ }
+                            return '';
+                        };
+
                         try {
-                            let text = data;
-                            // Check for {"response": "..."} wrapper
+                            let textToAdd = '';
+
+                            // Check for JSON wrapper(s)
                             if (data.startsWith('{')) {
                                 try {
+                                    // 1. Try parsing as a single JSON object
                                     const parsed = JSON.parse(data);
                                     if (parsed.response && typeof parsed.response === 'string') {
-                                        text = parsed.response;
+                                        textToAdd = parsed.response;
                                     }
-                                } catch { /* not JSON, use raw */ }
+                                } catch {
+                                    // 2. Parse failed, might be concatenated JSON objects (e.g. {response:...}{usage:...})
+                                    // This happens with Cloudflare Workers AI streaming sometimes
+                                    if (data.includes('}{')) {
+                                        const parts = data.split('}{');
+                                        for (let i = 0; i < parts.length; i++) {
+                                            let fragment = parts[i];
+                                            // Reconstruct valid JSON objects
+                                            if (i > 0) fragment = '{' + fragment;
+                                            if (i < parts.length - 1) fragment = fragment + '}';
+
+                                            textToAdd += extractResponse(fragment);
+                                        }
+                                    } else {
+                                        // 3. Just a broken JSON fragment or something else.
+                                        // CRITICAL: Do NOT append raw data if it looks like JSON but failed to parse.
+                                        // This prevents leaking raw JSON strings like {"response":"","usage":...} to the UI.
+                                        console.warn('[ChatStream] Skipping malformed JSON data chunk');
+                                    }
+                                }
+                            } else {
+                                // Not JSON, treat as raw text
+                                textToAdd = data;
                             }
-                            aiMessage.content += text;
-                            onMessageUpdate({ ...aiMessage });
-                        } catch {
-                            aiMessage.content += data;
-                            onMessageUpdate({ ...aiMessage });
+
+                            if (textToAdd) {
+                                aiMessage.content += textToAdd;
+                                onMessageUpdate({ ...aiMessage });
+                            }
+                        } catch (err) {
+                            console.error('[ChatStream] Error processing data chunk:', err);
+                            // Do not append raw data on error to be safe
                         }
                     }
                 }
