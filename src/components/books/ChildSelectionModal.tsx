@@ -88,8 +88,7 @@ export function ChildSelectionModal({
                     {children.map(child => (
                         <div
                             key={child.id}
-                            className="flex items-center space-x-3 p-3 rounded-lg hover:bg-accent cursor-pointer"
-                            onClick={() => handleToggleChild(child.id)}
+                            className="relative flex items-center space-x-3 p-3 rounded-lg hover:bg-accent"
                         >
                             <Checkbox
                                 id={child.id}
@@ -115,6 +114,11 @@ export function ChildSelectionModal({
                                     {child.name}
                                 </Label>
                             </div>
+                            <label
+                                htmlFor={child.id}
+                                className="absolute inset-0 cursor-pointer"
+                                aria-hidden="true"
+                            />
                         </div>
                     ))}
                 </div>
