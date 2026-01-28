@@ -651,10 +651,11 @@ app.get('/api/reading/history', async (c) => {
 
 // Upload book image (Admin only)
 app.put('/api/books/upload', async (c) => {
-    const key = c.req.query('key');
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const secret = c.env.ADMIN_SECRET;
 
-    if (!secret || !(await safeCompare(key, secret))) {
+    if (!secret || !(await safeCompare(token, secret))) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -677,10 +678,11 @@ app.put('/api/books/upload', async (c) => {
 
 // Debug R2 endpoint
 app.get('/api/debug/r2', async (c) => {
-    const key = c.req.query('key');
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const secret = c.env.ADMIN_SECRET;
 
-    if (!secret || !(await safeCompare(key, secret))) {
+    if (!secret || !(await safeCompare(token, secret))) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
@@ -705,10 +707,11 @@ app.get('/api/debug/r2', async (c) => {
 
 // Debug Book Audit
 app.get('/api/debug/books/audit', async (c) => {
-    const key = c.req.query('key');
+    const authHeader = c.req.header('Authorization');
+    const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
     const secret = c.env.ADMIN_SECRET;
 
-    if (!secret || !(await safeCompare(key, secret))) {
+    if (!secret || !(await safeCompare(token, secret))) {
         return c.json({ error: 'Unauthorized' }, 401);
     }
 
