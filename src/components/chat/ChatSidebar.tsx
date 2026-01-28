@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { ChatPlus, X } from '@phosphor-icons/react';
+import { ChatCircle } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger } from '@/components/ui/sheet';
 import { cn } from '@/lib/utils';
@@ -46,28 +46,17 @@ export function ChatSidebar({ className }: ChatSidebarProps) {
                         )}
                         aria-label="Open chat"
                     >
-                        <ChatPlus className="w-6 h-6" weight="fill" />
+                        <ChatCircle className="w-6 h-6" weight="fill" />
                     </Button>
                 </SheetTrigger>
                 <SheetContent
                     side="bottom"
                     className="h-[85vh] p-0 rounded-t-2xl"
-                    hideCloseButton
                 >
                     {/* Handle bar for bottom sheet */}
                     <div className="flex justify-center pt-3 pb-1">
                         <div className="w-10 h-1 rounded-full bg-muted-foreground/20" />
                     </div>
-
-                    {/* Close button */}
-                    <Button
-                        variant="ghost"
-                        size="icon"
-                        className="absolute right-4 top-4"
-                        onClick={() => setIsOpen(false)}
-                    >
-                        <X className="w-5 h-5" />
-                    </Button>
 
                     <ChatPanel className="h-full" />
                 </SheetContent>
