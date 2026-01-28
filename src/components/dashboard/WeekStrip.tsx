@@ -29,6 +29,8 @@ const DOMAIN_COLORS: Record<string, string> = {
     'Wonder': 'bg-cyan-500',
 };
 
+const EMPTY_DATA = {};
+
 // Get Monday of the current week
 function getWeekStart(date = new Date()): Date {
     const day = date.getDay();
@@ -42,24 +44,56 @@ function getWeekStart(date = new Date()): Date {
     return startOfDay(d);
 }
 
+function arePropsEqual(prev: WeekStripProps, next: WeekStripProps) {
+    const datesEqual =
+        prev.weekStart.valueOf() === next.weekStart.valueOf() &&
+        prev.selectedDay.valueOf() === next.selectedDay.valueOf();
+
+    if (!datesEqual) return false;
+
+    if (prev.isRegenerating !== next.isRegenerating) return false;
+    if (prev.onDaySelect !== next.onDaySelect) return false;
+    if (prev.onRegenerate !== next.onRegenerate) return false;
+
+    const prevData = prev.dayData || EMPTY_DATA;
+    const nextData = next.dayData || EMPTY_DATA;
+
+    if (prevData === nextData) return true;
+
+    // Treat two empty objects as equal to handle unstable references (e.g. from "|| {}")
+    const prevKeys = Object.keys(prevData);
+    const nextKeys = Object.keys(nextData);
+    if (prevKeys.length === 0 && nextKeys.length === 0) return true;
+
+    return false;
+}
+
 export const WeekStrip = memo(function WeekStrip({
     weekStart,
     selectedDay,
     onDaySelect,
     onRegenerate,
     isRegenerating = false,
-    dayData = {},
+    dayData = EMPTY_DATA,
 }: WeekStripProps) {
-    const today = startOfDay(new Date());
+    // Use primitive timestamp for today to ensure stability in useMemo
+    // startOfDay(new Date()) creates a new object every render, breaking memoization
+    const todayTs = new Date().setHours(0, 0, 0, 0);
+    const weekStartMs = weekStart.valueOf();
+    const selectedDayMs = selectedDay.valueOf();
 
     // Generate the 5 weekdays
     const days = useMemo(() => {
+        const today = new Date(todayTs);
+        const weekStartObj = new Date(weekStartMs);
+        const selectedDayObj = new Date(selectedDayMs);
+
         return [0, 1, 2, 3, 4].map((offset) => {
-            const date = addDays(weekStart, offset);
+            const date = addDays(weekStartObj, offset);
             const dateStr = format(date, 'yyyy-MM-dd');
             const data = dayData[dateStr] || { completed: 0, total: 0, domains: [] };
             const isToday = isSameDay(date, today);
-            const isSelected = isSameDay(date, selectedDay);
+            const isSelected = isSameDay(date, selectedDayObj);
             const isPastDay = isPast(date) && !isToday;
 
             let status: 'future' | 'today' | 'completed' | 'partial' | 'none' = 'future';
@@ -99,7 +133,7 @@ export const WeekStrip = memo(function WeekStrip({
                 ariaLabel: label,
             };
         });
-    }, [weekStart, selectedDay, today, dayData]);
+    }, [weekStartMs, selectedDayMs, todayTs, dayData]);
 
     const weekLabel = `Week of ${format(weekStart, 'MMM d')} - ${format(addDays(weekStart, 4), 'd')}`;
 
@@ -201,6 +235,6 @@ export const WeekStrip = memo(function WeekStrip({
             </div>
         </div>
     );
-});
+}, arePropsEqual);
 
 export { getWeekStart };

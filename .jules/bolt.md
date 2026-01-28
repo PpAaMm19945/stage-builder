@@ -29,3 +29,7 @@
 ## 2026-05-28 - Playwright Route Matching
 **Learning:** In `verify_book_reader.py`, the pattern `page.route("**/*.png", ...)` failed to intercept requests to `/api/books/.../pages/01` because the URL lacked a file extension, even though the content type was image/png. This caused the test to trigger the error handling path (skipping pages), inadvertently verifying the error propagation logic.
 **Action:** When mocking API endpoints that serve files without extensions, use path-based patterns (e.g., `**/pages/*`) instead of extension-based patterns.
+
+## 2026-05-29 - Unstable Date Objects in Memoization
+**Learning:** React's `useMemo` and `React.memo` rely on referential equality. Passing `new Date()` as a prop (like `WeekStrip` receiving `weekStart` from `Dashboard`) guarantees a re-render every time the parent renders, even if the time is identical.
+**Action:** When memoizing components or hooks dependent on Dates, extract primitive timestamps (e.g. `date.valueOf()`) for the dependency array or `React.memo` comparator. This isolates the component from reference instability in parent state.
