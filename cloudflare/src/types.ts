@@ -140,3 +140,20 @@ export interface JWTPayload {
     exp: number;
     iat: number;
 }
+
+export interface BookMetadata {
+    id: string;
+    series: string;
+    seriesTitle?: string;
+    title: string;
+    author?: string;
+    illustrator?: string;
+    description: string;
+    minAgeMonths: number;
+    maxAgeMonths: number;
+    pageCount: number;
+    domain: string;
+    learningStage: string;
+    readingPrompts?: any;
+    coverUrl?: string;
+}
