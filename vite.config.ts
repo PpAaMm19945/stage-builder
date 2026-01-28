@@ -27,16 +27,37 @@ export default defineConfig(({ mode }) => ({
     },
     rollupOptions: {
       output: {
-        manualChunks: {
-          // Heavy PDF library - only load when generating PDFs
-          'pdf-renderer': ['@react-pdf/renderer'],
+        // Use function-based manualChunks to prevent React duplication
+        manualChunks(id) {
+          // CRITICAL: Never split React - it must stay in main bundle
+          if (id.includes('node_modules/react/') ||
+            id.includes('node_modules/react-dom/') ||
+            id.includes('node_modules/scheduler/')) {
+            return; // Let Rollup handle these naturally (main bundle)
+          }
+
+          // Heavy PDF library - lazy load only when generating PDFs
+          if (id.includes('@react-pdf/renderer') || id.includes('@react-pdf/')) {
+            return 'pdf-renderer';
+          }
+
           // Charts - only needed on dashboard/reports
-          'charts': ['recharts'],
-          // Markdown rendering - only for chat and book content
-          'markdown': ['react-markdown'],
+          if (id.includes('recharts') || id.includes('d3-')) {
+            return 'charts';
+          }
+
+          // Markdown rendering - for chat and book content
+          if (id.includes('react-markdown') ||
+            id.includes('remark-') ||
+            id.includes('unified') ||
+            id.includes('hast-') ||
+            id.includes('mdast-')) {
+            return 'markdown';
+          }
         },
       },
     },
   },
 }));
+
 
