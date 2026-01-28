@@ -1,6 +1,7 @@
+
 import { Env } from '../types';
 
-export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GENERAL_CHAT';
+export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GET_TODAY_SCHEDULE' | 'GENERAL_CHAT';
 
 export interface RouteResult {
     intent: IntentType;
@@ -15,22 +16,27 @@ export class AiRouter {
     constructor(private env: Env) { }
 
     async routeRequest(message: string, context: any): Promise<RouteResult> {
-        const systemPrompt = `You are the "Router" for SchoolOS.
+        // Build readable context for prompt
+        const childrenAges = context.children?.map((c: any) => c.age_in_months) || [];
+
+        const systemPrompt = `You are the "Router" for FamilyPath.
         Your job is to classify the user's intent after they have passed safety triage.
         
         AVAILABLE TOOLS:
         1. SEARCH_BOOKS: strictly when user asks for a book, story, reading resource.
         2. SEARCH_ACTIVITIES: when user asks for a game, activity, lesson, craft, or curriculum.
-        3. ADJUST_SCHEDULE: when user wants to change time, days, or rhythm.
-        4. GENERAL_CHAT: for greetings, parenting advice, philosophy, or questions about the plan itself.
+        3. ADJUST_SCHEDULE: when user wants to change time, days, remove/add specific items.
+        4. GET_TODAY_SCHEDULE: when user asks "what is my schedule?", "what's for today?", "today's plan".
+        5. GENERAL_CHAT: for greetings, parenting advice, philosophy, "how does this app work", or questions about the plan ITSELF (e.g. "why did you choose this?").
 
         CONTEXT:
-        Child Ages (Months): ${JSON.stringify(context.children?.map((c: any) => c.age_in_months))}
+        Child Ages (Months): ${JSON.stringify(childrenAges)}
 
         OUTPUT JSON:
         {
-          "intent": "SEARCH_BOOKS" | "SEARCH_ACTIVITIES" | "ADJUST_SCHEDULE" | "GENERAL_CHAT",
-          "searchQuery": "space-separated keywords (stemmed/synonyms)",
+          "reasoning": "brief explanation of why this intent matches",
+          "intent": "SEARCH_BOOKS" | "SEARCH_ACTIVITIES" | "ADJUST_SCHEDULE" | "GET_TODAY_SCHEDULE" | "GENERAL_CHAT",
+          "searchQuery": "space-separated keywords (stemmed/synonyms) if applicable",
           "filters": {
             "age": number | null,
             "domain": string | null
@@ -38,10 +44,8 @@ export class AiRouter {
         }
         
         examples:
-        - "I need a story about lions" -> { "intent": "SEARCH_BOOKS", "searchQuery": "lion lions big cat" }
-        - "Activity for fine motor skills" -> { "intent": "SEARCH_ACTIVITIES", "searchQuery": "fine motor" }
-        - "Book about bravery" -> { "intent": "SEARCH_BOOKS", "searchQuery": "brave bravery courage" }
-        - "Help me with feelings" -> { "intent": "SEARCH_BOOKS", "searchQuery": "feeling emotion sad happy" }
+        - "I need a story about lions" -> { "reasoning": "User asked for a story", "intent": "SEARCH_BOOKS", "searchQuery": "lion lions big cat" }
+        - "Activity for fine motor skills" -> { "reasoning": "User asked for activity", "intent": "SEARCH_ACTIVITIES", "searchQuery": "fine motor" }
         `;
 
         try {
@@ -50,7 +54,6 @@ export class AiRouter {
                     { role: 'system', content: systemPrompt },
                     { role: 'user', content: message }
                 ]
-                // Don't use response_format as it's not reliably supported
             });
 
             // Extract JSON from response (may have markdown code blocks or extra text)
@@ -61,6 +64,8 @@ export class AiRouter {
             jsonStr = jsonMatch?.[1] || jsonStr;
 
             const result = JSON.parse(jsonStr.trim());
+            console.log('[Router] Decision:', JSON.stringify(result));
+
             return {
                 intent: result.intent || 'GENERAL_CHAT',
                 searchQuery: result.searchQuery,

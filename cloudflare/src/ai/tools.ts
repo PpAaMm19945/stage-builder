@@ -1,12 +1,74 @@
+
 import { D1Database } from '@cloudflare/workers-types';
 
 export interface SearchResult {
-    type: 'book' | 'activity';
+    type: 'book' | 'activity' | 'schedule_item';
     id: string;
     title: string;
     description: string;
     relevance: number;
     metadata?: any;
+}
+
+export async function getTodaySchedule(db: D1Database, familyId: string): Promise<SearchResult[]> {
+    console.log(`Getting schedule for family: ${familyId}`);
+
+    // 1. Get current date and week start (closest previous Monday)
+    const today = new Date();
+    const dayOfWeek = today.getDay(); // 0=Sun, 1=Mon...
+    const diff = today.getDate() - dayOfWeek + (dayOfWeek === 0 ? -6 : 1); // Adjust when day is Sunday
+    const weekStart = new Date(today.setDate(diff)).toISOString().split('T')[0];
+
+    // Day name for lookup (Mon, Tue, Wed...)
+    const days = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
+    const currentDayName = days[new Date().getDay()];
+
+    console.log(`Week start: ${weekStart}, Day: ${currentDayName}`);
+
+    // 2. Fetch active plan
+    const plan = await db.prepare(
+        'SELECT * FROM weekly_plans WHERE family_id = ? AND week_start = ?'
+    ).bind(familyId, weekStart).first<any>();
+
+    if (!plan || !plan.days) return [];
+
+    // 3. Parse and find today's items
+    let parsedDays: any[] = [];
+    try {
+        parsedDays = typeof plan.days === 'string' ? JSON.parse(plan.days) : plan.days;
+    } catch (e) {
+        console.error('Error parsing plan days', e);
+        return [];
+    }
+
+    const todayRhythm = parsedDays.find((d: any) => d.day === currentDayName);
+    if (!todayRhythm) return [];
+
+    const items: SearchResult[] = [];
+
+    // Helper to map items
+    const mapItem = (item: any, period: 'morning' | 'evening') => ({
+        type: 'schedule_item' as const,
+        id: item.id || crypto.randomUUID(),
+        title: item.title,
+        description: item.rationale || `Scheduled for ${period}`,
+        relevance: 1,
+        metadata: {
+            period,
+            duration: item.duration_minutes,
+            contentType: item.type,
+            status: item.status || 'upcoming'
+        }
+    });
+
+    if (todayRhythm.morning) {
+        items.push(...todayRhythm.morning.map((i: any) => mapItem(i, 'morning')));
+    }
+    if (todayRhythm.evening) {
+        items.push(...todayRhythm.evening.map((i: any) => mapItem(i, 'evening')));
+    }
+
+    return items;
 }
 
 export async function searchBooks(db: D1Database, query: string, ageMonths?: number): Promise<SearchResult[]> {
@@ -96,5 +158,3 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
         }
     }));
 }
-
-

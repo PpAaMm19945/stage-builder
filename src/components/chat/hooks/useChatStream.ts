@@ -54,39 +54,52 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                 const chunk = decoder.decode(value, { stream: true });
                 const lines = chunk.split('\n');
 
+                let currentEventType = 'message'; // default
+
                 for (const line of lines) {
-                    // Handle thought events
-                    if (line.startsWith('event: thought')) {
-                        isInThoughtMode = true;
+                    if (!line.trim()) continue; // Skip empty lines
+
+                    // Handle Event Types
+                    if (line.startsWith('event: ')) {
+                        const eventType = line.slice(7).trim();
+                        if (eventType === 'thought') currentEventType = 'thought';
+                        else if (eventType === 'step') currentEventType = 'step';
+                        else if (eventType === 'done') currentEventType = 'done';
+                        else currentEventType = 'message';
+
+                        if (currentEventType === 'done') {
+                            chatState.showFeedback();
+                        }
                         continue;
                     }
 
-                    if (line.startsWith('event: step')) {
-                        // Execution step update
-                        continue;
-                    }
-
-                    if (line.startsWith('event: done')) {
-                        chatState.showFeedback();
-                        continue;
-                    }
-
+                    // Handle Data
                     if (line.startsWith('data: ')) {
                         const data = line.slice(6);
                         if (data === '[DONE]') continue;
 
-                        // Handle thought data
-                        if (isInThoughtMode && data.startsWith('"') && data.endsWith('"')) {
+                        // 1. Handle Steps
+                        if (currentEventType === 'step') {
                             try {
-                                const thoughtText = JSON.parse(data);
-                                chatState.updateThinking(thoughtText);
-                            } catch {
-                                // Not valid JSON, ignore
-                            }
-                            isInThoughtMode = false;
+                                const stepData = JSON.parse(data);
+                                chatState.updateStreamingStep(stepData);
+                            } catch (e) { console.warn('Step parse error', e); }
                             continue;
                         }
-                        isInThoughtMode = false;
+
+                        // 2. Handle Thoughts
+                        if (currentEventType === 'thought') {
+                            try {
+                                // Sometimes thought data is quoted string, sometimes raw
+                                const thoughtText = data.startsWith('"') ? JSON.parse(data) : data;
+                                chatState.updateThinking(thoughtText);
+                            } catch {
+                                chatState.updateThinking(data);
+                            }
+                            continue;
+                        }
+
+                        // 3. Handle Message Data (Standard, Blocks, Actions)
 
                         // Handle DATA_BLOCK (search results)
                         if (data.includes('[DATA_BLOCK]')) {
@@ -99,7 +112,6 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                                         data: resultData.data,
                                     };
                                     aiMessage.content += resultData.reason || '';
-
                                     if (!hasStartedStreaming) {
                                         hasStartedStreaming = true;
                                         chatState.startStreaming();
@@ -112,7 +124,7 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                             continue;
                         }
 
-                        // Handle ACTION_PENDING (requires user confirmation)
+                        // Handle ACTION_PENDING
                         if (data.includes('[ACTION_PENDING]')) {
                             const parts = data.split('[ACTION_PENDING]');
                             if (parts[1]) {
@@ -126,25 +138,26 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                             continue;
                         }
 
-                        // Standard content streaming
+                        // Standard text content
                         if (!hasStartedStreaming) {
                             hasStartedStreaming = true;
                             chatState.startStreaming();
                         }
 
                         try {
-                            // Backend may send JSON like {"response": "text"} or raw text
                             let text = data;
+                            // Check for {"response": "..."} wrapper
                             if (data.startsWith('{')) {
-                                const parsed = JSON.parse(data);
-                                if (typeof parsed.response === 'string') {
-                                    text = parsed.response;
-                                }
+                                try {
+                                    const parsed = JSON.parse(data);
+                                    if (parsed.response && typeof parsed.response === 'string') {
+                                        text = parsed.response;
+                                    }
+                                } catch { /* not JSON, use raw */ }
                             }
                             aiMessage.content += text;
                             onMessageUpdate({ ...aiMessage });
                         } catch {
-                            // Raw text append
                             aiMessage.content += data;
                             onMessageUpdate({ ...aiMessage });
                         }

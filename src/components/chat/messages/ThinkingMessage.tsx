@@ -3,14 +3,29 @@ import { cn } from '@/lib/utils';
 
 interface ThinkingMessageProps {
     text: string;
+    steps?: Array<{
+        id: number;
+        label: string;
+        status: 'pending' | 'active' | 'complete' | 'error';
+    }>;
     className?: string;
 }
 
 /**
- * Displays a thinking/loading indicator with stage text.
+ * Displays a thinking/loading indicator with stage text and optional steps.
  * Shows "Searching library...", "Finding activities...", etc.
  */
-export function ThinkingMessage({ text, className }: ThinkingMessageProps) {
+export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps) {
+    if (steps && steps.length > 0) {
+        return (
+            <div className={cn("flex justify-start", className)}>
+                <div className="bg-muted/50 rounded-2xl px-4 py-3 max-w-[80%]">
+                    <ExecutionSteps steps={steps} />
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className={cn(
             "flex justify-start",

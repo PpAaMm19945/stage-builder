@@ -17,7 +17,8 @@ import {
     ThinkingMessage,
     BookCardMessage,
     ActivityCardMessage,
-    ActionConfirmCard
+    ActionConfirmCard,
+    ScheduleCardMessage
 } from './messages';
 
 import { BookReader } from '@/components/books/BookReader';
@@ -71,6 +72,42 @@ export function ChatPanel({ className }: ChatPanelProps) {
             scrollRef.current.scrollTop = scrollRef.current.scrollHeight;
         }
     }, [messages, chatState.mode, chatState.thinkingText]);
+
+    // Load history on mount
+    useEffect(() => {
+        const loadHistory = async () => {
+            try {
+                const logs = await ai.getInteractionLog();
+                if (logs.length === 0) return;
+
+                const historyMessages: Message[] = logs.flatMap(log => {
+                    const userMsg: Message = { role: 'user', content: log.question };
+
+                    // Parse context for action cards
+                    let actionCard = undefined;
+                    if (log.context && log.context.intent) {
+                        actionCard = {
+                            type: log.context.intent,
+                            data: { results: log.context.results }
+                        };
+                    }
+
+                    const aiMsg: Message = {
+                        role: 'assistant',
+                        content: log.answer,
+                        actionCard
+                    };
+
+                    return [userMsg, aiMsg];
+                }).reverse();
+
+                setMessages(historyMessages);
+            } catch (e) {
+                console.warn('Failed to load chat history', e);
+            }
+        };
+        loadHistory();
+    }, []);
 
     const handleSend = async () => {
         const trimmedInput = sanitizeMessage(input);
@@ -207,6 +244,11 @@ export function ChatPanel({ className }: ChatPanelProps) {
                                                 activities={msg.actionCard.data.results}
                                             />
                                         )}
+                                        {msg.actionCard.type === 'GET_TODAY_SCHEDULE' && msg.actionCard.data?.results && (
+                                            <ScheduleCardMessage
+                                                items={msg.actionCard.data.results}
+                                            />
+                                        )}
                                     </div>
                                 )}
                             </div>
@@ -214,7 +256,10 @@ export function ChatPanel({ className }: ChatPanelProps) {
 
                         {/* Thinking indicator */}
                         {chatState.mode === 'THINKING' && chatState.thinkingText && (
-                            <ThinkingMessage text={chatState.thinkingText} />
+                            <ThinkingMessage
+                                text={chatState.thinkingText}
+                                steps={chatState.streamingSteps}
+                            />
                         )}
 
                         {/* Pending action card */}

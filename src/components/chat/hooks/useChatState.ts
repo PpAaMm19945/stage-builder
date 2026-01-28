@@ -7,6 +7,7 @@ export interface ChatState {
     thinkingText: string | null;
     pendingAction: PendingAction | null;
     executionSteps: ExecutionStep[];
+    streamingSteps: ExecutionStep[];
 }
 
 export interface PendingAction {
@@ -27,6 +28,7 @@ const initialState: ChatState = {
     thinkingText: null,
     pendingAction: null,
     executionSteps: [],
+    streamingSteps: [],
 };
 
 export function useChatState() {
@@ -37,6 +39,7 @@ export function useChatState() {
             ...prev,
             mode: 'THINKING',
             thinkingText: text || 'Connecting to Cortex...',
+            streamingSteps: [],
         }));
     }, []);
 
@@ -53,6 +56,27 @@ export function useChatState() {
             mode: 'STREAMING',
             thinkingText: null,
         }));
+    }, []);
+
+    const updateStreamingStep = useCallback((step: ExecutionStep) => {
+        setState(prev => {
+            const existing = prev.streamingSteps.find(s => s.id === step.id);
+            if (existing) {
+                // Update existing
+                return {
+                    ...prev,
+                    streamingSteps: prev.streamingSteps.map(s =>
+                        s.id === step.id ? { ...s, ...step } : s
+                    )
+                };
+            } else {
+                // Add new
+                return {
+                    ...prev,
+                    streamingSteps: [...prev.streamingSteps, step]
+                };
+            }
+        });
     }, []);
 
     const showAction = useCallback((action: PendingAction) => {
@@ -97,6 +121,7 @@ export function useChatState() {
     }, []);
 
     const goIdle = useCallback(() => {
+        // Don't clear streamingSteps immediately so user can see what happened
         setState(prev => ({
             ...prev,
             mode: 'IDLE',
@@ -118,6 +143,7 @@ export function useChatState() {
         startThinking,
         updateThinking,
         startStreaming,
+        updateStreamingStep,
         showAction,
         startExecuting,
         updateExecutionStep,
