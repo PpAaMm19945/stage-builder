@@ -25,6 +25,24 @@ export interface TranscriptData {
     gpa?: string; // Optional if we calculate it
 }
 
+// Book Metadata (from R2)
+export interface BookMetadata {
+    id: string;
+    series: string;
+    seriesTitle?: string;
+    title: string;
+    author?: string;
+    illustrator?: string;
+    description: string;
+    minAgeMonths: number;
+    maxAgeMonths: number;
+    pageCount: number;
+    domain?: string;
+    learningStage?: string;
+    readingPrompts?: any;
+    coverUrl: string;
+}
+
 // Core Worker Types
 export interface Env {
     // Core bindings
