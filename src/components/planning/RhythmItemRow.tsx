@@ -61,10 +61,24 @@ export const RhythmItemRow = memo(function RhythmItemRow({ item, onSelect, onCom
         }
     }
 
+    const handleKeyDown = (e: React.KeyboardEvent) => {
+        if (item.type !== 'section_header' && (e.key === 'Enter' || e.key === ' ')) {
+            e.preventDefault();
+            onSelect(item);
+        }
+    }
+
     return (
         <div
-            className={cn("flex gap-4 group", item.type !== 'section_header' ? "cursor-pointer" : "")}
+            className={cn(
+                "flex gap-4 group rounded-lg focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
+                item.type !== 'section_header' ? "cursor-pointer" : ""
+            )}
             onClick={() => item.type !== 'section_header' && onSelect(item)}
+            role={item.type !== 'section_header' ? "button" : undefined}
+            tabIndex={item.type !== 'section_header' ? 0 : undefined}
+            onKeyDown={handleKeyDown}
+            aria-label={item.type !== 'section_header' ? `View details for ${item.title}` : undefined}
         >
             {item.type === 'section_header' ? (
                 <div className="w-full py-4 flex items-center gap-4">
