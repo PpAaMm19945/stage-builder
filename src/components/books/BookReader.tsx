@@ -23,8 +23,8 @@ import {
     TooltipContent,
     TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch } from '@phosphor-icons/react';
-import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
+import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch, DownloadSimple } from '@phosphor-icons/react';
+// PDFDownloadButton removed to prevent React #310 error
 import { useAuth } from '@/contexts/AuthContext';
 import { books, reading, progress } from '@/lib/api';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
@@ -253,7 +253,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     // 2. Use legacy indexed generation if no manifest
     const imagePages = useMemo(() => {
         if (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat)) {
-             return (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
+            return (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
                 return books.getPageUrl(book.series, book.id, i + 1);
             }));
         }
@@ -404,8 +404,17 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     <ArrowsOutSimple className="w-6 h-6" />
                                 )}
                             </Button>
-                            {/* PDF button - only for supported formats */}
-                            {showPdfButton && <PDFDownloadButton book={book} pages={parsedPages} />}
+                            {showPdfButton && (
+                                <Button
+                                    variant="ghost"
+                                    size="icon"
+                                    onClick={() => window.open(pdfUrl, '_blank')}
+                                    className="text-white hover:bg-white/20 rounded-full"
+                                    title="Download PDF"
+                                >
+                                    <DownloadSimple className="w-6 h-6" />
+                                </Button>
+                            )}
 
                             <Button
                                 variant="ghost"

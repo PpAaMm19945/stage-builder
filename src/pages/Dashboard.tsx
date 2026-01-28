@@ -29,9 +29,8 @@ import { AiLogViewer } from '@/components/ai/AiLogViewer';
 import { getRecommendedBooks } from '@/lib/recommendations';
 import { TimeSpentWidget } from '@/components/dashboard/TimeSpentWidget';
 import { BookReader } from '@/components/books/BookReader';
-// Lazy load PDF button to avoid React duplication issues
-const DownloadPrintButton = lazy(() => import('@/components/ui/DownloadPrintButton').then(module => ({ default: module.DownloadPrintButton })));
-import { DailyPlanDocument } from '@/components/pdf/documents';
+// PDF Generation removed as per user request to resolve React #310 error
+
 import {
   Dialog,
   DialogContent,
@@ -195,23 +194,7 @@ export default function Dashboard() {
 
   // Memoize PDF document to prevent expensive regeneration on every render
   // This must be declared here to avoid hook ordering issues with early returns
-  const pdfDocument = useMemo(() => {
-    // Return null if data isn't ready, similar to how we hide the button
-    if (!isToday || !dayData) return <></>; // Return empty fragment or handle appropriately
 
-    return (
-      <DailyPlanDocument
-        day={{
-          date: new Date().toLocaleDateString(),
-          dayName: format(new Date(), 'EEEE'),
-          liturgy: [],
-          activities: pdfActivities,
-          reading: pdfBook || undefined
-        }}
-        children={activeChildren}
-      />
-    );
-  }, [isToday, !!dayData, pdfActivities, pdfBook, activeChildren]);
 
   // Get weekly plan for completion status
   const { data: weeklyPlanData } = useQuery({
@@ -512,21 +495,7 @@ export default function Dashboard() {
         dayData={weekSummary?.days || {}}
       />
 
-      {/* Print Button */}
-      {isToday && dayData && (
-        <div className="flex justify-end px-2">
-          <Suspense fallback={null}>
-            <DownloadPrintButton
-              document={pdfDocument}
-              fileName={`daily_plan_${selectedDateStr}.pdf`}
-              label="Print Plan"
-              size="sm"
-              variant="ghost"
-              className="gap-2 text-muted-foreground hover:text-foreground"
-            />
-          </Suspense>
-        </div>
-      )}
+
 
       {/* REST DAY Override */}
       {dayData.restDay && (

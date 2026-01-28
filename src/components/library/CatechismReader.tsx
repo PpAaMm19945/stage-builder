@@ -15,7 +15,7 @@ import {
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { X, BookBookmark } from '@phosphor-icons/react';
-import { PDFDownloadButton } from '@/components/pdf/PDFDownloadButton';
+
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { catechism as catechismApi, liturgy } from '@/lib/api';
 import { toast } from 'sonner';
@@ -81,28 +81,7 @@ export function CatechismReader({ open, onOpenChange }: CatechismReaderProps) {
                         </DialogDescription>
                     </div>
                     <div className="flex items-center gap-2">
-                        <PDFDownloadButton
-                            book={{
-                                id: 'catechism',
-                                title: 'Westminster Shorter Catechism',
-                                series: 'catechism',
-                                pageCount: items.length + 1,
-                                coverUrl: '',
-                                renderFormat: 'catechism',
-                                minAgeMonths: 0,
-                                maxAgeMonths: 999,
-                                learningStage: 'all',
-                                domain: 'wisdom',
-                                description: 'Westminster Shorter Catechism'
-                            }}
-                            catechismData={items.map((item: any) => {
-                                // Parse Q&A from content format: "Q: ... \n\n A: ..."
-                                const parts = item.content.split('\nA: ');
-                                const question = parts[0]?.replace('Q: ', '').trim();
-                                const answer = parts[1]?.trim();
-                                return { question, answer, week: item.week };
-                            })}
-                        />
+
                         <Button variant="ghost" size="icon" onClick={() => onOpenChange(false)} className="text-white hover:bg-white/20 rounded-full" aria-label="Close catechism reader">
                             <X className="w-6 h-6" />
                         </Button>

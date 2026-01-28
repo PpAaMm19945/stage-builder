@@ -29,8 +29,7 @@ import {
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 
 import { Label } from '@/components/ui/label';
-import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
-import { WeeklyPlanDocument, DayPlan } from '@/components/pdf/documents';
+
 import { LiturgyItem, ApiActivity, Book, LiturgyType } from '@/types';
 import { ErrorState } from '@/components/ui/ErrorState';
 
@@ -140,96 +139,7 @@ export default function Planner() {
 
             {/* Control Bar */}
             <div className="flex justify-end items-center gap-3">
-                {planData?.plan?.slots && Array.isArray(planData.plan.slots) && (
-                    <DownloadPrintButton
-                        document={
-                            <WeeklyPlanDocument
-                                weekStart={weekStartStr}
-                                children={childrenData || []}
-                                days={['Mon', 'Tue', 'Wed', 'Thu', 'Fri'].map((dayStr, i) => {
-                                    const dayDate = new Date(currentWeek);
-                                    dayDate.setDate(currentWeek.getDate() + i);
-                                    const dateStr = format(dayDate, 'yyyy-MM-dd');
 
-                                    // Filter slots for this day
-                                    const daySlots = planData.plan.slots.filter((s: any) => s.day === dayStr);
-
-                                    // Extract liturgy
-                                    const liturgy = daySlots
-                                        .filter((s: any) => s.type === 'liturgy')
-                                        .map((s: any) => {
-                                            let type: LiturgyType = 'catechism';
-                                            const titleLower = (s.activityTitle || '').toLowerCase();
-                                            if (titleLower.includes('hymn')) type = 'hymn';
-                                            else if (titleLower.includes('verse') || titleLower.includes('scripture')) type = 'scripture';
-
-                                            return {
-                                                id: s.activityId,
-                                                type,
-                                                title: s.activityTitle,
-                                                content: '',
-                                                source: '',
-                                                sequence_number: 0,
-                                                min_age_months: 0,
-                                                max_age_months: 120
-                                            } as LiturgyItem;
-                                        });
-
-                                    // Extract activities
-                                    const activities = daySlots
-                                        .filter((s: any) => s.type !== 'liturgy' && s.type !== 'reading' && s.type !== 'book')
-                                        .map((s: any) => ({
-                                            id: s.activityId,
-                                            title: s.activityTitle,
-                                            primary_virtue: s.primary_virtue || s.domain || 'Wisdom',
-                                            domain: s.domain || s.primary_virtue || 'Wisdom',
-                                            duration_minutes: s.duration,
-                                            // Mock other required fields for PDF if missing in slot
-                                            description: s.description || '',
-                                            materials: [],
-                                            guide_steps: [],
-                                            instructions: [],
-                                            formation_type: s.formation_type || 'skill',
-                                            context_anchor: s.context_anchor || 'Anytime',
-                                            parent_posture: '',
-                                            min_age_months: 0,
-                                            max_age_months: 120
-                                        } as ApiActivity));
-
-                                    // Extract reading
-                                    const readingSlot = daySlots.find((s: any) => s.type === 'reading' || s.type === 'book');
-                                    let reading: Book | undefined;
-
-                                    if (readingSlot) {
-                                        reading = {
-                                            id: readingSlot.activityId || 'unknown',
-                                            title: readingSlot.activityTitle || 'Reading Time',
-                                            series: readingSlot.series || 'library',
-                                            description: readingSlot.description || readingSlot.reasoning || '',
-                                            author: readingSlot.author,
-                                            minAgeMonths: 0,
-                                            maxAgeMonths: 120,
-                                            pageCount: 0,
-                                            domain: readingSlot.domain || 'language',
-                                            learningStage: 'early-years'
-                                        } as Book;
-                                    }
-
-                                    return {
-                                        date: dateStr,
-                                        dayName: format(dayDate, 'EEEE'),
-                                        liturgy,
-                                        activities: activities,
-                                        reading: reading
-                                    } as DayPlan;
-                                })}
-                            />
-                        }
-                        fileName={`weekly_plan_${weekStartStr}.pdf`}
-                        label="Print Week"
-                        size="sm"
-                    />
-                )}
                 <Button
                     variant="outline"
                     size="sm"

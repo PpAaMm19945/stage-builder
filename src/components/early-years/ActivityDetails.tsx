@@ -26,8 +26,7 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
-import { DownloadPrintButton } from '@/components/ui/DownloadPrintButton';
-import { ActivityDocument } from '@/components/pdf/documents';
+
 import { ApiActivity } from '@/types';
 
 const virtueColors: Record<PrimaryVirtue, string> = {
@@ -204,18 +203,7 @@ export function ActivityDetails({
                         </Badge>
                     )}
                     <div className="flex items-center gap-2">
-                        <DownloadPrintButton
-                            document={
-                                <ActivityDocument
-                                    activity={activity as unknown as ApiActivity}
-                                    date={new Date().toLocaleDateString()}
-                                />
-                            }
-                            fileName={`${activity.title.replace(/[^a-z0-9]/gi, '_').toLowerCase()}.pdf`}
-                            label="PDF"
-                            size="icon"
-                            variant="outline"
-                        />
+
                         <UpvoteButton contentType="activity" contentId={activity.id} />
                     </div>
                 </div>

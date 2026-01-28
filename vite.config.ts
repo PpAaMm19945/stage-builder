@@ -36,11 +36,7 @@ export default defineConfig(({ mode }) => ({
             return; // Let Rollup handle these naturally (main bundle)
           }
 
-          // Heavy PDF library - lazy load only when generating PDFs
-          // COMMENTED OUT to fix React #310 error (Hook mismatch)
-          // if (id.includes('@react-pdf/renderer') || id.includes('@react-pdf/')) {
-          //   return 'pdf-renderer';
-          // }
+
 
           // Charts - only needed on dashboard/reports
           if (id.includes('recharts') || id.includes('d3-')) {
