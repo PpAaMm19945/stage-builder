@@ -82,8 +82,8 @@ export function AppSidebar() {
 
   return (
     <>
-      <Sidebar className="border-r border-border/50" collapsible="icon">
-        <SidebarHeader className="p-4">
+      <Sidebar className="border-r border-border/50" collapsible="offcanvas">
+        <SidebarHeader className="h-14 flex flex-row items-center px-4 border-b border-border/50">
           {/* Logo - Clickable to Dashboard or Home */}
           <div className="flex items-center justify-between w-full">
             <button

@@ -478,7 +478,8 @@ app.put('/api/portfolio/upload-handler', async (c) => {
 
     // Security: Strict path validation
     // Ensure key starts with "{user.id}/" to prevent uploading to other users' directories
-    if (!key || !key.startsWith(`${user.id}/`)) {
+    // AND check for path traversal characters
+    if (!key || !key.startsWith(`${user.id}/`) || !isValidPathSegment(key)) {
       return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
 
@@ -509,7 +510,7 @@ app.post('/api/portfolio/items', async (c) => {
 
     // Security: Validate that r2Key belongs to this user
     // This prevents IDOR where users claim ownership of others' files
-    if (r2Key && !r2Key.startsWith(`${user.id}/`)) {
+    if (r2Key && (!r2Key.startsWith(`${user.id}/`) || !isValidPathSegment(r2Key))) {
       return c.json({ error: 'Invalid file key' }, 403);
     }
 
@@ -615,7 +616,12 @@ app.get('/api/portfolio/file/:key', async (c) => {
     const key = c.req.param('key'); // Should include 'portfolio/' prefix if we added it
 
     // Security: Strict path validation
-    // 1. Owner Access (Fast Path): Check if user is the uploader
+    // 1. Check for path traversal first
+    if (!isValidPathSegment(key)) {
+      return c.json({ error: 'Invalid key' }, 400);
+    }
+
+    // 2. Owner Access (Fast Path): Check if user is the uploader
     const validPrefix1 = `${user.id}/`;
     const validPrefix2 = `portfolio/${user.id}/`;
     const isOwner = key.startsWith(validPrefix1) || key.startsWith(validPrefix2);
