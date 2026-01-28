@@ -66,7 +66,7 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
 
     return (
         <div
-            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] md:hover:scale-[1.1] hover:z-10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg"
+            className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] md:hover:scale-[1.1] hover:z-10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg w-fit"
             onClick={() => onClick?.(book)}
             role="button"
             tabIndex={0}

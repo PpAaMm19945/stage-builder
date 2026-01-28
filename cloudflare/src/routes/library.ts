@@ -311,62 +311,42 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
 
         const bucket = c.env.BOOKS_BUCKET;
 
-        const toTitleCase = (str: string) => str
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
+        // 1. Check Index File first
+        try {
+            const indexObj = await bucket.get('books/index.json');
+            if (indexObj) {
+                const index = await indexObj.json() as Record<string, Record<string, string>>;
+                if (index[series] && index[series][bookId]) {
+                    const indexedPath = index[series][bookId];
+                    const object = await bucket.get(indexedPath);
+                    if (object) {
+                        const headers = new Headers();
+                        const ext = indexedPath.split('.').pop()?.toLowerCase();
+                        const contentType = object.httpMetadata?.contentType ||
+                            (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                        headers.set('Content-Type', contentType);
+                        headers.set('Cache-Control', 'public, max-age=86400');
+                        headers.set('Access-Control-Allow-Origin', '*');
+                        headers.set('X-Source', 'index');
+                        return new Response(object.body, { headers });
+                    }
+                }
+            }
+        } catch (e) {
+            console.warn('Index lookup failed:', e);
+        }
 
-        const seriesTitleCase = toTitleCase(series);
-        const bookIdTitleCase = toTitleCase(bookId);
-
+        // 2. Fallback to Strict Structure Rules
+        // Priority 1: Picture Books (books/<Series>/<Book>/cover.png)
+        // Priority 2: PDF Bundles (books/<Series>/images/<Book>.png)
         const pathsToTry = [
-            `books/${series}/${bookId}/images/cover.png`,
-            `books/${series}/${bookId}/images/cover.jpg`,
-            `books/${series}/${bookId}/images/cover.jpeg`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/cover.png`,
-            `books/${seriesTitleCase}/${bookId}/images/cover.png`,
-            `books/${seriesTitleCase}/${bookId}/Cover Photo.png`,
-            `books/${series}/images/${bookId}.png`,
-            `books/${series}/images/${bookId}.jpg`,
-            `books/${series}/images/${bookId}.jpeg`,
             `books/${series}/${bookId}/cover.png`,
             `books/${series}/${bookId}/cover.jpg`,
-            `books/${series}/${bookId}/cover.jpeg`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/cover.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/cover.jpg`,
-            `books/${series}/images/cover.png`,
-            `books/${series}/images/cover.jpg`,
-            `books/${series}/images/cover.jpeg`,
-            `books/${series}/${bookId}/images/page-01.png`,
-            `books/${series}/${bookId}/images/page-01.jpg`,
-            `books/${series}/${bookId}/images/page_01.png`,
-            `books/${series}/${bookId}/images/page_01.jpg`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/images/Page 1.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/Page 1.png`,
-            `books/${series}/${bookId}/page-01.png`,
-            `books/${series}/${bookId}/page-01.jpg`,
-            `books/${series}/${bookId}/page_01.png`,
-            `books/${series}/${bookId}/page_01.jpg`,
-            `${series}/${bookId}/images/cover.png`,
-            `${series}/${bookId}/images/cover.jpg`,
-            `${series}/${bookId}/images/cover.jpeg`,
-            `${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
-            `${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
-            `${series}/images/${bookId}.png`,
-            `${series}/images/${bookId}.jpg`,
-            `${series}/images/${bookId}.jpeg`,
-            `${series}/${bookId}/cover.png`,
-            `${series}/${bookId}/cover.jpg`,
-            `${series}/${bookId}/cover.jpeg`,
-            `${series}/images/cover.png`,
-            `${series}/images/cover.jpg`,
-            `${series}/images/cover.jpeg`,
-            `${series}/${bookId}/images/page-01.png`,
-            `${series}/${bookId}/images/page_01.png`,
-            `${series}/${bookId}/page-01.png`,
-            `${series}/${bookId}/page_01.png`,
+            `books/${series}/images/${bookId}.png`,
+            `books/${series}/images/${bookId}.jpg`,
+            // Low priority legacy fallbacks
+            `books/${series}/${bookId}/images/cover.png`,
+            `books/${series}/${bookId}/images/cover.jpg`,
         ];
 
         for (const key of pathsToTry) {
@@ -387,7 +367,7 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
         return c.json({
             error: 'Cover not found',
             tried: pathsToTry,
-            help: 'Ensure cover.png, cover.jpg, or images/page-01.png exists in the book folder'
+            help: 'Create books/index.json or ensure cover exists at books/{series}/{bookId}/cover.png or books/{series}/images/{bookId}.png'
         }, 404);
     } catch (error: any) {
         return c.json({ error: error.message }, 500);
@@ -401,34 +381,44 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
         const bookId = decodeURIComponent(c.req.param('bookId'));
         const bucket = c.env.BOOKS_BUCKET;
 
-        const toTitleCase = (str: string) => str
-            .split('_')
-            .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-            .join(' ');
+        const results: any[] = [];
+        let foundPath = null;
+        let indexEntry = null;
 
-        const seriesTitleCase = toTitleCase(series);
-        const bookIdTitleCase = toTitleCase(bookId);
+        // Check index
+        try {
+            const indexObj = await bucket.get('books/index.json');
+            if (indexObj) {
+                const index = await indexObj.json() as Record<string, Record<string, string>>;
+                if (index[series] && index[series][bookId]) {
+                    indexEntry = index[series][bookId];
+                    const object = await bucket.head(indexEntry);
+                    results.push({
+                        path: indexEntry,
+                        source: 'index',
+                        found: !!object
+                    });
+                    if (object) foundPath = indexEntry;
+                }
+            }
+        } catch (e: any) {
+            results.push({ error: 'Index check failed', details: e.message });
+        }
 
         const pathsToTry = [
-            `books/${series}/${bookId}/images/cover.png`,
-            `books/${series}/${bookId}/images/cover.jpg`,
+            `books/${series}/${bookId}/cover.png`,
+            `books/${series}/${bookId}/cover.jpg`,
             `books/${series}/images/${bookId}.png`,
             `books/${series}/images/${bookId}.jpg`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/images/cover.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/Cover Photo.png`,
-            `books/${series}/${bookId}/images/page-01.png`,
-            `books/${series}/${bookId}/images/page_01.png`,
-            `books/${seriesTitleCase}/${bookIdTitleCase}/images/Page 1.png`,
+            `books/${series}/${bookId}/images/cover.png`,
         ];
-
-        const results = [];
-        let foundPath = null;
 
         for (const key of pathsToTry) {
             const object = await bucket.head(key);
             const found = !!object;
             results.push({
                 path: key,
+                source: 'heuristic',
                 found,
                 size: object?.size,
                 contentType: object?.httpMetadata?.contentType
@@ -439,9 +429,8 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
         return c.json({
             requestedSeries: series,
             requestedBookId: bookId,
-            seriesTitleCase,
-            bookIdTitleCase,
             foundPath,
+            indexEntry,
             pathsChecked: results
         });
     } catch (error: any) {
