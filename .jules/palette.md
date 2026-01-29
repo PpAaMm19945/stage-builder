@@ -33,3 +33,7 @@
 ## 2026-07-10 - List Item Keyboard Accessibility
 **Learning:** `div` elements with `onClick` handlers are invisible to keyboard users, breaking the experience for anyone tabbing through a list of actions.
 **Action:** Add `role="button"`, `tabIndex={0}`, and `onKeyDown` (for Enter/Space) to interactive list rows. Also ensure `focus-visible` styles are applied so users know where they are.
+
+## 2026-08-15 - Chat Accessibility & Live Regions
+**Learning:** Dynamic content updates (like AI thinking states) need `role="status"` and `aria-live="polite"` to be announced by screen readers. Without this, users are left waiting in silence.
+**Action:** Always wrap loading/thinking indicators in a live region to ensure status changes are communicated.
