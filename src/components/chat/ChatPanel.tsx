@@ -8,6 +8,12 @@ import { Input } from '@/components/ui/input';
 import { PaperPlaneRight, Robot, User, X } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipProvider,
+    TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 import { useChatState, Message } from './hooks';
 import { useChatStream } from './hooks/useChatStream';
@@ -191,7 +197,13 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         Frontdesk Officer
                     </CardTitle>
                     {onClose && (
-                        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onClose}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            aria-label="Close chat"
+                        >
                             <X className="w-4 h-4" />
                         </Button>
                     )}
@@ -220,7 +232,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     msg.role === 'user' ? "justify-end" : "justify-start"
                                 )}>
                                     {msg.role === 'assistant' && (
-                                        <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
                                             <Robot className="w-5 h-5 text-primary" />
                                         </div>
                                     )}
@@ -230,7 +242,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     )}
 
                                     {msg.role === 'user' && (
-                                        <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-primary-foreground">
+                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-primary-foreground">
                                             <User className="w-5 h-5" />
                                         </div>
                                     )}
@@ -308,13 +320,23 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                             placeholder="How can I help you today?"
                             disabled={chatState.isInputDisabled}
                         />
-                        <Button
-                            type="submit"
-                            size="icon"
-                            disabled={chatState.isInputDisabled || !input.trim()}
-                        >
-                            <PaperPlaneRight className="w-5 h-5" />
-                        </Button>
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        type="submit"
+                                        size="icon"
+                                        disabled={chatState.isInputDisabled || !input.trim()}
+                                        aria-label="Send message"
+                                    >
+                                        <PaperPlaneRight className="w-5 h-5" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Send message</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
                     </form>
                 </div>
             </Card>
