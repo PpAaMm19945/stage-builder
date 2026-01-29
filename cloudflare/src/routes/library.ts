@@ -186,7 +186,7 @@ app.get('/api/series', async (c) => {
         const rootList = await bucket.list({ prefix: 'books/', delimiter: '/' });
         const seriesPrefixes = rootList.delimitedPrefixes || [];
 
-        for (const prefix of seriesPrefixes) {
+        const seriesData = await Promise.all(seriesPrefixes.map(async (prefix) => {
             const seriesId = prefix.replace('books/', '').replace('/', '');
 
             const metaKey = `${prefix}metadata.json`;
@@ -200,12 +200,14 @@ app.get('/api/series', async (c) => {
                 } catch (e) { console.warn(`Invalid metadata for series ${seriesId}`); }
             }
 
-            seriesList.push({
+            return {
                 ...metadata,
                 id: seriesId,
                 coverUrl: `/api/series/${encodeURIComponent(seriesId)}/cover`
-            });
-        }
+            };
+        }));
+
+        seriesList.push(...seriesData);
 
         return c.json(seriesList);
 
@@ -232,15 +234,13 @@ app.get('/api/series/:seriesId', async (c) => {
 
         const booksList = await bucket.list({ prefix: `${prefix}/`, delimiter: '/' });
         const bookPrefixes = booksList.delimitedPrefixes || [];
-        const books: BookMetadata[] = [];
 
-        for (const bookPrefix of bookPrefixes) {
+        const booksData = await Promise.all(bookPrefixes.map(async (bookPrefix) => {
             const bookId = bookPrefix.replace(`${prefix}/`, '').replace('/', '');
-            const bookMeta = await getBookMetadata(bucket, seriesId, bookId);
-            if (bookMeta) {
-                books.push(bookMeta);
-            }
-        }
+            return getBookMetadata(bucket, seriesId, bookId);
+        }));
+
+        const books: BookMetadata[] = booksData.filter((b): b is BookMetadata => b !== null);
 
         return c.json({
             ...metadata,

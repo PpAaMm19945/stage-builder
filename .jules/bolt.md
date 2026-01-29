@@ -33,3 +33,7 @@
 ## 2026-05-29 - Unstable Date Objects in Memoization
 **Learning:** React's `useMemo` and `React.memo` rely on referential equality. Passing `new Date()` as a prop (like `WeekStrip` receiving `weekStart` from `Dashboard`) guarantees a re-render every time the parent renders, even if the time is identical.
 **Action:** When memoizing components or hooks dependent on Dates, extract primitive timestamps (e.g. `date.valueOf()`) for the dependency array or `React.memo` comparator. This isolates the component from reference instability in parent state.
+
+## 2026-05-29 - Parallelize R2 Metadata Fetching
+**Learning:** The `/api/series` and `/api/series/:id` endpoints were fetching metadata for each item sequentially in a `for` loop. For a series with 20 books, this caused 20 sequential round-trips to R2, significantly increasing latency.
+**Action:** Refactored the loops to use `Promise.all` to fetch all metadata in parallel. This changes the latency profile from O(N) to O(1) (bounded by concurrency limits), drastically reducing load times for the library views.
