@@ -3,6 +3,7 @@ import { Env, User } from '../types';
 import { requireParent, requireHouseholdMember, requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
+import { isValidName, isValidDate, isValidUrl } from '../lib/security';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -59,12 +60,20 @@ app.post('/api/students', async (c) => {
         const body = await c.req.json();
         const { name, dateOfBirth } = body;
 
+        // Security: Validate input
+        if (!isValidName(name)) {
+            return c.json({ error: 'Invalid name. Must be non-empty and less than 100 characters.' }, 400);
+        }
+        if (!isValidDate(dateOfBirth)) {
+            return c.json({ error: 'Invalid date of birth.' }, 400);
+        }
+
         const studentId = generateId('student');
 
         // V2 Schema: no age_in_months, no current_stage, use household_id
         await safeRun(c.env.DB,
             'INSERT INTO students (id, household_id, name, date_of_birth) VALUES (?, ?, ?, ?)',
-            [studentId, user.household_id, name, dateOfBirth]
+            [studentId, user.household_id, name.trim(), dateOfBirth]
         );
 
         const student = await safeQueryFirst(c.env.DB,
@@ -97,9 +106,27 @@ app.put('/api/students/:id', async (c) => {
 
         const { name, dateOfBirth, avatarUrl, independence_settings, pace_overrides } = body;
 
+        // Security: Validate inputs if present
+        if (name !== undefined && !isValidName(name)) {
+             return c.json({ error: 'Invalid name.' }, 400);
+        }
+        if (dateOfBirth !== undefined && !isValidDate(dateOfBirth)) {
+             return c.json({ error: 'Invalid date of birth.' }, 400);
+        }
+        if (avatarUrl !== undefined && avatarUrl !== null && !isValidUrl(avatarUrl)) {
+             return c.json({ error: 'Invalid avatar URL.' }, 400);
+        }
+
         await safeRun(c.env.DB,
             'UPDATE students SET name = COALESCE(?, name), date_of_birth = COALESCE(?, date_of_birth), avatar_url = COALESCE(?, avatar_url), independence_settings = COALESCE(?, independence_settings), pace_overrides = COALESCE(?, pace_overrides), updated_at = datetime("now") WHERE id = ?',
-            [name || null, dateOfBirth || null, avatarUrl || null, independence_settings ? JSON.stringify(independence_settings) : null, pace_overrides ? JSON.stringify(pace_overrides) : null, studentId]
+            [
+                name ? name.trim() : null,
+                dateOfBirth || null,
+                avatarUrl || null,
+                independence_settings ? JSON.stringify(independence_settings) : null,
+                pace_overrides ? JSON.stringify(pace_overrides) : null,
+                studentId
+            ]
         );
 
         const student = await safeQueryFirst(c.env.DB,
