@@ -32,6 +32,12 @@ export function MainLayout() {
 
   return (
     <SidebarProvider>
+      <a
+        href="#main-content"
+        className="sr-only focus:not-sr-only focus:absolute focus:z-50 focus:top-4 focus:left-4 focus:p-4 focus:bg-background focus:text-foreground focus:rounded-md focus:shadow-md focus:ring-2 focus:ring-primary"
+      >
+        Skip to main content
+      </a>
       <div className="flex h-screen w-full bg-background overflow-hidden">
         <AppSidebar />
 
@@ -61,7 +67,11 @@ export function MainLayout() {
           </header>
 
           {/* Main Content */}
-          <div className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto overflow-x-hidden">
+          <div
+            id="main-content"
+            tabIndex={-1}
+            className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto overflow-x-hidden focus:outline-none"
+          >
             <Outlet />
           </div>
 
