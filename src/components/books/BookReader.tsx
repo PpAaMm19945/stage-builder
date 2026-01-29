@@ -379,52 +379,80 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                         </div>
                         <div className="flex items-center gap-2">
                             {book.readingPrompts && book.readingPrompts.length > 0 && !isPdf && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => setShowPrompts(!showPrompts)}
-                                    className={showPrompts ? "text-primary bg-white/10" : "text-gray-400"}
-                                    aria-label={showPrompts ? "Hide reading prompts" : "Show reading prompts"}
-                                >
-                                    <BookOpenText className="w-6 h-6" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => setShowPrompts(!showPrompts)}
+                                            className={showPrompts ? "text-primary bg-white/10" : "text-gray-400"}
+                                            aria-label={showPrompts ? "Hide reading prompts" : "Show reading prompts"}
+                                        >
+                                            <BookOpenText className="w-6 h-6" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="z-[60]">
+                                        <p>{showPrompts ? "Hide reading prompts" : "Show reading prompts"}</p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
                             {/* Fullscreen toggle for mobile/tablet */}
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={toggleFullscreen}
-                                className="text-white hover:bg-white/20 rounded-full sm:hidden"
-                                title={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-                                aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
-                            >
-                                {isFullscreen ? (
-                                    <ArrowsInSimple className="w-6 h-6" />
-                                ) : (
-                                    <ArrowsOutSimple className="w-6 h-6" />
-                                )}
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={toggleFullscreen}
+                                        className="text-white hover:bg-white/20 rounded-full sm:hidden"
+                                        aria-label={isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}
+                                    >
+                                        {isFullscreen ? (
+                                            <ArrowsInSimple className="w-6 h-6" />
+                                        ) : (
+                                            <ArrowsOutSimple className="w-6 h-6" />
+                                        )}
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="z-[60]">
+                                    <p>{isFullscreen ? 'Exit Fullscreen' : 'Enter Fullscreen'}</p>
+                                </TooltipContent>
+                            </Tooltip>
+
                             {showPdfButton && (
-                                <Button
-                                    variant="ghost"
-                                    size="icon"
-                                    onClick={() => window.open(pdfUrl, '_blank')}
-                                    className="text-white hover:bg-white/20 rounded-full"
-                                    title="Download PDF"
-                                >
-                                    <DownloadSimple className="w-6 h-6" />
-                                </Button>
+                                <Tooltip>
+                                    <TooltipTrigger asChild>
+                                        <Button
+                                            variant="ghost"
+                                            size="icon"
+                                            onClick={() => window.open(pdfUrl, '_blank')}
+                                            className="text-white hover:bg-white/20 rounded-full"
+                                            aria-label="Download PDF"
+                                        >
+                                            <DownloadSimple className="w-6 h-6" />
+                                        </Button>
+                                    </TooltipTrigger>
+                                    <TooltipContent side="bottom" className="z-[60]">
+                                        <p>Download PDF</p>
+                                    </TooltipContent>
+                                </Tooltip>
                             )}
 
-                            <Button
-                                variant="ghost"
-                                size="icon"
-                                onClick={handleCloseRequest}
-                                className="text-white hover:bg-white/20 rounded-full"
-                                aria-label="Close reader"
-                            >
-                                <X className="w-6 h-6" />
-                            </Button>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleCloseRequest}
+                                        className="text-white hover:bg-white/20 rounded-full"
+                                        aria-label="Close reader"
+                                    >
+                                        <X className="w-6 h-6" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent side="bottom" className="z-[60]">
+                                    <p>Close reader</p>
+                                </TooltipContent>
+                            </Tooltip>
                         </div>
                     </div>
 
