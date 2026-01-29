@@ -191,7 +191,13 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         Frontdesk Officer
                     </CardTitle>
                     {onClose && (
-                        <Button variant="ghost" size="icon" onClick={onClose} className="h-8 w-8 text-muted-foreground hover:text-foreground">
+                        <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={onClose}
+                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                            aria-label="Close chat"
+                        >
                             <X className="w-4 h-4" />
                         </Button>
                     )}
@@ -312,6 +318,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                             type="submit"
                             size="icon"
                             disabled={chatState.isInputDisabled || !input.trim()}
+                            aria-label="Send message"
                         >
                             <PaperPlaneRight className="w-5 h-5" />
                         </Button>
