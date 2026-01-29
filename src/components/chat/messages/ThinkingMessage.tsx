@@ -18,7 +18,11 @@ interface ThinkingMessageProps {
 export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps) {
     if (steps && steps.length > 0) {
         return (
-            <div className={cn("flex justify-start", className)}>
+            <div
+                className={cn("flex justify-start", className)}
+                role="status"
+                aria-live="polite"
+            >
                 <div className="bg-muted/50 rounded-2xl px-4 py-3 max-w-[80%]">
                     <ExecutionSteps steps={steps} />
                 </div>
@@ -27,10 +31,14 @@ export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps
     }
 
     return (
-        <div className={cn(
-            "flex justify-start",
-            className
-        )}>
+        <div
+            className={cn(
+                "flex justify-start",
+                className
+            )}
+            role="status"
+            aria-live="polite"
+        >
             <div className="bg-muted rounded-2xl px-4 py-2 flex items-center gap-2 max-w-[80%]">
                 <CircleNotch className="w-4 h-4 animate-spin text-primary shrink-0" />
                 <span className="text-sm text-muted-foreground animate-pulse">
