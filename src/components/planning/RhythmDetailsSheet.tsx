@@ -10,7 +10,8 @@ import {
 import { Button } from '@/components/ui/button';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { cn } from '@/lib/utils';
-import { BookOpen } from '@phosphor-icons/react';
+import { BookOpen, Play, Pause } from '@phosphor-icons/react';
+import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
 import { getIcon, getTypeColor } from './RhythmItemRow';
@@ -38,6 +39,7 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
     onLiturgyToggle,
     onLiturgyAdvance
 }: RhythmDetailsSheetProps) {
+    const { playTrack, currentTrack, isPlaying, togglePlay } = useAudioPlayer();
 
     const handleSheetComplete = (duration?: number) => {
         if (activeItem && onComplete) {
@@ -98,6 +100,34 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                                 )
                                             }}
                                         />
+                                        {(activeItem.data.audio_url || activeItem.data.content?.audio_url) && (
+                                            <Button
+                                                variant="secondary"
+                                                className="w-full gap-2"
+                                                onClick={() => {
+                                                    const url = activeItem.data.audio_url || activeItem.data.content?.audio_url;
+                                                    if (currentTrack?.url === url) {
+                                                        togglePlay();
+                                                    } else {
+                                                        playTrack({
+                                                            url,
+                                                            title: activeItem.title,
+                                                            artist: activeItem.data.content?.composer || 'Hymn'
+                                                        });
+                                                    }
+                                                }}
+                                            >
+                                                {(currentTrack?.url === (activeItem.data.audio_url || activeItem.data.content?.audio_url)) && isPlaying ? (
+                                                    <>
+                                                        <Pause className="w-4 h-4" /> Pause Hymn
+                                                    </>
+                                                ) : (
+                                                    <>
+                                                        <Play className="w-4 h-4" /> Play Hymn
+                                                    </>
+                                                )}
+                                            </Button>
+                                        )}
                                         <p className="text-sm text-muted-foreground">
                                             🎵 Sing together as a family
                                         </p>
@@ -114,7 +144,7 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                         <div className="bg-muted/30 rounded-lg p-5 space-y-3">
                                             <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
                                             <div
-                                                className="prose prose-sm dark:prose-invert"
+                                                className="prose prose-sm dark:prose-invert whitespace-pre-wrap"
                                                 dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
                                                         activeItem.data.item_data?.liturgical_script ||
@@ -234,7 +264,7 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                             <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium">Answer</p>
                                             {/* Use liturgical_script as answer */}
                                             <div
-                                                className="prose prose-sm dark:prose-invert"
+                                                className="prose prose-sm dark:prose-invert whitespace-pre-wrap"
                                                 dangerouslySetInnerHTML={{
                                                     __html: sanitizeHtml(
                                                         activeItem.data.liturgical_script ||
@@ -264,7 +294,31 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                         />
                                         {activeItem.data.audio_url && (
                                             <div className="mt-4">
-                                                <audio controls src={activeItem.data.audio_url} className="w-full" />
+                                                <Button
+                                                    variant="secondary"
+                                                    className="w-full gap-2"
+                                                    onClick={() => {
+                                                        if (currentTrack?.url === activeItem.data.audio_url) {
+                                                            togglePlay();
+                                                        } else {
+                                                            playTrack({
+                                                                url: activeItem.data.audio_url,
+                                                                title: activeItem.title,
+                                                                artist: 'Hymn'
+                                                            });
+                                                        }
+                                                    }}
+                                                >
+                                                    {currentTrack?.url === activeItem.data.audio_url && isPlaying ? (
+                                                        <>
+                                                            <Pause className="w-4 h-4" /> Pause Hymn
+                                                        </>
+                                                    ) : (
+                                                        <>
+                                                            <Play className="w-4 h-4" /> Play Hymn
+                                                        </>
+                                                    )}
+                                                </Button>
                                             </div>
                                         )}
                                         <p className="text-sm text-muted-foreground">

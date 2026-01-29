@@ -227,6 +227,11 @@ app.get('/api/paths/today', async (c) => {
                 params.push(filter.cluster_tag);
             }
 
+            if (filter.source) {
+                query += " AND source = ?";
+                params.push(filter.source);
+            }
+
             // Refined Logic based on seeds
             if (filter.domain === 'history') {
                 query += " AND cluster_tag LIKE '%history%'"; // Approximating since no domain col
