@@ -35,3 +35,32 @@ export async function safeCompare(a: string | undefined | null, b: string | unde
     // Compare hashes in constant time
     return crypto.subtle.timingSafeEqual(aHash, bHash);
 }
+
+// Security helper: Validate URL (http/https only)
+export function isValidUrl(url: string): boolean {
+    if (!url) return false;
+    try {
+        const parsed = new URL(url);
+        return parsed.protocol === 'http:' || parsed.protocol === 'https:';
+    } catch {
+        return false;
+    }
+}
+
+// Security helper: Validate Date string (YYYY-MM-DD or ISO)
+export function isValidDate(dateStr: string): boolean {
+    if (!dateStr) return false;
+    const date = new Date(dateStr);
+    return !isNaN(date.getTime());
+}
+
+// Security helper: Validate Name (non-empty, max 100 chars, no control chars)
+export function isValidName(name: string): boolean {
+    if (!name || typeof name !== 'string') return false;
+    const trimmed = name.trim();
+    if (trimmed.length === 0 || trimmed.length > 100) return false;
+    // Basic check for control characters
+    // eslint-disable-next-line no-control-regex
+    if (/[\x00-\x1F\x7F]/.test(trimmed)) return false;
+    return true;
+}
