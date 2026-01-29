@@ -4,6 +4,7 @@ import { isValidPathSegment, safeCompare } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
+import { safeError } from '../lib/safe-response';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -173,7 +174,7 @@ app.get('/api/books', async (c) => {
         return c.json(filtered);
     } catch (error: any) {
         console.error('Books list error:', error);
-        return c.json({ error: error.message || 'Failed to list books' }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -212,7 +213,7 @@ app.get('/api/series', async (c) => {
         return c.json(seriesList);
 
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -250,7 +251,7 @@ app.get('/api/series/:seriesId', async (c) => {
         });
 
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -273,7 +274,7 @@ app.get('/api/series/:seriesId/cover', async (c) => {
         return c.json({ error: 'Series cover not found' }, 404);
 
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -295,7 +296,7 @@ app.get('/api/books/:series/:bookId', async (c) => {
 
         return c.json(metadata);
     } catch (error: any) {
-        return c.json({ error: error.message || 'Failed to get book' }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -370,7 +371,7 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
             help: 'Create books/index.json or ensure cover exists at books/{series}/{bookId}/cover.png or books/{series}/images/{bookId}.png'
         }, 404);
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -434,7 +435,7 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
             pathsChecked: results
         });
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -492,7 +493,7 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
             help: 'Ensure images/page-XX.png or page-XX.jpg exists in the book folder'
         }, 404);
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -536,7 +537,7 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
             help: 'Upload PDF to R2 at books/{series}/{bookId}/book.pdf'
         }, 404);
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -570,7 +571,7 @@ app.get('/api/books/:series/:bookId/asset/*', async (c) => {
 
         return c.json({ error: 'Asset not found', tried: pathsToTry }, 404);
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -610,7 +611,7 @@ app.post('/api/reading/complete', async (c) => {
 
         return c.json(session, 201);
     } catch (error: any) {
-        return c.json({ error: error.message || 'Failed to log reading session' }, 400);
+        return safeError(c, error, 400);
     }
 });
 
@@ -634,7 +635,7 @@ app.get('/api/reading/history', async (c) => {
 
         return c.json(sessions);
     } catch (error: any) {
-        return c.json({ error: error.message || 'Unauthorized' }, 401);
+        return safeError(c, error);
     }
 });
 
@@ -661,7 +662,7 @@ app.put('/api/books/upload', async (c) => {
         await c.env.BOOKS_BUCKET.put(path, body);
         return c.json({ success: true, path });
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -690,7 +691,7 @@ app.get('/api/debug/r2', async (c) => {
             listWithDelimiter
         });
     } catch (error: any) {
-        return c.json({ error: error.message }, 500);
+        return safeError(c, error);
     }
 });
 
@@ -758,7 +759,7 @@ app.get('/api/debug/books/audit', async (c) => {
         });
 
     } catch (e: any) {
-        return c.json({ error: e.message }, 500);
+        return safeError(c, e);
     }
 });
 
