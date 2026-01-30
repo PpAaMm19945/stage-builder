@@ -5,7 +5,7 @@ import {
     Books,
     MusicNotes,
     Shapes,
-    Compass
+
 } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { ActivityBrowser } from '@/components/library/ActivityBrowser';
@@ -16,14 +16,14 @@ import { GuestBanner } from '@/components/library/GuestBanner';
 export default function LibraryPage() {
     const location = useLocation();
     const [searchParams, setSearchParams] = useSearchParams();
-    
+
     // Determine active tab from URL path or query param
     const getInitialTab = () => {
         // Check path-based routing first
         if (location.pathname === '/library/books') return 'books';
         if (location.pathname === '/library/hymns') return 'hymns';
         if (location.pathname === '/library/activities') return 'activities';
-        
+
         // Fall back to query param for backward compatibility
         const tabParam = searchParams.get('tab');
         if (tabParam && ['activities', 'books', 'hymns'].includes(tabParam)) {
@@ -31,7 +31,7 @@ export default function LibraryPage() {
         }
         return 'activities';
     };
-    
+
     const [activeTab, setActiveTab] = useState(getInitialTab);
 
     // Sync tab state with URL
@@ -54,12 +54,7 @@ export default function LibraryPage() {
                         <h1 className="text-3xl font-display font-bold text-foreground">Library</h1>
                         <p className="text-muted-foreground">Resources for your family's formation and delight.</p>
                     </div>
-                    <Button asChild variant="outline" className="hidden sm:flex">
-                        <Link to="/library/paths">
-                            <Compass className="mr-2 h-4 w-4" />
-                            Learning Paths
-                        </Link>
-                    </Button>
+
                 </div>
             </div>
 
@@ -94,15 +89,7 @@ export default function LibraryPage() {
                 </div>
             </Tabs>
 
-            {/* Mobile-only Learning Paths Link */}
-            <div className="sm:hidden">
-                <Button asChild variant="outline" className="w-full">
-                    <Link to="/library/paths">
-                        <Compass className="mr-2 h-4 w-4" />
-                        Explore Learning Paths
-                    </Link>
-                </Button>
-            </div>
+
 
             {/* Guest Conversion Banner */}
             <GuestBanner incrementView />

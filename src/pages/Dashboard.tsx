@@ -309,13 +309,14 @@ export default function Dashboard() {
 
   const handleRhythmComplete = useCallback((item: RhythmItem, duration?: number) => {
     // Existing activity completion logic
-    if (item.type === 'activity') {
+    if (item.type === 'activity' || item.type === 'hymn' || item.type === 'catechism') {
       completeActivity({ item, duration });
     }
 
-    // Path item advancement
-    if (item.type === 'path_item' && item.data?.pathId) {
-      advancePath(item.data.pathId);
+    // Path item advancement (Check both item.data.pathId and item.pathId if it exists on root)
+    const pathId = item.data?.pathId || (item as any).pathId;
+    if (pathId) {
+      advancePath(pathId);
     }
   }, [completeActivity, advancePath]);
 
@@ -448,263 +449,232 @@ export default function Dashboard() {
     // Dashboard Content
     return (
       <div className="space-y-6 max-w-2xl mx-auto pb-12 px-4 sm:px-0">
-      {/* Greeting */}
-      <div className="py-6 space-y-2 text-center sm:text-left">
-        <h1 className="text-3xl font-display font-semibold text-foreground">
-          Hello, {user?.name?.split(' ')[0] || 'Family'}! 👋
-        </h1>
-        <p className="text-muted-foreground">
-          {isToday ? "Ready for today's rhythms?" : `Viewing ${format(selectedDate, 'EEEE, MMM d')}`}
-        </p>
-      </div>
-
-      {/* Materials Banner (Optional) */}
-      {dayData.materials?.every((m: MaterialItem) => m.status === 'unknown') && (
-        <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 mb-6">
-          <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
-          <AlertDescription className="text-blue-900 dark:text-blue-200 flex items-center justify-between">
-            <span>To get the best activity recommendations, set up your materials.</span>
-            <Button variant="link" size="sm" onClick={() => navigate('/settings')} className="h-auto p-0 ml-2">
-              Setup Materials &rarr;
-            </Button>
-          </AlertDescription>
-        </Alert>
-      )}
-
-      {/* Week Strip */}
-      <WeekStrip
-        weekStart={weekStart}
-        selectedDay={selectedDate}
-        onDaySelect={setSelectedDate}
-        onRegenerate={handleRegenerate}
-        isRegenerating={regenerateMutation.isPending}
-        dayData={weekSummary?.days || {}}
-      />
-
-
-
-      {/* REST DAY Override */}
-      {dayData.restDay && (
-        <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-xl border border-blue-100 dark:border-blue-900 text-center mb-6">
-          <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">Rest Day</h2>
-          <p className="text-blue-700 dark:text-blue-200">{dayData.message}</p>
+        {/* Greeting */}
+        <div className="py-6 space-y-2 text-center sm:text-left">
+          <h1 className="text-3xl font-display font-semibold text-foreground">
+            Hello, {user?.name?.split(' ')[0] || 'Family'}! 👋
+          </h1>
+          <p className="text-muted-foreground">
+            {isToday ? "Ready for today's rhythms?" : `Viewing ${format(selectedDate, 'EEEE, MMM d')}`}
+          </p>
         </div>
-      )}
 
-      {/* Active Paths Progress */}
-      {pathsToday?.active_paths && pathsToday.active_paths.length > 0 && (
-        <div className="space-y-3">
-          {pathsToday.active_paths.map(path => (
-            <div key={path.id} className="flex items-center justify-between text-sm bg-muted/30 p-2 rounded-lg">
-              <span className="font-medium flex items-center gap-2">
-                <Compass className="w-4 h-4 text-primary" />
-                {path.title || path.path_type || 'Learning Path'}
-              </span>
-              <span className="text-muted-foreground text-xs">
-                {path.subscription?.current_position}/{path.total_items}
-              </span>
+        {/* Materials Banner (Optional) */}
+        {dayData.materials?.every((m: MaterialItem) => m.status === 'unknown') && (
+          <Alert className="border-blue-200 bg-blue-50 dark:bg-blue-900/20 dark:border-blue-800 mb-6">
+            <Info className="h-4 w-4 text-blue-600 dark:text-blue-400" />
+            <AlertDescription className="text-blue-900 dark:text-blue-200 flex items-center justify-between">
+              <span>To get the best activity recommendations, set up your materials.</span>
+              <Button variant="link" size="sm" onClick={() => navigate('/settings')} className="h-auto p-0 ml-2">
+                Setup Materials &rarr;
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+
+        {/* Week Strip */}
+        <WeekStrip
+          weekStart={weekStart}
+          selectedDay={selectedDate}
+          onDaySelect={setSelectedDate}
+          onRegenerate={handleRegenerate}
+          isRegenerating={regenerateMutation.isPending}
+          dayData={weekSummary?.days || {}}
+        />
+
+
+
+        {/* REST DAY Override */}
+        {dayData.restDay && (
+          <div className="bg-blue-50 dark:bg-blue-950 p-6 rounded-xl border border-blue-100 dark:border-blue-900 text-center mb-6">
+            <h2 className="text-xl font-bold text-blue-900 dark:text-blue-100">Rest Day</h2>
+            <p className="text-blue-700 dark:text-blue-200">{dayData.message}</p>
+          </div>
+        )}
+
+
+
+
+
+        {/* Up Next Card - only for today */}
+        {isToday && (
+          <UpNextCard
+            item={nextItem}
+            onAction={(item) => {
+              setActiveRhythmItem(item);
+            }}
+            onExpand={() => { }}
+            pendingCount={pendingCount}
+          />
+        )}
+
+        {/* Timeline */}
+        <div className="space-y-4">
+          <div className="flex items-center justify-between px-2">
+            <div className="flex items-center gap-2">
+              <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
+                {isToday ? `Learning Path (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Items (${timelineItems.length})`}
+              </h3>
+              {dayFetching && (
+                <CircleNotch className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
+              )}
             </div>
-          ))}
+          </div>
+
+          <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
+            <DailyRhythm
+              items={timelineItems}
+              activeItem={activeRhythmItem}
+              onSelectItem={setActiveRhythmItem}
+              onComplete={handleRhythmComplete}
+              onBookClick={handleBookClick}
+              onSwap={isToday ? handleSwap : undefined}
+            />
+          </div>
         </div>
-      )}
 
-      {/* No Active Paths Empty State */}
-      {isToday && (!pathsToday?.active_paths || pathsToday.active_paths.length === 0) && (
-        <Card className="bg-gradient-to-br from-primary/5 to-transparent border-dashed">
-          <CardContent className="flex flex-col items-center text-center py-6 space-y-3">
-            <div className="h-10 w-10 bg-background rounded-full flex items-center justify-center shadow-sm">
-              <Compass className="h-5 w-5 text-primary" weight="duotone" />
-            </div>
-            <div>
-              <p className="font-medium">Start a Learning Path</p>
-              <p className="text-sm text-muted-foreground">Follow a guided journey through hymns, catechisms, and more.</p>
-            </div>
-            <Button size="sm" variant="outline" asChild>
-              <Link to="/library/paths">Explore Paths</Link>
-            </Button>
+        {/* Book Reader */}
+        {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
+        {selectedBook && (
+          <BookReader
+            book={selectedBook}
+            open={!!selectedBook}
+            onOpenChange={(open) => !open && setSelectedBook(null)}
+            childrenIds={dayData?.children?.map((c: any) => c.id)}
+            onComplete={() => {
+              queryClient.invalidateQueries({ queryKey: ['todays-book'] });
+              queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+            }}
+          />
+        )}
+
+
+
+        {/* Swap Activity Sheet */}
+        <SwapActivitySheet
+          open={!!swapActivity}
+          onOpenChange={(open) => !open && setSwapActivity(null)}
+          activityId={swapActivity?.id || null}
+          activityTitle={swapActivity?.title}
+          day={selectedDayName}
+          weekStart={weekStartStr}
+          onSwapComplete={() => {
+            queryClient.invalidateQueries({ queryKey: ['family-day'] });
+            queryClient.invalidateQueries({ queryKey: ['family-today'] });
+            queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
+          }}
+        />
+
+        {/* Apprenticeship Approvals */}
+        <WorkApprovals />
+
+        {/* Time Spent Widget */}
+        <TimeSpentWidget />
+
+        {/* Family Progress (The Quiet Footer) */}
+        <FamilyProgressMini activePaths={pathsToday?.active_paths || []} />
+
+        {/* AI Interaction Logs (Parent Visibility) */}
+        <Card className="mt-6">
+          <CardHeader className="pb-3">
+            <CardTitle className="text-lg">AI Safety Monitor</CardTitle>
+            <CardDescription>Review what your children are asking the AI</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <AiLogViewer />
           </CardContent>
         </Card>
-      )}
 
-      {/* Up Next Card - only for today */}
-      {isToday && (
-        <UpNextCard
-          item={nextItem}
-          onAction={(item) => {
-            setActiveRhythmItem(item);
-          }}
-          onExpand={() => { }}
-          pendingCount={pendingCount}
-        />
-      )}
-
-      {/* Timeline */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between px-2">
-          <div className="flex items-center gap-2">
-            <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">
-              {isToday ? `Learning Path (${timelineItems.length})` : `${format(selectedDate, 'EEEE')} Items (${timelineItems.length})`}
-            </h3>
-            {dayFetching && (
-              <CircleNotch className="h-3.5 w-3.5 animate-spin text-muted-foreground" />
-            )}
-          </div>
-        </div>
-
-        <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
-          <DailyRhythm
-            items={timelineItems}
-            activeItem={activeRhythmItem}
-            onSelectItem={setActiveRhythmItem}
-            onComplete={handleRhythmComplete}
-            onBookClick={handleBookClick}
-            onSwap={isToday ? handleSwap : undefined}
-          />
-        </div>
-      </div>
-
-      {/* Book Reader */}
-      {/* ⚡ Performance: Conditionally render BookReader to avoid hook overhead when closed */}
-      {selectedBook && (
-        <BookReader
-          book={selectedBook}
-          open={!!selectedBook}
-          onOpenChange={(open) => !open && setSelectedBook(null)}
-          childrenIds={dayData?.children?.map((c: any) => c.id)}
-          onComplete={() => {
-            queryClient.invalidateQueries({ queryKey: ['todays-book'] });
-            queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+        <EndOfDaySummary
+          date={selectedDate}
+          items={timelineItems}
+          open={showSummary}
+          onClose={() => {
+            setShowSummary(false);
+            localStorage.setItem('daily_summary_shown', format(new Date(), 'yyyy-MM-dd'));
           }}
         />
-      )}
 
+        {/* Regenerate Dialog */}
+        <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Customize this Week</DialogTitle>
+              <DialogDescription>
+                How should we balance activities for your children{childAges.length > 0 ? ` (${childAges.join(', ')})` : ''}?
+              </DialogDescription>
+            </DialogHeader>
 
+            <div className="py-4 space-y-4">
+              {/* Missed Items Warning */}
+              {regenerationContext.missedItems.length > 0 && (
+                <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
+                  <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
+                    I noticed {regenerationContext.missedItems.length} incomplete items from earlier this week.
+                  </p>
+                  <RadioGroup value={transferAction} onValueChange={(v: any) => setTransferAction(v)}>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="move" id="move" />
+                      <Label htmlFor="move">Move to tomorrow</Label>
+                    </div>
+                    <div className="flex items-center space-x-2">
+                      <RadioGroupItem value="skip" id="skip" />
+                      <Label htmlFor="skip">Skip and continue</Label>
+                    </div>
+                  </RadioGroup>
+                </div>
+              )}
 
-      {/* Swap Activity Sheet */}
-      <SwapActivitySheet
-        open={!!swapActivity}
-        onOpenChange={(open) => !open && setSwapActivity(null)}
-        activityId={swapActivity?.id || null}
-        activityTitle={swapActivity?.title}
-        day={selectedDayName}
-        weekStart={weekStartStr}
-        onSwapComplete={() => {
-          queryClient.invalidateQueries({ queryKey: ['family-day'] });
-          queryClient.invalidateQueries({ queryKey: ['family-today'] });
-          queryClient.invalidateQueries({ queryKey: ['family-week-summary'] });
-        }}
-      />
-
-      {/* Apprenticeship Approvals */}
-      <WorkApprovals />
-
-      {/* Time Spent Widget */}
-      <TimeSpentWidget />
-
-      {/* Family Progress */}
-      <FamilyProgressMini />
-
-      {/* AI Interaction Logs (Parent Visibility) */}
-      <Card className="mt-6">
-        <CardHeader className="pb-3">
-          <CardTitle className="text-lg">AI Safety Monitor</CardTitle>
-          <CardDescription>Review what your children are asking the AI</CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AiLogViewer />
-        </CardContent>
-      </Card>
-
-      <EndOfDaySummary
-        date={selectedDate}
-        items={timelineItems}
-        open={showSummary}
-        onClose={() => {
-          setShowSummary(false);
-          localStorage.setItem('daily_summary_shown', format(new Date(), 'yyyy-MM-dd'));
-        }}
-      />
-
-      {/* Regenerate Dialog */}
-      <Dialog open={isBalanceDialogOpen} onOpenChange={setIsBalanceDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>Customize this Week</DialogTitle>
-            <DialogDescription>
-              How should we balance activities for your children{childAges.length > 0 ? ` (${childAges.join(', ')})` : ''}?
-            </DialogDescription>
-          </DialogHeader>
-
-          <div className="py-4 space-y-4">
-            {/* Missed Items Warning */}
-            {regenerationContext.missedItems.length > 0 && (
-              <div className="bg-amber-50 dark:bg-amber-900/20 p-4 rounded-lg border border-amber-200 dark:border-amber-800">
-                <p className="text-sm font-medium text-amber-800 dark:text-amber-200 mb-2">
-                  I noticed {regenerationContext.missedItems.length} incomplete items from earlier this week.
+              {regenerationContext.frozenDays.length > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  * {regenerationContext.frozenDays.join(', ')} are passed and will be frozen.
                 </p>
-                <RadioGroup value={transferAction} onValueChange={(v: any) => setTransferAction(v)}>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="move" id="move" />
-                    <Label htmlFor="move">Move to tomorrow</Label>
+              )}
+            </div>
+
+
+
+            <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
+              <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                <RadioGroupItem value="baby_focused" id="r1" />
+                <Label htmlFor="r1" className="flex-1 cursor-pointer">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Baby className="w-4 h-4 text-indigo-500" />
+                    Baby Focused
                   </div>
-                  <div className="flex items-center space-x-2">
-                    <RadioGroupItem value="skip" id="skip" />
-                    <Label htmlFor="skip">Skip and continue</Label>
-                  </div>
-                </RadioGroup>
+                  <span className="text-xs text-muted-foreground">Prioritize sensory & bonding. Older kids help lead.</span>
+                </Label>
               </div>
-            )}
+              <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                <RadioGroupItem value="mixed" id="r2" />
+                <Label htmlFor="r2" className="flex-1 cursor-pointer">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <UsersThree className="w-4 h-4 text-green-500" />
+                    Balanced Mix
+                  </div>
+                  <span className="text-xs text-muted-foreground">Equal focus across all age groups.</span>
+                </Label>
+              </div>
+              <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
+                <RadioGroupItem value="older_focused" id="r3" />
+                <Label htmlFor="r3" className="flex-1 cursor-pointer">
+                  <div className="flex items-center gap-2 font-semibold">
+                    <Crown className="w-4 h-4 text-amber-500" />
+                    Older Focused
+                  </div>
+                  <span className="text-xs text-muted-foreground">More complex activities. Babies observe/tag along.</span>
+                </Label>
+              </div>
+            </RadioGroup>
 
-            {regenerationContext.frozenDays.length > 0 && (
-              <p className="text-xs text-muted-foreground">
-                * {regenerationContext.frozenDays.join(', ')} are passed and will be frozen.
-              </p>
-            )}
-          </div>
-
-
-
-          <RadioGroup value={balancePreference} onValueChange={(v: any) => setBalancePreference(v)} className="gap-3">
-            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="baby_focused" id="r1" />
-              <Label htmlFor="r1" className="flex-1 cursor-pointer">
-                <div className="flex items-center gap-2 font-semibold">
-                  <Baby className="w-4 h-4 text-indigo-500" />
-                  Baby Focused
-                </div>
-                <span className="text-xs text-muted-foreground">Prioritize sensory & bonding. Older kids help lead.</span>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="mixed" id="r2" />
-              <Label htmlFor="r2" className="flex-1 cursor-pointer">
-                <div className="flex items-center gap-2 font-semibold">
-                  <UsersThree className="w-4 h-4 text-green-500" />
-                  Balanced Mix
-                </div>
-                <span className="text-xs text-muted-foreground">Equal focus across all age groups.</span>
-              </Label>
-            </div>
-            <div className="flex items-center space-x-2 border p-3 rounded-lg hover:bg-muted/50 cursor-pointer">
-              <RadioGroupItem value="older_focused" id="r3" />
-              <Label htmlFor="r3" className="flex-1 cursor-pointer">
-                <div className="flex items-center gap-2 font-semibold">
-                  <Crown className="w-4 h-4 text-amber-500" />
-                  Older Focused
-                </div>
-                <span className="text-xs text-muted-foreground">More complex activities. Babies observe/tag along.</span>
-              </Label>
-            </div>
-          </RadioGroup>
-
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>Cancel</Button>
-            <Button onClick={confirmRegenerate} disabled={regenerateMutation.isPending}>
-              {regenerateMutation.isPending ? 'Generating...' : 'Generate Week'}
-            </Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+            <DialogFooter>
+              <Button variant="outline" onClick={() => setIsBalanceDialogOpen(false)}>Cancel</Button>
+              <Button onClick={confirmRegenerate} disabled={regenerateMutation.isPending}>
+                {regenerateMutation.isPending ? 'Generating...' : 'Generate Week'}
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         {/* Path Completion Celebration Modal */}
         <PathCompletionModal

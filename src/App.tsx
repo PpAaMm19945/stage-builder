@@ -31,7 +31,7 @@ const Dashboard = lazy(() => import("./pages/Dashboard"));
 const Planner = lazy(() => import("./pages/early-years/Planner"));
 const DailyPractices = lazy(() => import("./pages/early-years/DailyPractices"));
 const LibraryPage = lazy(() => import("./pages/library/index"));
-const PathsPage = lazy(() => import("./pages/library/Paths"));
+
 const ActivityViewer = lazy(() => import("./pages/early-years/ActivityViewer"));
 const ProgressPage = lazy(() => import("./pages/early-years/Progress"));
 const Reading = lazy(() => import("./pages/early-years/Reading"));
@@ -78,7 +78,7 @@ const App = () => (
                       <Route path="/library/activities" element={<LibraryPage />} />
                       <Route path="/library/books" element={<LibraryPage />} />
                       <Route path="/library/hymns" element={<LibraryPage />} />
-                      <Route path="/library/paths" element={<PathsPage />} />
+
                       <Route path="/library/activities/:id" element={<ActivityViewer />} />
 
                       <Route path="/privacy" element={<PrivacyPolicy />} />

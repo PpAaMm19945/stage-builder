@@ -19,6 +19,12 @@ export interface FamilyContext {
         hymn_position: number;
         current_book_id: string | null;
     };
+    basket_items: {
+        hymn?: PathItem;
+        catechism?: PathItem;
+        history?: PathItem;
+        habit?: PathItem;
+    };
     family_id: string; // Added for plan lookup
 }
 
@@ -31,6 +37,15 @@ export interface RhythmItem {
     for_children: string[]; // Child IDs
     rationale: string;
     status: "upcoming" | "current" | "completed" | "skipped" | "transferred";
+}
+
+export interface PathItem {
+    id: string;
+    title: string;
+    type: string;
+    data: any;
+    position: number;
+    total: number;
 }
 
 export interface DailyRhythm {
@@ -47,6 +62,7 @@ export interface WeeklyPlan {
     theme: string;
     generated_at: string;
     frozen_through: string | null;
+    slots?: any[];
 }
 
 export class RhythmGenerator {
@@ -54,6 +70,46 @@ export class RhythmGenerator {
 
     constructor(private env: Env) {
         this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp');
+    }
+
+    // Helper to get next item for a path
+    private async getNextPathItem(db: D1Database, userId: string, pathId: string): Promise<PathItem | undefined> {
+        // 1. Get Subscription (or default to pos 1)
+        const sub = await db.prepare('SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?').bind(userId, pathId).first<any>();
+        const position = sub?.current_position || 1;
+
+        // 2. Get Path Definition
+        const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ?').bind(pathId).first<any>();
+        if (!path) return undefined;
+
+        // 3. Build Query
+        const filter = JSON.parse(path.content_filter || '{}');
+        let query = "SELECT * FROM formations WHERE is_active = 1";
+        const params: any[] = [];
+
+        if (filter.cluster_tag) {
+            query += " AND cluster_tag = ?";
+            params.push(filter.cluster_tag);
+        }
+        if (filter.domain === 'history') query += " AND cluster_tag LIKE '%history%'";
+        if (filter.skill === 'reading') query += " AND cluster_tag = 'reading'";
+        if (filter.age_tier === 'infant') query += " AND cluster_tag = 'toddler'";
+
+        query += " ORDER BY COALESCE(sequence_number, 999999), title LIMIT 1 OFFSET ?";
+        params.push(position - 1);
+
+        const item = await db.prepare(query).bind(...params).first<any>();
+
+        if (!item) return undefined;
+
+        return {
+            id: item.id,
+            title: item.title,
+            type: path.path_type,
+            data: item,
+            position,
+            total: path.total_items || 100
+        };
     }
 
     async loadFamilyContext(userId: string): Promise<FamilyContext> {
@@ -89,18 +145,37 @@ export class RhythmGenerator {
             };
         });
 
+        const preferences = JSON.parse(profile?.preferences || '{}');
+
+        // 4. Fetch Basket Items (The Ingredients)
+        const basketItems: any = {};
+
+        // Hymns (Default: ON)
+        if (preferences.includeHymns !== false) {
+            basketItems.hymn = await this.getNextPathItem(db, userId, 'hymn-journey');
+        }
+        // Catechism (Default: ON)
+        if (preferences.includeCatechism !== false) {
+            basketItems.catechism = await this.getNextPathItem(db, userId, 'westminster-catechism');
+        }
+        // History (Default: ON - inferred) - Using 'african-history-young' as default for now
+        // In future, select based on age.
+        basketItems.history = await this.getNextPathItem(db, userId, 'african-history-young');
+
+
         return {
             children,
             morning_minutes: profile?.morning_minutes || 15,
             evening_minutes: profile?.evening_minutes || 0,
             available_days: JSON.parse(profile?.available_days || '["Mon","Tue","Wed","Thu","Fri"]'),
             goals: JSON.parse(profile?.goals || '[]'),
-            preferences: JSON.parse(profile?.preferences || '{}'),
+            preferences,
             progress: {
                 catechism_position: profile?.catechism_position || 1,
                 hymn_position: profile?.hymn_position || 1,
-                current_book_id: null // TODO: Implement reading progress lookup
+                current_book_id: null
             },
+            basket_items: basketItems,
             family_id: householdId
         };
     }
@@ -122,29 +197,27 @@ export class RhythmGenerator {
             context.available_days = context.available_days.filter(d => !frozenDays.includes(d));
         }
 
-        const systemPrompt = `You are the FamilyPath Rhythm Generator. Your goal is to create a personalized weekly formation plan for a family.
+        const systemPrompt = `You are the FamilyPath Rhythm Generator. Your goal is to create a personalized weekly formation plan.
     
     FAMILY CONTEXT:
     Children: ${JSON.stringify(context.children)}
     Time: Morning ${context.morning_minutes}m, Evening ${context.evening_minutes}m
     Days: ${JSON.stringify(context.available_days)}
     Goals: ${JSON.stringify(context.goals)}
-    Progress: Catechism Q${context.progress.catechism_position}, Hymn #${context.progress.hymn_position}
-    ${additionalContext ? `\n    ADDITIONAL CONTEXT:\n    ${additionalContext}` : ''}
     
-    LIBRARY CONTENT:
-    - Catechism: Westminster Shorter Catechism (use Q${context.progress.catechism_position} onwards)
-    - Hymn: Hymn #${context.progress.hymn_position} (Focus on one hymn per week)
-    - Scripture: Psalms (start with Psalm 23 or 100)
-    - History: Early Church Fathers (focus on Augustine, Athanasius, Polycarp) for this week
+    WEEKLY BASKET INGREDIENTS (Use these specifically):
+    ${context.basket_items.catechism ? `- Catechism: ${context.basket_items.catechism.title} (ID: ${context.basket_items.catechism.id})` : '- Catechism: [Skipped by preference]'}
+    ${context.basket_items.hymn ? `- Hymn: ${context.basket_items.hymn.title} (ID: ${context.basket_items.hymn.id}) - Practice this all week` : '- Hymn: [Skipped by preference]'}
+    ${context.basket_items.history ? `- History: ${context.basket_items.history.title} (ID: ${context.basket_items.history.id})` : ''}
     
     INSTRUCTIONS:
     1. Plan for the available days ONLY.
-    2. Respect the time limits strictly.
-    3. Ensure variety but continuity (progressive formation).
-    4. Provide a rationale for every item.
-    5. Assign activities to specific children or "all".
-    6. Return a STRUCTURED JSON response matching the schema.
+    2. Respect the time limits.
+    3. Use the Basket Ingredients as the core anchor items for the week.
+       - The Hymn should appear multiple times (repetition).
+       - The Catechism should appear multiple times.
+    4. Fill remaining space with age-appropriate activities (e.g., "Nature Walk", "Drawing", "Free Play").
+    5. Return a STRUCTURED JSON response.
     `;
 
         const responseSchema = {
@@ -207,18 +280,34 @@ export class RhythmGenerator {
             // Enhance with IDs and status
             const days = generatedData.days.map((d: any) => ({
                 day: d.day,
-                morning: d.morning.map((item: any) => ({
-                    ...item,
-                    id: crypto.randomUUID(),
-                    content_id: "placeholder", // In a real impl, we'd lookup content IDs
-                    status: "upcoming"
-                })),
-                evening: d.evening.map((item: any) => ({
-                    ...item,
-                    id: crypto.randomUUID(),
-                    content_id: "placeholder",
-                    status: "upcoming"
-                }))
+                morning: d.morning.map((item: any) => {
+                    let pathId = undefined;
+                    if (item.type === 'hymn') pathId = 'hymn-journey';
+                    if (item.type === 'catechism') pathId = 'westminster-catechism';
+                    // History path ID might vary, but for now defaulting if we know it came from the basket
+                    if (item.title === context.basket_items.history?.title) pathId = 'african-history-young';
+
+                    return {
+                        ...item,
+                        id: crypto.randomUUID(),
+                        content_id: "placeholder",
+                        status: "upcoming",
+                        pathId: pathId
+                    };
+                }),
+                evening: d.evening.map((item: any) => {
+                    let pathId = undefined;
+                    if (item.type === 'hymn') pathId = 'hymn-journey';
+                    if (item.type === 'catechism') pathId = 'westminster-catechism';
+
+                    return {
+                        ...item,
+                        id: crypto.randomUUID(),
+                        content_id: "placeholder",
+                        status: "upcoming",
+                        pathId: pathId
+                    };
+                })
             }));
 
             // Merge with frozen days and sort
@@ -227,11 +316,55 @@ export class RhythmGenerator {
                 return dayOrder.indexOf(a.day) - dayOrder.indexOf(b.day);
             });
 
+            // Convert to flat 'slots' format for family.ts compatibility
+            const slots: any[] = [];
+
+            allDays.forEach(d => {
+                // Morning Items
+                d.morning.forEach((item: any) => {
+                    let activityId = null;
+
+                    // Resolve ID from Basket Context
+                    if (item.type === 'hymn' && context.basket_items.hymn) activityId = context.basket_items.hymn.id;
+                    if (item.type === 'catechism' && context.basket_items.catechism) activityId = context.basket_items.catechism.id;
+                    if (item.title === context.basket_items.history?.title && context.basket_items.history) activityId = context.basket_items.history.id;
+
+                    // If we have a valid ID, add to slots
+                    if (activityId) {
+                        slots.push({
+                            day: d.day,
+                            timeSlot: "Morning",
+                            activityId: activityId,
+                            reasoning: item.rationale,
+                            pathId: (item as any).pathId // Pass pathId for advancement
+                        });
+                    }
+                });
+
+                // Evening Items
+                d.evening.forEach((item: any) => {
+                    let activityId = null;
+                    if (item.type === 'hymn' && context.basket_items.hymn) activityId = context.basket_items.hymn.id;
+                    if (item.type === 'catechism' && context.basket_items.catechism) activityId = context.basket_items.catechism.id;
+
+                    if (activityId) {
+                        slots.push({
+                            day: d.day,
+                            timeSlot: "Evening",
+                            activityId: activityId,
+                            reasoning: item.rationale,
+                            pathId: (item as any).pathId
+                        });
+                    }
+                });
+            });
+
             return {
                 id: crypto.randomUUID(),
-                family_id: "pending_save", // Will be set by caller
+                family_id: "pending_save",
                 week_start: weekStart,
                 days: allDays,
+                slots: slots, // Added for family.ts compatibility
                 theme: generatedData.weekly_theme,
                 generated_at: new Date().toISOString(),
                 frozen_through: frozenDays.length > 0 ? frozenDays[frozenDays.length - 1] : null

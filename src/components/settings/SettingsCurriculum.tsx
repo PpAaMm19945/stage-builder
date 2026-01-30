@@ -5,7 +5,7 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
-import { Lightning } from '@phosphor-icons/react';
+import { Lightning, Shapes } from '@phosphor-icons/react';
 import { OverrideManager } from '@/components/overrides/OverrideManager';
 import { FormationSettings } from '@/components/settings/FormationSettings';
 import { toast } from 'sonner';
@@ -122,6 +122,47 @@ export function SettingsCurriculum() {
         <div className="space-y-6">
             {/* Formation Preferences */}
             <FormationSettings />
+
+            {/* Basket Ingredients (Opt-outs) */}
+            <Card>
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-lg">
+                        <Shapes className="h-5 w-5" />
+                        Basket Ingredients
+                    </CardTitle>
+                    <CardDescription>
+                        Choose what items the AI should include in your weekly basket.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {[
+                        { id: 'includeHymns', label: 'Hymns', description: 'Weekly hymn study from the curated library.' },
+                        { id: 'includeCatechism', label: 'Catechism', description: 'Question & Answer theology practice.' },
+                        { id: 'includeScripture', label: 'Scripture Memory', description: 'Weekly verses to memorize together.' },
+                        { id: 'includeHabits', label: 'Character Habits', description: 'Focus on virtues like Order, Wonder, and Stewardship.' }
+                    ].map((item) => (
+                        <div key={item.id} className="flex items-center justify-between">
+                            <div className="space-y-0.5">
+                                <Label className="text-base">{item.label}</Label>
+                                <p className="text-xs text-muted-foreground">{item.description}</p>
+                            </div>
+                            <Switch
+                                checked={preferences[item.id] !== false} // Default to TRUE if undefined
+                                onCheckedChange={async (checked) => {
+                                    const newPrefs = { ...preferences, [item.id]: checked };
+                                    setPreferences(newPrefs);
+                                    try {
+                                        await profile.update({ preferences: newPrefs });
+                                    } catch (e) {
+                                        toast.error('Failed to update preference');
+                                        setPreferences(preferences); // Revert
+                                    }
+                                }}
+                            />
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
 
             {/* Goals & Focus */}
             <Card>
