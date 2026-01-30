@@ -136,7 +136,11 @@ app.get('/auth/google/callback', async (c) => {
             return c.redirect(`${frontendUrl}/login?error=temporary&message=Database temporarily unavailable. Please try again.`);
         }
 
-        return c.text(`Authentication Failed: ${error.message}`, 500);
+        const errorMessage = c.env.ENVIRONMENT === 'production'
+            ? 'Authentication failed. Please try again.'
+            : error.message;
+
+        return c.text(`Authentication Failed: ${errorMessage}`, 500);
     }
 });
 
@@ -164,6 +168,11 @@ app.get('/api/auth/me', async (c) => {
 
 // DEBUG ENDPOINT
 app.get('/api/debug/auth', async (c) => {
+    // Security: Disable debug endpoint in production
+    if (c.env.ENVIRONMENT === 'production') {
+        return c.json({ error: 'Endpoint disabled in production' }, 404);
+    }
+
     const authHeader = c.req.header('Authorization');
     const token = authHeader?.replace('Bearer ', '') || c.req.query('token') as string;
 
