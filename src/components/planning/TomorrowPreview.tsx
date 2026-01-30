@@ -66,13 +66,23 @@ export function TomorrowPreview() {
     }
 
     return (
-        <Card className="border-dashed border-2">
+        <Card
+            className="border-dashed border-2"
+            role="region"
+            aria-label="Tomorrow's plan"
+        >
             <CardHeader className="py-3 px-4 flex flex-row items-center justify-between space-y-0 bg-muted/20">
                 <div className="flex items-center gap-2">
                     <CalendarBlank className="h-4 w-4 text-primary" />
                     <CardTitle className="text-sm font-medium">Tomorrow's Plan</CardTitle>
                 </div>
-                <Button variant="ghost" size="icon" className="h-6 w-6" onClick={() => setIsOpen(false)}>
+                <Button
+                    variant="ghost"
+                    size="icon"
+                    className="h-6 w-6"
+                    onClick={() => setIsOpen(false)}
+                    aria-label="Close preview"
+                >
                     <CaretUp className="h-4 w-4" />
                 </Button>
             </CardHeader>
@@ -112,6 +122,7 @@ export function TomorrowPreview() {
                                             onClick={() => skipMutation.mutate(activity.id)}
                                             disabled={skipMutation.isPending}
                                             title="Skip this activity"
+                                            aria-label="Skip activity"
                                         >
                                             <X className="h-4 w-4" />
                                         </Button>
