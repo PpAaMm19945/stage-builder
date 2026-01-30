@@ -11,9 +11,13 @@ export default function AuthCallback() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const token = searchParams.get('token');
-    const errorParam = searchParams.get('error');
-    const messageParam = searchParams.get('message');
+    // Check both hash (new secure way) and searchParams (legacy/fallback)
+    const hash = window.location.hash;
+    const hashParams = new URLSearchParams(hash.replace(/^#/, ''));
+
+    const token = hashParams.get('token') || searchParams.get('token');
+    const errorParam = searchParams.get('error') || hashParams.get('error');
+    const messageParam = searchParams.get('message') || hashParams.get('message');
 
     if (errorParam) {
       setError(messageParam || errorParam);
