@@ -184,6 +184,7 @@ export function PathCard({
                   variant="outline"
                   size="icon"
                   disabled={isLoading}
+                  aria-label="Resume path"
                 >
                   <Play className="h-4 w-4" />
                 </Button>
@@ -193,6 +194,7 @@ export function PathCard({
                   variant="outline"
                   size="icon"
                   disabled={isLoading}
+                  aria-label="Pause path"
                 >
                   <Pause className="h-4 w-4" />
                 </Button>
