@@ -40,8 +40,17 @@ export function MomentumRings() {
 
     return (
         <div
-            className="mt-6 mb-12 cursor-pointer group"
+            role="button"
+            tabIndex={0}
+            className="mt-6 mb-12 cursor-pointer group outline-none rounded-lg focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2"
             onClick={() => navigate('/early-years/progress')}
+            onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    navigate('/early-years/progress');
+                }
+            }}
+            aria-label="View weekly momentum progress"
         >
             <div className="flex items-center justify-between px-4 py-2">
                 <h3 className="text-sm font-semibold text-muted-foreground uppercase tracking-wider">Weekly Momentum</h3>
