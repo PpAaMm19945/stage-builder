@@ -164,6 +164,11 @@ app.get('/api/auth/me', async (c) => {
 
 // DEBUG ENDPOINT
 app.get('/api/debug/auth', async (c) => {
+    // Security: Disable debug endpoint in production
+    if (c.env.ENVIRONMENT === 'production') {
+        return c.notFound();
+    }
+
     const authHeader = c.req.header('Authorization');
     const token = authHeader?.replace('Bearer ', '') || c.req.query('token') as string;
 
