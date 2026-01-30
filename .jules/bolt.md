@@ -37,3 +37,7 @@
 ## 2026-05-29 - Parallelize R2 Metadata Fetching
 **Learning:** The `/api/series` and `/api/series/:id` endpoints were fetching metadata for each item sequentially in a `for` loop. For a series with 20 books, this caused 20 sequential round-trips to R2, significantly increasing latency.
 **Action:** Refactored the loops to use `Promise.all` to fetch all metadata in parallel. This changes the latency profile from O(N) to O(1) (bounded by concurrency limits), drastically reducing load times for the library views.
+
+## 2026-06-03 - R2 Index Caching in Workers
+**Learning:** The `GET /api/books/:series/:bookId/cover` endpoint was fetching `books/index.json` from R2 on every request to look up the file path. When loading a library page with 50+ books, this triggered 50+ simultaneous reads for the same index file, causing high latency and unnecessary Class A operations costs.
+**Action:** Implemented a short-lived (60s) in-memory cache for `books/index.json` using a module-level global variable in the Cloudflare Worker. This reduces the index lookup cost to O(1) memory access for subsequent requests in the burst, saving ~98% of R2 reads for index lookups during page loads.

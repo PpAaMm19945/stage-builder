@@ -8,6 +8,50 @@ import { safeError } from '../lib/safe-response';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
+// ============ CACHE ============
+
+type BookIndex = Record<string, Record<string, string>>;
+
+interface CacheEntry<T> {
+    data: T;
+    timestamp: number;
+}
+
+const MEMORY_CACHE: Record<string, CacheEntry<BookIndex>> = {};
+const CACHE_TTL_MS = 60 * 1000; // 1 minute
+let indexFetchPromise: Promise<BookIndex | null> | null = null;
+
+async function getCachedIndex(bucket: R2Bucket): Promise<BookIndex | null> {
+    const cacheKey = 'books/index.json';
+    const now = Date.now();
+
+    if (MEMORY_CACHE[cacheKey] && (now - MEMORY_CACHE[cacheKey].timestamp < CACHE_TTL_MS)) {
+        return MEMORY_CACHE[cacheKey].data;
+    }
+
+    if (indexFetchPromise) {
+        return indexFetchPromise;
+    }
+
+    indexFetchPromise = (async () => {
+        try {
+            const object = await bucket.get(cacheKey);
+            if (object) {
+                const data = await object.json() as BookIndex;
+                MEMORY_CACHE[cacheKey] = { data, timestamp: Date.now() };
+                return data;
+            }
+        } catch (e) {
+            console.warn('Index lookup failed:', e);
+        } finally {
+            indexFetchPromise = null;
+        }
+        return null;
+    })();
+
+    return indexFetchPromise;
+}
+
 // ============ HELPERS ============
 
 // Helper: Parse age range string to months
@@ -314,23 +358,20 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
 
         // 1. Check Index File first
         try {
-            const indexObj = await bucket.get('books/index.json');
-            if (indexObj) {
-                const index = await indexObj.json() as Record<string, Record<string, string>>;
-                if (index[series] && index[series][bookId]) {
-                    const indexedPath = index[series][bookId];
-                    const object = await bucket.get(indexedPath);
-                    if (object) {
-                        const headers = new Headers();
-                        const ext = indexedPath.split('.').pop()?.toLowerCase();
-                        const contentType = object.httpMetadata?.contentType ||
-                            (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
-                        headers.set('Content-Type', contentType);
-                        headers.set('Cache-Control', 'public, max-age=86400');
-                        headers.set('Access-Control-Allow-Origin', '*');
-                        headers.set('X-Source', 'index');
-                        return new Response(object.body, { headers });
-                    }
+            const index = await getCachedIndex(bucket);
+            if (index && index[series] && index[series][bookId]) {
+                const indexedPath = index[series][bookId];
+                const object = await bucket.get(indexedPath);
+                if (object) {
+                    const headers = new Headers();
+                    const ext = indexedPath.split('.').pop()?.toLowerCase();
+                    const contentType = object.httpMetadata?.contentType ||
+                        (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                    headers.set('Content-Type', contentType);
+                    headers.set('Cache-Control', 'public, max-age=86400');
+                    headers.set('Access-Control-Allow-Origin', '*');
+                    headers.set('X-Source', 'index');
+                    return new Response(object.body, { headers });
                 }
             }
         } catch (e) {
@@ -388,19 +429,16 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
 
         // Check index
         try {
-            const indexObj = await bucket.get('books/index.json');
-            if (indexObj) {
-                const index = await indexObj.json() as Record<string, Record<string, string>>;
-                if (index[series] && index[series][bookId]) {
-                    indexEntry = index[series][bookId];
-                    const object = await bucket.head(indexEntry);
-                    results.push({
-                        path: indexEntry,
-                        source: 'index',
-                        found: !!object
-                    });
-                    if (object) foundPath = indexEntry;
-                }
+            const index = await getCachedIndex(bucket);
+            if (index && index[series] && index[series][bookId]) {
+                indexEntry = index[series][bookId];
+                const object = await bucket.head(indexEntry);
+                results.push({
+                    path: indexEntry,
+                    source: 'index',
+                    found: !!object
+                });
+                if (object) foundPath = indexEntry;
             }
         } catch (e: any) {
             results.push({ error: 'Index check failed', details: e.message });
