@@ -64,7 +64,7 @@ export const BookSeriesRow = memo(function BookSeriesRow({ series, books, onBook
                         {books.map(book => (
                             <CarouselItem
                                 key={`${book.series}-${book.id}`}
-                                className="pl-3 md:pl-4 shrink-0 grow-0 w-auto"
+                                className="pl-3 md:pl-4 shrink-0 grow-0 w-auto basis-auto"
                             >
                                 <BookCard
                                     book={book}

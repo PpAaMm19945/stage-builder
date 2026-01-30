@@ -41,6 +41,10 @@ export interface BookMetadata {
     learningStage?: string;
     readingPrompts?: any;
     coverUrl: string;
+    // New Living Education Fields
+    learningOutcomes?: string[]; // Array of strings
+    themes?: string[]; // Array of strings
+    relatedActivities?: string[]; // Array of formation IDs
 }
 
 // Core Worker Types
@@ -94,7 +98,7 @@ export interface Formation {
     id: string;
     title: string;
     description: string;
-    formation_type: 'skill' | 'habit' | 'liturgy' | 'reading' | 'service' | 'rest';
+    formation_type: 'skill' | 'habit' | 'liturgy' | 'reading' | 'scripture'; // Removed 'service' | 'rest'
     primary_virtue: string;
     min_age_months: number;
     max_age_months: number;
@@ -104,6 +108,9 @@ export interface Formation {
     render_format?: string;
     content_path?: string;
     audio_url?: string;
+    // New Living Education Fields
+    learning_outcomes?: string; // JSON string array e.g., ["Science:Chemistry"]
+    mess_level?: 'zero' | 'low' | 'high';
 }
 
 // V2 Foundation Tables
