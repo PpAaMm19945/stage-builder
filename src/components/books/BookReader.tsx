@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -268,9 +268,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
 
     const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
-    const handleImageError = (index: number) => {
+    const handleImageError = useCallback((index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
-    };
+    }, []);
 
     const handleCloseRequest = async () => {
         // If finished, close handling is standard
@@ -553,7 +553,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                     src={pageUrl}
                                                     alt={`Page ${index + 1}`}
                                                     index={index}
-                                                    onError={() => handleImageError(index)}
+                                                    onImageError={handleImageError}
                                                     prompt={prompt?.prompt}
                                                 />
                                             </CarouselItem>
