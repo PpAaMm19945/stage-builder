@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Clock, CheckCircle, Camera, Upload, Calendar, Briefcase } from 'lucide-react';
+import { Clock, CheckCircle, Camera, Upload, Calendar, Briefcase, X } from 'lucide-react';
 
 interface Apprenticeship {
     id: string;
@@ -99,7 +99,13 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
                     Log Work Hours
                 </h2>
                 {onClose && (
-                    <button onClick={onClose} className="text-amber-400 hover:text-amber-600 text-2xl leading-none">&times;</button>
+                    <button
+                        onClick={onClose}
+                        className="text-amber-400 hover:text-amber-600 hover:bg-amber-100 p-1 rounded-full transition-colors"
+                        aria-label="Close"
+                    >
+                        <X className="w-5 h-5" />
+                    </button>
                 )}
             </div>
 
