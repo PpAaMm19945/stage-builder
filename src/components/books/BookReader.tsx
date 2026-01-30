@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -266,11 +266,21 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         [imagePages, failedImages]
     );
 
+    // ⚡ Bolt: Create O(1) lookup map for prompts to avoid finding in loop
+    const promptsByPage = useMemo(() => {
+        if (!book?.readingPrompts) return new Map<number, string>();
+        return new Map(
+            book.readingPrompts
+                .filter((p): p is { page: number; prompt: string } => typeof p === 'object' && 'page' in p)
+                .map(p => [p.page, p.prompt])
+        );
+    }, [book?.readingPrompts]);
+
     const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
-    const handleImageError = (index: number) => {
+    const handleImageError = useCallback((index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
-    };
+    }, []);
 
     const handleCloseRequest = async () => {
         // If finished, close handling is standard
@@ -543,9 +553,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
-                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
-                                            typeof p === 'object' && 'page' in p && p.page === index + 1
-                                        ) as { page: number; prompt: string } | undefined;
+                                        const prompt = showPrompts ? promptsByPage.get(index + 1) : undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
@@ -553,8 +561,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                     src={pageUrl}
                                                     alt={`Page ${index + 1}`}
                                                     index={index}
-                                                    onError={() => handleImageError(index)}
-                                                    prompt={prompt?.prompt}
+                                                    onImageError={handleImageError}
+                                                    prompt={prompt}
                                                 />
                                             </CarouselItem>
                                         );
