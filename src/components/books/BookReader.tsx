@@ -591,14 +591,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
 
                                 {/* Tap zones for navigation */}
                                 <div
-                                    className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                    className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer transition-colors hover:bg-white/10"
                                     onClick={() => api?.scrollPrev()}
                                     aria-hidden="true"
+                                    title="Previous page"
                                 />
                                 <div
-                                    className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                    className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer transition-colors hover:bg-white/10"
                                     onClick={() => api?.scrollNext()}
                                     aria-hidden="true"
+                                    title="Next page"
                                 />
 
                                 <Tooltip>

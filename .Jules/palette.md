@@ -37,3 +37,7 @@
 ## 2026-08-15 - Chat Accessibility & Live Regions
 **Learning:** Dynamic content updates (like AI thinking states) need `role="status"` and `aria-live="polite"` to be announced by screen readers. Without this, users are left waiting in silence.
 **Action:** Always wrap loading/thinking indicators in a live region to ensure status changes are communicated.
+
+## 2026-09-02 - Invisible Tap Zones Feedback
+**Learning:** Large invisible click areas (like book navigation zones) provide excellent utility but poor discoverability for mouse users, leaving them unsure if the area is interactive.
+**Action:** Add a subtle hover state (e.g., `hover:bg-white/10`) and a tooltip `title` to these zones. This confirms interactivity without cluttering the interface, bridging the gap between invisible utility and clear affordance.
