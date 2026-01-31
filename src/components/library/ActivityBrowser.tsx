@@ -1,3 +1,4 @@
+import { KeyboardEvent } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useNavigate } from 'react-router-dom';
 import { activities as activitiesApi } from '@/lib/api';
@@ -90,6 +91,13 @@ export function ActivityBrowser() {
         navigate(`/library/activities/${activityId}`);
     };
 
+    const handleKeyDown = (e: KeyboardEvent, activityId: string) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            handleActivityClick(activityId);
+        }
+    };
+
     if (isLoading) {
         return <div className="space-y-4">
             {[1, 2, 3, 4, 5].map(i => (
@@ -164,8 +172,12 @@ export function ActivityBrowser() {
                                     {domainActivities.map((activity) => (
                                         <Card
                                             key={activity.id}
-                                            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all group bg-background/80 hover:bg-background backdrop-blur-sm"
+                                            className="cursor-pointer hover:shadow-md hover:border-primary/50 transition-all group bg-background/80 hover:bg-background backdrop-blur-sm focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2"
                                             onClick={() => handleActivityClick(activity.id)}
+                                            role="button"
+                                            tabIndex={0}
+                                            aria-label={`View activity: ${activity.title}`}
+                                            onKeyDown={(e) => handleKeyDown(e, activity.id)}
                                         >
                                             <CardContent className="p-4 space-y-3">
                                                 <div className="flex justify-between items-start">
