@@ -65,93 +65,44 @@ export class Cortex {
         // =================================================================================
 
         if (route.intent === 'UPDATE_PREFERENCES') {
-            const cortex = this; // Capture 'this' for the closure
             return new ReadableStream({
-                async start(controller) {
-                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reading current settings...", status: "active" })}\n\n`));
+                start(controller) {
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request...", status: "active" })}\n\n`));
+                    
+                    const changes = [];
+                    if (route.updates?.minutes) changes.push(`set morning time to ${route.updates.minutes} min`);
+                    if (route.updates?.days) changes.push(`set days to ${route.updates.days.join(', ')}`);
+                    if (route.updates?.period) changes.push(`set period to ${route.updates.period}`);
 
-                    try {
-                        // 1. Get current preferences
-                        const existing = await cortex.env.DB.prepare(
-                            'SELECT * FROM family_preferences WHERE parent_id = ?'
-                        ).bind(context.userState.id).first();
+                    const actionPayload = {
+                        type: 'UPDATE_PREFERENCES',
+                        data: route.updates,
+                        reason: `I can ${changes.join(' and ')}. Should I proceed?`
+                    };
 
-                        let overrides: any = {};
-                        if (existing && existing.overrides_json) {
-                            overrides = JSON.parse(existing.overrides_json as string);
-                        } else {
-                            overrides = {};
-                        }
-
-                        // 2. Apply updates
-                        const changes = [];
-                        if (route.updates?.minutes) {
-                            overrides.morning_minutes = route.updates.minutes;
-                            changes.push(`Set morning time to ${route.updates.minutes} min`);
-                        }
-                        if (route.updates?.days) {
-                            overrides.available_days = route.updates.days;
-                            changes.push(`Set days to ${route.updates.days.join(', ')}`);
-                        }
-
-                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reading current settings", status: "complete" })}\n\n`));
-                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Updating database...", status: "active" })}\n\n`));
-
-                        // 3. Save
-                        const jsonStr = JSON.stringify(overrides);
-                        const now = new Date().toISOString();
-
-                        if (existing) {
-                            await cortex.env.DB.prepare(
-                                'UPDATE family_preferences SET overrides_json = ?, updated_at = ? WHERE parent_id = ?'
-                            ).bind(jsonStr, now, context.userState.id).run();
-                        } else {
-                            const newId = crypto.randomUUID();
-                            await cortex.env.DB.prepare(`
-                                 INSERT INTO family_preferences (id, parent_id, overrides_json, created_at, updated_at)
-                                 VALUES (?, ?, ?, ?, ?)
-                             `).bind(newId, context.userState.id, jsonStr, now, now).run();
-                        }
-
-                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Settings updated", status: "complete" })}\n\n`));
-
-                        // 4. Respond
-                        controller.enqueue(encoder.encode(`data: I've updated your preferences: ${changes.join(', ')}. Your new schedule will reflect this next time it generates.\n\n`));
-
-                    } catch (e: any) {
-                        console.error("Update Prefs Error", e);
-                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Error updating settings", status: "error" })}\n\n`));
-                        controller.enqueue(encoder.encode(`data: Sorry, I couldn't save those changes right now.\n\n`));
-                    }
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request", status: "complete" })}\n\n`));
+                    
+                    const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
+                    controller.enqueue(encoder.encode(`data: ${jsonBlock}\n\n`));
                     controller.close();
                 }
             });
         }
 
         if (route.intent === 'TOGGLE_BASKET_ITEM') {
-            const cortex = this;
             return new ReadableStream({
-                async start(controller) {
-                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Updating basket...", status: "active" })}\n\n`));
-                    try {
-                        const itemMap: any = { 'hymns': 'liturgy_enabled', 'catechism': 'liturgy_enabled', 'scripture': 'liturgy_enabled' };
-                        const col = itemMap[route.updates?.item || ''] || 'activities_enabled';
-                        const val = route.updates?.action === 'disable' ? 0 : 1;
+                start(controller) {
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request...", status: "active" })}\n\n`));
+                    
+                    const actionPayload = {
+                        type: 'TOGGLE_BASKET_ITEM',
+                        data: route.updates,
+                        reason: `I can ${route.updates?.action === 'disable' ? 'disable' : 'enable'} ${route.updates?.item || 'this item'}. Confirm?`
+                    };
 
-                        // Note: This is rough (hymns/catechism share 'liturgy_enabled'). 
-                        // Ideally we use overrides_json for granular toggles if schema allows.
-                        // But for now, let's just assume we update the main column if it matches.
-
-                        await cortex.env.DB.prepare(
-                            `UPDATE family_preferences SET ${col} = ?, updated_at = datetime('now') WHERE parent_id = ?`
-                        ).bind(val, context.userState.id).run();
-
-                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Basket updated", status: "complete" })}\n\n`));
-                        controller.enqueue(encoder.encode(`data: I've ${route.updates?.action === 'disable' ? 'disabled' : 'enabled'} ${route.updates?.item}.\n\n`));
-
-                    } catch (e) {
-                        controller.enqueue(encoder.encode(`data: failed to toggle item.\n\n`));
-                    }
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request", status: "complete" })}\n\n`));
+                    const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
+                    controller.enqueue(encoder.encode(`data: ${jsonBlock}\n\n`));
                     controller.close();
                 }
             });
@@ -171,10 +122,72 @@ export class Cortex {
             });
         }
 
+        // ========================
+        // EXECUTE ACTION HANDLER
+        // ========================
+        if (route.intent === 'EXECUTE_ACTION') {
+            const cortex = this;
+            return new ReadableStream({
+                async start(controller) {
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Verifying action...", status: "active" })}\n\n`));
+
+                    // 1. Find payload
+                    let payload = route.actionPayload;
+                    if (!payload) {
+                        // Scan history for last [ACTION_PENDING]
+                        for (let i = history.length - 1; i >= 0; i--) {
+                            if (history[i].role === 'assistant') {
+                                const content = history[i].content;
+                                const match = content.match(/\[ACTION_PENDING\](.*?)\[ACTION_PENDING\]/);
+                                if (match && match[1]) {
+                                    try {
+                                        payload = JSON.parse(match[1]);
+                                        break;
+                                    } catch (e) { console.error("Failed to parse pending action", e); }
+                                }
+                            }
+                        }
+                    }
+
+                    if (!payload) {
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "No pending action found", status: "error" })}\n\n`));
+                        controller.enqueue(encoder.encode(`data: I'm not sure what you want me to confirm. Can you restate your request?`));
+                        controller.close();
+                        return;
+                    }
+
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Action verified", status: "complete" })}\n\n`));
+                    
+                    // 2. Execute
+                    try {
+                        if (payload.type === 'UPDATE_PREFERENCES') {
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Saving preferences...", status: "active" })}\n\n`));
+                            await cortex.executeUpdatePreferences(context.userState.id, payload.data);
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Preferences saved", status: "complete" })}\n\n`));
+                            controller.enqueue(encoder.encode(`data: Done! Your settings have been updated.`));
+                        } 
+                        else if (payload.type === 'TOGGLE_BASKET_ITEM') {
+                             controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Updating basket...", status: "active" })}\n\n`));
+                             await cortex.executeToggleBasket(context.userState.id, payload.data);
+                             controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Basket updated", status: "complete" })}\n\n`));
+                             controller.enqueue(encoder.encode(`data: Done! Item updated.`));
+                        }
+                        else {
+                            controller.enqueue(encoder.encode(`data: I don't know how to execute that action type.`));
+                        }
+                    } catch (e) {
+                         console.error("Exec Error", e);
+                         controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Execution failed", status: "error" })}\n\n`));
+                         controller.enqueue(encoder.encode(`data: Something went wrong while saving.`));
+                    }
+                    controller.close();
+                }
+            });
+        }
+
         // =================================================================================
         // END NEW HANDLERS
         // =================================================================================
-
         // For SEARCH_BOOKS, SEARCH_ACTIVITIES, and GET_TODAY_SCHEDULE, execute tools with streaming steps
         const db = this.env.DB;
         const searchQuery = route.searchQuery || '';
@@ -424,5 +437,52 @@ INSTRUCTIONS
                 }
             });
         }
+    }
+
+    // ==========================================
+    // EXECUTION HELPERS
+    // ==========================================
+
+    private async executeUpdatePreferences(userId: string, updates: any) {
+        // 1. Get current
+        const existing = await this.env.DB.prepare(
+            'SELECT * FROM family_preferences WHERE parent_id = ?'
+        ).bind(userId).first();
+
+        let overrides: any = {};
+        if (existing && existing.overrides_json) {
+            overrides = JSON.parse(existing.overrides_json as string);
+        }
+
+        // 2. Apply
+        if (updates.minutes) overrides.morning_minutes = updates.minutes;
+        if (updates.days) overrides.available_days = updates.days;
+        if (updates.period) { /* handle if needed */ }
+
+        // 3. Save
+        const jsonStr = JSON.stringify(overrides);
+        const now = new Date().toISOString();
+
+        if (existing) {
+            await this.env.DB.prepare(
+                'UPDATE family_preferences SET overrides_json = ?, updated_at = ? WHERE parent_id = ?'
+            ).bind(jsonStr, now, userId).run();
+        } else {
+            const newId = crypto.randomUUID();
+            await this.env.DB.prepare(`
+                  INSERT INTO family_preferences (id, parent_id, overrides_json, created_at, updated_at)
+                  VALUES (?, ?, ?, ?, ?)
+              `).bind(newId, userId, jsonStr, now, now).run();
+        }
+    }
+
+    private async executeToggleBasket(userId: string, updates: any) {
+        const itemMap: any = { 'hymns': 'liturgy_enabled', 'catechism': 'liturgy_enabled', 'scripture': 'liturgy_enabled' };
+        const col = itemMap[updates?.item || ''] || 'activities_enabled';
+        const val = updates?.action === 'disable' ? 0 : 1;
+
+        await this.env.DB.prepare(
+            `UPDATE family_preferences SET ${col} = ?, updated_at = datetime('now') WHERE parent_id = ?`
+        ).bind(val, userId).run();
     }
 }

@@ -1,7 +1,7 @@
 
 import { Env } from '../types';
 
-export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GET_TODAY_SCHEDULE' | 'GENERAL_CHAT' | 'UPDATE_PREFERENCES' | 'TOGGLE_BASKET_ITEM' | 'REGENERATE_PLAN';
+export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GET_TODAY_SCHEDULE' | 'GENERAL_CHAT' | 'UPDATE_PREFERENCES' | 'TOGGLE_BASKET_ITEM' | 'REGENERATE_PLAN' | 'EXECUTE_ACTION';
 
 export interface RouteResult {
     intent: IntentType;
@@ -16,7 +16,9 @@ export interface RouteResult {
         period?: 'morning' | 'evening';
         item?: string; // for toggle
         action?: 'enable' | 'disable';
-    }
+    };
+    // For EXECUTE_ACTION, we might pass the raw JSON payload if the user sent a command
+    actionPayload?: any;
 }
 
 export class AiRouter {
@@ -34,10 +36,11 @@ export class AiRouter {
         2. SEARCH_ACTIVITIES: when user asks for a game, activity, lesson, craft, or curriculum.
         3. ADJUST_SCHEDULE: when user wants to change time, days, remove/add specific items.
         4. GET_TODAY_SCHEDULE: when user asks "what is my schedule?", "what's for today?", "today's plan".
-        5. UPDATE_PREFERENCES: when user wants to change global settings (morning/evening time, school days).
-        6. TOGGLE_BASKET_ITEM: when user wants to enable/disable specific basket items (hymns, catechism, scripture).
-        7. REGENERATE_PLAN: when user wants to create a new weekly plan or "redo" the schedule.
-        8. GENERAL_CHAT: for greetings, parenting advice, philosophy, or questions about the plan ITSELF.
+        5. UPDATE_PREFERENCES: when user PROPOSES to change global settings (morning/evening time, school days).
+        6. TOGGLE_BASKET_ITEM: when user PROPOSES to enable/disable specific basket items (hymns, catechism, scripture).
+        7. REGENERATE_PLAN: when user PROPOSES to create a new weekly plan.
+        8. EXECUTE_ACTION: ONLY when the user says "CONFIRM", "YES", or sends a specific JSON command to execute a pending action.
+        9. GENERAL_CHAT: for greetings, parenting advice, philosophy, or questions.
 
         CONTEXT:
         Child Ages (Months): ${JSON.stringify(childrenAges)}
@@ -46,21 +49,17 @@ export class AiRouter {
         {
           "reasoning": "brief explanation",
           "intent": "INTENT_NAME",
-          "searchQuery": "keywords if applicable",
-          "updates": {
-            "minutes": number (e.g. 40),
-            "period": "morning" | "evening" | null,
-            "days": ["Mon", "Tue"] | null,
-            "item": "hymns" | "catechism" | "scripture" | null,
-            "action": "enable" | "disable" | null
-          }
+          "searchQuery": "keywords",
+          "updates": { ... },
+          "actionPayload": { ... } // If the user message IS a JSON command string, parse it here
         }
         
         examples:
         - "I need a story about lions" -> { "intent": "SEARCH_BOOKS", "searchQuery": "lion" }
         - "Change morning time to 40 minutes" -> { "intent": "UPDATE_PREFERENCES", "updates": { "minutes": 40, "period": "morning" } }
         - "Turn off hymns" -> { "intent": "TOGGLE_BASKET_ITEM", "updates": { "item": "hymns", "action": "disable" } }
-        - "Make me a new schedule" -> { "intent": "REGENERATE_PLAN" }
+        - "CONFIRM_ACTION {\"task\":\"update_prefs\"}" -> { "intent": "EXECUTE_ACTION", "actionPayload": {"task":"update_prefs"} }
+        - "Yes, please do it" -> { "intent": "EXECUTE_ACTION" }
         `;
 
         try {
@@ -85,7 +84,8 @@ export class AiRouter {
                 intent: result.intent || 'GENERAL_CHAT',
                 searchQuery: result.searchQuery,
                 filters: result.filters,
-                updates: result.updates
+                updates: result.updates,
+                actionPayload: result.actionPayload
             };
         } catch (error) {
             console.error('Router Error:', error);
