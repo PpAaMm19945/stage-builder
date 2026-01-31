@@ -26,6 +26,7 @@ export interface FamilyContext {
         habit?: PathItem;
     };
     family_id: string; // Added for plan lookup
+    accommodations?: any[]; // Added for Phase 4
 }
 
 export interface RhythmItem {
@@ -147,6 +148,24 @@ export class RhythmGenerator {
 
         const preferences = JSON.parse(profile?.preferences || '{}');
 
+        // [PHASE 4] BRAIN TRANSPLANT: Fetch new preferences (Time Model) and Overrides (Accommodations)
+        // 1. Get Family Preferences (Schedule)
+        const familyPrefs = await db.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?').bind(userId).first<any>();
+        let scheduleOverrides: any = {};
+        if (familyPrefs?.overrides_json) {
+            try { scheduleOverrides = JSON.parse(familyPrefs.overrides_json); } catch (e) { }
+        }
+
+        // 2. Get Parent Overrides (Accommodations)
+        const accommodationResults = await db.prepare('SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1').bind(userId).all<any>();
+        const accommodations = accommodationResults.results || [];
+
+        // 3. Merge Schedule (New Preferences take precedence over Legacy Profile)
+        const morningMinutes = scheduleOverrides.morning_minutes ?? profile?.morning_minutes ?? 15;
+        const eveningMinutes = scheduleOverrides.evening_minutes ?? profile?.evening_minutes ?? 0;
+        const availableDays = scheduleOverrides.available_days ?? (profile?.available_days ? JSON.parse(profile.available_days) : ["Mon", "Tue", "Wed", "Thu", "Fri"]);
+
+
         // 4. Fetch Basket Items (The Ingredients)
         const basketItems: any = {};
 
@@ -165,9 +184,9 @@ export class RhythmGenerator {
 
         return {
             children,
-            morning_minutes: profile?.morning_minutes || 15,
-            evening_minutes: profile?.evening_minutes || 0,
-            available_days: JSON.parse(profile?.available_days || '["Mon","Tue","Wed","Thu","Fri"]'),
+            morning_minutes: morningMinutes,
+            evening_minutes: eveningMinutes,
+            available_days: availableDays,
             goals: JSON.parse(profile?.goals || '[]'),
             preferences,
             progress: {
@@ -176,7 +195,8 @@ export class RhythmGenerator {
                 current_book_id: null
             },
             basket_items: basketItems,
-            family_id: householdId
+            family_id: householdId,
+            accommodations: accommodations // Added for prompt injection
         };
     }
 
@@ -205,6 +225,11 @@ export class RhythmGenerator {
     Days: ${JSON.stringify(context.available_days)}
     Goals: ${JSON.stringify(context.goals)}
     
+    CRITICAL ACCOMMODATIONS (You MUST respect these):
+    ${context.accommodations && context.accommodations.length > 0
+                ? context.accommodations.map((a: any) => `- ${a.description} (${JSON.stringify(a.constraints)})`).join('\n')
+                : 'None'}
+
     WEEKLY BASKET INGREDIENTS (Use these specifically):
     ${context.basket_items.catechism ? `- Catechism: ${context.basket_items.catechism.title} (ID: ${context.basket_items.catechism.id})` : '- Catechism: [Skipped by preference]'}
     ${context.basket_items.hymn ? `- Hymn: ${context.basket_items.hymn.title} (ID: ${context.basket_items.hymn.id}) - Practice this all week` : '- Hymn: [Skipped by preference]'}

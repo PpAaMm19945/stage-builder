@@ -108,6 +108,9 @@ export function AiLogViewer() {
         const groups: Record<string, AIInteractionLog[]> = {};
 
         logs.forEach((log: AIInteractionLog) => {
+            // [PHASE 4] Filter out test/placeholder logs
+            if (log.question.toLowerCase() === 'lions') return;
+
             const date = new Date(log.createdAt).toLocaleDateString(undefined, {
                 weekday: 'long',
                 year: 'numeric',

@@ -653,7 +653,26 @@ app.get('/api/family/materials', async (c) => {
         const slots = planData.slots || [];
         const activityIds = [...new Set(slots.map((s: any) => s.activityId))];
 
-        if (activityIds.length === 0) return c.json({ materials: [] });
+        // [PHASE 4] STARTER KIT: If no active plan, return basic homeschooling essentials
+        if (activityIds.length === 0) {
+            const starterKit = [
+                { name: 'Bible', status: 'have' },
+                { name: 'Hymnal', status: 'have' },
+                { name: 'Pencils', status: 'have' },
+                { name: 'Crayons', status: 'have' },
+                { name: 'Paper', status: 'have' },
+                { name: 'Scissors', status: 'have' },
+                { name: 'Glue', status: 'have' },
+                { name: 'Nature Journal', status: 'pending' }
+            ].map(m => ({
+                id: generateId('mat'),
+                name: m.name,
+                count: 1,
+                weekStart,
+                status: m.status
+            }));
+            return c.json({ materials: starterKit });
+        }
 
         // 2. Get Formations
         const placeholders = activityIds.map(() => '?').join(',');

@@ -15,6 +15,7 @@ export interface AiContext {
     date: string;
     children: ChildContext[];
     preferences: any; // FamilyProfile
+    accommodations: any[]; // ParentOverride[]
     recentActivity: any[]; // Last few completion items
     mood?: string;
 }
@@ -34,12 +35,35 @@ export class ContextBuilder {
             age_months: this.calculateMonths(s.date_of_birth)
         }));
 
-        // 2. Fetch Preferences
-        const prefs = await this.db.prepare(
+        // 2. Fetch Preferences (Legacy + Modern Merge)
+        const profile = await this.db.prepare(
             'SELECT * FROM family_profiles WHERE parent_id = ?'
-        ).bind(userId).first();
+        ).bind(userId).first<any>();
 
-        // 3. Fetch Recent Activity (Context for "What did we do yesterday?")
+        const familyPrefs = await this.db.prepare(
+            'SELECT overrides_json FROM family_preferences WHERE parent_id = ?'
+        ).bind(userId).first<any>();
+
+        let sectionOverrides: any = {};
+        if (familyPrefs?.overrides_json) {
+            try { sectionOverrides = JSON.parse(familyPrefs.overrides_json); } catch (e) { }
+        }
+
+        // Merge: New overrides take precedence
+        const mergedPrefs = {
+            ...(profile || {}),
+            morning_minutes: sectionOverrides.morning_minutes ?? profile?.morning_minutes ?? 15,
+            evening_minutes: sectionOverrides.evening_minutes ?? profile?.evening_minutes ?? 0,
+            available_days: sectionOverrides.available_days ?? profile?.available_days ?? '[]',
+            // ... other fields as needed
+        };
+
+        // 3. Fetch Accommodations
+        const accommodations = await this.db.prepare(
+            'SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1'
+        ).bind(userId).all<any>();
+
+        // 4. Fetch Recent Activity (Context for "What did we do yesterday?")
         // We look at 'evidences' or 'activity_progress' from the last 3 days
         const recent = await this.db.prepare(`
             SELECT ap.activity_type, ap.status, ap.scheduled_date, f.title 
@@ -56,7 +80,8 @@ export class ContextBuilder {
             userName: 'Parent', // TODO: Fetch name from user record if needed, but we have ID
             date: new Date().toISOString().split('T')[0],
             children,
-            preferences: prefs || {},
+            preferences: mergedPrefs,
+            accommodations: accommodations.results || [],
             recentActivity: recent.results || [],
         };
     }
