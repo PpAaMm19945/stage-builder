@@ -461,6 +461,20 @@ export const ai = {
   confirmAction: (actionId: string) =>
     apiRequest<{ success: boolean }>('/api/chat/confirm', { method: 'POST', body: JSON.stringify({ actionId }) }),
 
+  executeAction: async (actionPayload: any, context?: any) => {
+    const token = getAuthToken();
+    const response = await fetch(`${API_URL}/api/chat/execute`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      },
+      body: JSON.stringify({ actionPayload, context }),
+    });
+    if (!response.ok) throw new Error('Action execution failed');
+    return response.body;
+  },
+
   rejectAction: (actionId: string) =>
     apiRequest<{ success: boolean }>('/api/chat/reject', { method: 'POST', body: JSON.stringify({ actionId }) }),
 

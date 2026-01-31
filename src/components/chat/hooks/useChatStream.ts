@@ -1,6 +1,6 @@
 import { useCallback, useRef } from 'react';
 import { ai } from '@/lib/api';
-import { UseChatStateReturn, PendingAction } from './useChatState';
+import { UseChatStateReturn, PendingAction, ExecutionStep } from './useChatState';
 
 export interface Message {
     role: 'user' | 'assistant' | 'system';
@@ -9,7 +9,10 @@ export interface Message {
         type: string;
         data: any;
     };
+    steps?: ExecutionStep[];
 }
+
+const STREAM_TIMEOUT = 30000;
 
 export interface UseChatStreamOptions {
     chatState: UseChatStateReturn;
@@ -47,8 +50,15 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
             let hasStartedStreaming = false;
             let isInThoughtMode = false;
 
+            const readWithTimeout = async () => {
+                const timeoutPromise = new Promise<ReadableStreamReadResult<Uint8Array>>((_, reject) =>
+                    setTimeout(() => reject(new Error('Connection timed out')), STREAM_TIMEOUT)
+                );
+                return Promise.race([reader.read(), timeoutPromise]);
+            };
+
             while (true) {
-                const { done, value } = await reader.read();
+                const { done, value } = await readWithTimeout();
                 if (done) break;
 
                 const chunk = decoder.decode(value, { stream: true });
@@ -83,6 +93,16 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                             try {
                                 const stepData = JSON.parse(data);
                                 chatState.updateStreamingStep(stepData);
+
+                                // Update local message steps
+                                if (!aiMessage.steps) aiMessage.steps = [];
+                                const existingIndex = aiMessage.steps.findIndex(s => s.id === stepData.id);
+                                if (existingIndex >= 0) {
+                                    aiMessage.steps[existingIndex] = { ...aiMessage.steps[existingIndex], ...stepData };
+                                } else {
+                                    aiMessage.steps.push(stepData);
+                                }
+                                onMessageUpdate({ ...aiMessage });
                             } catch (e) { console.warn('Step parse error', e); }
                             continue;
                         }

@@ -54,6 +54,44 @@ app.post('/api/chat', async (c) => {
     }
 });
 
+app.post('/api/chat/execute', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const { actionPayload, context: clientContext } = await c.req.json();
+
+        if (!actionPayload) {
+            return c.json({ error: 'Missing actionPayload' }, 400);
+        }
+
+        // Build Rich Server Context
+        const contextBuilder = new ContextBuilder(c.env.DB);
+        const serverContext = await contextBuilder.buildUserContext(user.id, user.household_id || 'unknown');
+
+        // Merge client context
+        const fullContext = {
+            ...clientContext,
+            ...serverContext,
+            userState: user
+        };
+
+        // Use Cortex to execute action (via streaming response for status steps)
+        const cortex = new Cortex(c.env);
+        // We pass empty message/history as we are bypassing NLU
+        const stream = await cortex.chat('', [], fullContext, actionPayload);
+
+        return new Response(stream, {
+            headers: {
+                'Content-Type': 'text/event-stream',
+                'Cache-Control': 'no-cache',
+                'Connection': 'keep-alive',
+            }
+        });
+    } catch (e: any) {
+        console.error("Execute action error", e);
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 app.get('/api/chat/actions', async (c) => {
     try {
         const user = requireHouseholdMember(c);

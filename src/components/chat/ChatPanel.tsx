@@ -21,6 +21,7 @@ import { useKeyboardHeight } from './hooks/useKeyboardHeight';
 import {
     TextMessage,
     ThinkingMessage,
+    BotActivityLog,
     BookCardMessage,
     ActivityCardMessage,
     ActionConfirmCard,
@@ -135,7 +136,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
     };
 
     const handleConfirmAction = async () => {
-        if (!chatState.pendingAction?.id) {
+        if (!chatState.pendingAction) {
             toast.error('No action to confirm');
             return;
         }
@@ -143,7 +144,14 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         chatState.startExecuting();
 
         try {
-            await ai.confirmAction(chatState.pendingAction.id);
+            // Use direct execution with payload instead of ID
+            if (chatState.pendingAction.data) {
+                await ai.executeAction(chatState.pendingAction.data);
+            } else if (chatState.pendingAction.id) {
+                // Fallback for legacy ID-based actions
+                await ai.confirmAction(chatState.pendingAction.id);
+            }
+
             chatState.showFeedback();
 
             // Refresh relevant data
@@ -248,6 +256,11 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     )}
                                 </div>
 
+                                {/* Persistent Execution Steps (Transparency) */}
+                                {msg.role === 'assistant' && msg.steps && msg.steps.length > 0 && (
+                                    <BotActivityLog steps={msg.steps} className="ml-11" />
+                                )}
+
                                 {/* Action card for search results */}
                                 {msg.actionCard && (
                                     <div className="mt-3 pl-11">
@@ -272,13 +285,13 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                             </div>
                         ))}
 
-                        {/* Thinking indicator */}
-                        {chatState.mode === 'THINKING' && chatState.thinkingText && (
+                        {/* Thinking indicator - REMOVED: Steps are now attached to messages */}
+                        {/* {chatState.mode === 'THINKING' && chatState.thinkingText && (
                             <ThinkingMessage
                                 text={chatState.thinkingText}
                                 steps={chatState.streamingSteps}
                             />
-                        )}
+                        )} */}
 
                         {/* Pending action card */}
                         {chatState.mode === 'ACTION' && chatState.pendingAction && (
