@@ -67,9 +67,9 @@ export function PaceSettings() {
             // OR I just cast it here: `as unknown as PaceSetting[]`.
             // But wait, `ActivityDocument` also had issues.
             // I will cast here to fix build for now.
-        const rawData = await family.getPaceSettings(studentId);
-        const data = Array.isArray(rawData) ? rawData as unknown as PaceSetting[] : [];
-        setSettings(prev => ({ ...prev, [studentId]: data }));
+            const rawData = await family.getPaceSettings(studentId);
+            const data = Array.isArray(rawData) ? rawData as unknown as PaceSetting[] : [];
+            setSettings(prev => ({ ...prev, [studentId]: data }));
         } catch (e) {
             console.error(e);
         } finally {
@@ -98,9 +98,9 @@ export function PaceSettings() {
             const res = await family.updatePaceSetting({
                 studentId,
                 domain,
-                stageOverride: stage === 'default' ? null : stage,
+                stageOverride: stage === 'default' ? 'default' : stage,
                 reason: 'Parent override via Settings'
-            } as any);
+            });
 
             if (res.success) {
                 toast.success('Pace updated');

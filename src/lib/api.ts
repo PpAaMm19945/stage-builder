@@ -185,7 +185,12 @@ export const activities = formations; // Alias for backward compatibility during
 export const family = {
   getToday: () => apiRequest<FamilyTodayResponse>('/api/family/today'),
 
-  getMaterials: () => apiRequest<MaterialItem[]>('/api/family/materials'),
+  getMaterials: async () => {
+    const res = await apiRequest<{ materials: MaterialItem[] }>('/api/family/materials');
+    // Backend returns { materials: [...] }, so we must unwrap it
+    // @ts-ignore - The type expects array but runtime gets object
+    return res.materials || [];
+  },
 
   updateMaterials: (materials: MaterialItem[]) =>
     apiRequest<{ success: boolean }>('/api/family/materials', {
@@ -222,9 +227,9 @@ export const family = {
   getPaceSettings: (studentId: string) =>
     apiRequest<{ studentId: string; pace: string; lastUpdated: string }>(`/api/family/pace/${studentId}`),
 
-  updatePaceSetting: (data: { studentId: string; pace: 'gentle' | 'standard' | 'accelerated' }) =>
+  updatePaceSetting: (data: { studentId: string; domain: string; stageOverride: string; reason?: string }) =>
     apiRequest<{ success: boolean }>('/api/family/pace', {
-      method: 'POST', // or PUT, usually POST for updates/creates
+      method: 'POST',
       body: JSON.stringify(data),
     }),
 };
