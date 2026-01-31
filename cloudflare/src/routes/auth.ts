@@ -4,11 +4,21 @@ import { signJWT, verifyJWT } from '../lib/auth';
 import { generateId, generateInviteCode } from '../lib/utils';
 import { getCookie, setCookie, deleteCookie } from 'hono/cookie';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
+import { checkRateLimit } from '../middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // Redirect to Google OAuth
 app.get('/auth/google', (c) => {
+    // Security: Rate limit login attempts to prevent abuse
+    // Use CF-Connecting-IP if available, otherwise fallback to 'unknown' (dev environment)
+    const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+    const rateLimit = checkRateLimit(ip, 5, 60000); // 5 attempts per minute
+
+    if (!rateLimit.allowed) {
+        return c.text('Too many login attempts. Please try again later.', 429);
+    }
+
     const clientId = c.env.GOOGLE_CLIENT_ID;
     const redirectUri = c.env.GOOGLE_REDIRECT_URI;
 
