@@ -692,6 +692,111 @@ app.get('/api/family/materials', async (c) => {
     }
 });
 
+// Update materials inventory
+app.put('/api/family/materials', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const { materials } = await c.req.json(); // Expects [{ name, status }, ...]
+
+        // Store in family_preferences.overrides_json -> materials_inventory
+        // 1. Get existing
+        const existing = await safeQueryFirst<any>(c.env.DB,
+            'SELECT overrides_json FROM family_preferences WHERE parent_id = ?',
+            [user.id]
+        );
+
+        let overrides = existing ? JSON.parse(existing.overrides_json || '{}') : {};
+        let inventory = overrides.materials_inventory || {};
+
+        // 2. Update inventory
+        if (Array.isArray(materials)) {
+            materials.forEach((m: any) => {
+                if (m.name && m.status) {
+                    inventory[m.name] = m.status;
+                }
+            });
+        }
+
+        overrides.materials_inventory = inventory;
+
+        // 3. Save
+        await safeRun(c.env.DB, `
+            UPDATE family_preferences SET overrides_json = ?, updated_at = datetime('now') WHERE parent_id = ?
+        `, [JSON.stringify(overrides), user.id]);
+
+        return c.json({ success: true });
+
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+// Get Pace Settings for a Student
+app.get('/api/family/pace/:studentId', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const studentId = c.req.param('studentId');
+
+        const student = await safeQueryFirst<any>(c.env.DB,
+            'SELECT pace_overrides FROM students WHERE id = ? AND household_id = ?',
+            [studentId, user.household_id]
+        );
+
+        if (!student) return c.json({ error: 'Student not found' }, 404);
+
+        // Frontend expects array of { studentId, domain, stageOverride, reason }
+        const overrides = JSON.parse(student.pace_overrides || '{}');
+        const result = Object.entries(overrides).map(([domain, data]: [string, any]) => ({
+            id: domain, // naive id
+            studentId,
+            domain,
+            stageOverride: data.stage,
+            reason: data.reason
+        }));
+
+        return c.json(result);
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+// Update Pace Setting (Generic route for "family.updatePaceSetting")
+app.post('/api/family/pace', async (c) => {
+    try {
+        const user = requireParent(c);
+        const { studentId, domain, stageOverride, reason } = await c.req.json();
+
+        // 1. Get current overrides
+        const student = await safeQueryFirst<any>(c.env.DB,
+            'SELECT pace_overrides FROM students WHERE id = ? AND household_id = ?',
+            [studentId, user.household_id]
+        );
+
+        if (!student) return c.json({ error: 'Student not found' }, 404);
+
+        let overrides = JSON.parse(student.pace_overrides || '{}');
+
+        // 2. Update specific domain
+        if (stageOverride && stageOverride !== 'default') {
+            overrides[domain] = { stage: stageOverride, reason, updatedAt: new Date().toISOString() };
+        } else {
+            // Remove override if default
+            delete overrides[domain];
+        }
+
+        // 3. Save
+        await safeRun(c.env.DB,
+            'UPDATE students SET pace_overrides = ?, updated_at = datetime("now") WHERE id = ?',
+            [JSON.stringify(overrides), studentId]
+        );
+
+        return c.json({ success: true });
+
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 // ============ LEGACY / COMPATIBILITY ROUTES ============
 
 // Alias for rhythm/today -> family/today

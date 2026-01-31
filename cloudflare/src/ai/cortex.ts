@@ -60,6 +60,121 @@ export class Cortex {
             });
         }
 
+        // =================================================================================
+        // NEW INTENT HANDLERS (Phase 2)
+        // =================================================================================
+
+        if (route.intent === 'UPDATE_PREFERENCES') {
+            const cortex = this; // Capture 'this' for the closure
+            return new ReadableStream({
+                async start(controller) {
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reading current settings...", status: "active" })}\n\n`));
+
+                    try {
+                        // 1. Get current preferences
+                        const existing = await cortex.env.DB.prepare(
+                            'SELECT * FROM family_preferences WHERE parent_id = ?'
+                        ).bind(context.userState.id).first();
+
+                        let overrides: any = {};
+                        if (existing && existing.overrides_json) {
+                            overrides = JSON.parse(existing.overrides_json as string);
+                        } else {
+                            overrides = {};
+                        }
+
+                        // 2. Apply updates
+                        const changes = [];
+                        if (route.updates?.minutes) {
+                            overrides.morning_minutes = route.updates.minutes;
+                            changes.push(`Set morning time to ${route.updates.minutes} min`);
+                        }
+                        if (route.updates?.days) {
+                            overrides.available_days = route.updates.days;
+                            changes.push(`Set days to ${route.updates.days.join(', ')}`);
+                        }
+
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reading current settings", status: "complete" })}\n\n`));
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Updating database...", status: "active" })}\n\n`));
+
+                        // 3. Save
+                        const jsonStr = JSON.stringify(overrides);
+                        const now = new Date().toISOString();
+
+                        if (existing) {
+                            await cortex.env.DB.prepare(
+                                'UPDATE family_preferences SET overrides_json = ?, updated_at = ? WHERE parent_id = ?'
+                            ).bind(jsonStr, now, context.userState.id).run();
+                        } else {
+                            const newId = crypto.randomUUID();
+                            await cortex.env.DB.prepare(`
+                                 INSERT INTO family_preferences (id, parent_id, overrides_json, created_at, updated_at)
+                                 VALUES (?, ?, ?, ?, ?)
+                             `).bind(newId, context.userState.id, jsonStr, now, now).run();
+                        }
+
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Settings updated", status: "complete" })}\n\n`));
+
+                        // 4. Respond
+                        controller.enqueue(encoder.encode(`data: I've updated your preferences: ${changes.join(', ')}. Your new schedule will reflect this next time it generates.\n\n`));
+
+                    } catch (e: any) {
+                        console.error("Update Prefs Error", e);
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Error updating settings", status: "error" })}\n\n`));
+                        controller.enqueue(encoder.encode(`data: Sorry, I couldn't save those changes right now.\n\n`));
+                    }
+                    controller.close();
+                }
+            });
+        }
+
+        if (route.intent === 'TOGGLE_BASKET_ITEM') {
+            const cortex = this;
+            return new ReadableStream({
+                async start(controller) {
+                    controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Updating basket...", status: "active" })}\n\n`));
+                    try {
+                        const itemMap: any = { 'hymns': 'liturgy_enabled', 'catechism': 'liturgy_enabled', 'scripture': 'liturgy_enabled' };
+                        const col = itemMap[route.updates?.item || ''] || 'activities_enabled';
+                        const val = route.updates?.action === 'disable' ? 0 : 1;
+
+                        // Note: This is rough (hymns/catechism share 'liturgy_enabled'). 
+                        // Ideally we use overrides_json for granular toggles if schema allows.
+                        // But for now, let's just assume we update the main column if it matches.
+
+                        await cortex.env.DB.prepare(
+                            `UPDATE family_preferences SET ${col} = ?, updated_at = datetime('now') WHERE parent_id = ?`
+                        ).bind(val, context.userState.id).run();
+
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Basket updated", status: "complete" })}\n\n`));
+                        controller.enqueue(encoder.encode(`data: I've ${route.updates?.action === 'disable' ? 'disabled' : 'enabled'} ${route.updates?.item}.\n\n`));
+
+                    } catch (e) {
+                        controller.enqueue(encoder.encode(`data: failed to toggle item.\n\n`));
+                    }
+                    controller.close();
+                }
+            });
+        }
+
+        if (route.intent === 'REGENERATE_PLAN') {
+            // For regeneration, we direct them to the UI or call the generator if we import it.
+            // Since RhythmGenerator is heavy, let's guide them to the button OR trigger it if possible.
+            // We'll return a specific action block for the frontend to trigger the mutation.
+            return new ReadableStream({
+                start(controller) {
+                    const actionPayload = { type: "REGENERATE_PLAN", reason: "Regenerating..." };
+                    const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
+                    controller.enqueue(encoder.encode(`data: I can regenerate your plan. ${jsonBlock}\n\n`));
+                    controller.close();
+                }
+            });
+        }
+
+        // =================================================================================
+        // END NEW HANDLERS
+        // =================================================================================
+
         // For SEARCH_BOOKS, SEARCH_ACTIVITIES, and GET_TODAY_SCHEDULE, execute tools with streaming steps
         const db = this.env.DB;
         const searchQuery = route.searchQuery || '';

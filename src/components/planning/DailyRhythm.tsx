@@ -8,7 +8,7 @@ export interface RhythmItem {
     timeSlot: string; // "08:00", "Morning", etc.
     title: string;
     description?: string;
-    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item';
+    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item' | 'hymn' | 'catechism';
     status: 'upcoming' | 'current' | 'completed' | 'skipped' | 'transferred';
     data?: any; // The full object (Activity, Book, etc.)
     transferred_from?: string; // Date string if transferred

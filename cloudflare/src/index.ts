@@ -370,63 +370,174 @@ app.delete('/api/overrides/:id', async (c) => {
   }
 });
 
+// Parse natural language override
+app.post('/api/overrides/parse', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const { freeText, studentId } = await c.req.json();
+
+    if (!freeText) return c.json({ error: 'freeText is required' }, 400);
+
+    const systemPrompt = `You are a scheduling assistant for a homeschooling app.
+    Your job is to parse a parent's natural language request into a JSON structure for an "Override".
+    
+    Output JSON Schema:
+    {
+      "overrideType": "block_time" | "prioritize_subject" | "limit_subject" | "preferred_time",
+      "description": "Short summary of the rule",
+      "constraints": {
+        "day": "Mon" | "Tue" | "Wed" | "Thu" | "Fri" | null,
+        "timeOfDay": "morning" | "afternoon" | "evening" | null,
+        "subject": "math" | "reading" | "history" | null,
+        "action": "block" | "boost" | "limit"
+      },
+      "confidence": number (0-1),
+      "requiresConfirmation": boolean
+    }
+    
+    Examples:
+    "No math on Fridays" -> { "overrideType": "block_time", "description": "No Math on Fridays", "constraints": {"day": "Fri", "subject": "math", "action": "block"}, "confidence": 0.9, "requiresConfirmation": false }
+    "We do history in the evenings" -> { "overrideType": "preferred_time", "description": "History in Evening", "constraints": {"timeOfDay": "evening", "subject": "history", "action": "boost"}, "confidence": 0.8, "requiresConfirmation": false }
+    `;
+
+    const response = await c.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+      messages: [
+        { role: 'system', content: systemPrompt },
+        { role: 'user', content: freeText }
+      ]
+    });
+
+    // Extract JSON
+    let jsonStr = (response as any).response || '';
+    const jsonMatch = jsonStr.match(/\{[\s\S]*\}/);
+    if (jsonMatch) jsonStr = jsonMatch[0];
+
+    const parsed = JSON.parse(jsonStr);
+
+    return c.json({
+      parsed,
+      original: freeText
+    });
+
+  } catch (error: any) {
+    console.error('Override parsing error:', error);
+    return c.json({ error: error.message || 'Failed to parse request' }, 500);
+  }
+});
+
 // ============================================
 // WEEKLY TIME MODEL API
 // ============================================
 
 // Get time model for current user
+// Get time model for current user
 app.get('/api/time-model', async (c) => {
   try {
     const user = requireAuth(c);
-    let model = await c.env.DB.prepare(
-      'SELECT * FROM weekly_time_model WHERE parent_id = ?'
+
+    // 1. Try to get from family_preferences first (New System)
+    const prefs = await c.env.DB.prepare(
+      'SELECT overrides_json FROM family_preferences WHERE parent_id = ?'
     ).bind(user.id).first();
 
-    if (!model) {
-      // Return defaults if not set
-      model = {
-        available_days: '["Mon","Tue","Wed","Thu","Fri"]',
-        minutes_per_day: 45,
-        preferred_times: '["morning"]',
-        max_sessions_per_day: 2,
-        field_trip_days: '[]'
-      };
+    let overrides: any = {};
+    if (prefs && prefs.overrides_json) {
+      try {
+        overrides = JSON.parse(prefs.overrides_json as string);
+      } catch (e) {
+        overrides = {};
+      }
     }
 
-    return c.json({
-      ...model,
-      availableDays: JSON.parse((model as any).available_days),
-      preferredTimes: JSON.parse((model as any).preferred_times),
-      fieldTripDays: JSON.parse((model as any).field_trip_days || '[]')
-    });
-  } catch (error: any) {
-    const status = error.message === 'Unauthorized' ? 401 : 500;
-    return c.json({ error: error.message }, status);
-  }
-});
-
-// Update time model
-app.put('/api/time-model', async (c) => {
-  try {
-    const user = requireAuth(c);
-    // No-op for now as weekly_time_model is deprecated/migrating
-    // Returning success with defaults
+    // Default model
     const defaultModel = {
-      availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-      minutesPerDay: 45,
-      preferredTimes: ['morning'],
-      maxSessionsPerDay: 2,
-      fieldTripDays: []
+      availableDays: overrides.available_days || ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
+      minutesPerDay: overrides.morning_minutes || 45, // Use morning_minutes as primary "time per day"
+      eveningMinutes: overrides.evening_minutes || 0,
+      preferredTimes: overrides.preferred_times || ['morning'],
+      maxSessionsPerDay: overrides.max_sessions || 4,
+      fieldTripDays: overrides.field_trip_days || []
     };
 
     return c.json({
       id: 'default',
       ...defaultModel,
+      // Helper fields for legacy components if needed
       available_days: JSON.stringify(defaultModel.availableDays),
       preferred_times: JSON.stringify(defaultModel.preferredTimes),
       field_trip_days: JSON.stringify(defaultModel.fieldTripDays)
     });
+
   } catch (error: any) {
+    console.error('Time model fetch error:', error);
+    const status = error.message === 'Unauthorized' ? 401 : 500;
+    return c.json({ error: error.message }, status);
+  }
+});
+
+
+// Update time model
+app.put('/api/time-model', async (c) => {
+  try {
+    const user = requireAuth(c);
+    const body = await c.req.json();
+
+    // Map legacy frontend fields to our schema
+    // Frontend sends: { availableDays, minutesPerDay, preferredTimes, maxSessionsPerDay, fieldTripDays }
+    // We store in family_preferences.overrides_json
+
+    // 1. Get existing preferences
+    const existing = await c.env.DB.prepare(
+      'SELECT * FROM family_preferences WHERE parent_id = ?'
+    ).bind(user.id).first();
+
+    let overrides: any = {};
+    if (existing && existing.overrides_json) {
+      try {
+        overrides = JSON.parse(existing.overrides_json as string);
+      } catch (e) {
+        overrides = {};
+      }
+    }
+
+    // 2. Merge updates
+    if (body.minutesPerDay !== undefined) overrides.morning_minutes = body.minutesPerDay;
+    if (body.eveningMinutes !== undefined) overrides.evening_minutes = body.eveningMinutes;
+
+    if (body.availableDays) overrides.available_days = body.availableDays;
+    if (body.maxSessionsPerDay) overrides.max_sessions = body.maxSessionsPerDay;
+    if (body.preferredTimes) overrides.preferred_times = body.preferredTimes;
+    if (body.fieldTripDays) overrides.field_trip_days = body.fieldTripDays;
+
+    const jsonStr = JSON.stringify(overrides);
+    const now = new Date().toISOString();
+
+    // 3. Upsert
+    if (existing) {
+      await c.env.DB.prepare(
+        'UPDATE family_preferences SET overrides_json = ?, updated_at = ? WHERE parent_id = ?'
+      ).bind(jsonStr, now, user.id).run();
+    } else {
+      const newId = generateId('fpref');
+      await c.env.DB.prepare(`
+         INSERT INTO family_preferences (id, parent_id, overrides_json, created_at, updated_at)
+         VALUES (?, ?, ?, ?, ?)
+       `).bind(newId, user.id, jsonStr, now, now).run();
+    }
+
+    // 4. Return compatible response
+    // Frontend expects: { id: 'default', ...body }
+    return c.json({
+      id: existing?.id || 'new',
+      ...body,
+      // Echo back what we saved
+      available_days: JSON.stringify(overrides.available_days || []),
+      preferred_times: JSON.stringify(overrides.preferred_times || []),
+      field_trip_days: JSON.stringify(overrides.field_trip_days || [])
+    });
+
+  } catch (error: any) {
+    console.error('Time model update error:', error);
     const status = error.message === 'Unauthorized' ? 401 : 500;
     return c.json({ error: error.message }, status);
   }
