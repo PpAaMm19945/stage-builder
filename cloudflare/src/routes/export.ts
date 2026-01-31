@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, User } from '../types';
 import { requireHouseholdMember } from '../lib/middleware';
 import { PdfService } from '../services/pdf-service';
+import { sanitizeFilename } from '../lib/security';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -87,10 +88,12 @@ app.get('/api/export/transcript/:studentId', async (c) => {
         totalCredits
     });
 
+    const sanitizedName = sanitizeFilename(student.name);
+
     return new Response(pdfBytes, {
         headers: {
             'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${student.name}_Transcript.pdf"`
+            'Content-Disposition': `attachment; filename="${sanitizedName}_Transcript.pdf"`
         }
     });
 });
@@ -106,10 +109,12 @@ app.get('/api/export/diploma/:studentId', async (c) => {
 
     const pdfBytes = await PdfService.generateDiploma(student.name, new Date().toLocaleDateString());
 
+    const sanitizedName = sanitizeFilename(student.name);
+
     return new Response(pdfBytes, {
         headers: {
             'Content-Type': 'application/pdf',
-            'Content-Disposition': `attachment; filename="${student.name}_Diploma.pdf"`
+            'Content-Disposition': `attachment; filename="${sanitizedName}_Diploma.pdf"`
         }
     });
 });

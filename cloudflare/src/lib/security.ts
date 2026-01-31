@@ -64,3 +64,27 @@ export function isValidName(name: string): boolean {
     if (/[\x00-\x1F\x7F]/.test(trimmed)) return false;
     return true;
 }
+
+// Security helper: Sanitize filename for Content-Disposition headers
+export function sanitizeFilename(name: string): string {
+    if (!name) return 'download';
+    // Remove control characters
+    // eslint-disable-next-line no-control-regex
+    let sanitized = name.replace(/[\x00-\x1F\x7F]/g, '');
+
+    // Replace risky characters with underscore: " / \ : * ? < > | ;
+    sanitized = sanitized.replace(/["\/\\:*?<>|;]/g, '_');
+
+    // Prevent traversal
+    sanitized = sanitized.replace(/\.\./g, '__');
+
+    // Trim
+    sanitized = sanitized.trim();
+
+    if (sanitized.length === 0) return 'download';
+
+    // Max length
+    if (sanitized.length > 200) sanitized = sanitized.substring(0, 200);
+
+    return sanitized;
+}
