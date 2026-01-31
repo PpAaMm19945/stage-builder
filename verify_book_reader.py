@@ -53,11 +53,11 @@ def verify_book_reader():
 
         print("Navigating...")
         # Navigate to /early-years/reading
-        page.goto("http://localhost:3000/early-years/reading")
+        page.goto("http://localhost:8080/early-years/reading")
         page.evaluate("localStorage.setItem('schoolos_token', 'test_token')")
 
         # Reload to apply auth
-        page.goto("http://localhost:3000/early-years/reading")
+        page.goto("http://localhost:8080/early-years/reading")
 
         print("Waiting for book card...")
         # Wait for book card

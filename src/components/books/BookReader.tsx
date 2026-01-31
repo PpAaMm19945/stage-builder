@@ -266,6 +266,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         [imagePages, failedImages]
     );
 
+    // ⚡ Bolt: Memoize reading prompts for O(1) lookup
+    const promptsByPage = useMemo(() => {
+        const map = new Map<number, string>();
+        if (book?.readingPrompts) {
+            book.readingPrompts.forEach(p => {
+                if (typeof p === 'object' && 'page' in p) {
+                    map.set(p.page, p.prompt);
+                }
+            });
+        }
+        return map;
+    }, [book]);
+
     const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
 
     const handleImageError = useCallback((index: number) => {
@@ -543,19 +556,30 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
-                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
-                                            typeof p === 'object' && 'page' in p && p.page === index + 1
-                                        ) as { page: number; prompt: string } | undefined;
+                                        // ⚡ Bolt: Virtualization - only render if within window
+                                        // Carousel index for imagePages[index] is index + 1 (because of Cover).
+                                        // current matches api.selectedScrollSnap() + 1.
+                                        // So current=1 is Cover, current=2 is Page 1.
+                                        const carouselIndex = index + 1;
+                                        const currentCarouselIndex = current - 1;
+                                        // Render window of +/- 4 slides (9 total)
+                                        const shouldRender = Math.abs(carouselIndex - currentCarouselIndex) <= 4;
+
+                                        const promptText = showPrompts ? promptsByPage.get(index + 1) : undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                <BookPageImage
-                                                    src={pageUrl}
-                                                    alt={`Page ${index + 1}`}
-                                                    index={index}
-                                                    onImageError={handleImageError}
-                                                    prompt={prompt?.prompt}
-                                                />
+                                                {shouldRender ? (
+                                                    <BookPageImage
+                                                        src={pageUrl}
+                                                        alt={`Page ${index + 1}`}
+                                                        index={index}
+                                                        onImageError={handleImageError}
+                                                        prompt={promptText}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full" />
+                                                )}
                                             </CarouselItem>
                                         );
                                     })}

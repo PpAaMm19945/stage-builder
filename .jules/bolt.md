@@ -37,3 +37,7 @@
 ## 2026-05-29 - Parallelize R2 Metadata Fetching
 **Learning:** The `/api/series` and `/api/series/:id` endpoints were fetching metadata for each item sequentially in a `for` loop. For a series with 20 books, this caused 20 sequential round-trips to R2, significantly increasing latency.
 **Action:** Refactored the loops to use `Promise.all` to fetch all metadata in parallel. This changes the latency profile from O(N) to O(1) (bounded by concurrency limits), drastically reducing load times for the library views.
+
+## 2026-06-01 - BookReader Virtualization
+**Learning:** The `BookReader` component was rendering all page slides (including heavy `BookPageImage` components with their own state and effects) regardless of visibility. For a 50-page book, this meant 50 concurrent component instances, leading to high memory usage and slow initial mount. Additionally, an O(N) search for reading prompts was executing inside the render loop for every page on every render.
+**Action:** Implemented a virtualization window (current page +/- 4) to only render active `BookPageImage` components while maintaining the `CarouselItem` structure for layout. Also memoized the reading prompts into a `Map` for O(1) lookup. This reduces the DOM footprint and render cost significantly for large books.
