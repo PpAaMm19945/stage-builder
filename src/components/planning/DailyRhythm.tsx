@@ -1,7 +1,6 @@
-import { useState, useCallback, memo } from 'react';
+import { useCallback, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { RhythmItemRow } from './RhythmItemRow';
-import { RhythmDetailsSheet } from './RhythmDetailsSheet';
 
 export interface RhythmItem {
     id: string;
@@ -16,43 +15,24 @@ export interface RhythmItem {
 
 interface DailyRhythmProps {
     items?: RhythmItem[];
-    activeItem?: RhythmItem | null;
-    onSelectItem?: (item: RhythmItem | null) => void;
+    onSelectItem?: (item: RhythmItem) => void;
     onComplete?: (item: RhythmItem, duration?: number) => void;
-    onBookClick?: () => void;
     onSwap?: (item: RhythmItem) => void;
-    onLiturgyToggle?: (id: string, completed: boolean) => void;
-    onLiturgyAdvance?: (type: string) => void;
 }
 
 export const DailyRhythm = memo(function DailyRhythm({
     items = [],
-    activeItem: propActiveItem,
-    onSelectItem: propOnSelectItem,
+    onSelectItem,
     onComplete,
-    onBookClick,
     onSwap,
-    onLiturgyToggle,
-    onLiturgyAdvance
 }: DailyRhythmProps) {
-    // Internal state if not controlled
-    const [internalActiveItem, setInternalActiveItem] = useState<RhythmItem | null>(null);
-
-    // Derived state
-    const activeItem = propActiveItem !== undefined ? propActiveItem : internalActiveItem;
-    const setActiveItem = propOnSelectItem || setInternalActiveItem;
-
     const timelineItems = items.length > 0 ? items : [];
 
     const handleSelect = useCallback((item: RhythmItem) => {
-        if (item.type !== 'section_header') {
-            setActiveItem(item);
+        if (item.type !== 'section_header' && onSelectItem) {
+            onSelectItem(item);
         }
-    }, [setActiveItem]);
-
-    const handleClose = useCallback(() => {
-        setActiveItem(null);
-    }, [setActiveItem]);
+    }, [onSelectItem]);
 
     if (timelineItems.length === 0) {
         return (
@@ -73,15 +53,6 @@ export const DailyRhythm = memo(function DailyRhythm({
                     onSwap={onSwap}
                 />
             ))}
-
-            <RhythmDetailsSheet
-                activeItem={activeItem}
-                onClose={handleClose}
-                onComplete={onComplete}
-                onBookClick={onBookClick}
-                onLiturgyToggle={onLiturgyToggle}
-                onLiturgyAdvance={onLiturgyAdvance}
-            />
         </div>
     );
 });
