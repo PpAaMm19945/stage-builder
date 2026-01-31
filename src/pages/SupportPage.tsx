@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, KeyboardEvent } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 
@@ -9,6 +9,13 @@ const SupportPage = () => {
   const copyToClipboard = (text: string, label: string) => {
     navigator.clipboard.writeText(text);
     toast.success(`${label} number copied to clipboard!`);
+  };
+
+  const handleKeyDown = (e: KeyboardEvent, text: string, label: string) => {
+    if (e.key === 'Enter' || e.key === ' ') {
+      e.preventDefault();
+      copyToClipboard(text, label);
+    }
   };
 
   const logInternationalClick = async () => {
@@ -50,13 +57,17 @@ const SupportPage = () => {
           <h2 className="text-xl font-semibold mb-2">Support our Family</h2>
           <p className="text-sm text-slate-400 mb-6">Direct support for Anthony, Primah, Azie, and Arie as we build this vision.</p>
           <div
-            className="bg-slate-900 p-4 rounded-lg mb-4 cursor-pointer hover:bg-slate-900/80 transition-colors group"
+            role="button"
+            tabIndex={0}
+            aria-label="Copy Family support number +256 781 888 609"
+            className="bg-slate-900 p-4 rounded-lg mb-4 cursor-pointer hover:bg-slate-900/80 transition-colors group focus:outline-none focus:ring-2 focus:ring-blue-500"
             onClick={() => copyToClipboard('+256781888609', 'Family support')}
+            onKeyDown={(e) => handleKeyDown(e, '+256781888609', 'Family support')}
           >
             <span className="text-xs text-blue-400 font-mono uppercase tracking-widest">Mobile Money (MTN)</span>
             <div className="flex items-center gap-2">
               <p className="text-lg font-bold mt-1">+256 781 888 609</p>
-              <span className="text-xs text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">(Click to copy)</span>
+              <span className="text-xs text-slate-500 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">(Click to copy)</span>
             </div>
             <p className="text-xs text-slate-500">Primah Ataro Mwesigwa</p>
           </div>
@@ -67,13 +78,17 @@ const SupportPage = () => {
           <h2 className="text-xl font-semibold mb-2">Support the Platform</h2>
           <p className="text-sm text-slate-400 mb-6">Funds for server costs, development, and reaching more homeschooling families.</p>
           <div
-            className="bg-slate-900 p-4 rounded-lg mb-4 cursor-pointer hover:bg-slate-900/80 transition-colors group"
+            role="button"
+            tabIndex={0}
+            aria-label="Copy Platform support number +256 751 822 500"
+            className="bg-slate-900 p-4 rounded-lg mb-4 cursor-pointer hover:bg-slate-900/80 transition-colors group focus:outline-none focus:ring-2 focus:ring-yellow-500"
             onClick={() => copyToClipboard('+256751822500', 'Platform support')}
+            onKeyDown={(e) => handleKeyDown(e, '+256751822500', 'Platform support')}
           >
             <span className="text-xs text-yellow-500 font-mono uppercase tracking-widest">Mobile Money (Airtel)</span>
             <div className="flex items-center gap-2">
               <p className="text-lg font-bold mt-1">+256 751 822 500</p>
-              <span className="text-xs text-slate-500 opacity-0 group-hover:opacity-100 transition-opacity">(Click to copy)</span>
+              <span className="text-xs text-slate-500 opacity-0 group-hover:opacity-100 group-focus:opacity-100 transition-opacity">(Click to copy)</span>
             </div>
             <p className="text-xs text-slate-500">Anthony Mwesigwa</p>
           </div>
