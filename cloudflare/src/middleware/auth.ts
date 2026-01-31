@@ -7,7 +7,8 @@ export const authMiddleware = async (c: Context<{ Bindings: Env, Variables: { us
     c.header('Cache-Control', 'no-store, max-age=0');
 
     const authHeader = c.req.header('Authorization');
-    const token = authHeader?.replace('Bearer ', '') || c.req.query('token');
+    // Security: Only accept tokens via Authorization header to prevent leakage in logs/history
+    const token = authHeader?.replace('Bearer ', '');
 
     if (!c.env.JWT_SECRET) {
         console.error('[CRITICAL] JWT_SECRET is not set!');
