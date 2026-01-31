@@ -37,3 +37,7 @@
 ## 2026-08-15 - Chat Accessibility & Live Regions
 **Learning:** Dynamic content updates (like AI thinking states) need `role="status"` and `aria-live="polite"` to be announced by screen readers. Without this, users are left waiting in silence.
 **Action:** Always wrap loading/thinking indicators in a live region to ensure status changes are communicated.
+
+## 2026-01-22 - Shadcn Card Interactivity
+**Learning:** The `Card` component is semantically a `div`. When used as a clickable list item (like in ActivityBrowser), it requires manual addition of `role="button"`, `tabIndex={0}`, and `onKeyDown` to be accessible.
+**Action:** Always treat clickable Cards as custom buttons and apply the "List Item Keyboard Accessibility" pattern (2026-07-10).
