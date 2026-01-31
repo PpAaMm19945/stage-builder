@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Env, BookMetadata, User } from '../types';
-import { isValidPathSegment, safeCompare } from '../lib/security';
+import { isValidPathSegment, safeCompare, sanitizeFilename } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
@@ -509,6 +509,8 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
 
         const bucket = c.env.BOOKS_BUCKET;
 
+        const sanitizedBookId = sanitizeFilename(bookId);
+
         const pathsToTry = [
             `books/${series}/${bookId}.pdf`,
             `${series}/${bookId}.pdf`,
@@ -526,7 +528,7 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
                 headers.set('Cache-Control', 'public, max-age=86400');
                 headers.set('Access-Control-Allow-Origin', '*');
                 headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-                headers.set('Content-Disposition', `inline; filename="${bookId}.pdf"`);
+                headers.set('Content-Disposition', `inline; filename="${sanitizedBookId}.pdf"`);
                 return new Response(object.body, { headers });
             }
         }
