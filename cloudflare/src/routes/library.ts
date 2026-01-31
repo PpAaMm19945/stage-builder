@@ -10,6 +10,34 @@ const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // ============ HELPERS ============
 
+// Manifest Cache
+let MANIFEST_CACHE: {
+    data: Record<string, string>;
+    timestamp: number;
+} | null = null;
+const MANIFEST_TTL = 300 * 1000; // 5 minutes
+
+// Helper: Get Manifest
+async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
+    const now = Date.now();
+    if (MANIFEST_CACHE && (now - MANIFEST_CACHE.timestamp < MANIFEST_TTL)) {
+        return MANIFEST_CACHE.data;
+    }
+
+    try {
+        const object = await bucket.get('manifest.json');
+        if (object) {
+            const data = await object.json() as Record<string, string>;
+            MANIFEST_CACHE = { data, timestamp: now };
+            return data;
+        }
+    } catch (e) {
+        console.warn('Failed to fetch manifest.json:', e);
+    }
+
+    return {};
+}
+
 // Helper: Parse age range string to months
 function parseAgeRange(ageRange: string): { min: number; max: number } {
     const match = ageRange.match(/(\d+)\s*-\s*(\d+)/);
@@ -29,7 +57,16 @@ function parseAgeRange(ageRange: string): { min: number; max: number } {
 
 // Helper: Get book metadata from R2
 async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string): Promise<BookMetadata | null> {
-    const key = `books/${series}/${bookId}/metadata.json`;
+    const manifest = await getManifest(bucket);
+
+    // Try manifest first
+    let key = manifest[`${series}/${bookId}/metadata.json`];
+
+    // Fallback to standard path if not in manifest
+    if (!key) {
+        key = `books/${series}/${bookId}/metadata.json`;
+    }
+
     const object = await bucket.get(key);
 
     if (!object) return null;
@@ -100,6 +137,49 @@ app.get('/api/books', async (c) => {
 
         console.log('Starting robust book listing...');
 
+        // 1. Manifest-based Listing
+        const manifest = await getManifest(bucket);
+        const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
+
+        const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
+            const parts = entryKey.split('/');
+            // Expect series/bookId/metadata.json
+            if (parts.length < 3) return null;
+            const series = parts[0];
+            const bookId = parts[1];
+
+            try {
+                const physicalKey = manifest[entryKey];
+                const object = await bucket.get(physicalKey);
+                if (object) {
+                    const data = await object.json() as any;
+                    const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+                    return {
+                        id: bookId,
+                        series: series,
+                        seriesTitle: data.series || series,
+                        title: data.title || bookId,
+                        author: data.author,
+                        illustrator: data.illustrator,
+                        description: data.description || '',
+                        minAgeMonths: data.minAgeMonths || ageRange.min,
+                        maxAgeMonths: data.maxAgeMonths || ageRange.max,
+                        pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+                        domain: data.domain || 'language',
+                        learningStage: data.learningStage || 'early-years',
+                        readingPrompts: data.readingPrompts,
+                        coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
+                    } as BookMetadata;
+                }
+            } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
+            return null;
+        }));
+
+        const validManifestBooks = manifestBooks.filter((b): b is BookMetadata => b !== null);
+        books.push(...validManifestBooks);
+        const loadedIds = new Set(validManifestBooks.map(b => `${b.series}/${b.id}`));
+
+        // 2. Legacy Listing (fallback for non-manifest items)
         const rootList = await bucket.list({ delimiter: '/' });
         const rootPrefixes = rootList.delimitedPrefixes || [];
 
@@ -129,6 +209,9 @@ app.get('/api/books', async (c) => {
 
         const bookResults = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
             const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
+
+            // Skip if already loaded from manifest
+            if (loadedIds.has(`${seriesName}/${bookId}`)) return null;
 
             try {
                 const object = await findMetadataFile(bucket, bookPrefix);
@@ -183,14 +266,29 @@ app.get('/api/series', async (c) => {
     try {
         const bucket = c.env.BOOKS_BUCKET;
         const seriesList: any[] = [];
+        const seenSeries = new Set<string>();
 
+        // 1. Manifest Discovery
+        const manifest = await getManifest(bucket);
+        Object.keys(manifest).forEach(k => {
+            const parts = k.split('/');
+            if (parts.length > 0) seenSeries.add(parts[0]);
+        });
+
+        // 2. Legacy Discovery
         const rootList = await bucket.list({ prefix: 'books/', delimiter: '/' });
         const seriesPrefixes = rootList.delimitedPrefixes || [];
+        seriesPrefixes.forEach(prefix => {
+            const s = prefix.replace('books/', '').replace('/', '');
+            if (s) seenSeries.add(s);
+        });
 
-        const seriesData = await Promise.all(seriesPrefixes.map(async (prefix) => {
-            const seriesId = prefix.replace('books/', '').replace('/', '');
+        const seriesData = await Promise.all(Array.from(seenSeries).map(async (seriesId) => {
+            // Check manifest for series metadata
+            let metaKey = manifest[`${seriesId}/metadata.json`];
+            // Fallback
+            if (!metaKey) metaKey = `books/${seriesId}/metadata.json`;
 
-            const metaKey = `${prefix}metadata.json`;
             const metaObj = await bucket.get(metaKey);
 
             let metadata: any = { id: seriesId, title: seriesId, description: '' };
@@ -222,9 +320,12 @@ app.get('/api/series/:seriesId', async (c) => {
     try {
         const seriesId = c.req.param('seriesId');
         const bucket = c.env.BOOKS_BUCKET;
-        const prefix = `books/${seriesId}`;
+        const manifest = await getManifest(bucket);
 
-        const metaKey = `${prefix}/metadata.json`;
+        // Series Metadata
+        let metaKey = manifest[`${seriesId}/metadata.json`];
+        if (!metaKey) metaKey = `books/${seriesId}/metadata.json`;
+
         const metaObj = await bucket.get(metaKey);
 
         if (!metaObj) {
@@ -232,16 +333,34 @@ app.get('/api/series/:seriesId', async (c) => {
         }
 
         const metadata = await metaObj.json() as any;
+        const books: BookMetadata[] = [];
+        const seenBooks = new Set<string>();
 
+        // 1. Manifest Books
+        const manifestEntries = Object.keys(manifest).filter(k => k.startsWith(`${seriesId}/`) && k.endsWith('/metadata.json'));
+        const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
+             const parts = entryKey.split('/');
+             if (parts.length < 3) return null;
+             const bookId = parts[1];
+             if (seenBooks.has(bookId)) return null;
+             seenBooks.add(bookId);
+
+             return getBookMetadata(bucket, seriesId, bookId);
+        }));
+        books.push(...manifestBooks.filter((b): b is BookMetadata => b !== null));
+
+        // 2. Legacy Books
+        const prefix = `books/${seriesId}`;
         const booksList = await bucket.list({ prefix: `${prefix}/`, delimiter: '/' });
         const bookPrefixes = booksList.delimitedPrefixes || [];
 
-        const booksData = await Promise.all(bookPrefixes.map(async (bookPrefix) => {
+        const legacyBooks = await Promise.all(bookPrefixes.map(async (bookPrefix) => {
             const bookId = bookPrefix.replace(`${prefix}/`, '').replace('/', '');
+            if (seenBooks.has(bookId)) return null;
             return getBookMetadata(bucket, seriesId, bookId);
         }));
 
-        const books: BookMetadata[] = booksData.filter((b): b is BookMetadata => b !== null);
+        books.push(...legacyBooks.filter((b): b is BookMetadata => b !== null));
 
         return c.json({
             ...metadata,
@@ -311,6 +430,24 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
         }
 
         const bucket = c.env.BOOKS_BUCKET;
+
+        // 0. Manifest Lookup
+        const manifest = await getManifest(bucket);
+        const manifestKey = manifest[`${series}/${bookId}/cover`];
+        if (manifestKey) {
+            const object = await bucket.get(manifestKey);
+            if (object) {
+                const headers = new Headers();
+                const ext = manifestKey.split('.').pop()?.toLowerCase();
+                const contentType = object.httpMetadata?.contentType ||
+                    (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                headers.set('Content-Type', contentType);
+                headers.set('Cache-Control', 'public, max-age=86400');
+                headers.set('Access-Control-Allow-Origin', '*');
+                headers.set('X-Source', 'manifest');
+                return new Response(object.body, { headers });
+            }
+        }
 
         // 1. Check Index File first
         try {
@@ -453,6 +590,25 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
         const bucket = c.env.BOOKS_BUCKET;
         const paddedNum = pageNum.padStart(2, '0');
 
+        // 0. Manifest Lookup
+        const manifest = await getManifest(bucket);
+        const manifestKey = manifest[`${series}/${bookId}/pages/${paddedNum}`];
+        if (manifestKey) {
+             const object = await bucket.get(manifestKey);
+             if (object) {
+                 const headers = new Headers();
+                 const ext = manifestKey.split('.').pop()?.toLowerCase();
+                 const contentType = object.httpMetadata?.contentType ||
+                     (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                 headers.set('Content-Type', contentType);
+                 headers.set('Cache-Control', 'public, max-age=86400');
+                 headers.set('Access-Control-Allow-Origin', '*');
+                 headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+                 headers.set('X-Source', 'manifest');
+                 return new Response(object.body, { headers });
+             }
+        }
+
         const pathsToTry = [
             `books/${series}/${bookId}/images/page-${paddedNum}.png`,
             `books/${series}/${bookId}/images/page-${paddedNum}.jpg`,
@@ -510,6 +666,32 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
         const bucket = c.env.BOOKS_BUCKET;
 
         const sanitizedBookId = sanitizeFilename(bookId);
+
+        // 0. Manifest Lookup (Inferred)
+        const manifest = await getManifest(bucket);
+        const metaKey = manifest[`${series}/${bookId}/metadata.json`];
+        if (metaKey) {
+            // Infer PDF path from metadata location
+            const dir = metaKey.substring(0, metaKey.lastIndexOf('/'));
+            const potentialPdfPaths = [
+                `${dir}/book.pdf`,
+                `${dir}/${bookId}.pdf`
+            ];
+
+            for (const key of potentialPdfPaths) {
+                const object = await bucket.get(key);
+                if (object) {
+                    const headers = new Headers();
+                    headers.set('Content-Type', 'application/pdf');
+                    headers.set('Cache-Control', 'public, max-age=86400');
+                    headers.set('Access-Control-Allow-Origin', '*');
+                    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+                    headers.set('Content-Disposition', `inline; filename="${sanitizedBookId}.pdf"`);
+                    headers.set('X-Source', 'manifest-inferred');
+                    return new Response(object.body, { headers });
+                }
+            }
+        }
 
         const pathsToTry = [
             `books/${series}/${bookId}.pdf`,
