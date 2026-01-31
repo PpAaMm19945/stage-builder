@@ -8,6 +8,7 @@ import {
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Checkbox } from '@/components/ui/checkbox';
+import { Label } from '@/components/ui/label';
 import { family } from '@/lib/api';
 import { useEveningPrompt } from '@/hooks/useEveningPrompt';
 import {
@@ -96,20 +97,31 @@ export function TomorrowsPrepModal() {
                                 Materials to Prepare
                             </p>
                             <div className="space-y-2 max-h-48 overflow-y-auto">
-                                {materials.map((material: any) => (
-                                    <label
+                                {materials.map((material: any, idx: number) => (
+                                    <div
                                         key={material.name}
-                                        className="flex items-center gap-3 p-2 rounded-lg border cursor-pointer hover:bg-muted/50 transition-colors"
+                                        className="relative flex items-center gap-3 p-2 rounded-lg border hover:bg-muted/50 transition-colors"
                                     >
                                         <Checkbox
+                                            id={`prep-material-${idx}`}
                                             checked={checkedItems.has(material.name)}
                                             onCheckedChange={() => toggleItem(material.name)}
                                         />
-                                        <span className="text-sm font-medium">{material.name}</span>
+                                        <Label
+                                            htmlFor={`prep-material-${idx}`}
+                                            className="text-sm font-medium cursor-pointer flex-1"
+                                        >
+                                            {material.name}
+                                        </Label>
                                         {material.status === 'have' && (
                                             <CheckCircle className="h-4 w-4 text-green-500 ml-auto" weight="fill" />
                                         )}
-                                    </label>
+                                        <label
+                                            htmlFor={`prep-material-${idx}`}
+                                            className="absolute inset-0 cursor-pointer"
+                                            aria-hidden="true"
+                                        />
+                                    </div>
                                 ))}
                             </div>
                         </div>
