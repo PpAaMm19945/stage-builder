@@ -7,11 +7,11 @@ import {
     User,
     ShieldCheck,
     SignOut,
-    SunDim,
-    Heart
+    SunDim
 } from '@phosphor-icons/react';
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
+import { FundingWidget } from '@/components/funding/FundingWidget';
 
 export function SettingsAccount() {
     const { user, logout } = useAuth();
@@ -86,42 +86,12 @@ export function SettingsAccount() {
             </Card>
 
             {/* Support SchoolOS */}
-            <Card id="support" className="border-green-200 bg-gradient-to-br from-green-50 to-transparent dark:from-green-900/10 dark:border-green-800">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-lg text-green-800 dark:text-green-200">
-                        <Heart className="h-5 w-5" weight="fill" />
-                        Support SchoolOS
-                    </CardTitle>
-                    <CardDescription>
-                        Help keep learning free for African families
-                    </CardDescription>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                            <span>Monthly Goal</span>
-                            <span className="font-medium">$412 / $500</span>
-                        </div>
-                        <div className="h-2 bg-green-100 dark:bg-green-900/30 rounded-full overflow-hidden">
-                            <div className="h-full bg-green-500 w-[82%] rounded-full" />
-                        </div>
-                        <p className="text-xs text-muted-foreground">
-                            $500/month covers storage for 10,000 families and 1,000+ books
-                        </p>
-                    </div>
-
-                    <div className="grid grid-cols-4 gap-2">
-                        <Button variant="outline" className="border-green-300 dark:border-green-700">$1</Button>
-                        <Button variant="outline" className="border-green-300 dark:border-green-700">$5</Button>
-                        <Button variant="outline" className="border-green-300 dark:border-green-700">$10</Button>
-                        <Button variant="outline" className="border-green-300 dark:border-green-700">Other</Button>
-                    </div>
-
-                    <p className="text-xs text-center text-muted-foreground">
-                        Contributions are not tax-deductible. Payment processed securely.
-                    </p>
-                </CardContent>
-            </Card>
+            <FundingWidget
+                id="support"
+                variant="full"
+                raised={412}
+                goal={500}
+            />
 
             {/* Privacy */}
             <Card>
