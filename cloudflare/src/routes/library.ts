@@ -433,19 +433,28 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
 
         // 0. Manifest Lookup
         const manifest = await getManifest(bucket);
-        const manifestKey = manifest[`${series}/${bookId}/cover`];
-        if (manifestKey) {
-            const object = await bucket.get(manifestKey);
-            if (object) {
-                const headers = new Headers();
-                const ext = manifestKey.split('.').pop()?.toLowerCase();
-                const contentType = object.httpMetadata?.contentType ||
-                    (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
-                headers.set('Content-Type', contentType);
-                headers.set('Cache-Control', 'public, max-age=86400');
-                headers.set('Access-Control-Allow-Origin', '*');
-                headers.set('X-Source', 'manifest');
-                return new Response(object.body, { headers });
+        const coverKeys = [
+            `${series}/${bookId}/cover`,
+            `${series}/${bookId}/cover.png`,
+            `${series}/${bookId}/cover.jpg`,
+            `${series}/${bookId}/cover.jpeg`
+        ];
+
+        for (const key of coverKeys) {
+            const manifestKey = manifest[key];
+            if (manifestKey) {
+                const object = await bucket.get(manifestKey);
+                if (object) {
+                    const headers = new Headers();
+                    const ext = manifestKey.split('.').pop()?.toLowerCase();
+                    const contentType = object.httpMetadata?.contentType ||
+                        (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                    headers.set('Content-Type', contentType);
+                    headers.set('Cache-Control', 'public, max-age=86400');
+                    headers.set('Access-Control-Allow-Origin', '*');
+                    headers.set('X-Source', 'manifest');
+                    return new Response(object.body, { headers });
+                }
             }
         }
 
@@ -669,6 +678,31 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
 
         // 0. Manifest Lookup (Inferred)
         const manifest = await getManifest(bucket);
+
+        // Check for explicit PDF entries
+        const pdfKeys = [
+            `${series}/${bookId}/pdf`,
+            `${series}/${bookId}/book.pdf`,
+            `${series}/${bookId}.pdf`
+        ];
+
+        for (const key of pdfKeys) {
+            const manifestKey = manifest[key];
+            if (manifestKey) {
+                const object = await bucket.get(manifestKey);
+                if (object) {
+                    const headers = new Headers();
+                    headers.set('Content-Type', 'application/pdf');
+                    headers.set('Cache-Control', 'public, max-age=86400');
+                    headers.set('Access-Control-Allow-Origin', '*');
+                    headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+                    headers.set('Content-Disposition', `inline; filename="${sanitizedBookId}.pdf"`);
+                    headers.set('X-Source', 'manifest-explicit');
+                    return new Response(object.body, { headers });
+                }
+            }
+        }
+
         const metaKey = manifest[`${series}/${bookId}/metadata.json`];
         if (metaKey) {
             // Infer PDF path from metadata location
