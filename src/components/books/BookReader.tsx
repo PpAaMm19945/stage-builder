@@ -34,6 +34,8 @@ import { cn } from '@/lib/utils';
 import { ChildSelectionModal } from './ChildSelectionModal';
 import { BookPageImage } from './BookPageImage';
 
+const RENDER_WINDOW = 3;
+
 interface BookReaderProps {
     book: Book | null;
     open: boolean;
@@ -525,37 +527,49 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     </CarouselItem>
 
                                     {/* Pages - Markdown Mode */}
-                                    {isMarkdown && parsedPages.map((content, index) => (
-                                        <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                            <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
-                                                <MarkdownBookSlide
-                                                    content={content}
-                                                    styleProfile={book.styleProfile}
-                                                    pageIndex={index}
-                                                    book={book}
-                                                />
-                                            </div>
-                                        </CarouselItem>
-                                    ))}
+                                    {isMarkdown && parsedPages.map((content, index) => {
+                                        const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
+                                        return (
+                                            <CarouselItem key={index} className="flex items-center justify-center h-full">
+                                                {isNearby ? (
+                                                    <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
+                                                        <MarkdownBookSlide
+                                                            content={content}
+                                                            styleProfile={book.styleProfile}
+                                                            pageIndex={index}
+                                                            book={book}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className="w-full h-full" />
+                                                )}
+                                            </CarouselItem>
+                                        );
+                                    })}
 
                                     {/* Pages - Image Mode */}
                                     {!isMarkdown && imagePages.map((pageUrl, index) => {
                                         // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
+                                        const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
                                         const prompt = showPrompts && book.readingPrompts?.find(p =>
                                             typeof p === 'object' && 'page' in p && p.page === index + 1
                                         ) as { page: number; prompt: string } | undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                <BookPageImage
-                                                    src={pageUrl}
-                                                    alt={`Page ${index + 1}`}
-                                                    index={index}
-                                                    onImageError={handleImageError}
-                                                    prompt={prompt?.prompt}
-                                                />
+                                                {isNearby ? (
+                                                    <BookPageImage
+                                                        src={pageUrl}
+                                                        alt={`Page ${index + 1}`}
+                                                        index={index}
+                                                        onImageError={handleImageError}
+                                                        prompt={prompt?.prompt}
+                                                    />
+                                                ) : (
+                                                    <div className="w-full h-full" />
+                                                )}
                                             </CarouselItem>
                                         );
                                     })}
