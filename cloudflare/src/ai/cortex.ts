@@ -8,7 +8,13 @@ import { ContextBuilder, AiContext } from './context';
 export class Cortex {
     constructor(private env: Env) { }
 
-    async chat(message: string, history: any[], context: any): Promise<ReadableStream> {
+    async chat(message: string, history: any[], context: any, actionPayload?: any): Promise<ReadableStream> {
+        // 0. Direct Action Bypass
+        if (actionPayload) {
+            console.log('[Cortex] Direct action execution');
+            return this.runSystem1(message, history, context, actionPayload);
+        }
+
         // 1. Analyze Complexity (Heuristic)
         const isComplex = this.isComplexRequest(message, history);
 
@@ -31,9 +37,15 @@ export class Cortex {
         return isLong || hasKeyword;
     }
 
-    private async runSystem1(message: string, history: any[], context: any): Promise<ReadableStream> {
+    private async runSystem1(message: string, history: any[], context: any, actionPayload?: any): Promise<ReadableStream> {
         const router = new AiRouter(this.env);
-        const route = await router.routeRequest(message, context);
+
+        let route;
+        if (actionPayload) {
+            route = { intent: 'EXECUTE_ACTION', actionPayload };
+        } else {
+            route = await router.routeRequest(message, context);
+        }
 
         const encoder = new TextEncoder();
 
