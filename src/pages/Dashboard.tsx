@@ -20,6 +20,7 @@ import { WeekStrip, getWeekStart } from '@/components/dashboard/WeekStrip';
 import { toast } from 'sonner';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { DailyRhythm, RhythmItem } from '@/components/planning/DailyRhythm';
+import { RhythmDetailsSheet } from '@/components/planning/RhythmDetailsSheet';
 import { SwapActivitySheet } from '@/components/planning/SwapActivitySheet';
 import { MaterialItem, Book } from '@/types';
 import { Alert, AlertDescription } from '@/components/ui/alert';
@@ -524,11 +525,15 @@ export default function Dashboard() {
           <div className={cn("transition-opacity duration-200", dayFetching && "opacity-60")}>
             <DailyRhythm
               items={timelineItems}
-              activeItem={activeRhythmItem}
               onSelectItem={setActiveRhythmItem}
               onComplete={handleRhythmComplete}
-              onBookClick={handleBookClick}
               onSwap={isToday ? handleSwap : undefined}
+            />
+            <RhythmDetailsSheet
+              activeItem={activeRhythmItem}
+              onClose={() => setActiveRhythmItem(null)}
+              onComplete={handleRhythmComplete}
+              onBookClick={handleBookClick}
             />
           </div>
         </div>
