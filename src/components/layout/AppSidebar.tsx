@@ -107,27 +107,37 @@ export function AppSidebar() {
           <SidebarGroup>
             <SidebarGroupContent>
               <SidebarMenu>
-                {activeLinks.map((link) => (
-                  <SidebarMenuItem key={link.url}>
-                    <SidebarMenuButton
-                      isActive={
-                        location.pathname === link.url ||
-                        (link.url !== '/' && link.url !== '/dashboard' && location.pathname.startsWith(link.url))
-                      }
-                      onClick={() => handleNavigation(link.url)}
-                      className="flex items-center gap-3"
-                    >
-                      <link.icon className="h-4 w-4" weight="duotone" />
-                      <span>{link.title}</span>
-                    </SidebarMenuButton>
-                  </SidebarMenuItem>
-                ))}
+                {activeLinks.map((link) => {
+                  const isActive =
+                    location.pathname === link.url ||
+                    (link.url !== '/' &&
+                      link.url !== '/dashboard' &&
+                      location.pathname.startsWith(link.url));
+                  return (
+                    <SidebarMenuItem key={link.url}>
+                      <SidebarMenuButton
+                        isActive={isActive}
+                        aria-current={isActive ? 'page' : undefined}
+                        onClick={() => handleNavigation(link.url)}
+                        className="flex items-center gap-3"
+                      >
+                        <link.icon className="h-4 w-4" weight="duotone" />
+                        <span>{link.title}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                })}
 
                 {/* Daily Practices - Only visible for AUTHENTICATED families with infants */}
-                {isAuthenticated && children.some(c => c.ageInMonths <= 12) && (
+                {isAuthenticated && children.some((c) => c.ageInMonths <= 12) && (
                   <SidebarMenuItem>
                     <SidebarMenuButton
                       isActive={location.pathname === '/early-years/daily-practices'}
+                      aria-current={
+                        location.pathname === '/early-years/daily-practices'
+                          ? 'page'
+                          : undefined
+                      }
                       onClick={() => handleNavigation('/early-years/daily-practices')}
                       className="flex items-center gap-3"
                     >
@@ -150,6 +160,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/support')}
                     isActive={location.pathname === '/support'}
+                    aria-current={location.pathname === '/support' ? 'page' : undefined}
                     className="flex items-center gap-3 rounded-lg px-3 py-2 text-green-600 dark:text-green-400 transition-colors hover:bg-green-50 dark:hover:bg-green-900/20 w-full"
                   >
                     <Heart className="h-4 w-4" weight="fill" />
@@ -160,6 +171,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/trust')}
                     isActive={location.pathname === '/trust'}
+                    aria-current={location.pathname === '/trust' ? 'page' : undefined}
                     className="flex items-center gap-3"
                   >
                     <ShieldCheck className="h-4 w-4" weight="duotone" />
@@ -179,6 +191,7 @@ export function AppSidebar() {
                   <SidebarMenuButton
                     onClick={() => handleNavigation('/settings')}
                     isActive={location.pathname === '/settings'}
+                    aria-current={location.pathname === '/settings' ? 'page' : undefined}
                     className="flex items-center gap-3"
                   >
                     <SlidersHorizontal className="h-4 w-4" weight="duotone" />
