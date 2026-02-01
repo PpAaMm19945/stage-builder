@@ -212,6 +212,7 @@ export function FormationCard({
                                         "h-8 w-8 hover:bg-rose-50 hover:text-rose-600 transition-colors",
                                         isLoved ? "text-rose-500" : "text-muted-foreground/50"
                                     )}
+                                    aria-label={isLoved ? `Unmark ${formation.title} as favorite` : `Mark ${formation.title} as favorite`}
                                 >
                                     <Heart weight={isLoved ? "fill" : "regular"} className="w-5 h-5" />
                                 </Button>
@@ -226,6 +227,7 @@ export function FormationCard({
                                             "h-5 w-5 transition-colors",
                                             isCompleted ? "data-[state=checked]:bg-green-600 border-green-600" : ""
                                         )}
+                                        aria-label={`Mark ${formation.title} as complete`}
                                     />
                                 ) : (
                                     // Permission Denied Indicator
@@ -237,7 +239,12 @@ export function FormationCard({
 
                             {variant === 'full' && (
                                 <CollapsibleTrigger asChild onClick={() => setIsOpen(!isOpen)}>
-                                    <Button variant="ghost" size="icon" className="h-8 w-8 -mr-2 text-muted-foreground">
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        className="h-8 w-8 -mr-2 text-muted-foreground"
+                                        aria-label={isOpen ? `Collapse details for ${formation.title}` : `Expand details for ${formation.title}`}
+                                    >
                                         {isOpen ? <CaretUp size={16} /> : <CaretDown size={16} />}
                                     </Button>
                                 </CollapsibleTrigger>

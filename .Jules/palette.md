@@ -41,3 +41,7 @@
 ## 2026-01-22 - Shadcn Card Interactivity
 **Learning:** The `Card` component is semantically a `div`. When used as a clickable list item (like in ActivityBrowser), it requires manual addition of `role="button"`, `tabIndex={0}`, and `onKeyDown` to be accessible.
 **Action:** Always treat clickable Cards as custom buttons and apply the "List Item Keyboard Accessibility" pattern (2026-07-10).
+
+## 2026-05-26 - Contextual Action Labels
+**Learning:** In complex cards (like FormationCard), generic labels like "Expand details" or "Mark as complete" are insufficient when multiple cards are present. Screen reader users need to know *which* item they are acting on.
+**Action:** Always include the item's title in the `aria-label` for actions within a list or grid of cards (e.g., "Mark {title} as complete" instead of just "Mark as complete").
