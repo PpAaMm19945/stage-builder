@@ -206,6 +206,35 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
     }, []);
 
+    // Immersive mode timer
+    useEffect(() => {
+        let timer: NodeJS.Timeout;
+        if (isFullscreen && showControls) {
+            timer = setTimeout(() => {
+                setShowControls(false);
+            }, 3000);
+        }
+        return () => clearTimeout(timer);
+    }, [isFullscreen, showControls]);
+
+    // Landscape detection
+    useEffect(() => {
+        if (!open) return;
+        const checkOrientation = () => {
+            if (window.innerWidth < 768 && window.innerHeight > window.innerWidth) {
+                // Portrait mobile
+                if (book?.renderFormat === 'image' || book?.renderFormat === 'images') {
+                   // Ideally we'd check aspect ratio of the first image, but simplistic check is fine
+                   // toast.info("Rotate for better view", { duration: 2000, position: 'bottom-center' });
+                   // Commented out to avoid annoyance, but logic is here
+                }
+            }
+        };
+        checkOrientation();
+        window.addEventListener('resize', checkOrientation);
+        return () => window.removeEventListener('resize', checkOrientation);
+    }, [open, book]);
+
     // Keyboard navigation
     useEffect(() => {
         if (!open || !api || showChildSelection) return;
@@ -324,6 +353,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                     className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none"
                     hideCloseButton
                 >
+                    {/* Progress Bar */}
+                    {!isPdf && count > 0 && (
+                        <div className="absolute top-0 left-0 right-0 h-1 bg-white/10 z-[60]">
+                            <div
+                                className="h-full bg-primary transition-all duration-300"
+                                style={{ width: `${(current / count) * 100}%` }}
+                            />
+                        </div>
+                    )}
+
                     {/* Header - Overlaid and toggleable in fullscreen */}
                     <div
                         className={cn(
@@ -422,24 +461,35 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                     {/* Reader Area */}
                     <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
                         {isPdf ? (
-                            <div className="w-full h-full flex flex-col items-center justify-center relative bg-background/95 p-8">
-                                <div className="text-center max-w-md space-y-6">
-                                    <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
-                                        <BookOpenText className="w-10 h-10 text-primary" />
+                            <div className="w-full h-full flex flex-col sm:flex-row items-center justify-center relative bg-background/95 p-8 gap-8">
+                                {/* PDF Cover Preview */}
+                                {coverUrl && (
+                                    <div className="w-48 sm:w-64 shadow-2xl rounded-lg overflow-hidden shrink-0 transform hover:scale-105 transition-transform duration-300">
+                                        <AspectRatio ratio={3/4}>
+                                            <img
+                                                src={coverUrl}
+                                                alt={book.title}
+                                                className="w-full h-full object-cover"
+                                            />
+                                        </AspectRatio>
                                     </div>
+                                )}
+
+                                <div className="text-center sm:text-left max-w-md space-y-6">
                                     <div>
-                                        <h3 className="text-xl font-semibold text-foreground mb-2">{book.title}</h3>
-                                        <p className="text-muted-foreground">
-                                            This book is available as a PDF document. Click below to open it in a new tab.
-                                        </p>
+                                        <h3 className="text-2xl font-bold text-foreground mb-2">{book.title}</h3>
+                                        <p className="text-lg text-muted-foreground">{book.author}</p>
+                                        {book.description && (
+                                            <p className="text-sm text-gray-500 mt-4 leading-relaxed">{book.description}</p>
+                                        )}
                                     </div>
                                     <Button
                                         size="lg"
                                         onClick={() => window.open(pdfUrl, '_blank')}
-                                        className="gap-2"
+                                        className="gap-2 w-full sm:w-auto shadow-lg hover:shadow-xl transition-all"
                                     >
                                         <ArrowsOutSimple className="w-5 h-5" />
-                                        Open PDF in New Tab
+                                        Read PDF
                                     </Button>
                                 </div>
 

@@ -55,16 +55,29 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
         <div className="relative w-full h-full flex items-center justify-center p-4">
             {/* Loading skeleton */}
             {!isLoaded && !error && (
-                <div className="absolute inset-4 flex items-center justify-center">
-                    <Skeleton className="w-full max-w-2xl aspect-[4/3] rounded-lg bg-white/10" />
+                <div className="absolute inset-0 flex items-center justify-center p-4">
+                    <Skeleton className="w-full max-w-2xl aspect-[3/4] sm:aspect-[4/3] rounded-sm bg-white/5 animate-pulse" />
                 </div>
             )}
 
             {/* Error State */}
             {error && (
-                <div className="absolute inset-0 flex flex-col items-center justify-center text-white/50 gap-2">
-                    <ArrowCounterClockwise className="w-8 h-8" />
-                    <span className="text-xs">Failed to load page {index + 1}</span>
+                <div
+                    className="absolute inset-0 flex flex-col items-center justify-center text-white/50 gap-4 cursor-pointer hover:text-white transition-colors z-20"
+                    onClick={(e) => {
+                        e.stopPropagation(); // Prevent toggling controls
+                        setError(false);
+                        setIsLoaded(false);
+                        setRetries(0);
+                    }}
+                >
+                    <div className="bg-white/10 p-4 rounded-full hover:bg-white/20 transition-colors">
+                        <ArrowCounterClockwise className="w-8 h-8" />
+                    </div>
+                    <div className="text-center">
+                        <p className="text-sm font-medium">Failed to load page {index + 1}</p>
+                        <p className="text-xs opacity-70 mt-1">Tap to retry</p>
+                    </div>
                 </div>
             )}
 

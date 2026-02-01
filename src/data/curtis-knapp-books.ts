@@ -1,6 +1,7 @@
 import { Book } from '@/types';
 const SERIES_SLUG = 'pastor_curtis_knapp';
 const SERIES_TITLE = 'Selected Works: Booklets on Doctrine, Family, and the Christian Walk';
+const R2_BASE = 'https://pub-ca8030f7c94b40f68be9f17bfd8977c0.r2.dev';
 
 export const CURTIS_KNAPP_BOOKS: Book[] = [
     {
@@ -18,7 +19,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['counseling', 'marriage', 'christian living']
+        topics: ['counseling', 'marriage', 'christian living'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/before_you_tie_the_knot.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/before_you_tie_the_knot.pdf`,
     },
     {
         id: 'jesus_man_of_sorrows',
@@ -33,7 +36,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['christology', 'gospel']
+        topics: ['christology', 'gospel'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/jesus_man_of_sorrows.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/jesus_man_of_sorrows.pdf`,
     },
     {
         id: 'john_three_sixteen',
@@ -48,7 +53,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['gospel', 'salvation']
+        topics: ['gospel', 'salvation'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/john_three_sixteen.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/john_three_sixteen.pdf`,
     },
     {
         id: 'mad_at_god',
@@ -63,7 +70,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['counseling', 'suffering']
+        topics: ['counseling', 'suffering'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/mad_at_god.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/mad_at_god.pdf`,
     },
     {
         id: 'no_more_fig_leaves',
@@ -78,7 +87,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['sin', 'salvation']
+        topics: ['sin', 'salvation'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/no_more_fig_leaves.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/no_more_fig_leaves.pdf`,
     },
     {
         id: 'pharisees_and_sadducees',
@@ -93,7 +104,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['theology', 'history']
+        topics: ['theology', 'history'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/pharisees_and_sadducees.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/pharisees_and_sadducees.pdf`,
     },
     {
         id: 'spiritual_counsel_for_seekers',
@@ -108,7 +121,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['evangelism', 'salvation']
+        topics: ['evangelism', 'salvation'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/spiritual_counsel_for_seekers.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/spiritual_counsel_for_seekers.pdf`,
     },
     {
         id: 'the_homeschooling_mom',
@@ -123,7 +138,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['family', 'education']
+        topics: ['family', 'education'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/the_homeschooling_mom.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/the_homeschooling_mom.pdf`,
     },
     {
         id: 'to_eat_or_not_to_eat_print',
@@ -138,7 +155,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['theology', 'christian liberty']
+        topics: ['theology', 'christian liberty'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/to_eat_or_not_to_eat_print.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/to_eat_or_not_to_eat_print.pdf`,
     },
     {
         id: 'total_depravity_booklet',
@@ -153,7 +172,9 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['theology', 'calvinism']
+        topics: ['theology', 'calvinism'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/total_depravity_booklet.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/total_depravity_booklet.pdf`,
     },
     {
         id: 'unity_without_compromise',
@@ -168,6 +189,8 @@ export const CURTIS_KNAPP_BOOKS: Book[] = [
         renderFormat: 'pdf',
         learningStage: 'upper-school',
         domain: 'wisdom',
-        topics: ['church', 'unity']
+        topics: ['church', 'unity'],
+        coverUrl: `${R2_BASE}/books/pastor_curtis_knapp/images/unity_without_compromise.png`,
+        pdfUrl: `${R2_BASE}/books/pastor_curtis_knapp/unity_without_compromise.pdf`,
     }
 ];

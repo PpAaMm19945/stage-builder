@@ -330,19 +330,19 @@ export const books = {
 
   // Cover image URL - uses API route with CORS headers
   getCoverUrl: (series: string, bookId: string) =>
-    `/api/books/${slugify(series)}/${slugify(bookId)}/cover`,
+    `${API_URL}/api/books/${slugify(series)}/${slugify(bookId)}/cover`,
 
   // Page image URL - uses API route with CORS headers
   getPageUrl: (series: string, bookId: string, pageNum: number) =>
-    `/api/books/${slugify(series)}/${slugify(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
+    `${API_URL}/api/books/${slugify(series)}/${slugify(bookId)}/pages/${String(pageNum).padStart(2, '0')}`,
 
   // PDF URL - for larger books with many pages
   getPdfUrl: (series: string, bookId: string) =>
-    `/api/books/${slugify(series)}/${slugify(bookId)}/pdf`,
+    `${API_URL}/api/books/${slugify(series)}/${slugify(bookId)}/pdf`,
 
   // Generic asset URL - for markdown, manifests, etc.
   getAssetUrl: (series: string, bookId: string, assetPath: string) =>
-    `/api/books/${slugify(series)}/${slugify(bookId)}/asset/${assetPath}`,
+    `${API_URL}/api/books/${slugify(series)}/${slugify(bookId)}/asset/${assetPath}`,
 };
 
 // Reading Sessions
