@@ -13,6 +13,16 @@ export function escapeHtml(str: string): string {
 // Security helper: Validate path segment to prevent traversal
 export function isValidPathSegment(segment: string): boolean {
     if (!segment) return false;
+
+    // Check decoded version for hidden traversal (e.g. %2e%2e)
+    try {
+        const decoded = decodeURIComponent(segment);
+        const decodedParts = decoded.split(/[/\\]/);
+        if (decodedParts.includes('..')) return false;
+    } catch {
+        // Ignore decoding errors, fall back to raw check
+    }
+
     // Disallow ".." components to prevent traversing up the bucket
     const parts = segment.split(/[/\\]/);
     return !parts.includes('..');
