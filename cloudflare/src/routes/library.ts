@@ -17,6 +17,13 @@ let MANIFEST_CACHE: {
 } | null = null;
 const MANIFEST_TTL = 300 * 1000; // 5 minutes
 
+// Book List Cache
+let BOOKS_CACHE: {
+    data: BookMetadata[];
+    timestamp: number;
+} | null = null;
+const BOOKS_CACHE_TTL = 300 * 1000; // 5 minutes
+
 // Helper: Get Manifest
 async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
     const now = Date.now();
@@ -132,6 +139,22 @@ app.get('/api/books', async (c) => {
 
         const stage = c.req.query('stage');
         const ageMonths = c.req.query('ageMonths');
+
+        // Check Cache
+        const now = Date.now();
+        if (BOOKS_CACHE && (now - BOOKS_CACHE.timestamp < BOOKS_CACHE_TTL)) {
+            console.log('Books cache hit');
+            let filtered = BOOKS_CACHE.data;
+            if (stage) {
+                filtered = filtered.filter(b => b.learningStage === stage);
+            }
+            if (ageMonths) {
+                const age = parseInt(ageMonths);
+                filtered = filtered.filter(b => b.minAgeMonths <= age && b.maxAgeMonths >= age);
+            }
+            return c.json(filtered);
+        }
+
         const bucket = c.env.BOOKS_BUCKET;
         const books: BookMetadata[] = [];
 
@@ -244,6 +267,9 @@ app.get('/api/books', async (c) => {
         }));
 
         books.push(...bookResults.filter((b): b is BookMetadata => b !== null));
+
+        // Update Cache
+        BOOKS_CACHE = { data: books, timestamp: Date.now() };
 
         let filtered = books;
         if (stage) {
