@@ -41,3 +41,7 @@
 ## 2026-01-22 - Shadcn Card Interactivity
 **Learning:** The `Card` component is semantically a `div`. When used as a clickable list item (like in ActivityBrowser), it requires manual addition of `role="button"`, `tabIndex={0}`, and `onKeyDown` to be accessible.
 **Action:** Always treat clickable Cards as custom buttons and apply the "List Item Keyboard Accessibility" pattern (2026-07-10).
+
+## 2026-09-12 - External Link Indicators
+**Learning:** Emojis are often read inconsistently by screen readers and look unprofessional. External links (like PDF exports) need explicit visual and programmatic indicators to prevent user surprise when a new tab opens.
+**Action:** Replace emoji icons with semantic SVG icons (like `lucide-react`) and always include an `ExternalLink` icon + `sr-only` text "(opens in a new tab)" for buttons that trigger `window.open` or `_blank` links.
