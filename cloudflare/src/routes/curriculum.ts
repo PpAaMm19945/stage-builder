@@ -182,20 +182,6 @@ app.get('/api/catechism', async (c) => {
     }
 });
 
-// ============ R2 ASSET ROUTES ============
-
-// Debug R2 contents
-app.get('/api/r2-debug', async (c) => {
-    try {
-        const prefix = c.req.query('prefix') || '';
-        const list = await c.env.BOOKS_BUCKET.list({ limit: 100, prefix });
-        return c.json(list);
-    } catch (e: any) {
-        // Assuming BOOKS_BUCKET binding exists on Env
-        return c.text(`Error listing bucket: ${e.message}`, 500);
-    }
-});
-
 // ============ LITURGY COMPLETION ROUTES ============
 
 app.post('/api/liturgy/complete', async (c) => {

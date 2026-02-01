@@ -61,3 +61,8 @@
 **Vulnerability:** The `GET /api/debug/auth` endpoint returned metadata about the `JWT_SECRET`, including its length and a 3-character preview. While intended for debugging, this exposes sensitive information about the secret's structure and existence to unauthenticated users (if the endpoint is public) or lower-privilege users.
 **Learning:** Debug endpoints are often overlooked in security reviews. "Metadata" about a secret (length, partial value) is still sensitive information that can aid attackers in brute-force or identification attacks.
 **Prevention:** Never return partial secrets or length in production. If a "check" is needed, return a simple boolean `configured: true` or `exists: true` without any details.
+
+## 2026-07-15 - Unauthenticated R2 Bucket Listing
+**Vulnerability:** A `GET /api/r2-debug` endpoint was left in `curriculum.ts` without any authentication checks, allowing anyone to list the entire contents of the `BOOKS_BUCKET`. This duplicate of the secured `library.ts` functionality was likely a development leftover.
+**Learning:** Redundant code often leads to security gaps. If a feature exists in two places, one will likely be forgotten during security hardening. Public "debug" endpoints in API routers are a major risk as they often bypass standard middleware checks if not explicitly guarded.
+**Prevention:** Audit API routes for "debug", "test", or "temp" keywords. Consolidate functionality into single, well-secured modules (like `admin.ts`). Ensure global authentication middleware blocks access by default, or that every route handler explicitly calls `requireAuth()`.
