@@ -7,6 +7,8 @@ import { BookDocument } from './BookDocument';
 import { Book } from '@/types';
 import { books } from '@/lib/api';
 import { fetchAllHymns, fetchCatechism, HymnData, CatechismData } from '@/lib/book-content';
+import { useBookAssetUrl, useBookPageUrls } from '@/hooks/useBookAssetUrl';
+import { bookManifest } from '@/lib/book-manifest';
 
 interface PDFDownloadButtonProps {
     book: Book;
@@ -23,6 +25,10 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
     const [ready, setReady] = useState(false);
     const [parsedPages, setParsedPages] = useState<string[]>(pages || []);
 
+    // Use hooks to resolve URLs proactively
+    const { data: manifestPageUrls } = useBookPageUrls(book.series, book.id, book.pageCount);
+    const { data: resolvedCover } = useBookAssetUrl(book.series, book.id, 'cover');
+
     // Helper to convert URL to base64
     const imageUrlToBase64 = async (url: string): Promise<string> => {
         try {
@@ -33,35 +39,45 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
             if (!response.ok) {
                 console.warn(`[PDF] Image fetch failed for ${url} (Status: ${response.status}). Trying fallbacks...`);
 
-                // If API proxy URL failed, try direct R2 URL fallbacks
+                // If API proxy URL failed, try manifest resolution first
                 if (url.includes('/api/books/')) {
                     const match = url.match(/\/api\/books\/([^\/]+)\/([^\/]+)\/pages\/(\d+)/);
                     if (match) {
                         const [_, series, bookId, pageNum] = match;
                         const pageNumInt = parseInt(pageNum);
 
-                        // Try multiple common naming patterns for R2
-                        // We try the padded version first as it's most common for image sequences
-                        const fallbackPatterns = [
-                            `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${pageNum}.png`,      // page-01.png
-                            `https://r2.schoolos.io/books/${series}/${bookId}/images/page-${pageNumInt}.png`,   // page-1.png
-                            `https://r2.schoolos.io/books/${series}/${bookId}/page-${pageNum}.png`,             // root/page-01.png
-                            `https://r2.schoolos.io/books/${series}/${bookId}/page-${pageNumInt}.png`,          // root/page-1.png
-                            `https://r2.schoolos.io/books/${series}/${bookId}/images/${pageNum}.png`,           // images/01.png
-                            `https://r2.schoolos.io/books/${series}/${bookId}/${pageNum}.png`                   // root/01.png
-                        ];
+                        // Try manifest resolution
+                        const padded = String(pageNumInt).padStart(2, '0');
+                        const manifestKey = `${series}/${bookId}/pages/${padded}`;
+                        const manifestUrl = await bookManifest.resolve(manifestKey);
 
-                        for (const fallbackUrl of fallbackPatterns) {
-                            console.log('[PDF] Attempting fallback:', fallbackUrl);
-                            try {
-                                const fbResponse = await fetch(fallbackUrl);
-                                if (fbResponse.ok) {
-                                    console.log('[PDF] Fallback success:', fallbackUrl);
-                                    response = fbResponse;
-                                    break;
-                                }
-                            } catch (e) {
-                                // Continue to next fallback
+                        if (manifestUrl) {
+                            console.log('[PDF] Trying manifest URL:', manifestUrl);
+                            const mRes = await fetch(manifestUrl);
+                            if (mRes.ok) {
+                                response = mRes;
+                            }
+                        }
+
+                        // If still failing, try common R2 patterns
+                        if (!response.ok) {
+                            const r2Url = import.meta.env.VITE_R2_PUBLIC_URL || 'https://pub-ca8030f7c94b40f68be9f17bfd8977c0.r2.dev';
+                            const fallbackPatterns = [
+                                `${r2Url}/books/${series}/${bookId}/images/page-${pageNum}.png`,
+                                `${r2Url}/books/${series}/${bookId}/images/page-${pageNumInt}.png`,
+                                `${r2Url}/books/${series}/${bookId}/page-${pageNum}.png`,
+                                `${r2Url}/${series}/${bookId}/pages/${padded}`, // Manifest Key direct
+                            ];
+
+                            for (const fallbackUrl of fallbackPatterns) {
+                                try {
+                                    const fbResponse = await fetch(fallbackUrl);
+                                    if (fbResponse.ok) {
+                                        console.log('[PDF] Fallback success:', fallbackUrl);
+                                        response = fbResponse;
+                                        break;
+                                    }
+                                } catch (e) {}
                             }
                         }
                     }
@@ -103,7 +119,6 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
             }
             // 2. Catechism
             else if (book.renderFormat === 'catechism' || book.series === 'catechism') {
-                // Use pre-fetched data if available, otherwise try to fetch (may fail)
                 if (prefetchedCatechism && prefetchedCatechism.length > 0) {
                     setCatechismData(prefetchedCatechism);
                     contentLoaded = true;
@@ -118,18 +133,23 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
             }
             // 3. Image-based books (try first if pageCount > 0)
             else if (book.pageCount > 0) {
-                const urls = Array.from({ length: book.pageCount }, (_, i) =>
-                    books.getPageUrl(book.series, book.id, i + 1)
-                );
+                // Use manifest URLs if available, otherwise fallback to API construction
+                const urls = (manifestPageUrls && manifestPageUrls.length === book.pageCount)
+                    ? manifestPageUrls
+                    : Array.from({ length: book.pageCount }, (_, i) =>
+                        books.getPageUrl(book.series, book.id, i + 1)
+                    );
 
                 // Try to load cover with fallback
                 let coverBase64 = '';
-                if (book.coverUrl) {
-                    coverBase64 = await imageUrlToBase64(book.coverUrl);
+                const coverUrlToUse = resolvedCover || book.coverUrl;
+
+                if (coverUrlToUse) {
+                    coverBase64 = await imageUrlToBase64(coverUrlToUse);
                 }
 
-                if (!coverBase64) {
-                    // Try API cover URL
+                if (!coverBase64 && !coverUrlToUse) {
+                    // Try API cover URL fallback
                     const apiCoverUrl = books.getCoverUrl(book.series, book.id);
                     coverBase64 = await imageUrlToBase64(apiCoverUrl);
                 }
