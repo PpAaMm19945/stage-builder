@@ -49,11 +49,16 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
 
     // Determine aspect ratio based on book type
     // Picture books (landscape) use 4:3, standard books use 2:3 (portrait)
-    const isLandscape = landscape ||
+    // FORCE "The Paperback Bible" and "Pr. Curtis Knapp" to be Portrait (2:3)
+    // and use object-contain to show the full image without cropping.
+    const seriesLower = book.series?.toLowerCase() || '';
+    const isStrictPortrait = seriesLower.includes('paperback') || seriesLower === 'pastor_curtis_knapp';
+
+    const isLandscape = !isStrictPortrait && (landscape ||
         book.renderFormat === 'image' ||
         book.renderFormat === 'images' ||
-        book.series?.toLowerCase().includes('picture') ||
-        book.series?.toLowerCase().includes('first');
+        seriesLower.includes('picture') ||
+        seriesLower.includes('first'));
 
     const aspectClass = isLandscape ? 'aspect-[4/3]' : 'aspect-[2/3]';
 
@@ -113,7 +118,7 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
                         src={coverUrl}
                         alt={`Cover of ${displayTitle}`}
                         loading="lazy"
-                        className={`h-full w-full object-cover transition-all duration-300 group-hover:brightness-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
+                        className={`h-full w-full ${isStrictPortrait ? 'object-contain' : 'object-cover'} transition-all duration-300 group-hover:brightness-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
                             }`}
                         onLoad={() => setImageLoaded(true)}
                         onError={() => {
