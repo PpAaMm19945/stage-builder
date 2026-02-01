@@ -820,7 +820,7 @@ app.get('/api/books/:series/:bookId/asset/*', async (c) => {
         const assetPath = c.req.path.split('/asset/')[1] || '';
         const bucket = c.env.BOOKS_BUCKET;
 
-        if (!assetPath || assetPath.includes('..') || !isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+        if (!assetPath || !isValidPathSegment(assetPath) || !isValidPathSegment(series) || !isValidPathSegment(bookId)) {
             return c.json({ error: 'Invalid path segment' }, 400);
         }
 
