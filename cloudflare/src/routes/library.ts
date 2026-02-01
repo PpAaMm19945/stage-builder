@@ -572,8 +572,22 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
 // Debug endpoint for cover URL probing
 app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
     try {
+        // Security: Admin access only
+        const authHeader = c.req.header('Authorization');
+        const token = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+        const secret = c.env.ADMIN_SECRET;
+
+        if (!secret || !(await safeCompare(token, secret))) {
+            return c.json({ error: 'Unauthorized' }, 401);
+        }
+
         const series = decodeURIComponent(c.req.param('series'));
         const bookId = decodeURIComponent(c.req.param('bookId'));
+
+        if (!isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+            return c.json({ error: 'Invalid path segment' }, 400);
+        }
+
         const bucket = c.env.BOOKS_BUCKET;
 
         const results: any[] = [];
