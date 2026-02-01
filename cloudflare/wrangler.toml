@@ -45,6 +45,7 @@ ENVIRONMENT = "production"
 # App URLs
 GOOGLE_REDIRECT_URI = "https://stage-builder.antmwes104-1.workers.dev/auth/google/callback"
 FRONTEND_URL = "https://stage-builder-9hh.pages.dev"
+R2_PUBLIC_URL = "https://pub-ca8030f7c94b40f68be9f17bfd8977c0.r2.dev"
 
 # ------------------------
 # AI Gateway configuration

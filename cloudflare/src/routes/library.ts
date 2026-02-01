@@ -63,7 +63,7 @@ function parseAgeRange(ageRange: string): { min: number; max: number } {
 }
 
 // Helper: Get book metadata from R2
-async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string): Promise<BookMetadata | null> {
+async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string, r2PublicUrl?: string): Promise<BookMetadata | null> {
     const manifest = await getManifest(bucket);
 
     // Try manifest first
@@ -81,6 +81,12 @@ async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string)
     const data = await object.json() as any;
     const ageRange = parseAgeRange(data.ageRange || '2-5 years');
 
+    let coverUrl = `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`;
+    const coverKey = manifest[`${series}/${bookId}/cover`];
+    if (r2PublicUrl && coverKey) {
+        coverUrl = `${r2PublicUrl}/${coverKey}`;
+    }
+
     return {
         id: bookId,
         series: series,
@@ -94,7 +100,7 @@ async function getBookMetadata(bucket: R2Bucket, series: string, bookId: string)
         domain: data.domain || 'language',
         learningStage: data.learningStage || 'early-years',
         readingPrompts: data.readingPrompts,
-        coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
+        coverUrl
     };
 }
 
@@ -156,6 +162,7 @@ app.get('/api/books', async (c) => {
         }
 
         const bucket = c.env.BOOKS_BUCKET;
+        const r2PublicUrl = c.env.R2_PUBLIC_URL;
         const books: BookMetadata[] = [];
 
         console.log('Starting robust book listing...');
@@ -177,6 +184,13 @@ app.get('/api/books', async (c) => {
                 if (object) {
                     const data = await object.json() as any;
                     const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+                    let coverUrl = `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`;
+                    const coverKey = manifest[`${series}/${bookId}/cover`];
+                    if (r2PublicUrl && coverKey) {
+                        coverUrl = `${r2PublicUrl}/${coverKey}`;
+                    }
+
                     return {
                         id: bookId,
                         series: series,
@@ -191,7 +205,7 @@ app.get('/api/books', async (c) => {
                         domain: data.domain || 'language',
                         learningStage: data.learningStage || 'early-years',
                         readingPrompts: data.readingPrompts,
-                        coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
+                        coverUrl
                     } as BookMetadata;
                 }
             } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
@@ -243,6 +257,12 @@ app.get('/api/books', async (c) => {
                     const data = await object.json() as any;
                     const ageRange = parseAgeRange(data.ageRange || '2-5 years');
 
+                    let coverUrl = `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`;
+                    const coverKey = manifest[`${seriesName}/${bookId}/cover`];
+                    if (r2PublicUrl && coverKey) {
+                        coverUrl = `${r2PublicUrl}/${coverKey}`;
+                    }
+
                     return {
                         id: bookId,
                         series: seriesName,
@@ -257,7 +277,7 @@ app.get('/api/books', async (c) => {
                         domain: data.domain || 'language',
                         learningStage: data.learningStage || 'early-years',
                         readingPrompts: data.readingPrompts,
-                        coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
+                        coverUrl
                     } as BookMetadata;
                 }
             } catch (e) {
@@ -371,7 +391,7 @@ app.get('/api/series/:seriesId', async (c) => {
              if (seenBooks.has(bookId)) return null;
              seenBooks.add(bookId);
 
-             return getBookMetadata(bucket, seriesId, bookId);
+             return getBookMetadata(bucket, seriesId, bookId, c.env.R2_PUBLIC_URL);
         }));
         books.push(...manifestBooks.filter((b): b is BookMetadata => b !== null));
 
@@ -383,7 +403,7 @@ app.get('/api/series/:seriesId', async (c) => {
         const legacyBooks = await Promise.all(bookPrefixes.map(async (bookPrefix) => {
             const bookId = bookPrefix.replace(`${prefix}/`, '').replace('/', '');
             if (seenBooks.has(bookId)) return null;
-            return getBookMetadata(bucket, seriesId, bookId);
+            return getBookMetadata(bucket, seriesId, bookId, c.env.R2_PUBLIC_URL);
         }));
 
         books.push(...legacyBooks.filter((b): b is BookMetadata => b !== null));
@@ -433,7 +453,7 @@ app.get('/api/books/:series/:bookId', async (c) => {
             return c.json({ error: 'Invalid path segment' }, 400);
         }
 
-        const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId);
+        const metadata = await getBookMetadata(c.env.BOOKS_BUCKET, series, bookId, c.env.R2_PUBLIC_URL);
 
         if (!metadata) {
             return c.json({ error: 'Book not found' }, 404);
@@ -445,7 +465,8 @@ app.get('/api/books/:series/:bookId', async (c) => {
     }
 });
 
-// Get book cover image (Robust)
+/*
+// Get book cover image (Robust) - DEPRECATED: Use direct R2 access via manifest
 app.get('/api/books/:series/:bookId/cover', async (c) => {
     try {
         const series = decodeURIComponent(c.req.param('series'));
@@ -546,6 +567,7 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
         return safeError(c, error);
     }
 });
+*/
 
 // Debug endpoint for cover URL probing
 app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
@@ -611,7 +633,8 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
     }
 });
 
-// Get book page image (with CORS for cross-origin requests)
+/*
+// Get book page image (with CORS for cross-origin requests) - DEPRECATED
 app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     try {
         const series = decodeURIComponent(c.req.param('series'));
@@ -687,8 +710,10 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
         return safeError(c, error);
     }
 });
+*/
 
-// Get book PDF
+/*
+// Get book PDF - DEPRECATED
 app.get('/api/books/:series/:bookId/pdf', async (c) => {
     try {
         const series = decodeURIComponent(c.req.param('series'));
@@ -784,8 +809,10 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
         return safeError(c, error);
     }
 });
+*/
 
-// Get any book asset
+/*
+// Get any book asset - DEPRECATED
 app.get('/api/books/:series/:bookId/asset/*', async (c) => {
     try {
         const series = decodeURIComponent(c.req.param('series'));
@@ -818,6 +845,7 @@ app.get('/api/books/:series/:bookId/asset/*', async (c) => {
         return safeError(c, error);
     }
 });
+*/
 
 // Log reading session completion
 app.post('/api/reading/complete', async (c) => {

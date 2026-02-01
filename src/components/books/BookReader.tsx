@@ -26,7 +26,8 @@ import {
 import { X, CaretLeft, CaretRight, BookOpenText, ArrowsOutSimple, ArrowsInSimple, CircleNotch, DownloadSimple } from '@phosphor-icons/react';
 // PDFDownloadButton removed to prevent React #310 error
 import { useAuth } from '@/contexts/AuthContext';
-import { books, reading, progress } from '@/lib/api';
+import { reading, progress } from '@/lib/api';
+import { useBookAssetUrl, useBookPageUrls } from '@/hooks/useBookAssetUrl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { MarkdownBookSlide } from './MarkdownBookSlide';
 import { toast } from 'sonner';
@@ -56,33 +57,32 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const [initialProgressChecked, setInitialProgressChecked] = useState(false);
     const [restoredPage, setRestoredPage] = useState<number | null>(null);
     const [isFullscreen, setIsFullscreen] = useState(false);
+    const [showControls, setShowControls] = useState(true);
     const dialogRef = useRef<HTMLDivElement>(null);
     const { user, children: authChildren } = useAuth();
     const queryClient = useQueryClient();
 
     // Determine if we need to prompt for child selection
-    // If childrenIds provided (from daily suggestions), use those
-    // If opened from sidebar (no childrenIds), need to prompt if multiple children
     const needsChildSelection = !childrenIds && authChildren.length > 1;
 
-    // Fetch markdown content if needed - use API route for consistent CORS handling
+    // Fetch markdown content if needed
+    const { data: markdownUrl } = useBookAssetUrl(book?.series || '', book?.id || '', 'asset', { assetPath: 'content.md' });
+
     const { data: markdownContent } = useQuery({
-        queryKey: ['book-content', book?.id],
+        queryKey: ['book-content', book?.id, markdownUrl],
         queryFn: async () => {
-            if (!book?.contentPath) return null;
+            if (!book?.contentPath && !markdownUrl) return null;
+            const url = book?.contentPath || markdownUrl;
+            if (!url) return null;
 
-            // Use the new API asset route for fetching markdown content
-            const url = books.getAssetUrl(book.series, book.id, 'content.md');
-            const res = await fetch(url);
-
-            if (!res.ok) {
-                // Try fallback location (images folder)
-                const urlFallback = books.getAssetUrl(book.series, book.id, 'images/content.md');
-                const res2 = await fetch(urlFallback);
-                if (!res2.ok) throw new Error('Failed to load book content');
-                return res2.text();
+            try {
+                const res = await fetch(url);
+                if (!res.ok) throw new Error('Failed to load book content');
+                return await res.text();
+            } catch (e) {
+                console.error("Markdown fetch error:", e);
+                return null;
             }
-            return res.text();
         },
         enabled: !!book && (book.renderFormat === 'markdown' || book.renderFormat === 'hybrid')
     });
@@ -106,10 +106,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     // Restore page effect
     useEffect(() => {
         if (restoredPage && api && restoredPage > 1 && open) {
-            // Ask user? Or just restore? 
-            // Spec says "Show 'Continue from page X?' on reopen".
-            // Implementation detail: For now, we can toast or auto-jump.
-            // Let's us toast with action to jump.
             toast.info(`You were on page ${restoredPage}`, {
                 action: {
                     label: 'Jump there',
@@ -117,7 +113,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                 },
                 duration: 8000
             });
-            setRestoredPage(null); // Clear after notifying
+            setRestoredPage(null);
         }
     }, [restoredPage, api, open]);
 
@@ -128,7 +124,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             await progress.save(book.id, {
                 current_page: current,
                 total_pages: count || 0
-            }, 'book'); // 'book' type
+            }, 'book');
         },
         onSuccess: () => {
             toast.success("Progress saved");
@@ -148,11 +144,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         }
     });
 
-    // Completion mutation - now accepts optional override for childrenIds
     const completeMutation = useMutation({
         mutationFn: async (selectedChildrenIds?: string[]) => {
             if (!book) return;
-            // Use passed selectedChildrenIds, or fallback to prop childrenIds, or all children
             const idsToUse = selectedChildrenIds ?? childrenIds ?? authChildren.map(c => c.id);
             await reading.complete({
                 series: book.series,
@@ -172,10 +166,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         }
     });
 
-    // ⚡ Bolt: Memoize markdown parsing to prevent extra render cycle
+    // Memoize markdown parsing
     const parsedPages = useMemo(() => {
         if (markdownContent) {
-            // Split by "---" for pages
             return markdownContent.split(/\n---\n/);
         }
         return [];
@@ -198,11 +191,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         });
     }, [api]);
 
-    // Listen for fullscreen exit (e.g., pressing Esc)
-    // MOVED: This effect must be before the early return to satisfy Rules of Hooks
+    // Fullscreen listener
     useEffect(() => {
         const handleFullscreenChange = () => {
-            setIsFullscreen(!!document.fullscreenElement);
+            const isFull = !!document.fullscreenElement;
+            setIsFullscreen(isFull);
+            if (isFull) {
+                setShowControls(false); // Auto-hide controls on enter fullscreen
+            } else {
+                setShowControls(true);
+            }
         };
         document.addEventListener('fullscreenchange', handleFullscreenChange);
         return () => document.removeEventListener('fullscreenchange', handleFullscreenChange);
@@ -213,12 +211,15 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         if (!open || !api || showChildSelection) return;
 
         const handleKeyDown = (e: KeyboardEvent) => {
-            // Respect default prevented events (e.g. if focus is already in Carousel)
             if (e.defaultPrevented) return;
 
             if (e.key === 'ArrowLeft') {
                 api.scrollPrev();
             } else if (e.key === 'ArrowRight') {
+                api.scrollNext();
+            } else if (e.key === ' ') {
+                // Toggle controls on space if fullscreen? Or scroll?
+                // Standard is scroll/next.
                 api.scrollNext();
             }
         };
@@ -227,40 +228,17 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         return () => window.removeEventListener('keydown', handleKeyDown);
     }, [open, api, showChildSelection]);
 
-    // Fetch manifest for 'images' format - use API route for consistent CORS handling
-    const { data: manifestPages } = useQuery({
-        queryKey: ['book-manifest', book?.id],
-        queryFn: async () => {
-            if (!book?.contentPath || (book.renderFormat !== 'image' && book.renderFormat !== 'images')) return null;
+    // Use hooks for asset URLs
+    const { data: pageUrls } = useBookPageUrls(book?.series || '', book?.id || '', book?.pageCount || 0);
+    const { data: resolvedCover } = useBookAssetUrl(book?.series || '', book?.id || '', 'cover');
+    const { data: resolvedPdf } = useBookAssetUrl(book?.series || '', book?.id || '', 'pdf');
 
-            // If contentPath is a full URL, use it directly
-            // Otherwise use the API asset route
-            const url = book.contentPath.startsWith('http')
-                ? book.contentPath
-                : books.getAssetUrl(book.series, book.id, 'manifest.json');
-
-            const res = await fetch(url);
-            if (!res.ok) {
-                // Fallback: Return null to use legacy indexed images
-                return null;
-            }
-            const data = await res.json();
-            return data.pages as string[]; // Expecting { pages: ["url1", "url2"] }
-        },
-        enabled: !!book && (book.renderFormat === 'image' || book.renderFormat === 'images')
-    });
-
-    // Generate page URLs:
-    // 1. Use manifest if available
-    // 2. Use legacy indexed generation if no manifest
     const imagePages = useMemo(() => {
         if (book && (book.renderFormat === 'image' || book.renderFormat === 'images' || !book.renderFormat)) {
-            return (manifestPages || Array.from({ length: book.pageCount }, (_, i) => {
-                return books.getPageUrl(book.series, book.id, i + 1);
-            }));
+            return pageUrls || [];
         }
         return [];
-    }, [book, manifestPages]);
+    }, [book, pageUrls]);
 
     // Filter out failed images from display
     const validImagePages = useMemo(() =>
@@ -275,14 +253,11 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     }, []);
 
     const handleCloseRequest = async () => {
-        // If finished, close handling is standard
         if (current === count || current === totalPages) {
             handleCloseStandard();
             return;
         }
 
-        // Check if "incomplete but read something"
-        // E.g. > 1 page read (excluding cover)
         if (current > 1 && current < (count || totalPages)) {
             setShowFinishDialog(true);
         } else {
@@ -291,34 +266,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     };
 
     const handleCloseStandard = async () => {
-        // Standard logic from before (auto-complete if valid)
-        // Auto-complete trigger if activityId is present (planned activity)
-        // If > 2 pages viewed OR it's a PDF (where we can't track pages well, but user opened it)
-        const isProgressive = activityId && (pagesViewed.size >= 2 || isPdf);
-
-        if (isProgressive && !isPdf) { // Only auto current for PDF or if near end? 
-            // Actually, if they close early via X, we shouldn't auto-complete unless at end.
-            // The old logic was aggressive.
-            // New logic: If close at end -> Complete. If close middle -> Dialog.
-            // If close start (<2 pages) -> Just close.
-            // So here we likely just close.
-        }
-
-        // For PDF, we still might want auto-complete if they spent time?
-        // But let's rely on the PDF "Finish Book" button for explicit completion.
-
         handleCloseComplete();
     };
 
     const handleCloseComplete = () => {
-        // Reset state
         setShowPrompts(false);
         setFailedImages(new Set());
         setPagesViewed(new Set());
         setShowFinishDialog(false);
         setRestoredPage(null);
         setInitialProgressChecked(false);
-
+        if (document.fullscreenElement) {
+            document.exitFullscreen().catch(() => {});
+        }
         onOpenChange(false);
     };
 
@@ -328,16 +288,15 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const isImages = book.renderFormat === 'image' || book.renderFormat === 'images';
     const isPdf = book.renderFormat === 'pdf';
 
-    // Total pages calculation
     const totalPages = isMarkdown ? parsedPages.length : imagePages.length;
 
-    // Use external cover if available, otherwise use API route
-    const coverUrl = (book.coverUrl && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')))
+    // Cover URL logic
+    const coverUrl = (book.coverUrl && !book.coverUrl.includes('/api/books/') && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')))
         ? book.coverUrl
-        : books.getCoverUrl(book.series, book.id);
+        : (resolvedCover || '');
 
-    // PDF URL: use book.pdfUrl if set, otherwise use API route
-    const pdfUrl = book.pdfUrl || books.getPdfUrl(book.series, book.id);
+    // PDF URL logic
+    const pdfUrl = book.pdfUrl || resolvedPdf || '';
 
     const showPdfButton = !!book.downloadUrl || book.renderFormat === 'pdf' ||
         book.renderFormat === 'hymnal' ||
@@ -345,15 +304,12 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         book.series === 'reformed-hymns' ||
         book.series === 'catechism';
 
-    // Fullscreen toggle handler
     const toggleFullscreen = async () => {
         try {
             if (!document.fullscreenElement && dialogRef.current) {
                 await dialogRef.current.requestFullscreen();
-                setIsFullscreen(true);
             } else if (document.exitFullscreen) {
                 await document.exitFullscreen();
-                setIsFullscreen(false);
             }
         } catch (err) {
             console.log('Fullscreen not supported:', err);
@@ -368,11 +324,16 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                     className="w-full h-[100dvh] sm:h-[90vh] sm:max-w-[95vw] max-w-none p-0 flex flex-col bg-black/95 border-none sm:rounded-lg rounded-none"
                     hideCloseButton
                 >
-                    {/* Header */}
-                    <div className="flex items-center justify-between p-2 sm:p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
+                    {/* Header - Overlaid and toggleable in fullscreen */}
+                    <div
+                        className={cn(
+                            "flex items-center justify-between p-2 sm:p-4 text-white z-50 bg-gradient-to-b from-black/80 to-transparent transition-all duration-300",
+                            isFullscreen ? "absolute top-0 left-0 right-0" : "",
+                            isFullscreen && !showControls ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
+                        )}
+                    >
                         <div>
                             <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
-                            {/* Hide page count for PDF since we don't know it */}
                             {!isPdf && (
                                 <DialogDescription className="text-gray-400 text-xs">
                                     Page {current} of {count || (validImagePages.length > 0 ? validImagePages.length + 2 : totalPages + 2)}
@@ -398,7 +359,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     </TooltipContent>
                                 </Tooltip>
                             )}
-                            {/* Fullscreen toggle for mobile/tablet */}
+
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
@@ -462,7 +423,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                     <div className="flex-1 flex items-center justify-center relative overflow-hidden bg-black">
                         {isPdf ? (
                             <div className="w-full h-full flex flex-col items-center justify-center relative bg-background/95 p-8">
-                                {/* PDF opens in new tab - iframe embedding blocked by CORS/CSP */}
                                 <div className="text-center max-w-md space-y-6">
                                     <div className="w-20 h-20 mx-auto rounded-2xl bg-primary/10 flex items-center justify-center">
                                         <BookOpenText className="w-10 h-10 text-primary" />
@@ -483,7 +443,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     </Button>
                                 </div>
 
-                                {/* Quick finish button for PDFs since we don't track page turns */}
                                 <div className="absolute bottom-6 right-6 z-20">
                                     <Button
                                         size="lg"
@@ -511,7 +470,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                         ) : (
                             <Carousel setApi={setApi} className="w-full max-w-5xl h-full flex items-center">
                                 <CarouselContent>
-                                    {/* Cover Slide (Always Show Image Cover) */}
+                                    {/* Cover Slide */}
                                     <CarouselItem className="flex items-center justify-center h-full">
                                         <div className="relative w-full h-full max-h-[80dvh] sm:max-h-[70vh] max-w-3xl flex items-center justify-center">
                                             <img
@@ -519,9 +478,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                 alt="Cover"
                                                 className="w-full h-full object-contain drop-shadow-2xl"
                                                 onError={(e) => {
-                                                    // Fallback to placeholder service if R2 missing
                                                     e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
                                                 }}
+                                                onClick={() => isFullscreen && setShowControls(!showControls)}
                                             />
                                         </div>
                                     </CarouselItem>
@@ -532,7 +491,10 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
                                                 {isNearby ? (
-                                                    <div className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden">
+                                                    <div
+                                                        className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden"
+                                                        onClick={() => isFullscreen && setShowControls(!showControls)}
+                                                    >
                                                         <MarkdownBookSlide
                                                             content={content}
                                                             styleProfile={book.styleProfile}
@@ -549,7 +511,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
 
                                     {/* Pages - Image Mode */}
                                     {!isMarkdown && imagePages.map((pageUrl, index) => {
-                                        // Skip failed images entirely
                                         if (failedImages.has(index)) return null;
 
                                         const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
@@ -560,13 +521,18 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
                                                 {isNearby ? (
-                                                    <BookPageImage
-                                                        src={pageUrl}
-                                                        alt={`Page ${index + 1}`}
-                                                        index={index}
-                                                        onImageError={handleImageError}
-                                                        prompt={prompt?.prompt}
-                                                    />
+                                                    <div
+                                                        className="w-full h-full flex items-center justify-center"
+                                                        onClick={() => isFullscreen && setShowControls(!showControls)}
+                                                    >
+                                                        <BookPageImage
+                                                            src={pageUrl}
+                                                            alt={`Page ${index + 1}`}
+                                                            index={index}
+                                                            onImageError={handleImageError}
+                                                            prompt={prompt?.prompt}
+                                                        />
+                                                    </div>
                                                 ) : (
                                                     <div className="w-full h-full" />
                                                 )}
@@ -603,7 +569,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     </CarouselItem>
                                 </CarouselContent>
 
-                                {/* Tap zones for navigation */}
+                                {/* Tap zones for navigation - Hidden in fullscreen if controls hidden? Or always active? */}
+                                {/* In fullscreen, tap center to toggle controls. Left/Right to nav. */}
                                 <div
                                     className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
                                     onClick={() => api?.scrollPrev()}
@@ -614,23 +581,29 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     onClick={() => api?.scrollNext()}
                                     aria-hidden="true"
                                 />
+                                {/* Center tap zone for controls */}
+                                <div
+                                    className="absolute left-[20%] right-[20%] top-0 bottom-0 z-10 cursor-pointer"
+                                    onClick={() => isFullscreen && setShowControls(prev => !prev)}
+                                    aria-hidden="true"
+                                />
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <CarouselPrevious className="left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                        <CarouselPrevious className={cn(
+                                            "left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                            isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
+                                        )} />
                                     </TooltipTrigger>
-                                    <TooltipContent side="right" className="z-[60]">
-                                        <p>Previous Page <span className="text-xs text-muted-foreground ml-1">←</span></p>
-                                    </TooltipContent>
                                 </Tooltip>
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <CarouselNext className="right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20" />
+                                        <CarouselNext className={cn(
+                                            "right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                            isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
+                                        )} />
                                     </TooltipTrigger>
-                                    <TooltipContent side="left" className="z-[60]">
-                                        <p>Next Page <span className="text-xs text-muted-foreground ml-1">→</span></p>
-                                    </TooltipContent>
                                 </Tooltip>
                             </Carousel>
                         )}
@@ -638,7 +611,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                 </DialogContent>
             </Dialog>
 
-            {/* Child Selection Modal - shown when completing book opened from sidebar with multiple children */}
             <ChildSelectionModal
                 open={showChildSelection}
                 onOpenChange={setShowChildSelection}
@@ -647,7 +619,6 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                 isPending={completeMutation.isPending}
             />
 
-            {/* Didn't Finish Dialog */}
             <Dialog open={showFinishDialog} onOpenChange={setShowFinishDialog}>
                 <DialogContent>
                     <DialogHeader>
