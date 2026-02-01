@@ -15,26 +15,9 @@ export class Cortex {
             return this.runSystem1(message, history, context, actionPayload);
         }
 
-        // 1. Analyze Complexity (Heuristic)
-        const isComplex = this.isComplexRequest(message, history);
-
-        // 2. Route
-        if (isComplex) {
-            console.log('[Cortex] Routing to System 2 (Gemini)');
-            const planner = new GeminiPlanner(this.env);
-            return planner.chat(message, history, context);
-        } else {
-            console.log('[Cortex] Routing to System 1 (Llama)');
-            return this.runSystem1(message, history, context);
-        }
-    }
-
-    private isComplexRequest(message: string, history: any[]): boolean {
-        const complexKeywords = ['plan', 'schedule', 'week', 'curriculum', 'why', 'explain', 'create'];
-        const isLong = message.length > 200;
-        const hasKeyword = complexKeywords.some(w => message.toLowerCase().includes(w));
-
-        return isLong || hasKeyword;
+        // 1. Route Request (System 1)
+        console.log('[Cortex] Analyzing Intent (Router-First)');
+        return this.runSystem1(message, history, context);
     }
 
     private async runSystem1(message: string, history: any[], context: any, actionPayload?: any): Promise<ReadableStream> {
@@ -42,9 +25,16 @@ export class Cortex {
 
         let route;
         if (actionPayload) {
-            route = { intent: 'EXECUTE_ACTION', actionPayload };
+            route = { intent: 'EXECUTE_ACTION', actionPayload } as any;
         } else {
             route = await router.routeRequest(message, context);
+        }
+
+        // 2. Complex Hand-off (System 2)
+        if (route.intent === 'COMPLEX_QUERY') {
+            console.log('[Cortex] Intent is COMPLEX_QUERY -> Handing off to Gemini Planner');
+            const planner = new GeminiPlanner(this.env);
+            return planner.chat(message, history, context);
         }
 
         const encoder = new TextEncoder();
@@ -80,7 +70,7 @@ export class Cortex {
             return new ReadableStream({
                 start(controller) {
                     controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request...", status: "active" })}\n\n`));
-                    
+
                     const changes = [];
                     if (route.updates?.minutes) changes.push(`set morning time to ${route.updates.minutes} min`);
                     if (route.updates?.days) changes.push(`set days to ${route.updates.days.join(', ')}`);
@@ -93,7 +83,7 @@ export class Cortex {
                     };
 
                     controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request", status: "complete" })}\n\n`));
-                    
+
                     const jsonBlock = `[ACTION_PENDING]${JSON.stringify(actionPayload)}[ACTION_PENDING]`;
                     controller.enqueue(encoder.encode(`data: ${jsonBlock}\n\n`));
                     controller.close();
@@ -105,7 +95,7 @@ export class Cortex {
             return new ReadableStream({
                 start(controller) {
                     controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Reviewing request...", status: "active" })}\n\n`));
-                    
+
                     const actionPayload = {
                         type: 'TOGGLE_BASKET_ITEM',
                         data: route.updates,
@@ -169,7 +159,7 @@ export class Cortex {
                     }
 
                     controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Action verified", status: "complete" })}\n\n`));
-                    
+
                     // 2. Execute
                     try {
                         if (payload.type === 'UPDATE_PREFERENCES') {
@@ -177,20 +167,20 @@ export class Cortex {
                             await cortex.executeUpdatePreferences(context.userState.id, payload.data);
                             controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Preferences saved", status: "complete" })}\n\n`));
                             controller.enqueue(encoder.encode(`data: Done! Your settings have been updated.`));
-                        } 
+                        }
                         else if (payload.type === 'TOGGLE_BASKET_ITEM') {
-                             controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Updating basket...", status: "active" })}\n\n`));
-                             await cortex.executeToggleBasket(context.userState.id, payload.data);
-                             controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Basket updated", status: "complete" })}\n\n`));
-                             controller.enqueue(encoder.encode(`data: Done! Item updated.`));
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Updating basket...", status: "active" })}\n\n`));
+                            await cortex.executeToggleBasket(context.userState.id, payload.data);
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Basket updated", status: "complete" })}\n\n`));
+                            controller.enqueue(encoder.encode(`data: Done! Item updated.`));
                         }
                         else {
                             controller.enqueue(encoder.encode(`data: I don't know how to execute that action type.`));
                         }
                     } catch (e) {
-                         console.error("Exec Error", e);
-                         controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Execution failed", status: "error" })}\n\n`));
-                         controller.enqueue(encoder.encode(`data: Something went wrong while saving.`));
+                        console.error("Exec Error", e);
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 2, label: "Execution failed", status: "error" })}\n\n`));
+                        controller.enqueue(encoder.encode(`data: Something went wrong while saving.`));
                     }
                     controller.close();
                 }
@@ -455,7 +445,7 @@ INSTRUCTIONS
     // EXECUTION HELPERS
     // ==========================================
 
-    private async executeUpdatePreferences(userId: string, updates: any) {
+    public async executeUpdatePreferences(userId: string, updates: any) {
         // 1. Get current
         const existing = await this.env.DB.prepare(
             'SELECT * FROM family_preferences WHERE parent_id = ?'
@@ -488,7 +478,7 @@ INSTRUCTIONS
         }
     }
 
-    private async executeToggleBasket(userId: string, updates: any) {
+    public async executeToggleBasket(userId: string, updates: any) {
         const itemMap: any = { 'hymns': 'liturgy_enabled', 'catechism': 'liturgy_enabled', 'scripture': 'liturgy_enabled' };
         const col = itemMap[updates?.item || ''] || 'activities_enabled';
         const val = updates?.action === 'disable' ? 0 : 1;

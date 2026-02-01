@@ -1,7 +1,7 @@
 
 import { Env } from '../types';
 
-export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GET_TODAY_SCHEDULE' | 'GENERAL_CHAT' | 'UPDATE_PREFERENCES' | 'TOGGLE_BASKET_ITEM' | 'REGENERATE_PLAN' | 'EXECUTE_ACTION';
+export type IntentType = 'SEARCH_BOOKS' | 'SEARCH_ACTIVITIES' | 'ADJUST_SCHEDULE' | 'GET_TODAY_SCHEDULE' | 'GENERAL_CHAT' | 'UPDATE_PREFERENCES' | 'TOGGLE_BASKET_ITEM' | 'REGENERATE_PLAN' | 'EXECUTE_ACTION' | 'COMPLEX_QUERY';
 
 export interface RouteResult {
     intent: IntentType;
@@ -41,6 +41,7 @@ export class AiRouter {
         7. REGENERATE_PLAN: when user PROPOSES to create a new weekly plan.
         8. EXECUTE_ACTION: ONLY when the user says "CONFIRM", "YES", or sends a specific JSON command to execute a pending action.
         9. GENERAL_CHAT: for greetings, parenting advice, philosophy, or questions.
+        10. COMPLEX_QUERY: for requests requiring deep reasoning, explanations ("Why is this good?"), or creative generation ("Create a customized plan").
 
         CONTEXT:
         Child Ages (Months): ${JSON.stringify(childrenAges)}
@@ -59,7 +60,7 @@ export class AiRouter {
         - "Change morning time to 40 minutes" -> { "intent": "UPDATE_PREFERENCES", "updates": { "minutes": 40, "period": "morning" } }
         - "Turn off hymns" -> { "intent": "TOGGLE_BASKET_ITEM", "updates": { "item": "hymns", "action": "disable" } }
         - "CONFIRM_ACTION {\"task\":\"update_prefs\"}" -> { "intent": "EXECUTE_ACTION", "actionPayload": {"task":"update_prefs"} }
-        - "Yes, please do it" -> { "intent": "EXECUTE_ACTION" }
+        - "Why do we teach catechism?" -> { "intent": "COMPLEX_QUERY" }
         `;
 
         try {

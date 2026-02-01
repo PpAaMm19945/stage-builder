@@ -120,13 +120,21 @@ app.post('/api/chat/confirm', async (c) => {
         const data = JSON.parse(action.action_data);
 
         if (action.action_type === 'schedule_change') {
-            // Apply changes to weekly plan
-            // TODO: Load plan, modify, save
+            // Deprecated path? Or maybe explicitly requested in some legacy flows
+            // Ideally we map this to updatePreferences too if the payload matches
         } else if (action.action_type === 'skip_activity') {
             await c.env.DB.prepare(`
                 INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status)
                 VALUES (?, ?, 'unknown', ?, ?, 'skipped')
             `).bind(crypto.randomUUID(), user.household_id, data.activity_id, new Date().toISOString().split('T')[0]).run();
+        } else if (action.action_type === 'UPDATE_PREFERENCES') {
+            // [FIX] Execute preference update
+            const cortex = new Cortex(c.env);
+            await cortex.executeUpdatePreferences(user.id, data);
+        } else if (action.action_type === 'TOGGLE_BASKET_ITEM') {
+            // [FIX] Execute basket toggle
+            const cortex = new Cortex(c.env);
+            await cortex.executeToggleBasket(user.id, data);
         }
 
         // Update log status
