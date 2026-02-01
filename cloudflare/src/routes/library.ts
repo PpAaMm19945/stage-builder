@@ -487,7 +487,6 @@ app.get('/api/books/:series/:bookId', async (c) => {
     }
 });
 
-/*
 // Get book cover image (Robust) - DEPRECATED: Use direct R2 access via manifest
 app.get('/api/books/:series/:bookId/cover', async (c) => {
     try {
@@ -589,7 +588,6 @@ app.get('/api/books/:series/:bookId/cover', async (c) => {
         return safeError(c, error);
     }
 });
-*/
 
 // Debug endpoint for cover URL probing
 app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
@@ -669,7 +667,6 @@ app.get('/api/books/:series/:bookId/cover/debug', async (c) => {
     }
 });
 
-/*
 // Get book page image (with CORS for cross-origin requests) - DEPRECATED
 app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
     try {
@@ -746,9 +743,7 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
         return safeError(c, error);
     }
 });
-*/
 
-/*
 // Get book PDF - DEPRECATED
 app.get('/api/books/:series/:bookId/pdf', async (c) => {
     try {
@@ -845,9 +840,7 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
         return safeError(c, error);
     }
 });
-*/
 
-/*
 // Get any book asset - DEPRECATED
 app.get('/api/books/:series/:bookId/asset/*', async (c) => {
     try {
@@ -881,7 +874,6 @@ app.get('/api/books/:series/:bookId/asset/*', async (c) => {
         return safeError(c, error);
     }
 });
-*/
 
 // Log reading session completion
 app.post('/api/reading/complete', async (c) => {
