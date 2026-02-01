@@ -41,3 +41,7 @@
 ## 2026-01-22 - Shadcn Card Interactivity
 **Learning:** The `Card` component is semantically a `div`. When used as a clickable list item (like in ActivityBrowser), it requires manual addition of `role="button"`, `tabIndex={0}`, and `onKeyDown` to be accessible.
 **Action:** Always treat clickable Cards as custom buttons and apply the "List Item Keyboard Accessibility" pattern (2026-07-10).
+
+## 2026-05-26 - External Link Indicators
+**Learning:** Buttons that trigger external actions (like downloads or new tabs) should visually and programmatically indicate this behavior. Emojis are inconsistent and less accessible than SVG icons.
+**Action:** Use `ExternalLink` icon and `sr-only` text "(opens in a new tab)" for all actions that leave the current context.
