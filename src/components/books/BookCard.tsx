@@ -76,6 +76,22 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         ? 'h-[120px] sm:h-[150px] md:h-[180px]'  // Picture books: shorter on mobile
         : 'h-[150px] sm:h-[190px] md:h-[240px]'; // Portrait books: taller for visibility
 
+    // Visual styles logic:
+    // For "Strict Portrait" books (Paperback Bible, Curtis Knapp), we want a "floating" look:
+    // - No container border/background/shadow
+    // - No overflow hidden (so shadow can bleed)
+    // - Shadow applied to the image itself
+    // - Gradient overlay removed to avoid artifacts
+    const containerBaseClasses = `${aspectClass} ${heightClass} w-auto relative rounded-lg transition-all duration-300`;
+    const containerClasses = isStrictPortrait
+        ? `${containerBaseClasses} bg-transparent`
+        : `${containerBaseClasses} overflow-hidden shadow-md border border-border/30 bg-muted group-hover:shadow-xl`;
+
+    const imgBaseClasses = `h-full w-full transition-all duration-300 group-hover:brightness-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'}`;
+    const imgClasses = isStrictPortrait
+        ? `${imgBaseClasses} object-contain drop-shadow-md rounded-lg`
+        : `${imgBaseClasses} object-cover`;
+
     return (
         <div
             className="group relative cursor-pointer flex flex-col gap-2 transition-all duration-300 hover:scale-[1.05] md:hover:scale-[1.1] hover:z-10 active:scale-[0.98] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 focus-visible:ring-offset-background rounded-lg w-fit"
@@ -86,7 +102,7 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
             onKeyDown={handleKeyDown}
         >
             {/* Cover Image Container - Fixed height, width derives from aspect ratio */}
-            <div className={`${aspectClass} ${heightClass} w-auto relative overflow-hidden rounded-lg shadow-md border border-border/30 bg-muted group-hover:shadow-xl transition-all duration-300`}>
+            <div className={containerClasses}>
                 {/* Skeleton loader */}
                 {(!imageLoaded || !coverUrl) && !imageError && (
                     <div className="absolute inset-0">
@@ -118,8 +134,7 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
                         src={coverUrl}
                         alt={`Cover of ${displayTitle}`}
                         loading="lazy"
-                        className={`h-full w-full ${isStrictPortrait ? 'object-contain' : 'object-cover'} transition-all duration-300 group-hover:brightness-105 ${imageLoaded && !imageError ? 'opacity-100' : 'opacity-0'
-                            }`}
+                        className={imgClasses}
                         onLoad={() => setImageLoaded(true)}
                         onError={() => {
                             setImageError(true);
@@ -128,8 +143,10 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
                     />
                 )}
 
-                {/* Subtle gradient overlay for depth */}
-                <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                {/* Subtle gradient overlay for depth - only for standard cards */}
+                {!isStrictPortrait && (
+                    <div className="absolute inset-0 bg-gradient-to-t from-black/20 via-transparent to-transparent pointer-events-none" />
+                )}
             </div>
 
             {/* Book Info */}
