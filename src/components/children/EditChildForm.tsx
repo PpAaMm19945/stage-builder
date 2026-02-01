@@ -15,7 +15,7 @@ import {
     DialogTitle,
 } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { Loader2, Pencil, GraduationCap } from 'lucide-react';
+import { Loader2, Pencil, GraduationCap, FileText, ExternalLink } from 'lucide-react';
 import type { Student, PaceOverrides, PaceLevel, PaceSubject } from '@/types';
 import { IndependenceSettings } from '../settings/IndependenceSettings';
 import { PaceOverrideSettings } from '../settings/PaceOverrideSettings';
@@ -161,8 +161,12 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
                             const url = `${API_URL}/api/export/transcript/${child.id}?token=${token}`;
                             window.open(url, '_blank');
                         }}
+                        className="gap-2"
                     >
-                        📄 Export Transcript
+                        <FileText className="h-4 w-4" />
+                        Export Transcript
+                        <ExternalLink className="h-3 w-3 opacity-50 ml-1" />
+                        <span className="sr-only">(opens in a new tab)</span>
                     </Button>
                     <Button
                         variant="outline"
@@ -172,8 +176,12 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
                             const url = `${API_URL}/api/export/diploma/${child.id}?token=${token}`;
                             window.open(url, '_blank');
                         }}
+                        className="gap-2"
                     >
-                        🎓 Export Diploma
+                        <GraduationCap className="h-4 w-4" />
+                        Export Diploma
+                        <ExternalLink className="h-3 w-3 opacity-50 ml-1" />
+                        <span className="sr-only">(opens in a new tab)</span>
                     </Button>
                 </div>
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-4 pt-4">
@@ -244,8 +252,9 @@ export function EditChildForm({ child, open, onOpenChange, onSuccess }: EditChil
                                 Graduate Student
                             </Button>
                             {watch('is_graduated') && (
-                                <p className="text-xs text-indigo-600 mt-2 text-center font-medium">
-                                    🎓 Marked for Graduation upon save.
+                                <p className="text-xs text-indigo-600 mt-2 text-center font-medium flex items-center justify-center gap-1">
+                                    <GraduationCap className="h-3 w-3" />
+                                    Marked for Graduation upon save.
                                 </p>
                             )}
                         </div>
