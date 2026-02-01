@@ -32,6 +32,7 @@ export function BottomNav() {
                         <Link
                             key={item.path}
                             to={item.path}
+                            aria-current={isActive ? 'page' : undefined}
                             className={cn(
                                 "flex flex-col items-center justify-center flex-1 h-full gap-1 transition-colors",
                                 isActive
