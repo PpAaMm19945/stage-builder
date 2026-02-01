@@ -17,12 +17,16 @@ let MANIFEST_CACHE: {
 } | null = null;
 const MANIFEST_TTL = 300 * 1000; // 5 minutes
 
+let MANIFEST_FETCH_PROMISE: Promise<Record<string, string>> | null = null;
+
 // Book List Cache
 let BOOKS_CACHE: {
     data: BookMetadata[];
     timestamp: number;
 } | null = null;
 const BOOKS_CACHE_TTL = 300 * 1000; // 5 minutes
+
+let BOOKS_FETCH_PROMISE: Promise<BookMetadata[]> | null = null;
 
 // Helper: Get Manifest
 async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
@@ -31,18 +35,27 @@ async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
         return MANIFEST_CACHE.data;
     }
 
-    try {
-        const object = await bucket.get('manifest.json');
-        if (object) {
-            const data = await object.json() as Record<string, string>;
-            MANIFEST_CACHE = { data, timestamp: now };
-            return data;
-        }
-    } catch (e) {
-        console.warn('Failed to fetch manifest.json:', e);
+    if (MANIFEST_FETCH_PROMISE) {
+        return MANIFEST_FETCH_PROMISE;
     }
 
-    return {};
+    MANIFEST_FETCH_PROMISE = (async () => {
+        try {
+            const object = await bucket.get('manifest.json');
+            if (object) {
+                const data = await object.json() as Record<string, string>;
+                MANIFEST_CACHE = { data, timestamp: Date.now() };
+                return data;
+            }
+        } catch (e) {
+            console.warn('Failed to fetch manifest.json:', e);
+        } finally {
+            MANIFEST_FETCH_PROMISE = null;
+        }
+        return {};
+    })();
+
+    return MANIFEST_FETCH_PROMISE;
 }
 
 // Helper: Parse age range string to months
@@ -130,6 +143,142 @@ async function findMetadataFile(bucket: R2Bucket, bookPrefix: string): Promise<R
     return null;
 }
 
+// Helper: Fetch all books (with request coalescing)
+async function fetchAllBooks(bucket: R2Bucket): Promise<BookMetadata[]> {
+    const now = Date.now();
+    if (BOOKS_CACHE && (now - BOOKS_CACHE.timestamp < BOOKS_CACHE_TTL)) {
+        console.log('Books cache hit');
+        return BOOKS_CACHE.data;
+    }
+
+    if (BOOKS_FETCH_PROMISE) {
+        return BOOKS_FETCH_PROMISE;
+    }
+
+    BOOKS_FETCH_PROMISE = (async () => {
+        try {
+            const books: BookMetadata[] = [];
+            console.log('Starting robust book listing...');
+
+            // 1. Manifest-based Listing
+            const manifest = await getManifest(bucket);
+            const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
+
+            const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
+                const parts = entryKey.split('/');
+                // Expect series/bookId/metadata.json
+                if (parts.length < 3) return null;
+                const series = parts[0];
+                const bookId = parts[1];
+
+                try {
+                    const physicalKey = manifest[entryKey];
+                    const object = await bucket.get(physicalKey);
+                    if (object) {
+                        const data = await object.json() as any;
+                        const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+                        return {
+                            id: bookId,
+                            series: series,
+                            seriesTitle: data.series || series,
+                            title: data.title || bookId,
+                            author: data.author,
+                            illustrator: data.illustrator,
+                            description: data.description || '',
+                            minAgeMonths: data.minAgeMonths || ageRange.min,
+                            maxAgeMonths: data.maxAgeMonths || ageRange.max,
+                            pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+                            domain: data.domain || 'language',
+                            learningStage: data.learningStage || 'early-years',
+                            readingPrompts: data.readingPrompts,
+                            coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
+                        } as BookMetadata;
+                    }
+                } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
+                return null;
+            }));
+
+            const validManifestBooks = manifestBooks.filter((b): b is BookMetadata => b !== null);
+            books.push(...validManifestBooks);
+            const loadedIds = new Set(validManifestBooks.map(b => `${b.series}/${b.id}`));
+
+            // 2. Legacy Listing (fallback for non-manifest items)
+            const rootList = await bucket.list({ delimiter: '/' });
+            const rootPrefixes = rootList.delimitedPrefixes || [];
+
+            let rootPath = '';
+            if (rootPrefixes.includes('books/')) {
+                rootPath = 'books/';
+            }
+            console.log(`Detected root path: '${rootPath}'`);
+
+            const seriesPrefixes = await listAllPrefixes(bucket, {
+                prefix: rootPath,
+                delimiter: '/'
+            });
+
+            const seriesBookLists = await Promise.all(seriesPrefixes.map(async (seriesPrefix) => {
+                const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
+                const bookPrefixes = await listAllPrefixes(bucket, {
+                    prefix: seriesPrefix,
+                    delimiter: '/'
+                });
+                return { seriesName, seriesPrefix, bookPrefixes };
+            }));
+
+            const allBookTasks = seriesBookLists.flatMap(({ seriesName, seriesPrefix, bookPrefixes }) =>
+                bookPrefixes.map(bookPrefix => ({ seriesName, seriesPrefix, bookPrefix }))
+            );
+
+            const bookResults = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
+                const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
+
+                // Skip if already loaded from manifest
+                if (loadedIds.has(`${seriesName}/${bookId}`)) return null;
+
+                try {
+                    const object = await findMetadataFile(bucket, bookPrefix);
+
+                    if (object) {
+                        const data = await object.json() as any;
+                        const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+                        return {
+                            id: bookId,
+                            series: seriesName,
+                            seriesTitle: data.series || seriesName,
+                            title: data.title || bookId,
+                            author: data.author,
+                            illustrator: data.illustrator,
+                            description: data.description || '',
+                            minAgeMonths: data.minAgeMonths || ageRange.min,
+                            maxAgeMonths: data.maxAgeMonths || ageRange.max,
+                            pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+                            domain: data.domain || 'language',
+                            learningStage: data.learningStage || 'early-years',
+                            readingPrompts: data.readingPrompts,
+                            coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
+                        } as BookMetadata;
+                    }
+                } catch (e) {
+                    console.warn(`Failed to load book ${bookId}:`, e);
+                }
+                return null;
+            }));
+
+            books.push(...bookResults.filter((b): b is BookMetadata => b !== null));
+
+            // Update Cache
+            BOOKS_CACHE = { data: books, timestamp: Date.now() };
+            return books;
+        } finally {
+            BOOKS_FETCH_PROMISE = null;
+        }
+    })();
+
+    return BOOKS_FETCH_PROMISE;
+}
+
 // ============ BOOKS & SERIES ROUTES ============
 
 // List all books
@@ -139,137 +288,9 @@ app.get('/api/books', async (c) => {
 
         const stage = c.req.query('stage');
         const ageMonths = c.req.query('ageMonths');
-
-        // Check Cache
-        const now = Date.now();
-        if (BOOKS_CACHE && (now - BOOKS_CACHE.timestamp < BOOKS_CACHE_TTL)) {
-            console.log('Books cache hit');
-            let filtered = BOOKS_CACHE.data;
-            if (stage) {
-                filtered = filtered.filter(b => b.learningStage === stage);
-            }
-            if (ageMonths) {
-                const age = parseInt(ageMonths);
-                filtered = filtered.filter(b => b.minAgeMonths <= age && b.maxAgeMonths >= age);
-            }
-            return c.json(filtered);
-        }
-
         const bucket = c.env.BOOKS_BUCKET;
-        const books: BookMetadata[] = [];
 
-        console.log('Starting robust book listing...');
-
-        // 1. Manifest-based Listing
-        const manifest = await getManifest(bucket);
-        const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
-
-        const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
-            const parts = entryKey.split('/');
-            // Expect series/bookId/metadata.json
-            if (parts.length < 3) return null;
-            const series = parts[0];
-            const bookId = parts[1];
-
-            try {
-                const physicalKey = manifest[entryKey];
-                const object = await bucket.get(physicalKey);
-                if (object) {
-                    const data = await object.json() as any;
-                    const ageRange = parseAgeRange(data.ageRange || '2-5 years');
-                    return {
-                        id: bookId,
-                        series: series,
-                        seriesTitle: data.series || series,
-                        title: data.title || bookId,
-                        author: data.author,
-                        illustrator: data.illustrator,
-                        description: data.description || '',
-                        minAgeMonths: data.minAgeMonths || ageRange.min,
-                        maxAgeMonths: data.maxAgeMonths || ageRange.max,
-                        pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
-                        domain: data.domain || 'language',
-                        learningStage: data.learningStage || 'early-years',
-                        readingPrompts: data.readingPrompts,
-                        coverUrl: `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`
-                    } as BookMetadata;
-                }
-            } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
-            return null;
-        }));
-
-        const validManifestBooks = manifestBooks.filter((b): b is BookMetadata => b !== null);
-        books.push(...validManifestBooks);
-        const loadedIds = new Set(validManifestBooks.map(b => `${b.series}/${b.id}`));
-
-        // 2. Legacy Listing (fallback for non-manifest items)
-        const rootList = await bucket.list({ delimiter: '/' });
-        const rootPrefixes = rootList.delimitedPrefixes || [];
-
-        let rootPath = '';
-        if (rootPrefixes.includes('books/')) {
-            rootPath = 'books/';
-        }
-        console.log(`Detected root path: '${rootPath}'`);
-
-        const seriesPrefixes = await listAllPrefixes(bucket, {
-            prefix: rootPath,
-            delimiter: '/'
-        });
-
-        const seriesBookLists = await Promise.all(seriesPrefixes.map(async (seriesPrefix) => {
-            const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
-            const bookPrefixes = await listAllPrefixes(bucket, {
-                prefix: seriesPrefix,
-                delimiter: '/'
-            });
-            return { seriesName, seriesPrefix, bookPrefixes };
-        }));
-
-        const allBookTasks = seriesBookLists.flatMap(({ seriesName, seriesPrefix, bookPrefixes }) =>
-            bookPrefixes.map(bookPrefix => ({ seriesName, seriesPrefix, bookPrefix }))
-        );
-
-        const bookResults = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
-            const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
-
-            // Skip if already loaded from manifest
-            if (loadedIds.has(`${seriesName}/${bookId}`)) return null;
-
-            try {
-                const object = await findMetadataFile(bucket, bookPrefix);
-
-                if (object) {
-                    const data = await object.json() as any;
-                    const ageRange = parseAgeRange(data.ageRange || '2-5 years');
-
-                    return {
-                        id: bookId,
-                        series: seriesName,
-                        seriesTitle: data.series || seriesName,
-                        title: data.title || bookId,
-                        author: data.author,
-                        illustrator: data.illustrator,
-                        description: data.description || '',
-                        minAgeMonths: data.minAgeMonths || ageRange.min,
-                        maxAgeMonths: data.maxAgeMonths || ageRange.max,
-                        pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
-                        domain: data.domain || 'language',
-                        learningStage: data.learningStage || 'early-years',
-                        readingPrompts: data.readingPrompts,
-                        coverUrl: `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`
-                    } as BookMetadata;
-                }
-            } catch (e) {
-                console.warn(`Failed to load book ${bookId}:`, e);
-            }
-            return null;
-        }));
-
-        books.push(...bookResults.filter((b): b is BookMetadata => b !== null));
-
-        // Update Cache
-        BOOKS_CACHE = { data: books, timestamp: Date.now() };
+        const books = await fetchAllBooks(bucket);
 
         let filtered = books;
         if (stage) {

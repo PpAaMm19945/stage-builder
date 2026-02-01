@@ -37,3 +37,7 @@
 ## 2026-05-29 - Parallelize R2 Metadata Fetching
 **Learning:** The `/api/series` and `/api/series/:id` endpoints were fetching metadata for each item sequentially in a `for` loop. For a series with 20 books, this caused 20 sequential round-trips to R2, significantly increasing latency.
 **Action:** Refactored the loops to use `Promise.all` to fetch all metadata in parallel. This changes the latency profile from O(N) to O(1) (bounded by concurrency limits), drastically reducing load times for the library views.
+
+## 2026-05-30 - Request Coalescing in Cloudflare Workers
+**Learning:** High-traffic endpoints with expensive cache-revalidation logic (like `GET /api/books` which fetches metadata for hundreds of items) are vulnerable to "cache stampedes" or "dog-piling". When the cache expires, concurrent requests trigger multiple parallel "rebuild" operations (N requests * M R2 calls), causing throttling and high costs.
+**Action:** Implemented request coalescing by storing the active promise of the fetch operation in a module-level variable (`FETCH_PROMISE`). Subsequent requests await the existing promise instead of starting a new one. This ensures only 1 R2 listing operation happens per worker instance during a cold start, regardless of concurrent load.
