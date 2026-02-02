@@ -1,12 +1,19 @@
 
+// ... existing imports
 import { Env } from '../types';
 import { AiRouter } from './router';
 import { GeminiPlanner } from './planner';
+import { GeminiService, GeminiContent } from './gemini';
+import { Summarizer } from './summarizer';
 import { searchBooks, searchActivities, getTodaySchedule } from './tools';
 import { ContextBuilder, AiContext } from './context';
 
 export class Cortex {
-    constructor(private env: Env) { }
+    private summarizer: Summarizer;
+
+    constructor(private env: Env) {
+        this.summarizer = new Summarizer(env);
+    }
 
     async chat(message: string, history: any[], context: any, actionPayload?: any): Promise<ReadableStream> {
         // 0. Direct Action Bypass
@@ -30,20 +37,28 @@ export class Cortex {
             route = await router.routeRequest(message, context);
         }
 
-        // 2. Complex Hand-off (System 2)
+        // 2. Agent Loop Hand-off (System 2)
+        // If it's a complex query, we now prefer the Agent Loop over just GeminiPlanner
+        // unless it's specifically planning related which GeminiPlanner handles well.
         if (route.intent === 'COMPLEX_QUERY') {
-            console.log('[Cortex] Intent is COMPLEX_QUERY -> Handing off to Gemini Planner');
-            const planner = new GeminiPlanner(this.env);
-            return planner.chat(message, history, context);
+            console.log('[Cortex] Intent is COMPLEX_QUERY -> Starting Agent Loop');
+            return this.runAgentLoop(message, history, context);
         }
 
         const encoder = new TextEncoder();
 
-        // If simple chat, stream a Llama response with FULL history
+        // If simple chat, check if we need to escalate to Gemini based on context size
         if (route.intent === 'GENERAL_CHAT') {
+            const model = this.selectModel(message, history);
+            console.log(`[Cortex] Selected model: ${model}`);
+
+            if (model === 'gemini-2.0-flash') {
+                return this.runGeminiChat(message, history, context);
+            }
             return this.streamLlamaResponse(message, history, context);
         }
 
+        // ... existing intent handlers ...
         // For ADJUST_SCHEDULE, return an action pending for user confirmation
         if (route.intent === 'ADJUST_SCHEDULE') {
             return new ReadableStream({
@@ -111,9 +126,6 @@ export class Cortex {
         }
 
         if (route.intent === 'REGENERATE_PLAN') {
-            // For regeneration, we direct them to the UI or call the generator if we import it.
-            // Since RhythmGenerator is heavy, let's guide them to the button OR trigger it if possible.
-            // We'll return a specific action block for the frontend to trigger the mutation.
             return new ReadableStream({
                 start(controller) {
                     const actionPayload = { type: "REGENERATE_PLAN", reason: "Regenerating..." };
@@ -259,6 +271,153 @@ export class Cortex {
         });
     }
 
+    // [Refactored to separate method for clarity]
+    // ... selectModel, logInteraction, buildSystemPrompt, streamLlamaResponse ...
+
+    // ... executeUpdatePreferences, executeToggleBasket ...
+
+    // NEW: Agent Loop Implementation
+    private async runAgentLoop(message: string, history: any[], context: any): Promise<ReadableStream> {
+        const encoder = new TextEncoder();
+        const cortex = this;
+        const db = this.env.DB;
+
+        return new ReadableStream({
+            async start(controller) {
+                let iterations = 0;
+                const maxIterations = 5;
+                const toolResults: any[] = [];
+                let currentMessage = message;
+
+                // Initial Thinking
+                controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 0, label: "Thinking about plan...", status: "active" })}\n\n`));
+
+                while (iterations < maxIterations) {
+                    iterations++;
+                    const stepId = iterations;
+
+                    // 1. Construct messages with history + tool results
+                    const systemPrompt = cortex.buildSystemPrompt(context) +
+                        `\n\nYOU ARE IN AN AGENT LOOP.
+                        You must output JSON to either call a tool or provide a final response.
+                        
+                        TOOLS:
+                        - "search_books": { query: string, age_months?: number }
+                        - "search_activities": { query: string }
+                        - "get_today_schedule": {}
+                        - "check_time": {}
+
+                        OUTPUT FORMAT (choose one):
+                        1. { "tool": "TOOL_NAME", "args": { ... }, "thought": "Reasoning..." }
+                        2. { "response": "Final answer to user..." }
+                        
+                        Be direct. If you need info, call the tool. If you have info, give response.
+                        `;
+
+                    const loopMessages = [
+                        { role: 'system', content: systemPrompt },
+                        ...history.slice(-5).map(m => ({ role: m.role, content: m.content })), // Limit history
+                        ...toolResults.map(r => ({ role: 'user', content: `Tool Result (${r.tool}): ${JSON.stringify(r.result)}` })),
+                        { role: 'user', content: currentMessage }
+                    ];
+
+                    try {
+                        controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: stepId, label: "Planning next step...", status: "active" })}\n\n`));
+
+                        // Force JSON mode if possible, or just robust parsing
+                        const response = await cortex.env.AI.run('@cf/meta/llama-3-8b-instruct', {
+                            messages: loopMessages,
+                            // response_format: { type: 'json_object' } // Not all models support this clean yet on CF, use prompt eng
+                        });
+
+                        // Parse Decision
+                        let decision: any = {};
+                        try {
+                            const raw = (response as any).response || '';
+                            const jsonMatch = raw.match(/\{[\s\S]*\}/);
+                            if (jsonMatch) {
+                                decision = JSON.parse(jsonMatch[0]);
+                            } else {
+                                // Fallback if model just chats
+                                decision = { response: raw };
+                            }
+                        } catch (e) {
+                            decision = { response: "I'm having trouble thinking clearly. Let me just answer directly." };
+                        }
+
+                        // Stream thought if present
+                        if (decision.thought) {
+                            controller.enqueue(encoder.encode(`event: thought\ndata: "${decision.thought}"\n\n`));
+                        }
+
+                        // CASE A: Tool Call
+                        if (decision.tool) {
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: stepId, label: `Running ${decision.tool}...`, status: "active" })}\n\n`));
+
+                            let result: any = {};
+                            if (decision.tool === 'search_books') {
+                                result = await searchBooks(db, decision.args?.query || message, decision.args?.age_months);
+                            } else if (decision.tool === 'search_activities') {
+                                result = await searchActivities(db, decision.args?.query || message);
+                            } else if (decision.tool === 'get_today_schedule') {
+                                result = await getTodaySchedule(db, context.householdId);
+                            } else if (decision.tool === 'check_time') {
+                                result = { time: new Date().toISOString() };
+                            } else {
+                                result = { error: "Unknown tool" };
+                            }
+
+                            toolResults.push({ tool: decision.tool, result });
+
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: stepId, label: `Finished ${decision.tool}`, status: "complete" })}\n\n`));
+
+                            // Continue loop
+                        }
+                        // CASE B: Final Response
+                        else {
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: stepId, label: "Finished thinking", status: "complete" })}\n\n`));
+
+                            controller.enqueue(encoder.encode(`data: ${decision.response || "I couldn't figure that out."}\n\n`));
+                            break; // Exit loop
+                        }
+
+                    } catch (e) {
+                        console.error("Agent Loop Error", e);
+                        controller.enqueue(encoder.encode(`data: I encountered an error while thinking.\n\n`));
+                        break;
+                    }
+                }
+
+                controller.close();
+            }
+        });
+    }
+
+    // ... existing selectModel, logInteraction, buildSystemPrompt, streamLlamaResponse, runGeminiChat ...
+
+
+    /**
+     * Determine best model based on context length and complexity
+     */
+    private selectModel(message: string, history: any[]): 'llama-3-8b-instruct' | 'gemini-2.0-flash' {
+        // 1. Estimate token count (rough: 4 chars = 1 token)
+        const totalChars = history.reduce((acc, m) => acc + (m.content?.length || 0), 0) + message.length;
+        const estimatedTokens = totalChars / 4;
+
+        // 2. Check complexity signals
+        const isComplex = message.length > 300 ||
+            ['plan', 'schedule', 'why', 'explain', 'create', 'strategy'].some(k => message.toLowerCase().includes(k));
+
+        // 3. Select model
+        if (estimatedTokens > 6000) {
+            return 'gemini-2.0-flash'; // Context too large for Llama
+        } else if (isComplex) {
+            return 'gemini-2.0-flash'; // Complex reasoning needed
+        } else {
+            return 'llama-3-8b-instruct'; // Fast and efficient
+        }
+    }
+
     /**
      * Log interactions to history
      */
@@ -364,19 +523,22 @@ INSTRUCTIONS
     }
 
     /**
-     * Stream a Llama response with FULL conversation history
+     * Stream a Llama response with FULL conversation history (compressed if needed)
      */
     private async streamLlamaResponse(message: string, history: any[], context: any): Promise<ReadableStream> {
         const systemPrompt = this.buildSystemPrompt(context);
         const encoder = new TextEncoder();
 
-        // Build messages array with full history
+        // Compress history if too long to fit in Llama's context
+        const processedHistory = await this.summarizer.compressIfNeeded(history);
+
+        // Build messages array
         const messages: Array<{ role: string; content: string }> = [
             { role: 'system', content: systemPrompt }
         ];
 
-        // Add conversation history (limit to last 10 turns for context window)
-        const recentHistory = history.slice(-10);
+        // Add history
+        const recentHistory = processedHistory.slice(-15); // Llama limit
         for (const msg of recentHistory) {
             messages.push({
                 role: msg.role === 'assistant' ? 'assistant' : 'user',
@@ -439,6 +601,56 @@ INSTRUCTIONS
                 }
             });
         }
+    }
+
+    /**
+     * Run Gemini for long-context chat
+     */
+    private async runGeminiChat(message: string, history: any[], context: any): Promise<ReadableStream> {
+        if (!this.env.GOOGLE_API_KEY) {
+            // Fallback to Llama if key is missing
+            return this.streamLlamaResponse(message, history, context);
+        }
+
+        const systemPrompt = this.buildSystemPrompt(context);
+        const gemini = new GeminiService(this.env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp');
+        const encoder = new TextEncoder();
+
+        // Convert history to Gemini format (Gemini has huge context, no need to compress usually)
+        const contents: GeminiContent[] = history.map(h => ({
+            role: h.role === 'user' ? 'user' : 'model',
+            parts: [{ text: h.content }]
+        }));
+
+        // Add current message
+        contents.push({ role: 'user', parts: [{ text: message }] });
+
+        // Stream from Gemini
+        const stream = gemini.streamGenerateContent(contents, systemPrompt);
+
+        return new ReadableStream({
+            async start(controller) {
+                controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Thinking (Deep Brain)...", status: "active" })}\n\n`));
+                let firstChunk = true;
+
+                try {
+                    for await (const chunk of stream) {
+                        if (firstChunk) {
+                            controller.enqueue(encoder.encode(`event: step\ndata: ${JSON.stringify({ id: 1, label: "Thinking", status: "complete" })}\n\n`));
+                            firstChunk = false;
+                        }
+
+                        if (chunk.text) {
+                            controller.enqueue(encoder.encode(`data: ${chunk.text}`)); // Chunked text
+                        }
+                    }
+                } catch (e) {
+                    console.error('[Cortex] Gemini Error', e);
+                    // Fallback or error message
+                }
+                controller.close();
+            }
+        });
     }
 
     // ==========================================

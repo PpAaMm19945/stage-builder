@@ -5,7 +5,7 @@ import { sanitizeMessage, validateMessage } from '@/lib/chat-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PaperPlaneRight, Robot, User, X } from '@phosphor-icons/react';
+import { PaperPlaneRight, Robot, User, X, Trash } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -16,6 +16,7 @@ import {
 } from "@/components/ui/tooltip";
 
 import { useChatState, Message } from './hooks';
+import { chatStorage } from '@/lib/chat-storage';
 import { useChatStream } from './hooks/useChatStream';
 import { useKeyboardHeight } from './hooks/useKeyboardHeight';
 import {
@@ -42,6 +43,7 @@ interface ChatPanelProps {
  */
 export function ChatPanel({ className, onClose }: ChatPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
+    const [userId, setUserId] = useState<string | null>(null);
     const [input, setInput] = useState('');
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
     const scrollRef = useRef<HTMLDivElement>(null);
@@ -60,9 +62,15 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
             } else {
                 newMessages.push(message);
             }
+
+            // Persist to local storage if we have a user
+            if (userId) {
+                chatStorage.saveSession(userId, newMessages);
+            }
+
             return newMessages;
         });
-    }, []);
+    }, [userId]);
 
     const handleError = useCallback((error: Error) => {
         toast.error('Chat error', { description: error.message });
@@ -83,8 +91,21 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
     // Load history on mount
     useEffect(() => {
-        const loadHistory = async () => {
+        const initializeChat = async () => {
             try {
+                // 1. Get User ID
+                const { user } = await ai.auth.getMe();
+                if (!user?.id) return;
+                setUserId(user.id);
+
+                // 2. Try loading local session
+                const localSession = await chatStorage.loadSession(user.id);
+                if (localSession && localSession.length > 0) {
+                    setMessages(localSession);
+                    return;
+                }
+
+                // 3. Fallback: Load from server logs
                 const logs = await ai.getInteractionLog();
                 if (logs.length === 0) return;
 
@@ -111,11 +132,19 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
                 setMessages(historyMessages);
             } catch (e) {
-                console.warn('Failed to load chat history', e);
+                console.warn('Failed to initialize chat', e);
             }
         };
-        loadHistory();
+        initializeChat();
     }, []);
+
+    const handleClearChat = async () => {
+        if (userId) {
+            await chatStorage.clearSession(userId);
+            setMessages([]);
+            toast.success('Chat cleared');
+        }
+    };
 
     const handleSend = async () => {
         const trimmedInput = sanitizeMessage(input);
@@ -130,7 +159,12 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         setInput('');
 
         // Add empty assistant message that will be updated by stream
-        setMessages(prev => [...prev, { role: 'assistant', content: '' }]);
+        const updatedMessages = [...prev, { role: 'assistant', content: '' }];
+        setMessages(updatedMessages);
+
+        if (userId) {
+            chatStorage.saveSession(userId, updatedMessages);
+        }
 
         await sendMessage([...messages, userMessage], { page: 'dashboard' });
     };
@@ -204,17 +238,38 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         <Robot className="w-5 h-5 text-primary" />
                         Frontdesk Officer
                     </CardTitle>
-                    {onClose && (
-                        <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={onClose}
-                            className="h-8 w-8 text-muted-foreground hover:text-foreground"
-                            aria-label="Close chat"
-                        >
-                            <X className="w-4 h-4" />
-                        </Button>
-                    )}
+                    <div className="flex items-center gap-1">
+                        <TooltipProvider>
+                            <Tooltip>
+                                <TooltipTrigger asChild>
+                                    <Button
+                                        variant="ghost"
+                                        size="icon"
+                                        onClick={handleClearChat}
+                                        className="h-8 w-8 text-muted-foreground hover:text-destructive"
+                                        aria-label="Clear chat"
+                                    >
+                                        <Trash className="w-4 h-4" />
+                                    </Button>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                    <p>Clear chat history</p>
+                                </TooltipContent>
+                            </Tooltip>
+                        </TooltipProvider>
+
+                        {onClose && (
+                            <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={onClose}
+                                className="h-8 w-8 text-muted-foreground hover:text-foreground"
+                                aria-label="Close chat"
+                            >
+                                <X className="w-4 h-4" />
+                            </Button>
+                        )}
+                    </div>
                 </CardHeader>
 
                 <CardContent className="flex-1 p-0 overflow-hidden relative">
@@ -352,16 +407,18 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         </TooltipProvider>
                     </form>
                 </div>
-            </Card>
+            </Card >
 
             {/* BookReader lightbox */}
-            {selectedBook && (
-                <BookReader
-                    book={selectedBook}
-                    open={!!selectedBook}
-                    onOpenChange={(open) => !open && setSelectedBook(null)}
-                />
-            )}
+            {
+                selectedBook && (
+                    <BookReader
+                        book={selectedBook}
+                        open={!!selectedBook}
+                        onOpenChange={(open) => !open && setSelectedBook(null)}
+                    />
+                )
+            }
         </>
     );
 }
