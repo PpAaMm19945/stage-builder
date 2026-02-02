@@ -33,6 +33,24 @@ const PAGES_CACHE = new Map<string, {
 }>();
 const PAGES_CACHE_TTL = 3600 * 1000; // 1 hour
 
+// Manifest Books Cache (Long-lived, invalidated by manifest change)
+let MANIFEST_BOOKS_CACHE: {
+    data: BookMetadata[];
+    manifest: Record<string, string>;
+} | null = null;
+
+// Helper: Check if two manifests are equal
+function areManifestsEqual(a: Record<string, string>, b: Record<string, string>): boolean {
+    if (a === b) return true;
+    const keysA = Object.keys(a);
+    const keysB = Object.keys(b);
+    if (keysA.length !== keysB.length) return false;
+    for (const key of keysA) {
+        if (a[key] !== b[key]) return false;
+    }
+    return true;
+}
+
 // Helper: Get Manifest
 async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
     const now = Date.now();
@@ -173,52 +191,66 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
 
             // 1. Manifest-based Listing
             const manifest = await getManifest(bucket);
-            const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
 
-            const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
-                const parts = entryKey.split('/');
-                // Expect series/bookId/metadata.json
-                if (parts.length < 3) return null;
-                const series = parts[0];
-                const bookId = parts[1];
+            // Check if we can use cached manifest books (avoiding N+1 R2 reads)
+            if (MANIFEST_BOOKS_CACHE && areManifestsEqual(MANIFEST_BOOKS_CACHE.manifest, manifest)) {
+                console.log('Using cached manifest books');
+                books.push(...MANIFEST_BOOKS_CACHE.data);
+            } else {
+                const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
 
-                try {
-                    const physicalKey = manifest[entryKey];
-                    const object = await bucket.get(physicalKey);
-                    if (object) {
-                        const data = await object.json() as any;
-                        const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+                const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
+                    const parts = entryKey.split('/');
+                    // Expect series/bookId/metadata.json
+                    if (parts.length < 3) return null;
+                    const series = parts[0];
+                    const bookId = parts[1];
 
-                        let coverUrl = `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`;
-                        const coverKey = manifest[`${series}/${bookId}/cover`];
-                        if (r2PublicUrl && coverKey) {
-                            coverUrl = `${r2PublicUrl}/${coverKey}`;
+                    try {
+                        const physicalKey = manifest[entryKey];
+                        const object = await bucket.get(physicalKey);
+                        if (object) {
+                            const data = await object.json() as any;
+                            const ageRange = parseAgeRange(data.ageRange || '2-5 years');
+
+                            let coverUrl = `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/cover`;
+                            const coverKey = manifest[`${series}/${bookId}/cover`];
+                            if (r2PublicUrl && coverKey) {
+                                coverUrl = `${r2PublicUrl}/${coverKey}`;
+                            }
+
+                            return {
+                                id: bookId,
+                                series: series,
+                                seriesTitle: data.series || series,
+                                title: data.title || bookId,
+                                author: data.author,
+                                illustrator: data.illustrator,
+                                description: data.description || '',
+                                minAgeMonths: data.minAgeMonths || ageRange.min,
+                                maxAgeMonths: data.maxAgeMonths || ageRange.max,
+                                pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
+                                domain: data.domain || 'language',
+                                learningStage: data.learningStage || 'early-years',
+                                readingPrompts: data.readingPrompts,
+                                coverUrl
+                            } as BookMetadata;
                         }
+                    } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
+                    return null;
+                }));
 
-                        return {
-                            id: bookId,
-                            series: series,
-                            seriesTitle: data.series || series,
-                            title: data.title || bookId,
-                            author: data.author,
-                            illustrator: data.illustrator,
-                            description: data.description || '',
-                            minAgeMonths: data.minAgeMonths || ageRange.min,
-                            maxAgeMonths: data.maxAgeMonths || ageRange.max,
-                            pageCount: data.pageCount || data.pages?.filter((p: any) => p.pageNumber)?.length || 10,
-                            domain: data.domain || 'language',
-                            learningStage: data.learningStage || 'early-years',
-                            readingPrompts: data.readingPrompts,
-                            coverUrl
-                        } as BookMetadata;
-                    }
-                } catch (e) { console.warn(`Failed to load manifest book ${series}/${bookId}`, e); }
-                return null;
-            }));
+                const validManifestBooks = manifestBooks.filter((b): b is BookMetadata => b !== null);
+                books.push(...validManifestBooks);
 
-            const validManifestBooks = manifestBooks.filter((b): b is BookMetadata => b !== null);
-            books.push(...validManifestBooks);
-            const loadedIds = new Set(validManifestBooks.map(b => `${b.series}/${b.id}`));
+                // Update Manifest Cache
+                MANIFEST_BOOKS_CACHE = {
+                    data: validManifestBooks,
+                    manifest: manifest
+                };
+            }
+
+            const loadedIds = new Set(books.map(b => `${b.series}/${b.id}`));
 
             // 2. Legacy Listing (fallback for non-manifest items)
             const rootList = await bucket.list({ delimiter: '/' });
@@ -958,7 +990,11 @@ app.get('/api/books/:series/:bookId/pages', async (c) => {
         };
 
         // Update Cache
-        if (PAGES_CACHE.size > 1000) PAGES_CACHE.clear(); // Simple cleanup
+        if (PAGES_CACHE.size > 1000) {
+            // Evict oldest instead of clearing all to prevent cache stampedes
+            const oldest = PAGES_CACHE.keys().next().value;
+            if (oldest) PAGES_CACHE.delete(oldest);
+        }
         PAGES_CACHE.set(cacheKey, { data: responseData, timestamp: now });
 
         c.header('Cache-Control', 'public, max-age=86400');
