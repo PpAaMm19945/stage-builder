@@ -106,10 +106,11 @@ export function ActivityBrowser() {
         </div>;
     }
 
-    // Filter out liturgy and reading items - only show skill/habit activities
+    // Filter out liturgy and reading items - show all other formation types (skill, habit, daily_practice, family_session, etc.)
     const activityItems = activities.filter((activity: ApiActivity) => {
         const formationType = activity.formation_type || 'skill';
-        return formationType === 'skill' || formationType === 'habit';
+        // Explicitly exclude types that have their own browsers or are not general activities
+        return !['liturgy', 'book', 'hymn', 'catechism', 'reading'].includes(formationType);
     });
 
     // Group activities by virtue (mapping legacy domains if needed)
