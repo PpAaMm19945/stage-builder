@@ -61,8 +61,13 @@ export function useBookPageUrls(series: string, bookId: string, pageCount: numbe
                 if (!res.ok) throw new Error('Failed to fetch pages url');
                 const data = await res.json();
 
-                if (data.pages && Array.isArray(data.pages)) {
+                if (data.pages && Array.isArray(data.pages) && data.pages.length > 0) {
                     return data.pages.map((p: any) => p.url) as string[];
+                }
+
+                // If API returned empty array but we expect pages, throw to trigger fallback
+                if (pageCount > 0 && (!data.pages || data.pages.length === 0)) {
+                    throw new Error('API returned no pages for book with known page count');
                 }
             } catch (e) {
                 console.warn("Failed to fetch dynamic pages, falling back to legacy generation", e);

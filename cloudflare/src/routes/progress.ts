@@ -231,4 +231,81 @@ app.get('/api/students/:studentId/progress', async (c) => {
     }
 });
 
+// Get content progress (Book bookmark) - supports :contentId or :activityId
+app.get('/api/progress/:contentId', async (c) => {
+    try {
+        const user = requireAuth(c);
+        const contentId = c.req.param('contentId');
+
+        // Check for existing progress
+        const progress = await safeQueryFirst<{ data: string, updated_at: string }>(c.env.DB,
+            'SELECT data, updated_at FROM content_progress WHERE user_id = ? AND content_id = ?',
+            [user.id, contentId]
+        );
+
+        if (!progress) {
+            return c.json({ progress: null });
+        }
+
+        return c.json({
+            progress: {
+                status: 'in_progress',
+                data: JSON.parse(progress.data),
+                updatedAt: progress.updated_at
+            }
+        });
+
+    } catch (error: any) {
+        // If table doesn't exist, return null
+        return c.json({ progress: null });
+    }
+});
+
+// Save content progress
+app.post('/api/progress/save', async (c) => {
+    try {
+        const user = requireAuth(c);
+        const body = await c.req.json();
+
+        // Handle aliases from frontend api.ts
+        const contentId = body.contentId || body.activityId;
+        const data = body.data || body.progressData;
+        const contentType = body.contentType || body.type;
+
+        if (!contentId || !data) {
+            return c.json({ error: 'Missing contentId or data' }, 400);
+        }
+
+        const id = generateId('prog');
+        const now = new Date().toISOString();
+        const dataJson = JSON.stringify(data);
+
+        // Upsert
+        // We use a safe upsert pattern compatible with SQLite
+        const existing = await safeQueryFirst<{ id: string }>(c.env.DB,
+            'SELECT id FROM content_progress WHERE user_id = ? AND content_id = ?',
+            [user.id, contentId]
+        );
+
+        if (existing) {
+            await safeRun(c.env.DB,
+                'UPDATE content_progress SET data = ?, updated_at = ? WHERE id = ?',
+                [dataJson, now, existing.id]
+            );
+        } else {
+            // Create table if needed (lazy init) - unlikely to work here without permissions, 
+            // but we assume table exists. If not, this throws and we catch.
+            await safeRun(c.env.DB,
+                'INSERT INTO content_progress (id, user_id, content_type, content_id, data, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [id, user.id, contentType || 'book', contentId, dataJson, now, now]
+            );
+        }
+
+        return c.json({ success: true });
+
+    } catch (error: any) {
+        return c.json({ error: error.message }, 500);
+    }
+});
+
 export default app;
