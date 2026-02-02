@@ -26,6 +26,13 @@ let BOOKS_CACHE: {
 let BOOKS_FETCH_PROMISE: Promise<BookMetadata[]> | null = null;
 const BOOKS_CACHE_TTL = 300 * 1000; // 5 minutes
 
+// Pages Cache
+const PAGES_CACHE = new Map<string, {
+    data: { count: number; pages: { index: number; url: string; filename: string }[] };
+    timestamp: number;
+}>();
+const PAGES_CACHE_TTL = 3600 * 1000; // 1 hour
+
 // Helper: Get Manifest
 async function getManifest(bucket: R2Bucket): Promise<Record<string, string>> {
     const now = Date.now();
@@ -851,6 +858,16 @@ app.get('/api/books/:series/:bookId/pages', async (c) => {
             return c.json({ error: 'Invalid path segment' }, 400);
         }
 
+        // Cache Check
+        const cacheKey = `${series}/${bookId}`;
+        const now = Date.now();
+        const cached = PAGES_CACHE.get(cacheKey);
+
+        if (cached && (now - cached.timestamp < PAGES_CACHE_TTL)) {
+            c.header('Cache-Control', 'public, max-age=86400');
+            return c.json(cached.data);
+        }
+
         const bucket = c.env.BOOKS_BUCKET;
         const r2PublicUrl = c.env.R2_PUBLIC_URL;
 
@@ -925,10 +942,17 @@ app.get('/api/books/:series/:bookId/pages', async (c) => {
             };
         });
 
-        return c.json({
+        const responseData = {
             count: pages.length,
             pages
-        });
+        };
+
+        // Update Cache
+        if (PAGES_CACHE.size > 1000) PAGES_CACHE.clear(); // Simple cleanup
+        PAGES_CACHE.set(cacheKey, { data: responseData, timestamp: now });
+
+        c.header('Cache-Control', 'public, max-age=86400');
+        return c.json(responseData);
 
     } catch (error: any) {
         return safeError(c, error);
