@@ -121,11 +121,16 @@ export function useChatState() {
     }, []);
 
     const goIdle = useCallback(() => {
-        // Don't clear streamingSteps immediately so user can see what happened
+        // Mark all active/pending steps as complete so UI doesn't show "Thinking"
         setState(prev => ({
             ...prev,
             mode: 'IDLE',
             thinkingText: null,
+            streamingSteps: prev.streamingSteps.map(step =>
+                (step.status === 'active' || step.status === 'pending')
+                    ? { ...step, status: 'complete' }
+                    : step
+            )
         }));
     }, []);
 

@@ -297,14 +297,21 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     msg.role === 'user' ? "justify-end" : "justify-start"
                                 )}>
                                     {msg.role === 'assistant' && (
-                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
+                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 self-start mt-1">
                                             <Robot className="w-5 h-5 text-primary" />
                                         </div>
                                     )}
 
-                                    {msg.content && (
-                                        <TextMessage content={msg.content} role={msg.role === 'system' ? 'assistant' : msg.role} />
-                                    )}
+                                    <div className="flex flex-col gap-1 min-w-0 max-w-[85%]">
+                                        {/* Activity Log (Thinking Steps) - Above Message */}
+                                        {msg.role === 'assistant' && msg.steps && msg.steps.length > 0 && (
+                                            <BotActivityLog steps={msg.steps} className="mb-0" />
+                                        )}
+
+                                        {msg.content && (
+                                            <TextMessage content={msg.content} role={msg.role === 'system' ? 'assistant' : msg.role} />
+                                        )}
+                                    </div>
 
                                     {msg.role === 'user' && (
                                         <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-primary-foreground">
@@ -313,10 +320,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     )}
                                 </div>
 
-                                {/* Persistent Execution Steps (Transparency) */}
-                                {msg.role === 'assistant' && msg.steps && msg.steps.length > 0 && (
-                                    <BotActivityLog steps={msg.steps} className="ml-11" />
-                                )}
+
 
                                 {/* Action card for search results */}
                                 {msg.actionCard && (
