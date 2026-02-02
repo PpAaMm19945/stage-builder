@@ -72,3 +72,8 @@
 **Vulnerability:** The endpoints `GET /api/series/:seriesId` and `GET /api/series/:seriesId/cover` used the `seriesId` parameter directly to construct R2 storage keys (`books/${seriesId}/...`) without validation. While the R2 bucket structure mitigates some risks, an attacker could theoretically use `..` sequences to access objects outside the intended directory structure.
 **Learning:** Inconsistent application of security controls is a common vulnerability. While `isValidPathSegment` was applied to book endpoints, it was missed in the series endpoints in the same file. "Copy-paste" or evolution of code often leads to these gaps.
 **Prevention:** Systematically apply input validation to *all* parameters that touch the file system or storage keys. Use automated linting or security scanning to catch missing validations.
+
+## 2026-07-28 - Unrestricted File Upload in Portfolio
+**Vulnerability:** The `PUT /api/portfolio/upload-handler` endpoint allowed users to upload files with any extension or content (e.g., HTML, JS) to a public R2 bucket. This could lead to Stored XSS if the uploaded file was accessed via the public R2 URL.
+**Learning:** Accepting user uploads without strict validation is a critical risk, especially when storage is public. "Key prefixing" is insufficient if the extension allows execution (e.g., serving HTML).
+**Prevention:** Always enforce an allowlist of file extensions (e.g., images/PDFs only) and valid MIME types. Explicitly set `Content-Type` on storage objects to prevent MIME-sniffing. Implement size limits to prevent DoS.
