@@ -98,3 +98,26 @@ export function sanitizeFilename(name: string): string {
 
     return sanitized;
 }
+
+// Security helper: File Upload Constraints
+export const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
+export const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.pdf']);
+
+export function isAllowedFile(filename: string): boolean {
+    if (!filename) return false;
+    // Handle query params or URL fragments if present (though unusual in a key)
+    const cleanName = filename.split('?')[0].split('#')[0];
+    const parts = cleanName.split('.');
+    if (parts.length < 2) return false;
+    const ext = '.' + parts.pop()?.toLowerCase();
+    return ALLOWED_EXTENSIONS.has(ext);
+}
+
+export function getContentType(filename: string): string {
+    const lower = filename.toLowerCase();
+    if (lower.endsWith('.jpg') || lower.endsWith('.jpeg')) return 'image/jpeg';
+    if (lower.endsWith('.png')) return 'image/png';
+    if (lower.endsWith('.webp')) return 'image/webp';
+    if (lower.endsWith('.pdf')) return 'application/pdf';
+    return 'application/octet-stream';
+}
