@@ -67,7 +67,16 @@ export function GlobalAudioPlayer() {
           >
             {/* The "Loading Bar" visuals */}
             <div
-              className="group relative h-1.5 w-full bg-border/20 cursor-pointer overflow-hidden hover:h-4 transition-all duration-300"
+              role="button"
+              tabIndex={0}
+              aria-label="Expand audio player"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                  e.preventDefault();
+                  setIsExpanded(true);
+                }
+              }}
+              className="group relative h-1.5 w-full bg-border/20 cursor-pointer overflow-hidden hover:h-4 transition-all duration-300 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary"
               onClick={() => setIsExpanded(true)}
             >
               {/* Progress Indicator */}
@@ -91,6 +100,7 @@ export function GlobalAudioPlayer() {
             <div className="flex justify-center -mt-px">
               <button
                 onClick={() => setIsExpanded(true)}
+                aria-label="Expand audio player"
                 className="bg-background/95 backdrop-blur border border-t-0 border-border/40 rounded-b-lg px-4 py-1 flex items-center gap-2 shadow-sm hover:bg-muted/50 transition-colors text-xs font-medium"
               >
                 <span className={cn("inline-block h-2 w-2 rounded-full", isPlaying ? "bg-green-500 animate-pulse" : "bg-amber-500")} />
@@ -127,10 +137,21 @@ export function GlobalAudioPlayer() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => setIsExpanded(false)}>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setIsExpanded(false)}
+                      aria-label="Minimize player"
+                    >
                       <ArrowsInSimple className="h-5 w-5" />
                     </Button>
-                    <Button variant="ghost" size="icon" onClick={closePlayer} className="text-muted-foreground hover:text-red-500">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={closePlayer}
+                      className="text-muted-foreground hover:text-red-500"
+                      aria-label="Close player"
+                    >
                       <X className="h-5 w-5" />
                     </Button>
                   </div>
@@ -147,6 +168,7 @@ export function GlobalAudioPlayer() {
                       step={1}
                       onValueChange={(val) => seek(val[0])}
                       className="cursor-pointer py-1"
+                      aria-label="Seek"
                     />
                     <div className="flex justify-between text-xs font-medium text-muted-foreground">
                       <span>{formatTime(currentTime)}</span>
@@ -162,6 +184,7 @@ export function GlobalAudioPlayer() {
                       size="icon"
                       onClick={toggleMute}
                       className={cn("hidden sm:flex", isMuted && "text-red-500")}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
                     >
                       {isMuted ? <SpeakerX weight="fill" className="h-5 w-5" /> : <SpeakerHigh weight="fill" className="h-5 w-5" />}
                     </Button>
@@ -172,6 +195,7 @@ export function GlobalAudioPlayer() {
                         size="icon"
                         className="h-10 w-10 rounded-full border-2"
                         onClick={playPrevious}
+                        aria-label="Previous track"
                       >
                         <SkipBack weight="fill" className="h-5 w-5" />
                       </Button>
@@ -180,6 +204,7 @@ export function GlobalAudioPlayer() {
                         size="icon"
                         className="h-14 w-14 rounded-full shadow-lg hover:scale-105 transition-transform"
                         onClick={togglePlay}
+                        aria-label={isPlaying ? "Pause" : "Play"}
                       >
                         {isPlaying ? (
                           <Pause weight="fill" className="h-7 w-7" />
@@ -193,6 +218,7 @@ export function GlobalAudioPlayer() {
                         size="icon"
                         className="h-10 w-10 rounded-full border-2"
                         onClick={playNext}
+                        aria-label="Next track"
                       >
                         <SkipForward weight="fill" className="h-5 w-5" />
                       </Button>
@@ -204,6 +230,7 @@ export function GlobalAudioPlayer() {
                       size="icon"
                       onClick={toggleMute}
                       className={cn("sm:hidden", isMuted && "text-red-500")}
+                      aria-label={isMuted ? "Unmute" : "Mute"}
                     >
                       {isMuted ? <SpeakerX weight="fill" className="h-5 w-5" /> : <SpeakerHigh weight="fill" className="h-5 w-5" />}
                     </Button>
