@@ -674,6 +674,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                             isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
                                         )} />
                                     </TooltipTrigger>
+                                    <TooltipContent side="right" className="z-[60]">
+                                        <p>Previous Page</p>
+                                    </TooltipContent>
                                 </Tooltip>
 
                                 <Tooltip>
@@ -683,6 +686,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                             isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
                                         )} />
                                     </TooltipTrigger>
+                                    <TooltipContent side="left" className="z-[60]">
+                                        <p>Next Page</p>
+                                    </TooltipContent>
                                 </Tooltip>
                             </Carousel>
                         )}

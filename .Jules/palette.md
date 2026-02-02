@@ -45,3 +45,7 @@
 ## 2026-09-12 - External Link Indicators
 **Learning:** Emojis are often read inconsistently by screen readers and look unprofessional. External links (like PDF exports) need explicit visual and programmatic indicators to prevent user surprise when a new tab opens.
 **Action:** Replace emoji icons with semantic SVG icons (like `lucide-react`) and always include an `ExternalLink` icon + `sr-only` text "(opens in a new tab)" for buttons that trigger `window.open` or `_blank` links.
+
+## 2026-10-05 - Carousel Navigation Tooltips
+**Learning:** Navigation buttons in Carousels often lack tooltips because they are icon-only. Wrapping them in `Tooltip` without `TooltipContent` leaves them inaccessible to mouse users who rely on hover for context.
+**Action:** Always ensure `TooltipContent` is present and positioned correctly (e.g., `side="right"` for left button) to prevent off-screen rendering. Use `z-[60]` if inside a modal.
