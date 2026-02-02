@@ -841,6 +841,100 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
     }
 });
 
+// Get book pages list (New dynamic endpoint)
+app.get('/api/books/:series/:bookId/pages', async (c) => {
+    try {
+        const series = decodeURIComponent(c.req.param('series'));
+        const bookId = decodeURIComponent(c.req.param('bookId'));
+
+        if (!isValidPathSegment(series) || !isValidPathSegment(bookId)) {
+            return c.json({ error: 'Invalid path segment' }, 400);
+        }
+
+        const bucket = c.env.BOOKS_BUCKET;
+        const r2PublicUrl = c.env.R2_PUBLIC_URL;
+
+        const prefixesToScan = [
+            `books/${series}/${bookId}/`,
+            `${series}/${bookId}/` // Manifest root
+        ];
+
+        const validExtensions = ['.jpg', '.jpeg', '.png', '.webp'];
+        const imageFiles: { key: string; filename: string }[] = [];
+        const seenKeys = new Set<string>();
+
+        // Helper to extract numeric part for sorting
+        const extractPageNumber = (filename: string): number => {
+            const match = filename.match(/(\d+)/);
+            return match ? parseInt(match[0], 10) : 999999;
+        };
+
+        for (const prefix of prefixesToScan) {
+            let truncated = true;
+            let cursor: string | undefined;
+
+            while (truncated) {
+                const result = await bucket.list({ prefix, cursor });
+                truncated = result.truncated;
+                if (result.truncated) {
+                    cursor = result.cursor;
+                } else {
+                    cursor = undefined;
+                }
+
+                for (const obj of result.objects) {
+                    if (seenKeys.has(obj.key)) continue;
+
+                    const lowerKey = obj.key.toLowerCase();
+                    if (validExtensions.some(ext => lowerKey.endsWith(ext))) {
+                        if (lowerKey.includes('cover')) continue;
+
+                        const filename = obj.key.split('/').pop() || '';
+                        const lowerFilename = filename.toLowerCase();
+
+                        if (
+                            lowerFilename.includes('page') ||
+                            /^\d+\.(jpg|jpeg|png|webp)$/.test(lowerFilename) ||
+                            (lowerKey.includes('/images/') && !lowerFilename.includes('cover'))
+                        ) {
+                            imageFiles.push({ key: obj.key, filename });
+                            seenKeys.add(obj.key);
+                        }
+                    }
+                }
+            }
+        }
+
+        imageFiles.sort((a, b) => {
+            const numA = extractPageNumber(a.filename);
+            const numB = extractPageNumber(b.filename);
+            return numA - numB;
+        });
+
+        const pages = imageFiles.map((file, index) => {
+            let url = `/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages/${index + 1}`;
+
+            if (r2PublicUrl) {
+                url = `${r2PublicUrl}/${file.key}`;
+            }
+
+            return {
+                index: index + 1,
+                url,
+                filename: file.filename
+            };
+        });
+
+        return c.json({
+            count: pages.length,
+            pages
+        });
+
+    } catch (error: any) {
+        return safeError(c, error);
+    }
+});
+
 // Get any book asset - DEPRECATED
 app.get('/api/books/:series/:bookId/asset/*', async (c) => {
     try {

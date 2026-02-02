@@ -49,13 +49,15 @@ export function useBookAssetUrl(
     });
 }
 
+import { API_URL } from '@/lib/api';
+
 export function useBookPageUrls(series: string, bookId: string, pageCount: number) {
     return useQuery({
         queryKey: ['book-pages', series, bookId], // Removed pageCount dependency as source of truth is now API
         queryFn: async () => {
             // New Dynamic Endpoint
             try {
-                const res = await fetch(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages`);
+                const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages`);
                 if (!res.ok) throw new Error('Failed to fetch pages url');
                 const data = await res.json();
 
