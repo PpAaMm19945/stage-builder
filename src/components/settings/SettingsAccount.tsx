@@ -12,6 +12,7 @@ import {
 import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { FundingWidget } from '@/components/funding/FundingWidget';
+import { ExternalLink } from 'lucide-react';
 
 export function SettingsAccount() {
     const { user, logout } = useAuth();
@@ -122,15 +123,21 @@ export function SettingsAccount() {
                         </p>
                         <Button
                             variant="outline"
+                            asChild
                             className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
-                            onClick={() => {
-                                window.open('mailto:antmwes104.1@gmail.com?subject=SchoolOS%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data.', '_blank');
-                                toast.info('Account deletion request', {
-                                    description: 'Your email client should open. Send the email to complete your request.'
-                                });
-                            }}
                         >
-                            Request Account Deletion
+                            <a
+                                href="mailto:antmwes104.1@gmail.com?subject=SchoolOS%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data."
+                                onClick={() => {
+                                    toast.info('Account deletion request', {
+                                        description: 'Your email client should open. Send the email to complete your request.'
+                                    });
+                                }}
+                            >
+                                Request Account Deletion
+                                <ExternalLink className="h-3 w-3 opacity-50 ml-1" />
+                                <span className="sr-only">(opens email client)</span>
+                            </a>
                         </Button>
                     </div>
                 </CardContent>
