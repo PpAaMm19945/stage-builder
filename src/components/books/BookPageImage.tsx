@@ -63,14 +63,16 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
 
             {/* Error State */}
             {error && (
-                <div
-                    className="absolute inset-0 flex flex-col items-center justify-center text-white/50 gap-4 cursor-pointer hover:text-white transition-colors z-20"
+                <button
+                    type="button"
+                    className="absolute inset-0 w-full h-full flex flex-col items-center justify-center text-white/50 gap-4 cursor-pointer hover:text-white transition-colors z-20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50"
                     onClick={(e) => {
                         e.stopPropagation(); // Prevent toggling controls
                         setError(false);
                         setIsLoaded(false);
                         setRetries(0);
                     }}
+                    aria-label={`Retry loading page ${index + 1}`}
                 >
                     <div className="bg-white/10 p-4 rounded-full hover:bg-white/20 transition-colors">
                         <ArrowCounterClockwise className="w-8 h-8" />
@@ -79,7 +81,7 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
                         <p className="text-sm font-medium">Failed to load page {index + 1}</p>
                         <p className="text-xs opacity-70 mt-1">Tap to retry</p>
                     </div>
-                </div>
+                </button>
             )}
 
             {!error && (

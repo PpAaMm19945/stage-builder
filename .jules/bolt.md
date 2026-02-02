@@ -41,3 +41,7 @@
 ## 2026-05-29 - BookReader Eager Loading Priority
 **Learning:** The `BookReader` used a static logic (`index < 3 ? "eager" : "lazy"`) for image loading, ignoring the user's current position in the book. If a user navigated to page 50, the image would be loaded lazily, delaying LCP.
 **Action:** Implemented dynamic priority logic where the current page and the immediate next page receive `loading="eager"` and `fetchPriority="high"`. This ensures near-instant rendering during navigation while maintaining lazy loading for distant pages.
+
+## 2026-06-01 - Manifest-Based Caching for Book Metadata
+**Learning:** `fetchAllBooks` was fetching `metadata.json` for every book in the manifest on every cache miss (5 mins). For 500+ books, this caused 500+ R2 Class B operations per worker every 5 minutes, increasing costs and latency.
+**Action:** Implemented `MANIFEST_BOOKS_CACHE` which stores the parsed book list alongside the manifest source. Before fetching metadata, we now compare the current `manifest.json` with the cached manifest using `areManifestsEqual`. If they match, we return the cached book list instantly (0 R2 reads), drastically reducing backend load.

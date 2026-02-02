@@ -12,7 +12,7 @@ import { errorHandler } from './middleware/error-handler';
 import { PdfService } from './services/pdf-service';
 import { handleArchiveExport, handleSignedDownload } from './export';
 import { Env, User, BookMetadata, JWTPayload } from './types';
-import { escapeHtml, isValidPathSegment, safeCompare } from './lib/security';
+import { escapeHtml, isValidPathSegment, safeCompare, MAX_UPLOAD_SIZE, isAllowedFile, getContentType } from './lib/security';
 import { signJWT, verifyJWT } from './lib/auth';
 import { requireAuth, requireParent, requireHouseholdMember } from './lib/middleware';
 import { generateId, generateInviteCode } from './lib/utils';
@@ -594,13 +594,33 @@ app.put('/api/portfolio/upload-handler', async (c) => {
       return c.json({ error: 'Invalid key or unauthorized' }, 403);
     }
 
+    // Security: Enforce allowed file types (prevent XSS/malware)
+    if (!isAllowedFile(key)) {
+      return c.json({ error: 'Invalid file type. Allowed: jpg, png, webp, pdf' }, 400);
+    }
+
+    // Security: Content-Length check (Fast fail)
+    const contentLength = c.req.header('content-length');
+    if (contentLength && parseInt(contentLength) > MAX_UPLOAD_SIZE) {
+      return c.json({ error: 'File too large (max 10MB)' }, 413);
+    }
+
     const body = await c.req.arrayBuffer();
+
+    // Security: Body size check
+    if (body.byteLength > MAX_UPLOAD_SIZE) {
+      return c.json({ error: 'File too large (max 10MB)' }, 413);
+    }
+
+    const contentType = getContentType(key);
 
     // We reuse the BOOKS_BUCKET for now or should add a separate bucket binding
     // Ideally we add PORTFOLIO_BUCKET to Env
     // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
     // Using BOOKS_BUCKET for now as "storage" bucket
-    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body);
+    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body, {
+      httpMetadata: { contentType }
+    });
 
     return c.json({ success: true, key: `portfolio/${key}` });
   } catch (error: any) {

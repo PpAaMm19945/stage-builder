@@ -34,7 +34,7 @@
 **Prevention:** Implement `isValidPath` checks that enforce `startsWith('safe-dir/')` and reject `includes('..')`.
 
 ## 2026-05-24 - CSRF in OAuth Flow (State Parameter)
-**Vulnerability:** The Google OAuth implementation generated a `state` parameter but failed to store or verify it in the callback handler. This allows attackers to perform Cross-Site Request Forgery (CSRF) by logging victims into the attacker's account, potentially to track activity or harvest data.
+**Vulnerability:** The Google OAuth implementation generated a `state` parameter but failed to verify it in the callback handler. This allows attackers to perform Cross-Site Request Forgery (CSRF) by logging victims into the attacker's account, potentially to track activity or harvest data.
 **Learning:** Generating a random `state` is only half the solution; it MUST be verified. The pattern of "generate state -> redirect -> check state in callback" requires persistence (e.g., cookie/session) between the request and the callback.
 **Prevention:** Store the `state` in a short-lived, HttpOnly, secure cookie (or session) before redirecting. In the callback, strictly verify that the `state` query parameter matches the stored value and delete the cookie immediately.
 
@@ -52,6 +52,7 @@
 **Vulnerability:** The Admin Reindex endpoint (`/api/admin/reindex`) accepted the `ADMIN_SECRET` via a query parameter (`?secret=...`).
 **Learning:** Recurrence of the "credentials in URL" pattern. It seems developers default to query params for "easy" curl/script usage.
 **Prevention:** Enforce header-based auth (`Authorization: Bearer ...`) across all admin endpoints. Review existing endpoints for similar patterns.
+
 ## 2026-06-26 - Credentials in URL Parameters (Admin Console)
 **Vulnerability:** The Admin Console (`cloudflare/src/routes/console.ts`) accepted the `ADMIN_SECRET` via a `key` query parameter (`?key=...`). This allows the secret to be leaked in browser history, proxy logs, and server logs.
 **Learning:** Even "internal" web dashboards often get deployed to public-facing URLs. Relying on query parameters for authentication is a persistent anti-pattern because it feels "easy" for browser access but is fundamentally insecure.
@@ -66,3 +67,13 @@
 **Vulnerability:** A `GET /api/r2-debug` endpoint was left in `curriculum.ts` without any authentication checks, allowing anyone to list the entire contents of the `BOOKS_BUCKET`. This duplicate of the secured `library.ts` functionality was likely a development leftover.
 **Learning:** Redundant code often leads to security gaps. If a feature exists in two places, one will likely be forgotten during security hardening. Public "debug" endpoints in API routers are a major risk as they often bypass standard middleware checks if not explicitly guarded.
 **Prevention:** Audit API routes for "debug", "test", or "temp" keywords. Consolidate functionality into single, well-secured modules (like `admin.ts`). Ensure global authentication middleware blocks access by default, or that every route handler explicitly calls `requireAuth()`.
+
+## 2026-01-20 - Path Traversal in Series Endpoints
+**Vulnerability:** The endpoints `GET /api/series/:seriesId` and `GET /api/series/:seriesId/cover` used the `seriesId` parameter directly to construct R2 storage keys (`books/${seriesId}/...`) without validation. While the R2 bucket structure mitigates some risks, an attacker could theoretically use `..` sequences to access objects outside the intended directory structure.
+**Learning:** Inconsistent application of security controls is a common vulnerability. While `isValidPathSegment` was applied to book endpoints, it was missed in the series endpoints in the same file. "Copy-paste" or evolution of code often leads to these gaps.
+**Prevention:** Systematically apply input validation to *all* parameters that touch the file system or storage keys. Use automated linting or security scanning to catch missing validations.
+
+## 2026-07-28 - Unrestricted File Upload in Portfolio
+**Vulnerability:** The `PUT /api/portfolio/upload-handler` endpoint allowed users to upload files with any extension or content (e.g., HTML, JS) to a public R2 bucket. This could lead to Stored XSS if the uploaded file was accessed via the public R2 URL.
+**Learning:** Accepting user uploads without strict validation is a critical risk, especially when storage is public. "Key prefixing" is insufficient if the extension allows execution (e.g., serving HTML).
+**Prevention:** Always enforce an allowlist of file extensions (e.g., images/PDFs only) and valid MIME types. Explicitly set `Content-Type` on storage objects to prevent MIME-sniffing. Implement size limits to prevent DoS.
