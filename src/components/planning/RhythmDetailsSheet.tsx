@@ -201,26 +201,19 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                 )}
 
                                 {/* Activity rendering */}
-                                {activeItem.data.item_type === 'activity' && (
-                                    <div className="space-y-4">
-                                        <h3 className="text-xl font-display font-bold text-center">{activeItem.title}</h3>
-                                        <div
-                                            className="prose prose-sm dark:prose-invert"
-                                            dangerouslySetInnerHTML={{
-                                                __html: sanitizeHtml(
-                                                    activeItem.data.content?.description ||
-                                                    activeItem.data.content?.content ||
-                                                    activeItem.description
-                                                )
-                                            }}
-                                        />
-                                        {activeItem.data.content?.materials && (
-                                            <div className="bg-muted/30 rounded-lg p-4">
-                                                <p className="text-xs uppercase tracking-wider text-muted-foreground font-medium mb-2">Materials Needed</p>
-                                                <p className="text-sm">{activeItem.data.content.materials}</p>
-                                            </div>
-                                        )}
-                                    </div>
+                                {activeItem.data.item_type === 'activity' && activeItem.data.content && (
+                                    <ActivityDetails
+                                        activity={{
+                                            ...activeItem.data.content,
+                                            // Ensure ID and Title are present from parent if missing in content
+                                            id: activeItem.data.content.id || activeItem.data.item_id,
+                                            title: activeItem.data.content.title || activeItem.title
+                                        }}
+                                        onComplete={(duration) => {
+                                            handleSheetComplete(duration);
+                                        }}
+                                        hideActions={false}
+                                    />
                                 )}
 
                                 {/* Fallback for unknown item types */}
@@ -240,12 +233,14 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
                                     </div>
                                 )}
 
-                                {/* Complete button */}
-                                <div className="pt-4">
-                                    <Button onClick={() => handleSheetComplete()} size="lg" className="w-full">
-                                        Mark Complete
-                                    </Button>
-                                </div>
+                                {/* Complete button - Hide for activity type as ActivityDetails handles it */}
+                                {activeItem.data.item_type !== 'activity' && (
+                                    <div className="pt-4">
+                                        <Button onClick={() => handleSheetComplete()} size="lg" className="w-full">
+                                            Mark Complete
+                                        </Button>
+                                    </div>
+                                )}
                             </div>
                         )}
 
