@@ -37,3 +37,7 @@
 ## 2026-05-29 - Parallelize R2 Metadata Fetching
 **Learning:** The `/api/series` and `/api/series/:id` endpoints were fetching metadata for each item sequentially in a `for` loop. For a series with 20 books, this caused 20 sequential round-trips to R2, significantly increasing latency.
 **Action:** Refactored the loops to use `Promise.all` to fetch all metadata in parallel. This changes the latency profile from O(N) to O(1) (bounded by concurrency limits), drastically reducing load times for the library views.
+
+## 2026-05-29 - BookReader Eager Loading Priority
+**Learning:** The `BookReader` used a static logic (`index < 3 ? "eager" : "lazy"`) for image loading, ignoring the user's current position in the book. If a user navigated to page 50, the image would be loaded lazily, delaying LCP.
+**Action:** Implemented dynamic priority logic where the current page and the immediate next page receive `loading="eager"` and `fetchPriority="high"`. This ensures near-instant rendering during navigation while maintaining lazy loading for distant pages.

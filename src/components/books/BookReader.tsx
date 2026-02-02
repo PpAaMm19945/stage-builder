@@ -527,6 +527,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                 src={coverUrl}
                                                 alt="Cover"
                                                 className="w-full h-full object-contain drop-shadow-2xl"
+                                                loading="eager"
+                                                fetchpriority="high"
                                                 onError={(e) => {
                                                     e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
                                                 }}
@@ -564,6 +566,12 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         if (failedImages.has(index)) return null;
 
                                         const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
+
+                                        // Priority logic: Load eager if it's the current page or the immediate next page
+                                        // Carousel 'current' is 1-based index (1 = Cover, 2 = Page 1)
+                                        // So Page Index 0 is Current when current=2. Next when current=1.
+                                        const priority = (index + 2 === current) || (index + 1 === current);
+
                                         const prompt = showPrompts && book.readingPrompts?.find(p =>
                                             typeof p === 'object' && 'page' in p && p.page === index + 1
                                         ) as { page: number; prompt: string } | undefined;
@@ -581,6 +589,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                             index={index}
                                                             onImageError={handleImageError}
                                                             prompt={prompt?.prompt}
+                                                            priority={priority}
                                                         />
                                                     </div>
                                                 ) : (
