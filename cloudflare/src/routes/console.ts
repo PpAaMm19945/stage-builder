@@ -324,9 +324,7 @@ app.get('/', async (c) => {
 
           function copyDebug(id) {
             const content = document.getElementById('debug-' + id).value;
-            const txt = document.createElement('textarea');
-            txt.innerHTML = content;
-            navigator.clipboard.writeText(txt.value).then(() => {
+            navigator.clipboard.writeText(content).then(() => {
               alert('Debug JSON copied to clipboard!');
             });
           };

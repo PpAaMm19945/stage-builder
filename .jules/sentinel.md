@@ -72,3 +72,8 @@
 **Vulnerability:** The endpoints `GET /api/series/:seriesId` and `GET /api/series/:seriesId/cover` used the `seriesId` parameter directly to construct R2 storage keys (`books/${seriesId}/...`) without validation. While the R2 bucket structure mitigates some risks, an attacker could theoretically use `..` sequences to access objects outside the intended directory structure.
 **Learning:** Inconsistent application of security controls is a common vulnerability. While `isValidPathSegment` was applied to book endpoints, it was missed in the series endpoints in the same file. "Copy-paste" or evolution of code often leads to these gaps.
 **Prevention:** Systematically apply input validation to *all* parameters that touch the file system or storage keys. Use automated linting or security scanning to catch missing validations.
+
+## 2026-05-25 - Unsafe innerHTML in Admin Tools
+**Vulnerability:** The Admin Console (`console.ts`) used `innerHTML` to populate a temporary textarea for clipboard copying. While `textarea` parsing context prevents direct script execution, this pattern is a dangerous "sink" that can lead to XSS if the element type changes or if specific breakout sequences (`</textarea>`) are used. It also confuses the data flow by decoding entities unnecessarily.
+**Learning:** Avoid using `innerHTML` for simple text operations. It's often used as a "hack" to decode HTML entities, but `textarea.value` or `DOMParser` are safer alternatives. For clipboard operations, `navigator.clipboard.writeText()` handles strings directly without needing DOM elements.
+**Prevention:** Audit codebase for `innerHTML` usage. Use `textContent` or `innerText` for setting text. Use `navigator.clipboard` for copying.
