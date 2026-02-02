@@ -387,6 +387,11 @@ app.get('/api/series', async (c) => {
 app.get('/api/series/:seriesId', async (c) => {
     try {
         const seriesId = c.req.param('seriesId');
+
+        if (!isValidPathSegment(seriesId)) {
+            return c.json({ error: 'Invalid path segment' }, 400);
+        }
+
         const bucket = c.env.BOOKS_BUCKET;
         const manifest = await getManifest(bucket);
 
@@ -446,6 +451,11 @@ app.get('/api/series/:seriesId', async (c) => {
 app.get('/api/series/:seriesId/cover', async (c) => {
     try {
         const seriesId = c.req.param('seriesId');
+
+        if (!isValidPathSegment(seriesId)) {
+            return c.json({ error: 'Invalid path segment' }, 400);
+        }
+
         const bucket = c.env.BOOKS_BUCKET;
 
         const key = `books/${seriesId}/cover.png`;
