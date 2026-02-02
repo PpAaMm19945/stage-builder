@@ -32,11 +32,11 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
 
     const handleError = () => {
         if (retries < 3) {
-             console.log(`Retrying image ${index} (attempt ${retries + 1})...`);
-             // Simple timeout to trigger re-render with new URL
-             setTimeout(() => {
-                 setRetries(r => r + 1);
-             }, 1000 * (retries + 1));
+            console.log(`Retrying image ${index} (attempt ${retries + 1})...`);
+            // Simple timeout to trigger re-render with new URL
+            setTimeout(() => {
+                setRetries(r => r + 1);
+            }, 1000 * (retries + 1));
         } else {
             setError(true);
             setIsLoaded(true);
@@ -93,6 +93,7 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
                     loading={index < 3 ? "eager" : "lazy"}
                     onLoad={handleLoad}
                     onError={handleError}
+                    fetchPriority={index < 3 ? "high" : "low"}
                 />
             )}
 

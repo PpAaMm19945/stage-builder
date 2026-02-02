@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ai } from '@/lib/api';
+import { ai, auth } from '@/lib/api';
 import { sanitizeMessage, validateMessage } from '@/lib/chat-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -94,7 +94,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         const initializeChat = async () => {
             try {
                 // 1. Get User ID
-                const { user } = await ai.auth.getMe();
+                const { user } = await auth.getMe();
                 if (!user?.id) return;
                 setUserId(user.id);
 
@@ -155,16 +155,18 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         }
 
         const userMessage: Message = { role: 'user', content: trimmedInput };
-        setMessages(prev => [...prev, userMessage]);
+        const assistantPlaceholder: Message = { role: 'assistant', content: '' };
+
+        setMessages(prev => {
+            const updated = [...prev, userMessage, assistantPlaceholder];
+            // Persist immediately
+            if (userId) {
+                chatStorage.saveSession(userId, updated);
+            }
+            return updated;
+        });
+
         setInput('');
-
-        // Add empty assistant message that will be updated by stream
-        const updatedMessages = [...prev, { role: 'assistant', content: '' }];
-        setMessages(updatedMessages);
-
-        if (userId) {
-            chatStorage.saveSession(userId, updatedMessages);
-        }
 
         await sendMessage([...messages, userMessage], { page: 'dashboard' });
     };

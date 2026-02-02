@@ -224,9 +224,9 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             if (window.innerWidth < 768 && window.innerHeight > window.innerWidth) {
                 // Portrait mobile
                 if (book?.renderFormat === 'image' || book?.renderFormat === 'images') {
-                   // Ideally we'd check aspect ratio of the first image, but simplistic check is fine
-                   // toast.info("Rotate for better view", { duration: 2000, position: 'bottom-center' });
-                   // Commented out to avoid annoyance, but logic is here
+                    // Ideally we'd check aspect ratio of the first image, but simplistic check is fine
+                    // toast.info("Rotate for better view", { duration: 2000, position: 'bottom-center' });
+                    // Commented out to avoid annoyance, but logic is here
                 }
             }
         };
@@ -306,7 +306,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         setRestoredPage(null);
         setInitialProgressChecked(false);
         if (document.fullscreenElement) {
-            document.exitFullscreen().catch(() => {});
+            document.exitFullscreen().catch(() => { });
         }
         onOpenChange(false);
     };
@@ -465,7 +465,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                 {/* PDF Cover Preview */}
                                 {coverUrl && (
                                     <div className="w-48 sm:w-64 shadow-2xl rounded-lg overflow-hidden shrink-0 transform hover:scale-105 transition-transform duration-300">
-                                        <AspectRatio ratio={3/4}>
+                                        <AspectRatio ratio={3 / 4}>
                                             <img
                                                 src={coverUrl}
                                                 alt={book.title}
@@ -527,6 +527,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                 src={coverUrl}
                                                 alt="Cover"
                                                 className="w-full h-full object-contain drop-shadow-2xl"
+                                                fetchPriority="high"
                                                 onError={(e) => {
                                                     e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
                                                 }}
