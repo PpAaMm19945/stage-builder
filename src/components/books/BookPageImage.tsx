@@ -11,9 +11,10 @@ interface BookPageImageProps {
     onImageError?: (index: number) => void;
     prompt?: string;
     className?: string;
+    priority?: boolean;
 }
 
-export const BookPageImage = memo(function BookPageImage({ src, alt, index, onError, onImageError, prompt, className }: BookPageImageProps) {
+export const BookPageImage = memo(function BookPageImage({ src, alt, index, onError, onImageError, prompt, className, priority }: BookPageImageProps) {
     const [isLoaded, setIsLoaded] = useState(false);
     const [error, setError] = useState(false);
     const [retries, setRetries] = useState(0);
@@ -90,10 +91,10 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
                         !isLoaded && "opacity-0",
                         className
                     )}
-                    loading={index < 3 ? "eager" : "lazy"}
+                    loading={priority ? "eager" : "lazy"}
+                    fetchPriority={priority ? "high" : "low"}
                     onLoad={handleLoad}
                     onError={handleError}
-                    fetchPriority={index < 3 ? "high" : "low"}
                 />
             )}
 
