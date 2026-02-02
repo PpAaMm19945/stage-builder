@@ -46,6 +46,10 @@
 **Learning:** Emojis are often read inconsistently by screen readers and look unprofessional. External links (like PDF exports) need explicit visual and programmatic indicators to prevent user surprise when a new tab opens.
 **Action:** Replace emoji icons with semantic SVG icons (like `lucide-react`) and always include an `ExternalLink` icon + `sr-only` text "(opens in a new tab)" for buttons that trigger `window.open` or `_blank` links.
 
-## 2026-10-05 - Carousel Navigation Tooltips
-**Learning:** Navigation buttons in Carousels often lack tooltips because they are icon-only. Wrapping them in `Tooltip` without `TooltipContent` leaves them inaccessible to mouse users who rely on hover for context.
-**Action:** Always ensure `TooltipContent` is present and positioned correctly (e.g., `side="right"` for left button) to prevent off-screen rendering. Use `z-[60]` if inside a modal.
+## 2026-10-01 - Interactive Error States
+**Learning:** Using generic `div` elements with `onClick` for retry actions (like "Tap to retry" on failed images) isolates keyboard and screen reader users, as these elements are not focusable or announced as interactive.
+**Action:** Replace interactive error containers with semantic `<button type="button">` elements. Ensure they have clear `aria-label`s (e.g., "Retry loading page X") and visual focus indicators (`focus-visible`) to support all navigation methods.
+
+## 2026-05-18 - Audio Player Accessibility
+**Learning:** Media players often have multiple icon-only controls (play, pause, skip) that are critical for usage but often lack accessible names.
+**Action:** Ensure every control in a custom media player has a clear `aria-label`, especially state-dependent ones like Play/Pause (switching labels) and Mute/Unmute.
