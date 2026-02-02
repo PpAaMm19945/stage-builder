@@ -308,4 +308,5 @@ app.post('/api/progress/save', async (c) => {
     }
 });
 
-export default app;
+// Export the app
+export const progressRoutes = app;

@@ -3,7 +3,7 @@
 
 name = "stage-builder"
 account_id = "4b9e1f0f3d5f50f35db086b8ae9431e1"
-main = "src/index.ts"
+main = "src/index_v2.ts"
 compatibility_date = "2024-01-01"
 compatibility_flags = ["nodejs_compat"]
 
