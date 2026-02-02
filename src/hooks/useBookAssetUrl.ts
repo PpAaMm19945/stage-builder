@@ -51,11 +51,36 @@ export function useBookAssetUrl(
 
 export function useBookPageUrls(series: string, bookId: string, pageCount: number) {
     return useQuery({
-        queryKey: ['book-pages', series, bookId, pageCount],
+        queryKey: ['book-pages', series, bookId], // Removed pageCount dependency as source of truth is now API
         queryFn: async () => {
+            // New Dynamic Endpoint
+            try {
+                const res = await fetch(`/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages`);
+                if (!res.ok) throw new Error('Failed to fetch pages url');
+                const data = await res.json();
+
+                if (data.pages && Array.isArray(data.pages)) {
+                    return data.pages.map((p: any) => p.url) as string[];
+                }
+            } catch (e) {
+                console.warn("Failed to fetch dynamic pages, falling back to legacy generation", e);
+            }
+
+            // Fallback: Legacy Logic (if API fails or not deployed yet during dev)
             const urls: string[] = [];
             // Wait for manifest first to avoid N requests
             await bookManifest.getManifest();
+
+            // Try Page 0 (Copyright/Intro) first - common in some new books
+            const zeroKey = `${series}/${bookId}/pages/00`;
+            const zeroUrl = await bookManifest.resolve(zeroKey);
+            if (zeroUrl) urls.push(zeroUrl);
+            else {
+                // Try loose 0
+                const looseKey = `${series}/${bookId}/pages/0`;
+                const looseUrl = await bookManifest.resolve(looseKey);
+                if (looseUrl) urls.push(looseUrl);
+            }
 
             for (let i = 1; i <= pageCount; i++) {
                 const padded = String(i).padStart(2, '0');
@@ -71,6 +96,6 @@ export function useBookPageUrls(series: string, bookId: string, pageCount: numbe
             return urls;
         },
         staleTime: 1000 * 60 * 60,
-        enabled: !!series && !!bookId && pageCount > 0,
+        enabled: !!series && !!bookId,
     });
 }

@@ -407,13 +407,13 @@ app.get('/api/series/:seriesId', async (c) => {
         // 1. Manifest Books
         const manifestEntries = Object.keys(manifest).filter(k => k.startsWith(`${seriesId}/`) && k.endsWith('/metadata.json'));
         const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
-             const parts = entryKey.split('/');
-             if (parts.length < 3) return null;
-             const bookId = parts[1];
-             if (seenBooks.has(bookId)) return null;
-             seenBooks.add(bookId);
+            const parts = entryKey.split('/');
+            if (parts.length < 3) return null;
+            const bookId = parts[1];
+            if (seenBooks.has(bookId)) return null;
+            seenBooks.add(bookId);
 
-             return getBookMetadata(bucket, seriesId, bookId, c.env.R2_PUBLIC_URL);
+            return getBookMetadata(bucket, seriesId, bookId, c.env.R2_PUBLIC_URL);
         }));
         books.push(...manifestBooks.filter((b): b is BookMetadata => b !== null));
 
@@ -685,19 +685,19 @@ app.get('/api/books/:series/:bookId/pages/:pageNum', async (c) => {
         const manifest = await getManifest(bucket);
         const manifestKey = manifest[`${series}/${bookId}/pages/${paddedNum}`];
         if (manifestKey) {
-             const object = await bucket.get(manifestKey);
-             if (object) {
-                 const headers = new Headers();
-                 const ext = manifestKey.split('.').pop()?.toLowerCase();
-                 const contentType = object.httpMetadata?.contentType ||
-                     (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
-                 headers.set('Content-Type', contentType);
-                 headers.set('Cache-Control', 'public, max-age=86400');
-                 headers.set('Access-Control-Allow-Origin', '*');
-                 headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
-                 headers.set('X-Source', 'manifest');
-                 return new Response(object.body, { headers });
-             }
+            const object = await bucket.get(manifestKey);
+            if (object) {
+                const headers = new Headers();
+                const ext = manifestKey.split('.').pop()?.toLowerCase();
+                const contentType = object.httpMetadata?.contentType ||
+                    (ext === 'jpg' || ext === 'jpeg' ? 'image/jpeg' : 'image/png');
+                headers.set('Content-Type', contentType);
+                headers.set('Cache-Control', 'public, max-age=86400');
+                headers.set('Access-Control-Allow-Origin', '*');
+                headers.set('Access-Control-Allow-Methods', 'GET, HEAD, OPTIONS');
+                headers.set('X-Source', 'manifest');
+                return new Response(object.body, { headers });
+            }
         }
 
         const pathsToTry = [

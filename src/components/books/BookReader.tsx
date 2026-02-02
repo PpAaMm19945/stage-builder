@@ -1,12 +1,11 @@
 import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
 import { Book } from '@/types';
-import {
-    Dialog,
+Dialog,
     DialogContent,
     DialogHeader,
     DialogTitle,
-    DialogDescription
-} from '@/components/ui/dialog';
+    DialogDescription,
+    DialogFooter,
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 import {
@@ -56,6 +55,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const [showFinishDialog, setShowFinishDialog] = useState(false);
     const [initialProgressChecked, setInitialProgressChecked] = useState(false);
     const [restoredPage, setRestoredPage] = useState<number | null>(null);
+    const [showResumeDialog, setShowResumeDialog] = useState(false);
     const [isFullscreen, setIsFullscreen] = useState(false);
     const [showControls, setShowControls] = useState(true);
     const dialogRef = useRef<HTMLDivElement>(null);
@@ -106,14 +106,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     // Restore page effect
     useEffect(() => {
         if (restoredPage && api && restoredPage > 1 && open) {
-            toast.info(`You were on page ${restoredPage}`, {
-                action: {
-                    label: 'Jump there',
-                    onClick: () => api.scrollTo(restoredPage - 1)
-                },
-                duration: 8000
-            });
-            setRestoredPage(null);
+            setShowResumeDialog(true);
         }
     }, [restoredPage, api, open]);
 
@@ -121,16 +114,27 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     const saveProgressMutation = useMutation({
         mutationFn: async () => {
             if (!book) return;
+            // Debounce check handled by effect, but we can double check here
             await progress.save(book.id, {
                 current_page: current,
                 total_pages: count || 0
             }, 'book');
         },
         onSuccess: () => {
-            toast.success("Progress saved");
-            handleCloseComplete();
+            // calculated "quiet" save, no toast needed for auto-save
         }
     });
+
+    // Auto-save effect
+    useEffect(() => {
+        if (!book || !open || current <= 1) return;
+
+        const timer = setTimeout(() => {
+            saveProgressMutation.mutate();
+        }, 3000); // 3 second debounce
+
+        return () => clearTimeout(timer);
+    }, [current, book, open]);
 
     const skipMutation = useMutation({
         mutationFn: async () => {
@@ -258,7 +262,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
     }, [open, api, showChildSelection]);
 
     // Use hooks for asset URLs
-    const { data: pageUrls } = useBookPageUrls(book?.series || '', book?.id || '', book?.pageCount || 0);
+    const { data: pageUrls, isLoading: isLoadingPages } = useBookPageUrls(book?.series || '', book?.id || '', book?.pageCount || 0);
     const { data: resolvedCover } = useBookAssetUrl(book?.series || '', book?.id || '', 'cover');
     const { data: resolvedPdf } = useBookAssetUrl(book?.series || '', book?.id || '', 'pdf');
 
@@ -303,6 +307,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         setFailedImages(new Set());
         setPagesViewed(new Set());
         setShowFinishDialog(false);
+        setShowResumeDialog(false);
         setRestoredPage(null);
         setInitialProgressChecked(false);
         if (document.fullscreenElement) {
@@ -375,7 +380,20 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                             <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
                             {!isPdf && (
                                 <DialogDescription className="text-gray-400 text-xs">
-                                    Page {current} of {count || (validImagePages.length > 0 ? validImagePages.length + 2 : totalPages + 2)}
+                                    {isLoadingPages ? (
+                                        <span className="flex items-center gap-2">
+                                            <CircleNotch className="w-3 h-3 animate-spin" />
+                                            Finding pages...
+                                        </span>
+                                    ) : (
+                                        <>
+                                            {current === 1 ? "Cover" : (
+                                                current === (count || totalPages + 2) ? "The End" : (
+                                                    `Page ${current - 1} of ${validImagePages.length > 0 ? validImagePages.length : totalPages}`
+                                                )
+                                            )}
+                                        </>
+                                    )}
                                 </DialogDescription>
                             )}
                         </div>
@@ -711,7 +729,10 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                         <Button
                             variant="outline"
                             className="w-full"
-                            onClick={() => saveProgressMutation.mutate()}
+                            onClick={() => {
+                                saveProgressMutation.mutate();
+                                handleCloseComplete();
+                            }}
                         >
                             No, continue later (Save page)
                         </Button>
@@ -725,6 +746,49 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                             </Button>
                         )}
                     </div>
+                </DialogContent>
+            </Dialog>
+
+            <Dialog open={showResumeDialog} onOpenChange={(open) => {
+                if (!open) {
+                    setShowResumeDialog(false);
+                    setRestoredPage(null);
+                }
+            }}>
+                <DialogContent>
+                    <DialogHeader>
+                        <DialogTitle>Welcome Back!</DialogTitle>
+                        <DialogDescription>
+                            You were reading <strong>{book.title}</strong> and left off at page {restoredPage}.
+                        </DialogDescription>
+                    </DialogHeader>
+                    <DialogFooter className="flex-col sm:justify-start gap-2">
+                        <div className="flex gap-2 w-full">
+                            <Button
+                                className="flex-1"
+                                variant="default"
+                                onClick={() => {
+                                    if (api && restoredPage) {
+                                        api.scrollTo(restoredPage - 1);
+                                    }
+                                    setShowResumeDialog(false);
+                                    setRestoredPage(null);
+                                }}
+                            >
+                                Resume from Page {restoredPage}
+                            </Button>
+                            <Button
+                                className="flex-1"
+                                variant="outline"
+                                onClick={() => {
+                                    setShowResumeDialog(false);
+                                    setRestoredPage(null);
+                                }}
+                            >
+                                Start Over
+                            </Button>
+                        </div>
+                    </DialogFooter>
                 </DialogContent>
             </Dialog>
         </>
