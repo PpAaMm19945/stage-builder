@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Env, BookMetadata, User } from '../types';
-import { isValidPathSegment, safeCompare, sanitizeFilename } from '../lib/security';
+import { isValidPathSegment, safeCompare, sanitizeFilename, isAllowedFile, getContentType } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
@@ -1142,9 +1142,21 @@ app.put('/api/books/upload', async (c) => {
         return c.json({ error: 'Invalid path. Must start with books/ and not contain traversal characters.' }, 403);
     }
 
+    // Security: Enforce allowed file types
+    const isJson = path.toLowerCase().endsWith('.json');
+    if (!isAllowedFile(path) && !isJson) {
+        return c.json({ error: 'Invalid file type. Allowed: jpg, png, webp, pdf, json' }, 400);
+    }
+
     try {
         const body = await c.req.arrayBuffer();
-        await c.env.BOOKS_BUCKET.put(path, body);
+
+        let contentType = getContentType(path);
+        if (isJson) contentType = 'application/json';
+
+        await c.env.BOOKS_BUCKET.put(path, body, {
+            httpMetadata: { contentType }
+        });
         return c.json({ success: true, path });
     } catch (error: any) {
         return safeError(c, error);
