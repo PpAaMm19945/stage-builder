@@ -331,6 +331,21 @@ export default function Dashboard() {
     }
   }, []);
 
+  const handleBookReaderComplete = useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['todays-book'] });
+    queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
+  }, [queryClient]);
+
+  const handleBookReaderOpenChange = useCallback((open: boolean) => {
+    if (!open) setSelectedBook(null);
+  }, []);
+
+  const bookReaderChildrenIdsRaw = useMemo(() => {
+    return dayData?.children?.map((c: any) => c.id);
+  }, [dayData?.children]);
+
+  const bookReaderChildrenIds = useStableValue(bookReaderChildrenIdsRaw);
+
   // BUILD TIMELINE ITEMS (Moved up before conditional returns)
   const timelineItemsRaw = useMemo(() => {
     const items: RhythmItem[] = [];
@@ -544,12 +559,9 @@ export default function Dashboard() {
           <BookReader
             book={selectedBook}
             open={!!selectedBook}
-            onOpenChange={(open) => !open && setSelectedBook(null)}
-            childrenIds={dayData?.children?.map((c: any) => c.id)}
-            onComplete={() => {
-              queryClient.invalidateQueries({ queryKey: ['todays-book'] });
-              queryClient.invalidateQueries({ queryKey: ['reading-history-recent'] });
-            }}
+            onOpenChange={handleBookReaderOpenChange}
+            childrenIds={bookReaderChildrenIds}
+            onComplete={handleBookReaderComplete}
           />
         )}
 
