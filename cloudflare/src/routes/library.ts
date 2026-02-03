@@ -199,6 +199,15 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
             } else {
                 const manifestEntries = Object.keys(manifest).filter(k => k.endsWith('/metadata.json'));
 
+                // Incremental Loading Optimization: Reuse cached books if physical key matches
+                const oldBookMap = new Map<string, BookMetadata>();
+                if (MANIFEST_BOOKS_CACHE) {
+                    for (const book of MANIFEST_BOOKS_CACHE.data) {
+                        const key = `${book.series}/${book.id}/metadata.json`;
+                        oldBookMap.set(key, book);
+                    }
+                }
+
                 const manifestBooks = await Promise.all(manifestEntries.map(async (entryKey) => {
                     const parts = entryKey.split('/');
                     // Expect series/bookId/metadata.json
@@ -208,6 +217,18 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
 
                     try {
                         const physicalKey = manifest[entryKey];
+
+                        // Check if we can reuse cached book
+                        if (MANIFEST_BOOKS_CACHE) {
+                            const oldPhysicalKey = MANIFEST_BOOKS_CACHE.manifest[entryKey];
+                            if (oldPhysicalKey === physicalKey) {
+                                const cachedBook = oldBookMap.get(entryKey);
+                                if (cachedBook) {
+                                    return cachedBook;
+                                }
+                            }
+                        }
+
                         const object = await bucket.get(physicalKey);
                         if (object) {
                             const data = await object.json() as any;
