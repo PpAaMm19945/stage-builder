@@ -49,36 +49,13 @@ import { Compass } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 import { PathCompletionModal } from '@/components/paths/PathCompletionModal';
 import { EndOfDaySummary } from '@/components/dashboard/EndOfDaySummary';
+import AnchorCard from '@/components/anchor/AnchorCard';
+import { useAuth } from '@/components/auth/AuthProvider';
 
 const EMPTY_WEEK_DATA = {};
 
 export default function Dashboard() {
   const { user } = useAuth();
-  const navigate = useNavigate();
-  const queryClient = useQueryClient();
-
-  // State for day navigation
-  const [selectedDate, setSelectedDate] = useState(() => startOfDay(new Date()));
-  const [selectedBook, setSelectedBook] = useState<Book | null>(null);
-
-  // State for regenerate dialog
-  const [isBalanceDialogOpen, setIsBalanceDialogOpen] = useState(false);
-  const [balancePreference, setBalancePreference] = useState<'baby_focused' | 'mixed' | 'older_focused'>('mixed');
-  const [transferAction, setTransferAction] = useState<'move' | 'skip'>('move');
-
-  // State for swap sheet
-  const [swapActivity, setSwapActivity] = useState<{ id: string; title: string } | null>(null);
-
-  // State for active rhythm item (lifted from DailyRhythm)
-  const [activeRhythmItem, setActiveRhythmItem] = useState<RhythmItem | null>(null);
-
-  // State for path completion celebration
-  const [completedPathInfo, setCompletedPathInfo] = useState<{
-    pathName: string;
-    totalItems: number;
-  } | null>(null);
-
-  // End of Day Summary State
   const [showSummary, setShowSummary] = useState(false);
 
   const today = startOfDay(new Date());

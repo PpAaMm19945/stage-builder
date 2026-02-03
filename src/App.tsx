@@ -27,7 +27,11 @@ import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
 const GuestHome = lazy(() => import("./components/guest/GuestHome"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
-const Dashboard = lazy(() => import("./pages/Dashboard"));
+
+// THE ANCHOR: Use DailyAnchorView instead of Dashboard
+const DailyAnchorView = lazy(() => import("./components/anchor/DailyAnchorView"));
+
+// Legacy/Hidden Pages
 const Planner = lazy(() => import("./pages/early-years/Planner"));
 const DailyPractices = lazy(() => import("./pages/early-years/DailyPractices"));
 const LibraryPage = lazy(() => import("./pages/library/index"));
@@ -88,13 +92,13 @@ const App = () => (
 
                       {/* Protected Routes */}
                       <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-                        <Route path="/dashboard" element={<Dashboard />} />
-                        <Route path="/planner" element={<Planner />} />
+                        {/* THE ANCHOR: Main View */}
+                        <Route path="/dashboard" element={<DailyAnchorView />} />
+
                         <Route path="/progress" element={<ProgressPage />} />
-                        <Route path="/reports" element={<Reports />} />
                         <Route path="/settings" element={<Settings />} />
 
-                        {/* Early Years - Legacy routes that still need auth */}
+                        {/* Early Years - Legacy routes */}
                         <Route path="/early-years/planner" element={<Navigate to="/planner" replace />} />
                         <Route path="/early-years/daily-practices" element={<DailyPractices />} />
                         <Route path="/early-years/today" element={<Navigate to="/dashboard" replace />} />
@@ -108,7 +112,7 @@ const App = () => (
                         <Route path="/middle-school" element={<LockedStage />} />
                         <Route path="/upper-school" element={<LockedStage />} />
 
-                        {/* Phase 3: Student Portal */}
+                        {/* Student Portal */}
                         <Route path="/student" element={<StudentPortal />} />
                         <Route path="/onboarding" element={<Onboarding />} />
                       </Route>

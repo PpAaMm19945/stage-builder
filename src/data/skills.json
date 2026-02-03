@@ -1,0 +1,2228 @@
+[
+  {
+    "id": "cognitive-001",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Object Permanence Play",
+    "base_instruction": "Activity: Object Permanence Play.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-002",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Shape Sorter Discovery",
+    "base_instruction": "Activity: Shape Sorter Discovery.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-003",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Simple Puzzles",
+    "base_instruction": "Activity: Simple Puzzles.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-004",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Color Matching Game",
+    "base_instruction": "Activity: Color Matching Game.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-005",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Counting Steps",
+    "base_instruction": "Activity: Counting Steps.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-006",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Memory Card Game",
+    "base_instruction": "Activity: Memory Card Game.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-009",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Size Sorting",
+    "base_instruction": "Activity: Size Sorting.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-010",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Simple Categories",
+    "base_instruction": "Activity: Simple Categories.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-001",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Tummy Time Play",
+    "base_instruction": "Activity: Tummy Time Play.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-002",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Reaching and Grasping",
+    "base_instruction": "Activity: Reaching and Grasping.",
+    "min_age_months": 3,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-003",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Ball Rolling",
+    "base_instruction": "Activity: Ball Rolling.",
+    "min_age_months": 9,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-004",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Stacking Blocks",
+    "base_instruction": "Activity: Stacking Blocks.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-005",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Walking Practice",
+    "base_instruction": "Activity: Walking Practice.",
+    "min_age_months": 9,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-006",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Scribbling Fun",
+    "base_instruction": "Activity: Scribbling Fun.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-008",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Playdough Sculpting",
+    "base_instruction": "Activity: Playdough Sculpting.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-009",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Climbing Safe Structures",
+    "base_instruction": "Activity: Climbing Safe Structures.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-010",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Pouring and Scooping",
+    "base_instruction": "Activity: Pouring and Scooping.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-001",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Talking Time",
+    "base_instruction": "Activity: Talking Time.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-002",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Picture Book Reading",
+    "base_instruction": "Activity: Picture Book Reading.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-003",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Nursery Rhymes",
+    "base_instruction": "Activity: Nursery Rhymes.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-004",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Animal Sounds Game",
+    "base_instruction": "Activity: Animal Sounds Game.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-005",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Simple Instructions",
+    "base_instruction": "Activity: Simple Instructions.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-006",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Story Time",
+    "base_instruction": "Activity: Story Time.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-007",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Naming Body Parts",
+    "base_instruction": "Activity: Naming Body Parts.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-008",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Conversation Practice",
+    "base_instruction": "Activity: Conversation Practice.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-009",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Describing Pictures",
+    "base_instruction": "Activity: Describing Pictures.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-010",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Letter Introduction",
+    "base_instruction": "Activity: Letter Introduction.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-001",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Face Time",
+    "base_instruction": "Activity: Face Time.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-002",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Peek-a-Boo",
+    "base_instruction": "Activity: Peek-a-Boo.",
+    "min_age_months": 4,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-003",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Gentle Play with Others",
+    "base_instruction": "Activity: Gentle Play with Others.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-004",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Turn Taking Games",
+    "base_instruction": "Activity: Turn Taking Games.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-005",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Emotion Naming",
+    "base_instruction": "Activity: Emotion Naming.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-006",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Pretend Tea Party",
+    "base_instruction": "Activity: Pretend Tea Party.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-007",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Helper Tasks",
+    "base_instruction": "Activity: Helper Tasks.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-008",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Greeting Practice",
+    "base_instruction": "Activity: Greeting Practice.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-009",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Sharing Stories",
+    "base_instruction": "Activity: Sharing Stories.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-010",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Problem Solving Together",
+    "base_instruction": "Activity: Problem Solving Together.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-001",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Texture Exploration",
+    "base_instruction": "Activity: Texture Exploration.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-002",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Water Play",
+    "base_instruction": "Activity: Water Play.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-003",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Sensory Bin Exploration",
+    "base_instruction": "Activity: Sensory Bin Exploration.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-004",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Music and Movement",
+    "base_instruction": "Activity: Music and Movement.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-005",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Finger Painting",
+    "base_instruction": "Activity: Finger Painting.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-006",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Nature Walk Sensory Hunt",
+    "base_instruction": "Activity: Nature Walk Sensory Hunt.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-007",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Bubble Play",
+    "base_instruction": "Activity: Bubble Play.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-008",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Scent Exploration",
+    "base_instruction": "Activity: Scent Exploration.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory-009",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Light and Shadow Play",
+    "base_instruction": "Activity: Light and Shadow Play.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive foundations",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-011",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Mirror Discovery",
+    "base_instruction": "Activity: Mirror Discovery.",
+    "min_age_months": 3,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-012",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Treasure Basket",
+    "base_instruction": "Activity: Treasure Basket.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "emerging problem-solving",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-013",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Container Fill and Dump",
+    "base_instruction": "Activity: Container Fill and Dump.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-014",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Simple Shape Matching",
+    "base_instruction": "Activity: Simple Shape Matching.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-015",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Hidden Sound Game",
+    "base_instruction": "Activity: Hidden Sound Game.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "growing logic",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-016",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Matching Pairs Game",
+    "base_instruction": "Activity: Matching Pairs Game.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-017",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Simple Sequencing",
+    "base_instruction": "Activity: Simple Sequencing.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-018",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Building Instructions",
+    "base_instruction": "Activity: Building Instructions.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "complex thinking",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-019",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Treasure Map Hunt",
+    "base_instruction": "Activity: Treasure Map Hunt.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-020",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "What Comes Next?",
+    "base_instruction": "Activity: What Comes Next?.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-021",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Problem-Solving Play",
+    "base_instruction": "Activity: Problem-Solving Play.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "school readiness",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-022",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Classification Games",
+    "base_instruction": "Activity: Classification Games.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-023",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Memory Challenge",
+    "base_instruction": "Activity: Memory Challenge.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-024",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Simple Experiments",
+    "base_instruction": "Activity: Simple Experiments.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-025",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Story Problems",
+    "base_instruction": "Activity: Story Problems.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "foundational movement",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-011",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Side-Lying Play",
+    "base_instruction": "Activity: Side-Lying Play.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-012",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Supported Sitting",
+    "base_instruction": "Activity: Supported Sitting.",
+    "min_age_months": 4,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-013",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Cruising Practice",
+    "base_instruction": "Activity: Cruising Practice.",
+    "min_age_months": 8,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "mobile toddler",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-014",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Push and Pull Toys",
+    "base_instruction": "Activity: Push and Pull Toys.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-015",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Outdoor Exploration Walk",
+    "base_instruction": "Activity: Outdoor Exploration Walk.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-016",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Crayon Grip Practice",
+    "base_instruction": "Activity: Crayon Grip Practice.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "coordination development",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-017",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Obstacle Course",
+    "base_instruction": "Activity: Obstacle Course.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-018",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Scissors Introduction",
+    "base_instruction": "Activity: Scissors Introduction.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-019",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Kicking Practice",
+    "base_instruction": "Activity: Kicking Practice.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "refined skills",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-020",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Tricycle Riding",
+    "base_instruction": "Activity: Tricycle Riding.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-021",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Ball Throwing and Catching",
+    "base_instruction": "Activity: Ball Throwing and Catching.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-022",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Buttoning Practice",
+    "base_instruction": "Activity: Buttoning Practice.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "school readiness skills",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-023",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Skipping and Hopping",
+    "base_instruction": "Activity: Skipping and Hopping.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-024",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Cutting Shapes",
+    "base_instruction": "Activity: Cutting Shapes.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-025",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Letter Formation",
+    "base_instruction": "Activity: Letter Formation.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "foundation",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-011",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Responsive Cooing",
+    "base_instruction": "Activity: Responsive Cooing.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-012",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Sound Effects Play",
+    "base_instruction": "Activity: Sound Effects Play.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "first words explosion",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-013",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "First Words Books",
+    "base_instruction": "Activity: First Words Books.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-014",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Action Word Games",
+    "base_instruction": "Activity: Action Word Games.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-015",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "What Sound Does It Make?",
+    "base_instruction": "Activity: What Sound Does It Make?.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sentence building",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-016",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Expanding Sentences",
+    "base_instruction": "Activity: Expanding Sentences.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-017",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Puppet Conversations",
+    "base_instruction": "Activity: Puppet Conversations.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-018",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Category Naming",
+    "base_instruction": "Activity: Category Naming.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "narrative skills",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-019",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Story Retelling",
+    "base_instruction": "Activity: Story Retelling.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-020",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Rhyming Games",
+    "base_instruction": "Activity: Rhyming Games.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-021",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Question Practice",
+    "base_instruction": "Activity: Question Practice.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "literacy foundation",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-022",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "First Sound Identification",
+    "base_instruction": "Activity: First Sound Identification.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-023",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Making Up Stories",
+    "base_instruction": "Activity: Making Up Stories.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-024",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Following Multi-Step Directions",
+    "base_instruction": "Activity: Following Multi-Step Directions.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "language-025",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Print Awareness Activities",
+    "base_instruction": "Activity: Print Awareness Activities.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "attachment foundation",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-011",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Calm Down Together",
+    "base_instruction": "Activity: Calm Down Together.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-012",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Interactive Games",
+    "base_instruction": "Activity: Interactive Games.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "emerging autonomy",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-013",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Big Feelings Naming",
+    "base_instruction": "Activity: Big Feelings Naming.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-014",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Parallel Play Practice",
+    "base_instruction": "Activity: Parallel Play Practice.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-015",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Daily Routine Practice",
+    "base_instruction": "Activity: Daily Routine Practice.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "developing self-control",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-016",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Calm Corner Setup",
+    "base_instruction": "Activity: Calm Corner Setup.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-017",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Feelings Faces",
+    "base_instruction": "Activity: Feelings Faces.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-018",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Waiting Practice Games",
+    "base_instruction": "Activity: Waiting Practice Games.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "perspective taking",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-019",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "How Would They Feel?",
+    "base_instruction": "Activity: How Would They Feel?.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-020",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Friendly Behavior Practice",
+    "base_instruction": "Activity: Friendly Behavior Practice.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-021",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Breathing Exercises",
+    "base_instruction": "Activity: Breathing Exercises.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "complex social skills",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-022",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Conflict Resolution Practice",
+    "base_instruction": "Activity: Conflict Resolution Practice.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-023",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Kindness Missions",
+    "base_instruction": "Activity: Kindness Missions.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-024",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Managing Disappointment",
+    "base_instruction": "Activity: Managing Disappointment.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "social-025",
+    "domain": "Character",
+    "sub_domain": "social-emotional",
+    "title": "Group Game Skills",
+    "base_instruction": "Activity: Group Game Skills.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "sensory foundations",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-001",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "High Contrast Cards",
+    "base_instruction": "Activity: High Contrast Cards.",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-002",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Cause Effect Exploration",
+    "base_instruction": "Activity: Cause Effect Exploration.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "early concepts",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-003",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Big and Little",
+    "base_instruction": "Activity: Big and Little.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-004",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "One and Two",
+    "base_instruction": "Activity: One and Two.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-005",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Simple Matching",
+    "base_instruction": "Activity: Simple Matching.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "growing concepts",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-007",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Counting to Five",
+    "base_instruction": "Activity: Counting to Five.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-008",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Shape Hunt",
+    "base_instruction": "Activity: Shape Hunt.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "pre-math and literacy",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-009",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Graphing Activities",
+    "base_instruction": "Activity: Graphing Activities.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-010",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Name Writing Practice",
+    "base_instruction": "Activity: Name Writing Practice.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-011",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Simple Measuring",
+    "base_instruction": "Activity: Simple Measuring.",
+    "min_age_months": 36,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "school readiness",
+    "domain": "General",
+    "sub_domain": "",
+    "title": "",
+    "base_instruction": "Activity: .",
+    "min_age_months": 0,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-012",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Number Recognition Games",
+    "base_instruction": "Activity: Number Recognition Games.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-013",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Beginning Addition",
+    "base_instruction": "Activity: Beginning Addition.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-014",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Letter of the Week",
+    "base_instruction": "Activity: Letter of the Week.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "preacademic-015",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Science Exploration",
+    "base_instruction": "Activity: Science Exploration.",
+    "min_age_months": 48,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "creative-001",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Drawing Together",
+    "base_instruction": "Activity: Drawing Together.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "creative-002",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Painting Fun",
+    "base_instruction": "Activity: Painting Fun.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "creative-003",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Playdough Sculpture",
+    "base_instruction": "Activity: Playdough Sculpture.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-031",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Dance Party",
+    "base_instruction": "Activity: Dance Party.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "motor-032",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Obstacle Course",
+    "base_instruction": "Activity: Obstacle Course.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "music-001",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Sing-Along",
+    "base_instruction": "Activity: Sing-Along.",
+    "min_age_months": 6,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "music-002",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Rhythm Instruments",
+    "base_instruction": "Activity: Rhythm Instruments.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "music-003",
+    "domain": "Motor Skills",
+    "sub_domain": "motor",
+    "title": "Musical Movement",
+    "base_instruction": "Activity: Musical Movement.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "science-011",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Leaf Collecting",
+    "base_instruction": "Activity: Leaf Collecting.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "science-012",
+    "domain": "General Knowledge",
+    "sub_domain": "pre-academic",
+    "title": "Nature Walk",
+    "base_instruction": "Activity: Nature Walk.",
+    "min_age_months": 12,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "literacy-011",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Story Retelling",
+    "base_instruction": "Activity: Story Retelling.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "literacy-012",
+    "domain": "Language",
+    "sub_domain": "language",
+    "title": "Rhyming Games",
+    "base_instruction": "Activity: Rhyming Games.",
+    "min_age_months": 30,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-031",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Counting Games",
+    "base_instruction": "Activity: Counting Games.",
+    "min_age_months": 18,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  },
+  {
+    "id": "cognitive-032",
+    "domain": "Math / Logic",
+    "sub_domain": "cognitive",
+    "title": "Shape Hunt",
+    "base_instruction": "Activity: Shape Hunt.",
+    "min_age_months": 24,
+    "materials": [],
+    "age_levels": {
+      "seedling": "Adapt for sensory/observation.",
+      "sprout": "Adapt for participation/motor skills.",
+      "sapling": "Adapt for understanding/explanation."
+    }
+  }
+]

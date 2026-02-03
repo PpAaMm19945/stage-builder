@@ -18,9 +18,6 @@ export default defineConfig(({ mode }) => ({
       "@config": path.resolve(__dirname, "./src/config"),
     },
   },
-  optimizeDeps: {
-    include: ['@react-pdf/renderer'],
-  },
   build: {
     commonjsOptions: {
       include: [/node_modules/],

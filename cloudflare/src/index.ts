@@ -31,6 +31,7 @@ import reportsRoutes from './routes/reports';
 import adminRoutes from './routes/admin';
 import pathsRoutes from './routes/paths';
 import aiRoutes from './routes/ai';                 // [NEW]
+import anchorRoutes from './routes/anchor';         // [NEW]
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
@@ -69,6 +70,7 @@ app.route('/', reportsRoutes);
 app.route('/', adminRoutes);
 app.route('/', pathsRoutes);
 app.route('/', aiRoutes);           // [NEW]
+app.route('/api/anchor', anchorRoutes); // [NEW]
 
 // Global error handler with CORS
 app.onError(errorHandler);

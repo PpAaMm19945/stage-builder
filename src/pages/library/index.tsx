@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { useSearchParams, Link, useLocation } from 'react-router-dom';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
@@ -18,7 +18,7 @@ export default function LibraryPage() {
     const [searchParams, setSearchParams] = useSearchParams();
 
     // Determine active tab from URL path or query param
-    const getInitialTab = () => {
+    const getInitialTab = useCallback(() => {
         // Check path-based routing first
         if (location.pathname === '/library/books') return 'books';
         if (location.pathname === '/library/hymns') return 'hymns';
@@ -30,14 +30,14 @@ export default function LibraryPage() {
             return tabParam;
         }
         return 'activities';
-    };
+    }, [location.pathname, searchParams]);
 
     const [activeTab, setActiveTab] = useState(getInitialTab);
 
     // Sync tab state with URL
     useEffect(() => {
         setActiveTab(getInitialTab());
-    }, [location.pathname, searchParams]);
+    }, [getInitialTab]);
 
     const handleTabChange = (value: string) => {
         setActiveTab(value);

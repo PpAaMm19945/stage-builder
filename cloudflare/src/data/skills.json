@@ -1,0 +1,99 @@
+[
+    {
+        "id": "skill_math_001",
+        "domain": "Math",
+        "sub_domain": "Counting",
+        "title": "Counting Objects",
+        "base_instruction": "Count a set of 1-10 objects aloud.",
+        "materials": [
+            "Blocks",
+            "Beans",
+            "Stones"
+        ],
+        "age_levels": {
+            "seedling": "Listen to parent count.",
+            "sprout": "Count to 5 with help.",
+            "sapling": "Count to 20 independently."
+        }
+    },
+    {
+        "id": "skill_math_002",
+        "domain": "Math",
+        "sub_domain": "Sorting",
+        "title": "Color Sorting",
+        "base_instruction": "Sort objects into piles by color.",
+        "materials": [
+            "Colored Toys",
+            "Paper scenarios"
+        ],
+        "age_levels": {
+            "seedling": "Match red to red.",
+            "sprout": "Sort into 3 color piles.",
+            "sapling": "Sort by color and then by size."
+        }
+    },
+    {
+        "id": "skill_motor_001",
+        "domain": "Motor Skills",
+        "sub_domain": "Fine Motor",
+        "title": "Pincer Grasp Practice",
+        "base_instruction": "Pick up small objects using thumb and pointer finger.",
+        "materials": [
+            "Cheerios",
+            "Small beads (supervised)"
+        ],
+        "age_levels": {
+            "seedling": "Pick up large puffs.",
+            "sprout": "String large beads.",
+            "sapling": "String small beads or sew."
+        }
+    },
+    {
+        "id": "skill_motor_002",
+        "domain": "Motor Skills",
+        "sub_domain": "Gross Motor",
+        "title": "Balancing Line",
+        "base_instruction": "Walk along a straight line on the floor.",
+        "materials": [
+            "Masking tape",
+            "String"
+        ],
+        "age_levels": {
+            "seedling": "Walk with hand held.",
+            "sprout": "Walk heel-to-toe with arms out.",
+            "sapling": "Walk backward or carry an object."
+        }
+    },
+    {
+        "id": "skill_write_001",
+        "domain": "Writing",
+        "sub_domain": "Pre-writing",
+        "title": "Sand Tray Tracing",
+        "base_instruction": "Trace shapes or letters in a tray of sand/salt.",
+        "materials": [
+            "Tray",
+            "Sand/Salt"
+        ],
+        "age_levels": {
+            "seedling": "Make random marks.",
+            "sprout": "Draw vertical and horizontal lines.",
+            "sapling": "Write first letter of name."
+        }
+    },
+    {
+        "id": "skill_life_001",
+        "domain": "Life Skills",
+        "sub_domain": "Kitchen",
+        "title": "Pouring Water",
+        "base_instruction": "Pour water from a pitcher to a cup.",
+        "materials": [
+            "Plastic pitcher",
+            "Cups"
+        ],
+        "age_levels": {
+            "seedling": "Play with water in a bin.",
+            "sprout": "Pour with two hands (small amount).",
+            "sapling": "Pour without spilling to a line."
+        }
+    }
+]

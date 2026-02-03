@@ -43,11 +43,12 @@ import { NotificationBell } from '@/components/notifications/NotificationBell';
 import { Button } from '@/components/ui/button';
 
 // Simplified primary navigation (stage-agnostic)
+// HACKATHON PIVOT: Simplified Navigation
 const primaryLinks = [
   { title: 'Home', url: '/dashboard', icon: House },
   { title: 'Library', url: '/library', icon: Books },
-  { title: 'Progress', url: '/progress', icon: TrendUp },
-  { title: 'Reports', url: '/reports', icon: FileText },
+  // { title: 'Progress', url: '/progress', icon: TrendUp },
+  // { title: 'Reports', url: '/reports', icon: FileText },
 ];
 
 // Guest navigation
@@ -237,13 +238,13 @@ export function AppSidebar() {
             </>
           ) : (
             <div className="mt-auto">
-                <Button
-                    onClick={() => handleNavigation('/login')}
-                    className="w-full flex items-center justify-center gap-2"
-                >
-                    <span>Sign In</span>
-                    <ArrowRight className="h-4 w-4" weight="bold" />
-                </Button>
+              <Button
+                onClick={() => handleNavigation('/login')}
+                className="w-full flex items-center justify-center gap-2"
+              >
+                <span>Sign In</span>
+                <ArrowRight className="h-4 w-4" weight="bold" />
+              </Button>
             </div>
           )}
         </SidebarFooter>

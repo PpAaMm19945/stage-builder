@@ -7,6 +7,31 @@ import { GeminiService, GeminiContent } from './gemini';
 import { Summarizer } from './summarizer';
 import { searchBooks, searchActivities, getTodaySchedule } from './tools';
 import { ContextBuilder, AiContext } from './context';
+import { BOOKS_DATA, SKILLS_DATA, CATECHISM_DATA } from './data';
+
+interface AnchorPayload {
+    date: string; // YYYY-MM-DD
+    theme: string;
+    liturgy: {
+        hymn: string;
+        catechism_q: number;
+        catechism_a: string;
+        scripture: string;
+    };
+    family_activity: {
+        title: string;
+        description: string;
+        skill_domain: string;
+        formation_lens: string;
+        levels: Array<{ stage: string; instruction: string }>;
+    };
+    book_nook: {
+        title: string;
+        author: string;
+        cover_image: string;
+        discussion_prompt: string;
+    };
+}
 
 export class Cortex {
     private summarizer: Summarizer;
@@ -699,4 +724,152 @@ INSTRUCTIONS
             `UPDATE family_preferences SET ${col} = ?, updated_at = datetime('now') WHERE parent_id = ?`
         ).bind(val, userId).run();
     }
+
+
+    /**
+     * GENERATE FAMILY ANCHOR (The Invisible Tutor Engine)
+     */
+    public async generateFamilyAnchor(context: any): Promise<AnchorPayload> {
+        const gemini = new GeminiService(this.env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp');
+
+        // 1. Select Ingredients
+        // In a real system, we would track history to avoid repeats.
+        // For Hackathon, random selection is acceptable but we prefer some logic if possible.
+        const randomBook = BOOKS_DATA[Math.floor(Math.random() * BOOKS_DATA.length)];
+        const randomSkill = SKILLS_DATA[Math.floor(Math.random() * SKILLS_DATA.length)];
+
+        // Find next catechism Q based on context or random
+        // If context has last_q, increment. Else random or start at 1.
+        let qIndex = 0;
+        if (context.progress?.catechism_last_q) {
+            qIndex = CATECHISM_DATA.findIndex(q => q.number === context.progress.catechism_last_q) + 1;
+            if (qIndex >= CATECHISM_DATA.length) qIndex = 0;
+        }
+        const catechismQ = CATECHISM_DATA[qIndex];
+
+        // 2. Build Prompt
+        const systemPrompt = `You are the FamilyPath Anchor Engine.
+        Your goal is to generate ONE single "Anchor" card for this family.
+        
+        FAMILY CONTEXT:
+        Children: ${JSON.stringify(context.children)}
+        
+        SELECTED INGREDIENTS:
+        - Book: "${randomBook.title}" (Theme: ${randomBook.theme})
+        - Skill: "${randomSkill.title}" (Domain: ${randomSkill.domain})
+        - Catechism: Q${catechismQ.number} ("${catechismQ.question}" -> "${catechismQ.answer}")
+        
+        TASK:
+        1. Choose a "Formation Theme" that ties the Book and Catechism together (e.g., "Creation", "God's Care").
+           - If the book is "Theology", lean heavily on the catechism.
+           - If the book is "History", tie God's providence to the catechism.
+        
+        2. Rewrite the Skill Activity through the "Lens" of this Theme.
+           - Explain WHY we do this skill (Theology Lens).
+           - Provide differentiated instructions for EACH child based on their age stage.
+             - Seedling (0-2): Sensory/Observation
+             - Sprout (3-5): Doing/Motor
+             - Sapling (6+): Understanding/Leading
+        
+        3. Generate a discussion prompt for the book.
+        
+        OUTPUT JSON format:
+        {
+            "theme": "string",
+            "liturgy": {
+                "hymn": "Select a classic hymn title matching the theme",
+                "scripture": "Select a short verse (KJV/ESV) matching the theme"
+            },
+            "family_activity": {
+                "title": "Renamed Activity Title (Thematic)",
+                "description": "Short description of activity",
+                "skill_domain": "${randomSkill.domain}",
+                "formation_lens": "The theological reason/lens",
+                "levels": [
+                    { "stage": "Seedling", "instruction": "..." },
+                    { "stage": "Sprout", "instruction": "..." },
+                    { "stage": "Sapling", "instruction": "..." }
+                ]
+            },
+            "book_nook": {
+                "discussion_prompt": "Question for the family"
+            }
+        }`;
+
+        try {
+            console.log('[Cortex] Generating Anchor with ingredients:', { book: randomBook.title, skill: randomSkill.title, q: catechismQ.number });
+
+            const responseText = await gemini.generateContent(
+                [{ role: 'user', parts: [{ text: "Generate the Daily Anchor." }] }],
+                systemPrompt,
+                null,
+                'application/json'
+            );
+
+            let raw;
+            try {
+                // Remove markdown code fence if present
+                const cleanText = responseText.replace(/```json\n?|\n?```/g, '');
+                raw = JSON.parse(cleanText);
+            } catch (e) {
+                console.error('JSON Parse Error', responseText);
+                throw new Error('Failed to parse AI response');
+            }
+
+            // Merge with static data to ensure robust response
+            return {
+                date: new Date().toISOString().split('T')[0],
+                theme: raw.theme || "God's Care",
+                liturgy: {
+                    hymn: raw.liturgy?.hymn || "Holy, Holy, Holy",
+                    catechism_q: catechismQ.number,
+                    catechism_a: catechismQ.answer,
+                    scripture: raw.liturgy?.scripture || "Genesis 1:1"
+                },
+                family_activity: {
+                    title: raw.family_activity?.title || randomSkill.title,
+                    description: raw.family_activity?.description || randomSkill.base_instruction,
+                    skill_domain: randomSkill.domain,
+                    formation_lens: raw.family_activity?.formation_lens || "Doing all things for God's glory.",
+                    levels: raw.family_activity?.levels || []
+                },
+                book_nook: {
+                    title: randomBook.title,
+                    author: randomBook.author || "Library",
+                    cover_image: randomBook.cover_image,
+                    discussion_prompt: raw.book_nook?.discussion_prompt || "What did you like about this story?"
+                }
+            };
+
+        } catch (e) {
+            console.error('[Cortex] Anchor Generation Failed', e);
+            // Fallback (Safe Mode)
+            return {
+                date: new Date().toISOString().split('T')[0],
+                theme: "God Made Us",
+                liturgy: {
+                    hymn: "Doxology",
+                    catechism_q: catechismQ.number,
+                    catechism_a: catechismQ.answer,
+                    scripture: "Genesis 1:1"
+                },
+                family_activity: {
+                    title: randomSkill.title,
+                    description: randomSkill.base_instruction,
+                    skill_domain: randomSkill.domain,
+                    formation_lens: "God gave us skills to use for His glory.",
+                    levels: [
+                        { stage: "Everyone", instruction: "Do this activity together." }
+                    ]
+                },
+                book_nook: {
+                    title: randomBook.title,
+                    author: randomBook.author,
+                    cover_image: randomBook.cover_image,
+                    discussion_prompt: "Read together."
+                }
+            };
+        }
+    }
+
 }

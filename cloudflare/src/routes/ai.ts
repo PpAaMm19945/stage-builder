@@ -167,6 +167,33 @@ app.post('/api/chat/reject', async (c) => {
     } catch (e: any) { return c.json({ error: e.message }, 500); }
 });
 
+
+app.post('/api/ai/anchor/daily', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+
+        // Build context for the family
+        const contextBuilder = new ContextBuilder(c.env.DB);
+        const serverContext = await contextBuilder.buildUserContext(user.id, user.household_id || 'unknown');
+
+        // Generate with Cortex
+        const cortex = new Cortex(c.env);
+        const anchor = await cortex.generateFamilyAnchor({
+            ...serverContext,
+            userState: user
+        });
+
+        // Save progress (optional, or implicit in generation?)
+        // For now, stateless generation is fine for the hackathon "Generate" button.
+        // We might want to persist it to avoid re-generating on reload if implemented later.
+
+        return c.json(anchor);
+    } catch (e: any) {
+        console.error("GENERATE ANCHOR ERROR", e);
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 app.get('/api/ai/interactions', async (c) => {
     try {
         const user = requireHouseholdMember(c);
