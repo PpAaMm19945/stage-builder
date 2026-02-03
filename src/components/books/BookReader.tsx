@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -47,7 +47,7 @@ interface BookReaderProps {
     activityId?: string;
 }
 
-export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
+export const BookReader = memo(function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
@@ -813,4 +813,4 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             </Dialog>
         </>
     );
-}
+});
