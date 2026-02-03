@@ -53,3 +53,7 @@
 ## 2026-05-18 - Audio Player Accessibility
 **Learning:** Media players often have multiple icon-only controls (play, pause, skip) that are critical for usage but often lack accessible names.
 **Action:** Ensure every control in a custom media player has a clear `aria-label`, especially state-dependent ones like Play/Pause (switching labels) and Mute/Unmute.
+
+## 2026-06-28 - Design System consistency
+**Learning:** Found raw HTML inputs used in modals despite a robust accessible component library being available. This creates inconsistent keyboard behavior and visual styles.
+**Action:** When auditing forms, search for `<input` tags to find deviations from the design system, especially for checkboxes and radio buttons which have complex accessibility requirements handled by the library.

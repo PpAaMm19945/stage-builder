@@ -3,6 +3,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogD
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Label } from '@/components/ui/label';
+import { Checkbox } from '@/components/ui/checkbox';
 import { Badge } from '@/components/ui/badge';
 import { observations, activityCompletions, family } from '@/lib/api';
 import { useToast } from '@/components/ui/use-toast';
@@ -276,15 +277,20 @@ export function FamilyCompletionModal({ isOpen, onClose, session, onSuccess }: F
                                             </p>
                                         </div>
                                         <div className="flex items-center gap-2">
-                                            <label className="text-xs flex items-center gap-1 cursor-pointer select-none text-muted-foreground hover:text-primary transition-colors">
-                                                <input
-                                                    type="checkbox"
-                                                    className="rounded border-gray-300 text-primary focus:ring-primary h-3 w-3"
+                                            <div className="flex items-center gap-2">
+                                                <Checkbox
+                                                    id={`passion-${child.childId}`}
                                                     checked={!!passionSignals[child.childId]}
-                                                    onChange={(e) => setPassionSignals(prev => ({ ...prev, [child.childId]: e.target.checked }))}
+                                                    onCheckedChange={(checked) => setPassionSignals(prev => ({ ...prev, [child.childId]: checked === true }))}
+                                                    className="h-3.5 w-3.5"
                                                 />
-                                                Loved it!
-                                            </label>
+                                                <Label
+                                                    htmlFor={`passion-${child.childId}`}
+                                                    className="text-xs font-normal text-muted-foreground hover:text-primary transition-colors cursor-pointer select-none"
+                                                >
+                                                    Loved it!
+                                                </Label>
+                                            </div>
                                         </div>
                                     </div>
 
