@@ -223,6 +223,7 @@ export function FormationCard({
                                     <Checkbox
                                         checked={isCompleted}
                                         onCheckedChange={handleToggle}
+                                        aria-label={`Mark ${formation.title} as complete`}
                                         className={cn(
                                             "h-5 w-5 transition-colors",
                                             isCompleted ? "data-[state=checked]:bg-green-600 border-green-600" : ""
