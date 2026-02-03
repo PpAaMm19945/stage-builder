@@ -83,6 +83,7 @@ export function FormationTimer({
                 <button
                     onClick={(e) => { e.stopPropagation(); onToggle(); }}
                     className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
+                    aria-label={isRunning ? "Pause timer" : "Start timer"}
                 >
                     {isRunning ? (
                         <Pause weight="fill" className="w-3 h-3" />

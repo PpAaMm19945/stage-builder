@@ -88,7 +88,7 @@ export function ChildSelectionModal({
                     {children.map(child => (
                         <div
                             key={child.id}
-                            className="relative flex items-center space-x-3 p-3 rounded-lg hover:bg-accent"
+                            className="relative flex items-center space-x-3 p-3 rounded-lg hover:bg-accent has-[:focus-visible]:bg-accent has-[:focus-visible]:ring-1 has-[:focus-visible]:ring-ring"
                         >
                             <Checkbox
                                 id={child.id}
