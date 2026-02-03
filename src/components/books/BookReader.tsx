@@ -180,6 +180,19 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
         return [];
     }, [markdownContent]);
 
+    // ⚡ Performance: Memoize prompts lookup to avoid O(N) find in render loop
+    const promptsByPage = useMemo(() => {
+        const map = new Map<number, string>();
+        if (book?.readingPrompts) {
+            book.readingPrompts.forEach(p => {
+                if (typeof p === 'object' && 'page' in p) {
+                    map.set(p.page, p.prompt);
+                }
+            });
+        }
+        return map;
+    }, [book?.readingPrompts]);
+
     useEffect(() => {
         if (!api) return;
 
@@ -548,7 +561,8 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                 alt="Cover"
                                                 className="w-full h-full object-contain drop-shadow-2xl"
                                                 loading="eager"
-                                                fetchPriority="high"
+                                                // @ts-expect-error React 18 type definition mismatch
+                                                fetchpriority="high"
                                                 onError={(e) => {
                                                     e.currentTarget.src = `https://placehold.co/600x800/1e1e1e/FFF?text=${encodeURIComponent(book.title)}`;
                                                 }}
@@ -592,9 +606,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                         // So Page Index 0 is Current when current=2. Next when current=1.
                                         const priority = (index + 2 === current) || (index + 1 === current);
 
-                                        const prompt = showPrompts && book.readingPrompts?.find(p =>
-                                            typeof p === 'object' && 'page' in p && p.page === index + 1
-                                        ) as { page: number; prompt: string } | undefined;
+                                        const promptText = showPrompts ? promptsByPage.get(index + 1) : undefined;
 
                                         return (
                                             <CarouselItem key={index} className="flex items-center justify-center h-full">
@@ -608,7 +620,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                                             alt={`Page ${index + 1}`}
                                                             index={index}
                                                             onImageError={handleImageError}
-                                                            prompt={prompt?.prompt}
+                                                            prompt={promptText}
                                                             priority={priority}
                                                         />
                                                     </div>
