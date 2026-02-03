@@ -45,6 +45,7 @@ export const BookSeriesRow = memo(function BookSeriesRow({ series, books, onBook
                         <a href="https://www.paperbackbible.com/" target="_blank" rel="noopener noreferrer">
                             Visit Store
                             <ArrowSquareOut className="h-4 w-4" />
+                            <span className="sr-only">(opens in a new tab)</span>
                         </a>
                     </Button>
                 )}
