@@ -45,3 +45,9 @@
 ## 2026-06-01 - Manifest-Based Caching for Book Metadata
 **Learning:** `fetchAllBooks` was fetching `metadata.json` for every book in the manifest on every cache miss (5 mins). For 500+ books, this caused 500+ R2 Class B operations per worker every 5 minutes, increasing costs and latency.
 **Action:** Implemented `MANIFEST_BOOKS_CACHE` which stores the parsed book list alongside the manifest source. Before fetching metadata, we now compare the current `manifest.json` with the cached manifest using `areManifestsEqual`. If they match, we return the cached book list instantly (0 R2 reads), drastically reducing backend load.
+
+## 2026-06-03 - Memoized BookReader Prompts & LCP Fix
+**Learning:** The `BookReader` was performing an O(N) `find()` operation on `readingPrompts` for every page in the `Carousel`, inside the render loop. For a book with many pages and prompts, this unnecessary computation ran on every slide change (re-render). Additionally, React 18 requires the `fetchpriority` attribute (lowercase) for correct browser handling, but `BookPageImage` was using `fetchPriority`, which may be ignored by some browsers or cause React warnings.
+**Action:**
+1. Memoized `readingPrompts` into a `Map<number, string>` using `useMemo` for O(1) lookup.
+2. Updated `BookReader` and `BookPageImage` to use `fetchpriority` (lowercase) with `@ts-expect-error` to ensure images are prioritized correctly for LCP without React type errors.

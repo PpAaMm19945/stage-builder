@@ -94,7 +94,8 @@ export const BookPageImage = memo(function BookPageImage({ src, alt, index, onEr
                         className
                     )}
                     loading={priority ? "eager" : "lazy"}
-                    fetchPriority={priority ? "high" : "low"}
+                    // @ts-expect-error React 18 type definition mismatch
+                    fetchpriority={priority ? "high" : "low"}
                     onLoad={handleLoad}
                     onError={handleError}
                 />
