@@ -1,143 +1,520 @@
 
 
-# Phase 2 Completion Plan: Next Steps for Full Functionality
+# Anchor Cleanup & Simplification Plan
 
-## Current Status Summary
+## Executive Summary
 
-All critical fixes from the previous phase are complete:
-- Settings page is stable
-- Dashboard shows only Learning Path items
-- Westminster Catechism displays Question AND Answer correctly
-- R2 asset fetching uses manifest.json strategy
-
-## Recommended Next Steps (Priority Order)
-
-### Step 1: Test Other Learning Path Types (30 mins)
-
-Before building new features, verify all 7 path types work correctly:
-
-| Path Type | Test Actions |
-|-----------|--------------|
-| Hymn Journey | Subscribe, verify lyrics display, mark complete |
-| Westminster Catechism | Already verified |
-| African History (Young) | Subscribe, verify story content renders |
-| African History (Full) | Subscribe, verify story content renders |
-| Pastor Curtis Series | Subscribe, verify book/PDF link works |
-| Toddler Development | Subscribe, verify activity instructions render |
-| Early Reading | Subscribe, verify reading activities render |
-
-**Expected Outcome:** Confirm each path type's bottom sheet displays appropriate content.
+This plan outlines the complete cleanup of the codebase to transform the current complex "FamilyPath/SchoolOS" into the focused "Anchor" app. We will archive unused files, simplify the database, reduce AI complexity, and add a simple AI action log viewer.
 
 ---
 
-### Step 2: Add Path Completion Celebration (1 hour)
+## Part 1: Codebase Inventory & Cleanup
 
-When a family completes all items in a path, trigger a celebration:
+### 1.1 Pages to Archive/Delete
 
-**New File:** `src/components/paths/PathCompletionModal.tsx`
+| Page | Location | Action | Reason |
+|------|----------|--------|--------|
+| Dashboard.tsx | src/pages/ | Replace with redirect to /anchor | New Anchor page replaces this |
+| Reports.tsx | src/pages/ | DELETE | Not MVP, AI handles reporting |
+| StudentView.tsx | src/pages/ | ARCHIVE | Student portal not in scope |
+| Onboarding.tsx | src/pages/ | SIMPLIFY | Reduce to minimal family setup |
 
-Features:
-- Confetti animation using `canvas-confetti` (already installed)
-- "Journey Complete!" header with trophy icon
-- Stats display: "You completed 107 catechism questions!"
-- CTA button: "Start Another Path" (navigates to /library/paths)
+**Early Years Directory** (entire `src/pages/early-years/`):
+| File | Action |
+|------|--------|
+| Activities.tsx | ARCHIVE (library handles this) |
+| ActivityViewer.tsx | KEEP (needed for viewing activities from anchor) |
+| DailyPractices.tsx | DELETE |
+| Library.tsx | ARCHIVE (replaced by simplified /library) |
+| Planner.tsx | DELETE (AI is the planner) |
+| Portfolio.tsx | ARCHIVE |
+| Progress.tsx | DELETE |
+| Reading.tsx | ARCHIVE |
+| ScopeSequence.tsx | DELETE |
+| Today.tsx | DELETE |
 
-**Integration in Dashboard.tsx:**
-```typescript
-// In advancePathMutation.onSuccess:
-if (data?.is_completed) {
-  setShowCompletionModal(true);
-  confetti({ particleCount: 100, spread: 70 });
-}
-```
+**Student Directory** (entire `src/pages/student/`):
+| File | Action |
+|------|--------|
+| StudentPortal.tsx | ARCHIVE |
 
----
-
-### Step 3: Enhance UpNextCard for Path Items (30 mins)
-
-Update `src/components/dashboard/UpNextCard.tsx` to better display Learning Path context:
-
-Changes:
-- Add `path_item` to `getIcon()` switch with appropriate icon (e.g., Compass or GraduationCap)
-- Add `path_item` to `getBgColor()` with a distinctive gradient
-- Show path name badge: "From: Hymn Journey"
-- Display progress: "23/100 complete"
-
----
-
-### Step 4: Add Library Progress Counters (1 hour)
-
-Display completion stats on the Dashboard and Library pages.
-
-**Backend:** New endpoint `GET /api/library/stats`
-Returns:
-```json
-{
-  "hymns": { "completed": 23, "total": 100 },
-  "books": { "completed": 12, "total": 100 },
-  "catechism": { "completed": 45, "total": 107 }
-}
-```
-
-**Frontend:** Badge row on Dashboard showing "23/100 Hymns • 12/100 Books • 45/107 Catechism"
+**Stages Directory** (entire `src/pages/stages/`):
+| File | Action |
+|------|--------|
+| LockedStage.tsx | DELETE (no stage gating needed) |
 
 ---
 
-### Step 5: Verify Content Exists for All Paths (1-2 hours)
+### 1.2 Components to Archive/Delete
 
-Some paths may return no items because `formations` table lacks rows with the correct `cluster_tag`.
+**Dashboard Components** (`src/components/dashboard/`):
+| Component | Action | Reason |
+|-----------|--------|--------|
+| AlumniView.tsx | DELETE | Graduation feature not MVP |
+| EndOfDaySummary.tsx | DELETE | Notification cleanup policy |
+| FamilyProgressMini.tsx | ARCHIVE | May reuse for streak |
+| MomentumRings.tsx | DELETE | Overcomplicated progress |
+| NotificationStack.tsx | DELETE | Notification cleanup policy |
+| TimeSpentWidget.tsx | DELETE | Not essential |
+| UpNextCard.tsx | ARCHIVE | May adapt for AnchorCard |
+| WeekStrip.tsx | DELETE | Calendar replaced by single anchor |
+| WorkApprovals.tsx | DELETE | Apprenticeship not MVP |
 
-**Audit Required:**
-- Check `formations` table for `cluster_tag = 'hymn'` (should have 50+ rows)
-- Check `formations` table for `cluster_tag = 'catechism'` (should have 107 rows)
-- Check `formations` table for `cluster_tag = 'toddler'`
-- Check `formations` table for `cluster_tag = 'reading'`
-- Check `formations` table for `cluster_tag = 'african_history_young'`
-- Check `formations` table for `cluster_tag = 'african_history'`
+**Planning Components** (entire `src/components/planning/`):
+| Component | Action |
+|-----------|--------|
+| DailyRhythm.tsx | DELETE |
+| RhythmDetailsSheet.tsx | ARCHIVE (may use in FormationView) |
+| RhythmItemRow.tsx | DELETE |
+| SwapActivitySheet.tsx | DELETE |
+| TimeModelEditor.tsx | DELETE |
+| TomorrowPreview.tsx | DELETE |
 
-If any are empty, sample content needs to be seeded (will be handled by admin portal later, but minimal seed may be needed now for testing).
+**Settings Components** (`src/components/settings/`):
+| Component | Action | Reason |
+|-----------|--------|--------|
+| FormationSettings.tsx | DELETE | AI handles |
+| IndependenceSettings.tsx | DELETE | Not MVP |
+| PaceOverrideSettings.tsx | DELETE | AI handles |
+| PaceSettings.tsx | DELETE | AI handles |
+| SettingsCurriculum.tsx | DELETE | AI handles |
+| SettingsMaterials.tsx | DELETE | Not MVP |
+| SettingsSchedule.tsx | DELETE | AI handles |
+| SettingsAccount.tsx | KEEP | |
+| SettingsFamily.tsx | KEEP (simplify) | |
+| DataArchive.tsx | KEEP | |
+| SettingsErrorBoundary.tsx | KEEP | |
+
+**Coach Components** (`src/components/coach/`):
+| Component | Action | Reason |
+|-----------|--------|--------|
+| ActionCard.tsx | ARCHIVE | May adapt for simpler UI |
+| ActionHistory.tsx | SIMPLIFY | Becomes new AI Log Viewer |
+| CoachChat.tsx | DELETE | Replaced by invisible AI |
+| FrontdeskChat.tsx | DELETE | Replaced by invisible AI |
+| PlanProposalCard.tsx | DELETE | AI plans invisibly |
+
+**Chat Components** (entire `src/components/chat/`):
+| Component | Action | Reason |
+|-----------|--------|--------|
+| ChatPanel.tsx | DELETE | No chat interface |
+| ChatSidebar.tsx | DELETE | No chat interface |
+| hooks/useChatState.ts | DELETE | No chat interface |
+| hooks/useChatStream.ts | DELETE | No chat interface |
+| hooks/useKeyboardHeight.ts | DELETE | No chat interface |
+| messages/* | DELETE (all) | No chat interface |
+
+**AI Components** (`src/components/ai/`):
+| Component | Action |
+|-----------|--------|
+| AIInteractionLog.tsx | SIMPLIFY into new AnchorAILog |
+| AiLogViewer.tsx | SIMPLIFY |
+| ChildExplainButton.tsx | ARCHIVE |
+| StudentAiChat.tsx | DELETE |
+
+**Other Components to Delete**:
+| Directory/File | Action |
+|----------------|--------|
+| `src/components/evening/TomorrowsPrepModal.tsx` | DELETE |
+| `src/components/notifications/*` | DELETE |
+| `src/components/scope/*` | DELETE |
+| `src/components/progress/*` | DELETE |
+| `src/components/reports/*` | DELETE |
+| `src/components/apprenticeships/*` | ARCHIVE |
+| `src/components/funding/*` | DELETE |
+| `src/components/independence/*` | DELETE |
+| `src/components/overrides/*` | DELETE |
+| `src/components/paths/*` | ARCHIVE |
+| `src/components/portfolio/*` | ARCHIVE |
 
 ---
 
-### Step 6: Optional Study Time Preferences (Future)
+### 1.3 Hooks to Archive/Delete
 
-Allow families to assign preferred times to each path subscription:
-- Add `study_time` column to `family_path_subscriptions` table
-- UI in Settings or Path Browser: "When do you want to study this path?" (Morning/Afternoon/Evening)
-- If set, display time badge next to path items in Daily Rhythm
+| Hook | Location | Action |
+|------|----------|--------|
+| useEveningPrompt.ts | src/hooks/ | DELETE |
+| useNotifications.ts | src/hooks/ | DELETE |
 
 ---
 
-## Summary of Files to Modify
+### 1.4 Lib Files to Clean
 
-| File | Changes |
+| File | Action | Reason |
+|------|--------|--------|
+| chat-storage.ts | DELETE | No chat persistence needed |
+| chat-utils.ts | DELETE | No chat interface |
+| recommendations.ts | ARCHIVE | AI handles recommendations |
+
+---
+
+## Part 2: Backend Cleanup
+
+### 2.1 AI Files to Simplify/Remove
+
+| File | Location | Action | Reason |
+|------|----------|--------|--------|
+| frontdesk.ts | cloudflare/src/ai/ | DELETE | No chat interface |
+| router.ts | cloudflare/src/ai/ | SIMPLIFY | Reduce to anchor generation |
+| triage.ts | cloudflare/src/ai/ | DELETE | No routing needed |
+| rhythm-generator.ts | cloudflare/src/ai/ | DELETE | AI generates anchors directly |
+| planner.ts | cloudflare/src/ai/ | SIMPLIFY | Becomes anchor curator |
+| report-generator.ts | cloudflare/src/ai/ | ARCHIVE | Not MVP |
+| tools.ts | cloudflare/src/ai/ | SIMPLIFY | Only need anchor-related tools |
+| cortex.ts | cloudflare/src/ai/ | SIMPLIFY | Reduce to anchor generation only |
+| context.ts | cloudflare/src/ai/ | KEEP (simplify) | |
+| gemini.ts | cloudflare/src/ai/ | KEEP | Core AI service |
+| summarizer.ts | cloudflare/src/ai/ | KEEP | For context compression |
+
+### 2.2 Backend Routes to Simplify
+
+| Route | Action | Reason |
+|-------|--------|--------|
+| ai.ts | SIMPLIFY | Remove chat endpoints, keep only anchor generation |
+| work.ts | ARCHIVE | Apprenticeship not MVP |
+| reports.ts | ARCHIVE | Not MVP |
+| paths.ts | ARCHIVE | Not MVP |
+| curriculum.ts | SIMPLIFY | Only what AI needs |
+
+### 2.3 New Backend Files
+
+| File | Purpose |
 |------|---------|
-| `src/components/paths/PathCompletionModal.tsx` | New file - celebration modal with confetti |
-| `src/pages/Dashboard.tsx` | Add completion modal state and trigger |
-| `src/components/dashboard/UpNextCard.tsx` | Add path_item icon and styling |
-| `cloudflare/src/index.ts` | New `/api/library/stats` endpoint |
-| `src/pages/Dashboard.tsx` | Display library progress badges |
+| cloudflare/src/routes/anchor.ts | GET/POST for daily anchor |
+| cloudflare/src/ai/anchor-curator.ts | Gemini-powered anchor generation |
 
 ---
 
-## Estimated Timeline
+## Part 3: Database Cleanup Strategy
 
-| Task | Time |
-|------|------|
-| Step 1: Test all path types | 30 mins |
-| Step 2: Completion celebration | 1 hour |
-| Step 3: UpNextCard enhancements | 30 mins |
-| Step 4: Library progress counters | 1 hour |
-| Step 5: Content verification | 1-2 hours |
-| **Total** | **4-5 hours** |
+### 3.1 Tables to KEEP (Essential)
+
+| Table | Purpose |
+|-------|---------|
+| households | Family units |
+| users | Parent accounts |
+| students | Children profiles |
+| sessions | Auth sessions |
+| formations | All content (activities, catechism, hymns, books) |
+| formation_progressions | Age-appropriate variants |
+| evidences | Completion tracking |
+| family_preferences | Settings (will simplify columns) |
+
+### 3.2 Tables to KEEP (But Simplify Use)
+
+| Table | Current Use | New Use |
+|-------|-------------|---------|
+| weekly_plans | Complex weekly planning | Cache daily anchors |
+| ai_logs | All AI interactions | Simplified anchor generation logs |
+
+### 3.3 Tables to Archive/Deprecate
+
+These tables exist but won't be actively used in Anchor MVP:
+
+| Table | Reason |
+|-------|--------|
+| apprenticeships | Phase 5 feature, not MVP |
+| work_entries | Phase 5 feature, not MVP |
+| learning_paths | Replaced by AI curation |
+| family_path_subscriptions | Replaced by AI curation |
+| family_materials | Settings cleanup |
+| weekly_time_model | AI handles scheduling |
+| parent_overrides | AI handles constraints |
+| content_upvotes | Not essential |
+| parent_comments | Not essential |
+| explanation_logs | Merged into ai_logs |
+| ai_triage_logs | No triage needed |
+| portfolio_items | Archive feature, not MVP |
+
+### 3.4 New Table
+
+```sql
+CREATE TABLE daily_anchors (
+  id TEXT PRIMARY KEY,
+  household_id TEXT NOT NULL,
+  anchor_date TEXT NOT NULL, -- "2026-02-03"
+  theme TEXT, -- "Patience", "Creation", etc.
+  catechism_id TEXT, -- FK → formations
+  hymn_id TEXT, -- FK → formations
+  activity_id TEXT, -- FK → formations
+  book_id TEXT, -- series/bookId format
+  differentiation TEXT, -- JSON with age-specific instructions
+  status TEXT DEFAULT 'pending', -- pending, completed, skipped
+  generated_at TEXT DEFAULT (datetime('now')),
+  completed_at TEXT,
+  
+  FOREIGN KEY (household_id) REFERENCES households(id),
+  UNIQUE(household_id, anchor_date)
+);
+```
 
 ---
 
-## After This Phase
+## Part 4: AI Simplification
 
-Once complete, you'll have:
-- All 7 Learning Path types rendering correctly
-- Celebration when paths are completed
-- Progress tracking visible on Dashboard
-- Foundation ready for Phase 3 (Child Age Filtering / Beast Engine)
+### 4.1 Current AI Complexity
+
+The current system has:
+- **Router** (intent classification)
+- **Cortex** (orchestration with agent loop)
+- **Frontdesk** (chat interface)
+- **Planner** (weekly planning)
+- **Rhythm Generator** (daily rhythm)
+- **Tools** (search, schedule, preferences)
+- **Triage** (request routing)
+
+### 4.2 New AI Architecture: "Invisible Curator"
+
+```text
++------------------+
+|   Family Opens   |
+|      Anchor      |
++--------+---------+
+         |
+         v
++--------+---------+
+| GET /api/anchor  |
+|     /today       |
++--------+---------+
+         |
+    Has anchor for today?
+         |
+    +----+----+
+    |         |
+   YES        NO
+    |         |
+    v         v
+ Return    Generate
+ cached    new anchor
+         (Gemini call)
+         |
+         v
++--------+---------+
+| Anchor Curator   |
++------------------+
+| 1. Get family context (children, preferences)
+| 2. Get current position (catechism Q#, hymn #)
+| 3. Query formations for matching activity
+| 4. Call Gemini to:
+|    - Select best activity
+|    - Generate differentiation per age
+|    - Select matching book (optional)
+| 5. Save to daily_anchors
+| 6. Return anchor
++------------------+
+```
+
+### 4.3 New AI Log Viewer
+
+Replace complex chat history with simple action log:
+
+```text
++------------------------------------------+
+|  AI Activity Log                    [?]  |
++------------------------------------------+
+|                                          |
+|  Feb 3 · 6:00 AM                        |
+|  ✓ Generated today's anchor              |
+|    Theme: Patience                       |
+|    Catechism: Q14                        |
+|    Activity: Baking Bread                |
+|    Book: God Made Africa                 |
+|                                          |
+|  Feb 2 · 7:15 PM                        |
+|  ✓ Anchor completed                      |
+|    Duration: 25 min                      |
+|                                          |
+|  Feb 2 · 6:00 AM                        |
+|  ✓ Generated anchor                      |
+|    Theme: Creation                       |
+|                                          |
++------------------------------------------+
+```
+
+**Component**: `src/components/anchor/AnchorAILog.tsx`
+
+Shows:
+- When anchors were generated
+- What was selected (catechism, hymn, activity, book)
+- Completion status
+- Any errors
+
+Accessible from: Settings > AI Activity (or small icon on Anchor page)
+
+---
+
+## Part 5: Documentation Cleanup
+
+### 5.1 Docs to Archive
+
+Move to `docs/archive/`:
+
+| File | Reason |
+|------|--------|
+| PRODUCT_VISION.md | Replaced by ANCHOR_VISION.md |
+| HACKATHON_BUILD_PLAN.md | Replaced by ANCHOR_HACKATHON.md |
+| ROADMAP.md | No longer relevant |
+| SCOPE_AND_SEQUENCE.md | AI handles this |
+| STREAMING_AGENT_ARCHITECTURE.md | No streaming chat |
+| CATECHISM_AND_LITURGY_GUIDE.md | Merge into new docs |
+| recommendation_enhancement_proposal.md | Obsolete |
+| pilot_guide.md | Will need rewrite |
+| staging_run_report.md | Obsolete |
+
+### 5.2 New Docs to Create
+
+| File | Purpose |
+|------|---------|
+| docs/ANCHOR_VISION.md | Product vision and philosophy |
+| docs/ANCHOR_HACKATHON.md | Hackathon submission plan |
+| docs/CONTENT_SOURCES.md | List of all content fed to AI |
+| docs/AI_CURATOR_ENGINE.md | How the Invisible Curator works |
+
+---
+
+## Part 6: Route Simplification
+
+### 6.1 Current Routes (Too Many)
+
+```text
+/                     (landing)
+/login                (auth)
+/auth/callback        (OAuth)
+/dashboard            (complex)
+/library              (4 sub-routes)
+/planner              (complex)
+/progress             (complex)
+/reports              (complex)
+/settings             (5 tabs)
+/early-years/*        (10 sub-routes)
+/student              (portal)
+/lower-primary        (locked)
+/middle-school        (locked)
+/upper-school         (locked)
+```
+
+### 6.2 New Routes (Minimal)
+
+```text
+/                     (landing - keep)
+/login                (auth - keep)
+/auth/callback        (OAuth - keep)
+/anchor               (NEW - main screen)
+/library              (simplified - search + browse)
+/library/activities/:id (keep - activity viewer)
+/settings             (simplified - 2 sections)
+/privacy              (keep)
+/terms                (keep)
+/support              (keep)
+```
+
+### 6.3 Redirects
+
+| Old Route | New Behavior |
+|-----------|--------------|
+| /dashboard | Redirect → /anchor |
+| /planner | Remove (404) |
+| /progress | Remove (404) |
+| /reports | Remove (404) |
+| /early-years/* | Remove all (404) |
+| /student | Remove (404) |
+| /lower-primary | Remove (404) |
+| /middle-school | Remove (404) |
+| /upper-school | Remove (404) |
+
+---
+
+## Part 7: Implementation Phases
+
+### Phase 1: Documentation & Data (Day 1)
+1. Create `docs/archive/` directory
+2. Move old docs to archive
+3. Create new ANCHOR_VISION.md
+4. Create new ANCHOR_HACKATHON.md
+5. Parse and convert new catechism to JSON
+6. Create catechism migration
+
+### Phase 2: Database & Backend (Day 2)
+1. Create `daily_anchors` table migration
+2. Create `cloudflare/src/routes/anchor.ts`
+3. Create `cloudflare/src/ai/anchor-curator.ts`
+4. Simplify `cloudflare/src/routes/ai.ts`
+5. Archive unused AI files
+
+### Phase 3: Frontend Cleanup (Day 3)
+1. Create archive directories for components
+2. Move/delete unused components
+3. Create new Anchor page and components
+4. Update App.tsx routes
+5. Simplify Settings page
+
+### Phase 4: AI Log & Polish (Day 4)
+1. Create AnchorAILog component
+2. Wire up AI logging to new table
+3. Test full anchor flow
+4. Fix integration bugs
+
+### Phase 5: Final Testing & Demo (Day 5)
+1. End-to-end testing
+2. Mobile testing
+3. Record demo video
+4. Submit hackathon
+
+---
+
+## Part 8: File Counts Summary
+
+### Before Cleanup
+- **Pages**: 15+ files across 5 directories
+- **Components**: 60+ files across 30+ directories
+- **AI Backend**: 11 files
+- **Routes**: 16 files
+- **Docs**: 16 files
+
+### After Cleanup
+- **Pages**: 6 files (Anchor, Library, Settings, Login, NotFound, legal)
+- **Components**: ~25 files (anchor, books, library, settings, ui, layout, auth)
+- **AI Backend**: 4 files (gemini, curator, summarizer, context)
+- **Routes**: 8 files (anchor, auth, family, formations, library, profile, students, export)
+- **Docs**: 6 files (new docs + essentials)
+
+### Reduction
+- ~60% fewer frontend files
+- ~65% fewer backend AI files
+- ~50% fewer routes
+- Much simpler mental model
+
+---
+
+## Part 9: Archive Strategy
+
+Create a structured archive to preserve work:
+
+```text
+archive/
+├── components/
+│   ├── dashboard/
+│   ├── planning/
+│   ├── chat/
+│   ├── coach/
+│   ├── progress/
+│   └── ...
+├── pages/
+│   ├── early-years/
+│   ├── student/
+│   └── ...
+├── ai/
+│   ├── frontdesk.ts
+│   ├── triage.ts
+│   └── ...
+└── docs/
+    ├── PRODUCT_VISION.md
+    ├── HACKATHON_BUILD_PLAN.md
+    └── ...
+```
+
+This allows:
+- Reverting if needed
+- Reference for future features
+- No code loss, just organization
 
