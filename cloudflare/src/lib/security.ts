@@ -101,7 +101,7 @@ export function sanitizeFilename(name: string): string {
 
 // Security helper: File Upload Constraints
 export const MAX_UPLOAD_SIZE = 10 * 1024 * 1024; // 10MB
-export const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.pdf']);
+export const ALLOWED_EXTENSIONS = new Set(['.jpg', '.jpeg', '.png', '.webp', '.pdf', '.epub']);
 
 export function isAllowedFile(filename: string): boolean {
     if (!filename) return false;
@@ -119,5 +119,6 @@ export function getContentType(filename: string): string {
     if (lower.endsWith('.png')) return 'image/png';
     if (lower.endsWith('.webp')) return 'image/webp';
     if (lower.endsWith('.pdf')) return 'application/pdf';
+    if (lower.endsWith('.epub')) return 'application/epub+zip';
     return 'application/octet-stream';
 }

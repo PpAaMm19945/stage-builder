@@ -77,3 +77,8 @@
 **Vulnerability:** The `PUT /api/portfolio/upload-handler` endpoint allowed users to upload files with any extension or content (e.g., HTML, JS) to a public R2 bucket. This could lead to Stored XSS if the uploaded file was accessed via the public R2 URL.
 **Learning:** Accepting user uploads without strict validation is a critical risk, especially when storage is public. "Key prefixing" is insufficient if the extension allows execution (e.g., serving HTML).
 **Prevention:** Always enforce an allowlist of file extensions (e.g., images/PDFs only) and valid MIME types. Explicitly set `Content-Type` on storage objects to prevent MIME-sniffing. Implement size limits to prevent DoS.
+
+## 2026-01-20 - Unrestricted File Upload in Admin Books API
+**Vulnerability:** The `PUT /api/books/upload` endpoint allowed uploading files with any extension. Although authenticated as Admin, this could allow Stored XSS (e.g., uploading HTML/JS) or serving malware if the bucket is public or accessed via the API.
+**Learning:** Admin endpoints are not exempt from input validation. "Trusted" users can still be compromised or tricked (CSRF). Always validate file types against a strict allowlist at the edge.
+**Prevention:** Enforce `isAllowedFile` (extension whitelist) and `MAX_UPLOAD_SIZE` checks on all file upload endpoints.

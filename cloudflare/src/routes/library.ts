@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Env, BookMetadata, User } from '../types';
-import { isValidPathSegment, safeCompare, sanitizeFilename } from '../lib/security';
+import { isValidPathSegment, safeCompare, sanitizeFilename, isAllowedFile, MAX_UPLOAD_SIZE } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
@@ -1142,8 +1142,19 @@ app.put('/api/books/upload', async (c) => {
         return c.json({ error: 'Invalid path. Must start with books/ and not contain traversal characters.' }, 403);
     }
 
+    // Security: Enforce allowed extensions (whitelist)
+    if (!isAllowedFile(path)) {
+        return c.json({ error: 'Invalid file extension. Allowed: .jpg, .jpeg, .png, .webp, .pdf' }, 400);
+    }
+
     try {
         const body = await c.req.arrayBuffer();
+
+        // Security: Enforce max upload size (10MB)
+        if (body.byteLength > MAX_UPLOAD_SIZE) {
+            return c.json({ error: `File too large. Max size is ${MAX_UPLOAD_SIZE / 1024 / 1024}MB.` }, 400);
+        }
+
         await c.env.BOOKS_BUCKET.put(path, body);
         return c.json({ success: true, path });
     } catch (error: any) {
