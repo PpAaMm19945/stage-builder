@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useMemo, useCallback } from 'react';
+import { useState, useEffect, useRef, useMemo, useCallback, memo } from 'react';
 import { Book } from '@/types';
 import {
     Dialog,
@@ -47,7 +47,7 @@ interface BookReaderProps {
     activityId?: string;
 }
 
-export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
+export const BookReader = memo(function BookReader({ book, open, onOpenChange, childrenIds, onComplete, activityId }: BookReaderProps) {
     const [api, setApi] = useState<CarouselApi>();
     const [current, setCurrent] = useState(0);
     const [count, setCount] = useState(0);
@@ -461,7 +461,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                             size="icon"
                                             onClick={() => window.open(pdfUrl, '_blank')}
                                             className="text-white hover:bg-white/20 rounded-full"
-                                            aria-label="Download PDF"
+                                            aria-label="Download PDF (opens in a new tab)"
                                         >
                                             <DownloadSimple className="w-6 h-6" />
                                         </Button>
@@ -523,6 +523,7 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
                                     >
                                         <ArrowsOutSimple className="w-5 h-5" />
                                         Read PDF
+                                        <span className="sr-only">(opens in a new tab)</span>
                                     </Button>
                                 </div>
 
@@ -813,4 +814,4 @@ export function BookReader({ book, open, onOpenChange, childrenIds, onComplete, 
             </Dialog>
         </>
     );
-}
+});

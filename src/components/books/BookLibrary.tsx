@@ -24,6 +24,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     const { data: allBooks = [], isLoading, error } = useQuery({
         queryKey: ['books', 'all'],
         queryFn: () => booksApi.list({}),
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
     // Combine API books and Local Bible books
