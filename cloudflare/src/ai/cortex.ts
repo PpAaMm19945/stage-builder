@@ -14,7 +14,9 @@ interface AnchorPayload {
     theme: string;
     liturgy: {
         hymn: string;
+        hymn_audio_url?: string;      // NEW: Optional audio URL for HymnPlayer
         catechism_q: number;
+        catechism_question?: string;  // NEW: The actual question text
         catechism_a: string;
         scripture: string;
     };
@@ -23,12 +25,16 @@ interface AnchorPayload {
         description: string;
         skill_domain: string;
         formation_lens: string;
-        levels: Array<{ stage: string; instruction: string }>;
+        materials?: string[];         // NEW: List of needed items
+        levels: Array<{ role: string; instruction: string }>; // CHANGED: stage -> role
     };
     book_nook: {
+        id?: string;                  // NEW: Book ID for BookReader
+        series?: string;              // NEW: Series for asset resolution
         title: string;
         author: string;
         cover_image: string;
+        content_path?: string;        // NEW: Path to markdown/images
         discussion_prompt: string;
     };
 }
@@ -747,12 +753,24 @@ INSTRUCTIONS
         }
         const catechismQ = CATECHISM_DATA[qIndex];
 
-        // 2. Build Prompt
+        // 2. Build family members list for personalized roles
+        const children = context.children || [];
+        const familyMembersList = children.length > 0
+            ? children.map((c: any) => {
+                const ageYears = Math.floor((c.age_months || 0) / 12);
+                const ageMonths = (c.age_months || 0) % 12;
+                const ageStr = ageYears > 0 ? `${ageYears}y${ageMonths > 0 ? ` ${ageMonths}m` : ''}` : `${ageMonths}m`;
+                return `${c.name} (${ageStr})`;
+            }).join(', ')
+            : 'No children specified';
+
+        // 3. Build Prompt with personalized roles
         const systemPrompt = `You are the FamilyPath Anchor Engine.
         Your goal is to generate ONE single "Anchor" card for this family.
         
-        FAMILY CONTEXT:
-        Children: ${JSON.stringify(context.children)}
+        FAMILY MEMBERS:
+        - Parent (the one running the activity)
+        - Children: ${familyMembersList}
         
         SELECTED INGREDIENTS:
         - Book: "${randomBook.title}" (Theme: ${randomBook.theme})
@@ -766,10 +784,13 @@ INSTRUCTIONS
         
         2. Rewrite the Skill Activity through the "Lens" of this Theme.
            - Explain WHY we do this skill (Theology Lens).
-           - Provide differentiated instructions for EACH child based on their age stage.
-             - Seedling (0-2): Sensory/Observation
-             - Sprout (3-5): Doing/Motor
-             - Sapling (6+): Understanding/Leading
+           - Generate personalized instructions for EACH family member by name:
+             * Parent: Guide and facilitate the activity
+             * Each child by name: Age-appropriate task based on their age
+               - Under 2 years: Sensory/Observation tasks
+               - 2-5 years: Doing/Motor tasks  
+               - 6+ years: Understanding/Leading tasks
+           - Suggest 2-3 materials if relevant
         
         3. Generate a discussion prompt for the book.
         
@@ -785,10 +806,10 @@ INSTRUCTIONS
                 "description": "Short description of activity",
                 "skill_domain": "${randomSkill.domain}",
                 "formation_lens": "The theological reason/lens",
+                "materials": ["item1", "item2"],
                 "levels": [
-                    { "stage": "Seedling", "instruction": "..." },
-                    { "stage": "Sprout", "instruction": "..." },
-                    { "stage": "Sapling", "instruction": "..." }
+                    { "role": "Parent", "instruction": "Guide the activity..." },
+                    { "role": "${children[0]?.name || 'Child'}", "instruction": "..." }
                 ]
             },
             "book_nook": {
@@ -823,6 +844,7 @@ INSTRUCTIONS
                 liturgy: {
                     hymn: raw.liturgy?.hymn || "Holy, Holy, Holy",
                     catechism_q: catechismQ.number,
+                    catechism_question: catechismQ.question,  // NEW: Include question text
                     catechism_a: catechismQ.answer,
                     scripture: raw.liturgy?.scripture || "Genesis 1:1"
                 },
@@ -831,12 +853,16 @@ INSTRUCTIONS
                     description: raw.family_activity?.description || randomSkill.base_instruction,
                     skill_domain: randomSkill.domain,
                     formation_lens: raw.family_activity?.formation_lens || "Doing all things for God's glory.",
+                    materials: raw.family_activity?.materials || [],  // NEW
                     levels: raw.family_activity?.levels || []
                 },
                 book_nook: {
+                    id: (randomBook as any).id || randomBook.title.toLowerCase().replace(/\s+/g, '_'),  // NEW
+                    series: (randomBook as any).path?.split('/')[2] || 'library',  // NEW: Extract series from path
                     title: randomBook.title,
                     author: randomBook.author || "Library",
                     cover_image: randomBook.cover_image,
+                    content_path: (randomBook as any).path,  // NEW
                     discussion_prompt: raw.book_nook?.discussion_prompt || "What did you like about this story?"
                 }
             };
@@ -850,6 +876,7 @@ INSTRUCTIONS
                 liturgy: {
                     hymn: "Doxology",
                     catechism_q: catechismQ.number,
+                    catechism_question: catechismQ.question,  // NEW
                     catechism_a: catechismQ.answer,
                     scripture: "Genesis 1:1"
                 },
@@ -858,14 +885,18 @@ INSTRUCTIONS
                     description: randomSkill.base_instruction,
                     skill_domain: randomSkill.domain,
                     formation_lens: "God gave us skills to use for His glory.",
+                    materials: [],  // NEW
                     levels: [
-                        { stage: "Everyone", instruction: "Do this activity together." }
+                        { role: "Everyone", instruction: "Do this activity together." }  // CHANGED: stage -> role
                     ]
                 },
                 book_nook: {
+                    id: (randomBook as any).id || randomBook.title.toLowerCase().replace(/\s+/g, '_'),  // NEW
+                    series: (randomBook as any).path?.split('/')[2] || 'library',  // NEW
                     title: randomBook.title,
                     author: randomBook.author,
                     cover_image: randomBook.cover_image,
+                    content_path: (randomBook as any).path,  // NEW
                     discussion_prompt: "Read together."
                 }
             };
