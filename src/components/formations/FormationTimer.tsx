@@ -1,6 +1,11 @@
 import React, { useEffect, useState, useRef } from 'react';
 import { cn } from '@/lib/utils';
 import { Timer, Pause, Play } from '@phosphor-icons/react';
+import {
+    Tooltip,
+    TooltipContent,
+    TooltipTrigger,
+} from '@/components/ui/tooltip';
 
 interface FormationTimerProps {
     isRunning: boolean;
@@ -76,21 +81,30 @@ export function FormationTimer({
                     "w-4 h-4",
                     isRunning && "animate-pulse"
                 )}
+                aria-hidden="true"
             />
             <span className="tabular-nums">{formatTime(elapsedSeconds)}</span>
 
             {showControls && onToggle && (
-                <button
-                    onClick={(e) => { e.stopPropagation(); onToggle(); }}
-                    className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors"
-                    aria-label={isRunning ? "Pause timer" : "Start timer"}
-                >
-                    {isRunning ? (
-                        <Pause weight="fill" className="w-3 h-3" />
-                    ) : (
-                        <Play weight="fill" className="w-3 h-3" />
-                    )}
-                </button>
+                <Tooltip>
+                    <TooltipTrigger asChild>
+                        <button
+                            type="button"
+                            onClick={(e) => { e.stopPropagation(); onToggle(); }}
+                            className="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            aria-label={isRunning ? "Pause timer" : "Start timer"}
+                        >
+                            {isRunning ? (
+                                <Pause weight="fill" className="w-3 h-3" />
+                            ) : (
+                                <Play weight="fill" className="w-3 h-3" />
+                            )}
+                        </button>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                        <p>{isRunning ? "Pause timer" : "Start timer"}</p>
+                    </TooltipContent>
+                </Tooltip>
             )}
         </div>
     );
