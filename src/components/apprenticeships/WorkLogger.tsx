@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
-import { Clock, CheckCircle, Camera, Upload, Calendar, Briefcase, X } from 'lucide-react';
+import { Clock, CheckCircle, Camera, Upload, Calendar, Briefcase, X, Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface Apprenticeship {
     id: string;
@@ -57,7 +58,7 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
                 if (onClose) onClose();
             }, 2000);
         } catch (err) {
-            alert('Failed to submit work log');
+            toast.error('Failed to submit work log');
             setSubmitting(false);
         }
     };
@@ -113,8 +114,9 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
 
                 {/* Apprenticeship Selector */}
                 <div>
-                    <label className="block text-sm font-medium text-amber-900 mb-1">Apprenticeship</label>
+                    <label htmlFor="apprenticeship" className="block text-sm font-medium text-amber-900 mb-1">Apprenticeship</label>
                     <select
+                        id="apprenticeship"
                         value={selectedApprenticeship}
                         onChange={(e) => setSelectedApprenticeship(e.target.value)}
                         className="w-full rounded-lg border-amber-200 bg-white px-3 py-2 text-amber-900 focus:ring-2 focus:ring-amber-500 focus:border-transparent outline-none transition-all"
@@ -132,10 +134,11 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
                 <div className="grid grid-cols-2 gap-4">
                     {/* Date */}
                     <div>
-                        <label className="block text-sm font-medium text-amber-900 mb-1">Date</label>
+                        <label htmlFor="work-date" className="block text-sm font-medium text-amber-900 mb-1">Date</label>
                         <div className="relative">
                             <Calendar className="absolute left-3 top-2.5 w-4 h-4 text-amber-400" />
                             <input
+                                id="work-date"
                                 type="date"
                                 value={date}
                                 onChange={(e) => setDate(e.target.value)}
@@ -147,10 +150,11 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
 
                     {/* Hours */}
                     <div>
-                        <label className="block text-sm font-medium text-amber-900 mb-1">Hours</label>
+                        <label htmlFor="work-hours" className="block text-sm font-medium text-amber-900 mb-1">Hours</label>
                         <div className="relative">
                             <Clock className="absolute left-3 top-2.5 w-4 h-4 text-amber-400" />
                             <input
+                                id="work-hours"
                                 type="number"
                                 step="0.5"
                                 min="0.5"
@@ -166,8 +170,9 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
 
                 {/* Description */}
                 <div>
-                    <label className="block text-sm font-medium text-amber-900 mb-1">What did you do?</label>
+                    <label htmlFor="work-description" className="block text-sm font-medium text-amber-900 mb-1">What did you do?</label>
                     <textarea
+                        id="work-description"
                         value={description}
                         onChange={(e) => setDescription(e.target.value)}
                         className="w-full rounded-lg border-amber-200 bg-white px-3 py-2 text-amber-900 focus:ring-2 focus:ring-amber-500 outline-none h-24 resize-none"
@@ -178,11 +183,12 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
 
                 {/* Photo URL (Optional MVP) */}
                 <div>
-                    <label className="block text-sm font-medium text-amber-900 mb-1">Photo (Optional)</label>
+                    <label htmlFor="work-photo" className="block text-sm font-medium text-amber-900 mb-1">Photo (Optional)</label>
                     <div className="flex gap-2">
                         <div className="relative flex-1">
                             <Camera className="absolute left-3 top-2.5 w-4 h-4 text-amber-400" />
                             <input
+                                id="work-photo"
                                 type="url"
                                 value={photoUrl}
                                 onChange={(e) => setPhotoUrl(e.target.value)}
@@ -199,7 +205,14 @@ export function WorkLogger({ studentId, onClose }: { studentId?: string; onClose
                     disabled={submitting || !selectedApprenticeship}
                     className="w-full bg-amber-600 hover:bg-amber-700 text-white font-medium py-2.5 rounded-lg transition-colors flex items-center justify-center gap-2 mt-2 disabled:opacity-50 disabled:cursor-not-allowed"
                 >
-                    {submitting ? 'Submitting...' : 'Log Work'}
+                    {submitting ? (
+                        <>
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                            Submitting...
+                        </>
+                    ) : (
+                        'Log Work'
+                    )}
                 </button>
 
             </form>
