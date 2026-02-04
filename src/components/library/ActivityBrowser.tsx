@@ -84,6 +84,7 @@ export function ActivityBrowser() {
     const { data: activities = [], isLoading } = useQuery({
         queryKey: ['activities', 'all'],
         queryFn: () => activitiesApi.list(),
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
     const handleActivityClick = (activityId: string) => {

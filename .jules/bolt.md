@@ -51,3 +51,11 @@
 **Action:**
 1. Memoized `readingPrompts` into a `Map<number, string>` using `useMemo` for O(1) lookup.
 2. Updated `BookReader` and `BookPageImage` to use `fetchpriority` (lowercase) with `@ts-expect-error` to ensure images are prioritized correctly for LCP without React type errors.
+
+## 2026-06-05 - Library Tab Caching
+**Learning:** The Library page uses `TabsContent` which unmounts inactive tabs. Without `staleTime`, switching between 'Books', 'Hymns', and 'Formations' triggered a new network request every time, even though the content is static.
+**Action:** Added `staleTime: 1000 * 60 * 5` (5 minutes) to the `useQuery` hooks in `BookLibrary`, `HymnBrowser`, and `ActivityBrowser`. This allows instant tab switching by serving data from memory.
+
+## 2026-06-05 - Deprecated Dashboard Component
+**Learning:** `src/pages/Dashboard.tsx` appears to be the main dashboard but is NOT connected to the `/dashboard` route in `App.tsx`. The actual dashboard is `DailyAnchorView`.
+**Action:** Always verify component usage via `App.tsx` routes or `grep` before optimizing, especially for 'main' pages that might have been recently refactored.
