@@ -202,11 +202,6 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
         api.on("select", () => {
             const page = api.selectedScrollSnap() + 1;
             setCurrent(page);
-            setPagesViewed(prev => {
-                const next = new Set(prev);
-                next.add(page);
-                return next;
-            });
         });
     }, [api]);
 
@@ -294,8 +289,6 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
         [imagePages, failedImages]
     );
 
-    const [pagesViewed, setPagesViewed] = useState<Set<number>>(new Set());
-
     const handleImageError = useCallback((index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
     }, []);
@@ -320,7 +313,6 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     const handleCloseComplete = () => {
         setShowPrompts(false);
         setFailedImages(new Set());
-        setPagesViewed(new Set());
         setShowFinishDialog(false);
         setShowResumeDialog(false);
         setRestoredPage(null);

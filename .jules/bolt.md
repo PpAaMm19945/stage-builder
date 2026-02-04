@@ -51,3 +51,7 @@
 **Action:**
 1. Memoized `readingPrompts` into a `Map<number, string>` using `useMemo` for O(1) lookup.
 2. Updated `BookReader` and `BookPageImage` to use `fetchpriority` (lowercase) with `@ts-expect-error` to ensure images are prioritized correctly for LCP without React type errors.
+
+## 2026-06-04 - Unused State Causing Re-renders in BookReader
+**Learning:** The `BookReader` component contained an unused state variable `pagesViewed` that was updated via `setPagesViewed` on every page slide change event. Although the state value was never read or used in rendering, the state update trigger caused the entire `BookReader` component (and its children) to re-render on every swipe, leading to unnecessary reconciliation overhead during interactions.
+**Action:** Removed the unused `pagesViewed` state and its associated setters from the component to eliminate these redundant re-renders.
