@@ -1,6 +1,7 @@
 
 import { Context } from 'hono';
 import { Env, User } from './types';
+import { isValidPathSegment } from './lib/security';
 
 // Helper: Generate a signed URL for a file
 // We use HMAC-SHA256 to sign the key and expiration time
@@ -11,7 +12,8 @@ async function generateSignedUrl(
     expiresInSeconds: number = 7 * 24 * 60 * 60 // 7 days default
 ): Promise<string> {
     const expiresAt = Math.floor(Date.now() / 1000) + expiresInSeconds;
-    const dataToSign = `${key}:${expiresAt}`;
+    // Security: Key Separation - prefix data to prevent collision with other uses of JWT_SECRET
+    const dataToSign = `file-export:${key}:${expiresAt}`;
 
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
@@ -48,7 +50,8 @@ async function verifySignature(
         return false;
     }
 
-    const dataToSign = `${key}:${expiresAt}`;
+    // Security: Key Separation must match generation
+    const dataToSign = `file-export:${key}:${expiresAt}`;
     const encoder = new TextEncoder();
     const keyData = encoder.encode(secret);
     const data = encoder.encode(dataToSign);
@@ -191,6 +194,11 @@ export async function handleSignedDownload(c: Context<{ Bindings: Env }>) {
             return c.text('Invalid or expired signature', 403);
         }
 
+        // Security: Explicit Path Traversal Check (Defense in Depth)
+        if (!isValidPathSegment(key)) {
+            return c.text('Invalid key path', 400);
+        }
+
         // Fetch from R2
         // Start by checking standard key
         let object = await c.env.BOOKS_BUCKET.get(key);
@@ -209,6 +217,8 @@ export async function handleSignedDownload(c: Context<{ Bindings: Env }>) {
         const headers = new Headers();
         object.writeHttpMetadata(headers);
         headers.set('etag', object.httpEtag);
+        // Security: Prevent MIME sniffing
+        headers.set('X-Content-Type-Options', 'nosniff');
 
         // Force download
         const filename = key.split('/').pop()?.replace(/"/g, '') || 'download';
