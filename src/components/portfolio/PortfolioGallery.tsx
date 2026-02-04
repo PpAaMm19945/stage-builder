@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react';
 import { portfolio } from '@/lib/api';
-import { SpinnerGap, Trash, FileText, FileAudio, Image as ImageIcon, Star, FunnelSimple, Calendar, Folder, Files } from '@phosphor-icons/react';
+import { SpinnerGap, Trash, FileText, FileAudio, Image as ImageIcon, Star, FunnelSimple, Calendar, Folder, Files, ArrowSquareOut } from '@phosphor-icons/react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -230,8 +230,15 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
                                         </div>
                                     )}
                                     {item.publicUrl && item.itemType !== 'image' && (
-                                        <a href={item.publicUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors">
-                                            <span className="sr-only">Open</span>
+                                        <a
+                                            href={item.publicUrl}
+                                            target="_blank"
+                                            rel="noopener noreferrer"
+                                            className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors group/link"
+                                            aria-label={`Open ${item.title} in new tab`}
+                                        >
+                                            <ArrowSquareOut className="h-8 w-8 text-foreground/50 group-hover/link:text-foreground transition-colors" />
+                                            <span className="sr-only">Open in new tab</span>
                                         </a>
                                     )}
                                 </div>

@@ -57,3 +57,7 @@
 ## 2026-06-28 - Design System consistency
 **Learning:** Found raw HTML inputs used in modals despite a robust accessible component library being available. This creates inconsistent keyboard behavior and visual styles.
 **Action:** When auditing forms, search for `<input` tags to find deviations from the design system, especially for checkboxes and radio buttons which have complex accessibility requirements handled by the library.
+
+## 2026-10-24 - Portfolio External Links
+**Learning:** Portfolio items (docs/audio) often link to external URLs via `target="_blank"`. Without a visual indicator like an "external link" icon, users might not realize the thumbnail is clickable or that it opens a new tab.
+**Action:** Added `ArrowSquareOut` icon overlay to non-image portfolio items with `publicUrl`, ensuring `sr-only` text clarifies "Open in new tab".
