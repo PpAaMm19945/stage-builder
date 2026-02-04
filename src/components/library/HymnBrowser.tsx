@@ -17,6 +17,7 @@ export function HymnBrowser() {
     const { data: hymns = [], isLoading } = useQuery({
         queryKey: ['hymns', 'all'],
         queryFn: () => hymnsApi.list(),
+        staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
     const handleHymnSelect = useCallback((hymn: Hymn) => {
