@@ -28,23 +28,16 @@ const GuestHome = lazy(() => import("./components/guest/GuestHome"));
 const Login = lazy(() => import("./pages/Login"));
 const AuthCallback = lazy(() => import("./pages/auth/Callback"));
 
-// THE ANCHOR: Use DailyAnchorView instead of Dashboard
+// THE ANCHOR: Main Dashboard View
 const DailyAnchorView = lazy(() => import("./components/anchor/DailyAnchorView"));
 
-// Legacy/Hidden Pages
-const Planner = lazy(() => import("./pages/early-years/Planner"));
-const DailyPractices = lazy(() => import("./pages/early-years/DailyPractices"));
+// Core Pages
 const LibraryPage = lazy(() => import("./pages/library/index"));
-
 const ActivityViewer = lazy(() => import("./pages/early-years/ActivityViewer"));
 const ProgressPage = lazy(() => import("./pages/early-years/Progress"));
 const Reading = lazy(() => import("./pages/early-years/Reading"));
 const PortfolioPage = lazy(() => import("./pages/early-years/Portfolio"));
-const ScopeSequence = lazy(() => import("./pages/early-years/ScopeSequence"));
 const Settings = lazy(() => import("./pages/Settings"));
-const Reports = lazy(() => import("./pages/Reports"));
-const StudentPortal = lazy(() => import("./pages/student/StudentPortal"));
-const LockedStage = lazy(() => import("./pages/stages/LockedStage"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const PrivacyPolicy = lazy(() => import("./pages/legal/PrivacyPolicy"));
 const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
@@ -82,7 +75,6 @@ const App = () => (
                       <Route path="/library/activities" element={<LibraryPage />} />
                       <Route path="/library/books" element={<LibraryPage />} />
                       <Route path="/library/hymns" element={<LibraryPage />} />
-
                       <Route path="/library/activities/:id" element={<ActivityViewer />} />
 
                       <Route path="/privacy" element={<PrivacyPolicy />} />
@@ -97,30 +89,21 @@ const App = () => (
 
                         <Route path="/progress" element={<ProgressPage />} />
                         <Route path="/settings" element={<Settings />} />
-
-                        {/* Early Years - Legacy routes */}
-                        <Route path="/early-years/planner" element={<Navigate to="/planner" replace />} />
-                        <Route path="/early-years/daily-practices" element={<DailyPractices />} />
-                        <Route path="/early-years/today" element={<Navigate to="/dashboard" replace />} />
-                        <Route path="/early-years/reading" element={<Reading />} />
-                        <Route path="/early-years/progress" element={<Navigate to="/progress" replace />} />
-                        <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
-                        <Route path="/early-years/scope-sequence" element={<ScopeSequence />} />
-
-                        {/* Locked Stages */}
-                        <Route path="/lower-primary" element={<LockedStage />} />
-                        <Route path="/middle-school" element={<LockedStage />} />
-                        <Route path="/upper-school" element={<LockedStage />} />
-
-                        {/* Student Portal */}
-                        <Route path="/student" element={<StudentPortal />} />
                         <Route path="/onboarding" element={<Onboarding />} />
+
+                        {/* Early Years - Legacy routes kept for portfolio */}
+                        <Route path="/early-years/reading" element={<Reading />} />
+                        <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
                       </Route>
                     </Route>
 
                     {/* Backward Compatibility Redirects */}
-                    <Route path="/early-years/activities" element={<Navigate to="/library" replace />} />
-                    <Route path="/early-years/activities/:id" element={<Navigate to="/library/activities/:id" replace />} />
+                    <Route path="/early-years/*" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/planner" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/lower-primary" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/middle-school" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/upper-school" element={<Navigate to="/dashboard" replace />} />
+                    <Route path="/student" element={<Navigate to="/dashboard" replace />} />
 
                     {/* Catch-all */}
                     <Route path="*" element={<NotFound />} />
@@ -136,3 +119,4 @@ const App = () => (
 );
 
 export default App;
+
