@@ -40,7 +40,7 @@
 
 ## 2026-05-29 - BookReader Eager Loading Priority
 **Learning:** The `BookReader` used a static logic (`index < 3 ? "eager" : "lazy"`) for image loading, ignoring the user's current position in the book. If a user navigated to page 50, the image would be loaded lazily, delaying LCP.
-**Action:** Implemented dynamic priority logic where the current page and the immediate next page receive `loading="eager"` and `fetchPriority="high"`. This ensures near-instant rendering during navigation while maintaining lazy loading for distant pages.
+**Action:** Implemented dynamic priority logic where the current page and immediate next page receive `loading="eager"` and `fetchPriority="high"`. This ensures near-instant rendering during navigation while maintaining lazy loading for distant pages.
 
 ## 2026-06-01 - Manifest-Based Caching for Book Metadata
 **Learning:** `fetchAllBooks` was fetching `metadata.json` for every book in the manifest on every cache miss (5 mins). For 500+ books, this caused 500+ R2 Class B operations per worker every 5 minutes, increasing costs and latency.
@@ -59,3 +59,7 @@
 ## 2026-06-05 - Deprecated Dashboard Component
 **Learning:** `src/pages/Dashboard.tsx` appears to be the main dashboard but is NOT connected to the `/dashboard` route in `App.tsx`. The actual dashboard is `DailyAnchorView`.
 **Action:** Always verify component usage via `App.tsx` routes or `grep` before optimizing, especially for 'main' pages that might have been recently refactored.
+
+## 2026-06-06 - Skipping Redundant Asset URL Queries
+**Learning:** The `BookCard` component was firing `useBookAssetUrl` for every book in the library (O(N)), even when the book object already contained a valid, fully-resolved cover URL (passed from the API). This caused hundreds of unnecessary query initiations and effect setups during the initial render of the library.
+**Action:** Modified `useBookAssetUrl` to accept an `{ enabled: boolean }` option and updated `BookCard` (and `BookReader`) to pass `enabled: !externalCover`. This ensures the query hook remains idle when the data is already present, significantly reducing the initial render overhead.
