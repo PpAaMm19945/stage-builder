@@ -489,13 +489,13 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                         size="icon"
                                         onClick={handleCloseRequest}
                                         className="text-white hover:bg-white/20 rounded-full"
-                                        aria-label="Close reader"
+                                    aria-label="Close reader (Esc)"
                                     >
                                         <X className="w-6 h-6" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom" className="z-[60]">
-                                    <p>Close reader</p>
+                                <p>Close reader (Esc)</p>
                                 </TooltipContent>
                             </Tooltip>
                         </div>
@@ -676,7 +676,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                         )} />
                                     </TooltipTrigger>
                                     <TooltipContent side="right" className="z-[60]">
-                                        <p>Previous Page</p>
+                                    <p>Previous Page (←)</p>
                                     </TooltipContent>
                                 </Tooltip>
 
@@ -688,7 +688,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                         )} />
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="z-[60]">
-                                        <p>Next Page</p>
+                                    <p>Next Page (→)</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </Carousel>

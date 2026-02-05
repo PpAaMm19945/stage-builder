@@ -57,3 +57,7 @@
 ## 2026-06-28 - Design System consistency
 **Learning:** Found raw HTML inputs used in modals despite a robust accessible component library being available. This creates inconsistent keyboard behavior and visual styles.
 **Action:** When auditing forms, search for `<input` tags to find deviations from the design system, especially for checkboxes and radio buttons which have complex accessibility requirements handled by the library.
+
+## 2026-10-25 - Keyboard Shortcut Discoverability
+**Learning:** Keyboard shortcuts (like arrow keys for navigation or Esc for closing) are often implemented but remain invisible to users, leading to underutilization.
+**Action:** Explicitly expose keyboard shortcuts in Tooltips (e.g., "Next Page (→)") and ARIA labels. This reinforces the shortcuts naturally as users interact with the UI.
