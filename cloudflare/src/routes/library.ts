@@ -1,12 +1,30 @@
-import { Hono } from 'hono';
+import { Hono, Context, Next } from 'hono';
 import { Env, BookMetadata, User } from '../types';
 import { isValidPathSegment, safeCompare, sanitizeFilename, isAllowedFile, getContentType, MAX_UPLOAD_SIZE, createSizeLimitStream } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
+import { checkRateLimit } from '../middleware/rate-limit';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 import { safeError } from '../lib/safe-response';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+
+// Middleware
+const libraryRateLimit = async (c: Context, next: Next) => {
+    // Rate limiting: 60 requests per minute per IP
+    const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+    const rateLimit = checkRateLimit(ip, 60, 60000);
+
+    if (!rateLimit.allowed) {
+        const retryAfter = Math.ceil((rateLimit.resetAt - Date.now()) / 1000);
+        c.header('Retry-After', String(retryAfter));
+        return c.json({
+            error: 'Too many requests. Please try again later.',
+            retryAfter
+        }, 429);
+    }
+    await next();
+};
 
 // ============ HELPERS ============
 
@@ -363,7 +381,7 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
 // ============ BOOKS & SERIES ROUTES ============
 
 // List all books
-app.get('/api/books', async (c) => {
+app.get('/api/books', libraryRateLimit, async (c) => {
     try {
         c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
 
@@ -390,7 +408,7 @@ app.get('/api/books', async (c) => {
 });
 
 // List all series
-app.get('/api/series', async (c) => {
+app.get('/api/series', libraryRateLimit, async (c) => {
     try {
         const bucket = c.env.BOOKS_BUCKET;
         const seriesList: any[] = [];
@@ -444,7 +462,7 @@ app.get('/api/series', async (c) => {
 });
 
 // Get series details
-app.get('/api/series/:seriesId', async (c) => {
+app.get('/api/series/:seriesId', libraryRateLimit, async (c) => {
     try {
         const seriesId = c.req.param('seriesId');
 
