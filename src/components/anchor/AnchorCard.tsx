@@ -221,13 +221,13 @@ export const AnchorCard: React.FC<AnchorCardProps> = ({ anchor, onComplete }) =>
                                             className="overflow-hidden"
                                         >
                                             <div className="pt-4 pb-2 px-2 space-y-4">
-                                                {section.id === 'liturgy' && (
+                                                {section.id === 'liturgy' && anchor.liturgy && (
                                                     <LiturgyContent liturgy={anchor.liturgy} />
                                                 )}
-                                                {section.id === 'activity' && (
+                                                {section.id === 'activity' && anchor.family_activity && (
                                                     <ActivityContent activity={anchor.family_activity} />
                                                 )}
-                                                {section.id === 'book' && (
+                                                {section.id === 'book' && anchor.book_nook && (
                                                     <BookContent book={anchor.book_nook} />
                                                 )}
                                             </div>

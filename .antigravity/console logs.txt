@@ -1,258 +1,96 @@
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:68 [API] isAuthenticated called. Result: true
-index-BMqx5Vrx.js:69 [AuthContext] refreshAuth called. isAuthenticated: true
-index-BMqx5Vrx.js:69 [AuthContext] Calling auth.getMe(). Attempt 1
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:69 [AuthContext] auth.getMe() success: {user: {…}, children: Array(1)}
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:249 [Chat] Fetching Daily Anchor...
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:249 [Chat] Fetching Daily Anchor...
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:211 `DialogContent` requires a `DialogTitle` for the component to be accessible for screen reader users.
-
-If you want to hide the `DialogTitle`, you can wrap it with our VisuallyHidden component.
-
-For more information, see https://radix-ui.com/primitives/docs/components/dialog
-(anonymous) @ index-BMqx5Vrx.js:211
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-(anonymous) @ index-BMqx5Vrx.js:41
-index-BMqx5Vrx.js:211 Warning: Missing `Description` or `aria-describedby={undefined}` for {DialogContent}.
-(anonymous) @ index-BMqx5Vrx.js:211
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-(anonymous) @ index-BMqx5Vrx.js:41
-index-BMqx5Vrx.js:249 [Chat] Fetching Daily Anchor...
-index-BMqx5Vrx.js:68 [API] getAuthToken called. Token exists: true
-index-BMqx5Vrx.js:68  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
-ae @ index-BMqx5Vrx.js:68
-getToday @ index-BMqx5Vrx.js:68
-(anonymous) @ index-BMqx5Vrx.js:249
-await in (anonymous)
-(anonymous) @ index-BMqx5Vrx.js:249
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:249 [Chat] Failed to fetch daily anchor: Error: Gemini API Error 429: {
-  "error": {
-    "code": 429,
-    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3-flash\nPlease retry in 58.676388806s.",
-    "status": "RESOURCE_EXHAUSTED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.Help",
-        "links": [
-          {
-            "description": "Learn more about Gemini API quotas",
-            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
-        "violations": [
-          {
-            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
-            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
-            "quotaDimensions": {
-              "location": "global",
-              "model": "gemini-3-flash"
-            },
-            "quotaValue": "5"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.RetryInfo",
-        "retryDelay": "58s"
-      }
-    ]
-  }
-}
-
-    at ae (index-BMqx5Vrx.js:68:4003)
-    at async index-BMqx5Vrx.js:249:76482
-(anonymous) @ index-BMqx5Vrx.js:249
-await in (anonymous)
-(anonymous) @ index-BMqx5Vrx.js:249
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:68  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
-ae @ index-BMqx5Vrx.js:68
-getToday @ index-BMqx5Vrx.js:68
-(anonymous) @ index-BMqx5Vrx.js:249
-await in (anonymous)
-(anonymous) @ index-BMqx5Vrx.js:249
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:249 [Chat] Failed to fetch daily anchor: Error: Gemini API Error 429: {
-  "error": {
-    "code": 429,
-    "message": "You exceeded your current quota, please check your plan and billing details. For more information on this error, head to: https://ai.google.dev/gemini-api/docs/rate-limits. To monitor your current usage, head to: https://ai.dev/rate-limit. \n* Quota exceeded for metric: generativelanguage.googleapis.com/generate_content_free_tier_requests, limit: 5, model: gemini-3-flash\nPlease retry in 58.374976171s.",
-    "status": "RESOURCE_EXHAUSTED",
-    "details": [
-      {
-        "@type": "type.googleapis.com/google.rpc.Help",
-        "links": [
-          {
-            "description": "Learn more about Gemini API quotas",
-            "url": "https://ai.google.dev/gemini-api/docs/rate-limits"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.QuotaFailure",
-        "violations": [
-          {
-            "quotaMetric": "generativelanguage.googleapis.com/generate_content_free_tier_requests",
-            "quotaId": "GenerateRequestsPerMinutePerProjectPerModel-FreeTier",
-            "quotaDimensions": {
-              "location": "global",
-              "model": "gemini-3-flash"
-            },
-            "quotaValue": "5"
-          }
-        ]
-      },
-      {
-        "@type": "type.googleapis.com/google.rpc.RetryInfo",
-        "retryDelay": "58s"
-      }
-    ]
-  }
-}
-
-    at ae (index-BMqx5Vrx.js:68:4003)
-    at async index-BMqx5Vrx.js:249:76482
-(anonymous) @ index-BMqx5Vrx.js:249
-await in (anonymous)
-(anonymous) @ index-BMqx5Vrx.js:249
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:41 TypeError: Cannot read properties of undefined (reading 'hymn')
-    at fe (DailyAnchorView-BCcd56DE.js:38:6052)
-    at Mm (index-BMqx5Vrx.js:39:16998)
-    at $3 (index-BMqx5Vrx.js:41:44030)
-    at F3 (index-BMqx5Vrx.js:41:39766)
-    at ok (index-BMqx5Vrx.js:41:39694)
-    at d0 (index-BMqx5Vrx.js:41:39547)
-    at yh (index-BMqx5Vrx.js:41:35914)
-    at q8 (index-BMqx5Vrx.js:41:36717)
-    at qo (index-BMqx5Vrx.js:39:3274)
-    at index-BMqx5Vrx.js:41:34246
-ah @ index-BMqx5Vrx.js:41
-a.componentDidCatch.n.callback @ index-BMqx5Vrx.js:41
-R8 @ index-BMqx5Vrx.js:39
-K8 @ index-BMqx5Vrx.js:41
-V3 @ index-BMqx5Vrx.js:41
-tk @ index-BMqx5Vrx.js:41
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-(anonymous) @ index-BMqx5Vrx.js:41
+index-HPUnkVYJ.js:68 [API] getAuthToken called. Token exists: true
+index-HPUnkVYJ.js:68 [API] isAuthenticated called. Result: true
+index-HPUnkVYJ.js:69 [AuthContext] refreshAuth called. isAuthenticated: true
+index-HPUnkVYJ.js:69 [AuthContext] Calling auth.getMe(). Attempt 1
+index-HPUnkVYJ.js:68 [API] getAuthToken called. Token exists: true
+index-HPUnkVYJ.js:69 [AuthContext] auth.getMe() success: {user: {…}, children: Array(1)}
+index-HPUnkVYJ.js:68 [API] getAuthToken called. Token exists: true
+index-HPUnkVYJ.js:68 [API] getAuthToken called. Token exists: true
+index-HPUnkVYJ.js:41 TypeError: Cannot read properties of undefined (reading 'hymn')
+    at fe (DailyAnchorView--u91yzCS.js:38:6052)
+    at Mm (index-HPUnkVYJ.js:39:16998)
+    at $3 (index-HPUnkVYJ.js:41:44030)
+    at F3 (index-HPUnkVYJ.js:41:39766)
+    at ok (index-HPUnkVYJ.js:41:39694)
+    at d0 (index-HPUnkVYJ.js:41:39547)
+    at yh (index-HPUnkVYJ.js:41:35914)
+    at q8 (index-HPUnkVYJ.js:41:36717)
+    at qo (index-HPUnkVYJ.js:39:3274)
+    at index-HPUnkVYJ.js:41:34246
+ah @ index-HPUnkVYJ.js:41
+a.componentDidCatch.n.callback @ index-HPUnkVYJ.js:41
+R8 @ index-HPUnkVYJ.js:39
+K8 @ index-HPUnkVYJ.js:41
+V3 @ index-HPUnkVYJ.js:41
+tk @ index-HPUnkVYJ.js:41
+ik @ index-HPUnkVYJ.js:41
+la @ index-HPUnkVYJ.js:41
+q8 @ index-HPUnkVYJ.js:41
+qo @ index-HPUnkVYJ.js:39
+(anonymous) @ index-HPUnkVYJ.js:41
 setTimeout
-dR @ index-BMqx5Vrx.js:41
-i @ index-BMqx5Vrx.js:41
-batch @ index-BMqx5Vrx.js:41
-Ir @ index-BMqx5Vrx.js:41
-setData @ index-BMqx5Vrx.js:41
-fetch @ index-BMqx5Vrx.js:41
+dR @ index-HPUnkVYJ.js:41
+i @ index-HPUnkVYJ.js:41
+batch @ index-HPUnkVYJ.js:41
+Ir @ index-HPUnkVYJ.js:41
+setData @ index-HPUnkVYJ.js:41
+fetch @ index-HPUnkVYJ.js:41
 await in fetch
-Ks @ index-BMqx5Vrx.js:41
-onSubscribe @ index-BMqx5Vrx.js:41
-subscribe @ index-BMqx5Vrx.js:41
-(anonymous) @ index-BMqx5Vrx.js:41
-o3 @ index-BMqx5Vrx.js:39
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:159 ErrorBoundary caught an error: TypeError: Cannot read properties of undefined (reading 'hymn')
-    at fe (DailyAnchorView-BCcd56DE.js:38:6052)
-    at Mm (index-BMqx5Vrx.js:39:16998)
-    at $3 (index-BMqx5Vrx.js:41:44030)
-    at F3 (index-BMqx5Vrx.js:41:39766)
-    at ok (index-BMqx5Vrx.js:41:39694)
-    at d0 (index-BMqx5Vrx.js:41:39547)
-    at yh (index-BMqx5Vrx.js:41:35914)
-    at q8 (index-BMqx5Vrx.js:41:36717)
-    at qo (index-BMqx5Vrx.js:39:3274)
-    at index-BMqx5Vrx.js:41:34246 {componentStack: '\n    at fe (https://stage-builder-9hh.pages.dev/as…s.dev/assets/index-BMqx5Vrx.js:159:145)\n    at yX'}
-componentDidCatch @ index-BMqx5Vrx.js:159
-a.componentDidCatch.n.callback @ index-BMqx5Vrx.js:41
-R8 @ index-BMqx5Vrx.js:39
-K8 @ index-BMqx5Vrx.js:41
-V3 @ index-BMqx5Vrx.js:41
-tk @ index-BMqx5Vrx.js:41
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-(anonymous) @ index-BMqx5Vrx.js:41
+Ks @ index-HPUnkVYJ.js:41
+onSubscribe @ index-HPUnkVYJ.js:41
+subscribe @ index-HPUnkVYJ.js:41
+(anonymous) @ index-HPUnkVYJ.js:41
+o3 @ index-HPUnkVYJ.js:39
+nd @ index-HPUnkVYJ.js:41
+Pi @ index-HPUnkVYJ.js:41
+q8 @ index-HPUnkVYJ.js:41
+qo @ index-HPUnkVYJ.js:39
+ik @ index-HPUnkVYJ.js:41
+la @ index-HPUnkVYJ.js:41
+D3 @ index-HPUnkVYJ.js:41
+E @ index-HPUnkVYJ.js:26
+I @ index-HPUnkVYJ.js:26
+index-HPUnkVYJ.js:159 ErrorBoundary caught an error: TypeError: Cannot read properties of undefined (reading 'hymn')
+    at fe (DailyAnchorView--u91yzCS.js:38:6052)
+    at Mm (index-HPUnkVYJ.js:39:16998)
+    at $3 (index-HPUnkVYJ.js:41:44030)
+    at F3 (index-HPUnkVYJ.js:41:39766)
+    at ok (index-HPUnkVYJ.js:41:39694)
+    at d0 (index-HPUnkVYJ.js:41:39547)
+    at yh (index-HPUnkVYJ.js:41:35914)
+    at q8 (index-HPUnkVYJ.js:41:36717)
+    at qo (index-HPUnkVYJ.js:39:3274)
+    at index-HPUnkVYJ.js:41:34246 {componentStack: '\n    at fe (https://stage-builder-9hh.pages.dev/as…s.dev/assets/index-HPUnkVYJ.js:159:145)\n    at yX'}
+componentDidCatch @ index-HPUnkVYJ.js:159
+a.componentDidCatch.n.callback @ index-HPUnkVYJ.js:41
+R8 @ index-HPUnkVYJ.js:39
+K8 @ index-HPUnkVYJ.js:41
+V3 @ index-HPUnkVYJ.js:41
+tk @ index-HPUnkVYJ.js:41
+ik @ index-HPUnkVYJ.js:41
+la @ index-HPUnkVYJ.js:41
+q8 @ index-HPUnkVYJ.js:41
+qo @ index-HPUnkVYJ.js:39
+(anonymous) @ index-HPUnkVYJ.js:41
 setTimeout
-dR @ index-BMqx5Vrx.js:41
-i @ index-BMqx5Vrx.js:41
-batch @ index-BMqx5Vrx.js:41
-Ir @ index-BMqx5Vrx.js:41
-setData @ index-BMqx5Vrx.js:41
-fetch @ index-BMqx5Vrx.js:41
+dR @ index-HPUnkVYJ.js:41
+i @ index-HPUnkVYJ.js:41
+batch @ index-HPUnkVYJ.js:41
+Ir @ index-HPUnkVYJ.js:41
+setData @ index-HPUnkVYJ.js:41
+fetch @ index-HPUnkVYJ.js:41
 await in fetch
-Ks @ index-BMqx5Vrx.js:41
-onSubscribe @ index-BMqx5Vrx.js:41
-subscribe @ index-BMqx5Vrx.js:41
-(anonymous) @ index-BMqx5Vrx.js:41
-o3 @ index-BMqx5Vrx.js:39
-nd @ index-BMqx5Vrx.js:41
-Pi @ index-BMqx5Vrx.js:41
-q8 @ index-BMqx5Vrx.js:41
-qo @ index-BMqx5Vrx.js:39
-ik @ index-BMqx5Vrx.js:41
-la @ index-BMqx5Vrx.js:41
-D3 @ index-BMqx5Vrx.js:41
-E @ index-BMqx5Vrx.js:26
-I @ index-BMqx5Vrx.js:26
-index-BMqx5Vrx.js:249 [Chat] Received Anchor: {date: '2026-02-05', arc_day: 1, catechism_focus: 'Westminster Shorter Catechism Question 1: What is … end is to glorify God, and to enjoy him forever.', hymn_stanza: 'All creatures of our God and King, lift up your voice and with us sing, Alleluia! Alleluia!', daily_reading: '01 God Made Africa', …}
+Ks @ index-HPUnkVYJ.js:41
+onSubscribe @ index-HPUnkVYJ.js:41
+subscribe @ index-HPUnkVYJ.js:41
+(anonymous) @ index-HPUnkVYJ.js:41
+o3 @ index-HPUnkVYJ.js:39
+nd @ index-HPUnkVYJ.js:41
+Pi @ index-HPUnkVYJ.js:41
+q8 @ index-HPUnkVYJ.js:41
+qo @ index-HPUnkVYJ.js:39
+ik @ index-HPUnkVYJ.js:41
+la @ index-HPUnkVYJ.js:41
+D3 @ index-HPUnkVYJ.js:41
+E @ index-HPUnkVYJ.js:26
+I @ index-HPUnkVYJ.js:26
