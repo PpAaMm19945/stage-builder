@@ -35,6 +35,7 @@ import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ChildSelectionModal } from './ChildSelectionModal';
 import { BookPageImage } from './BookPageImage';
+import { BookReaderSlide } from './BookReaderSlide';
 
 const RENDER_WINDOW = 3;
 
@@ -299,6 +300,12 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     const handleImageError = useCallback((index: number) => {
         setFailedImages(prev => new Set([...prev, index]));
     }, []);
+
+    const handleToggleControls = useCallback(() => {
+        if (isFullscreen) {
+            setShowControls(prev => !prev);
+        }
+    }, [isFullscreen]);
 
     const handleCloseRequest = async () => {
         if (current === count || current === totalPages) {
@@ -597,40 +604,18 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     })}
 
                                     {/* Pages - Image Mode */}
-                                    {!isMarkdown && imagePages.map((pageUrl, index) => {
-                                        if (failedImages.has(index)) return null;
-
-                                        const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
-
-                                        // Priority logic: Load eager if it's the current page or the immediate next page
-                                        // Carousel 'current' is 1-based index (1 = Cover, 2 = Page 1)
-                                        // So Page Index 0 is Current when current=2. Next when current=1.
-                                        const priority = (index + 2 === current) || (index + 1 === current);
-
-                                        const promptText = showPrompts ? promptsByPage.get(index + 1) : undefined;
-
-                                        return (
-                                            <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                {isNearby ? (
-                                                    <div
-                                                        className="w-full h-full flex items-center justify-center"
-                                                        onClick={() => isFullscreen && setShowControls(!showControls)}
-                                                    >
-                                                        <BookPageImage
-                                                            src={pageUrl}
-                                                            alt={`Page ${index + 1}`}
-                                                            index={index}
-                                                            onImageError={handleImageError}
-                                                            prompt={promptText}
-                                                            priority={priority}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-full h-full" />
-                                                )}
-                                            </CarouselItem>
-                                        );
-                                    })}
+                                    {!isMarkdown && imagePages.map((pageUrl, index) => (
+                                        <BookReaderSlide
+                                            key={index}
+                                            index={index}
+                                            url={pageUrl}
+                                            current={current}
+                                            isFailed={failedImages.has(index)}
+                                            prompt={showPrompts ? promptsByPage.get(index + 1) : undefined}
+                                            onToggleControls={handleToggleControls}
+                                            onImageError={handleImageError}
+                                        />
+                                    ))}
 
                                     {/* End Slide */}
                                     <CarouselItem className="flex items-center justify-center h-full">
