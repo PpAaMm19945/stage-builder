@@ -2,14 +2,15 @@ fetch("https://stage-builder-9hh.pages.dev/dashboard", {
   "headers": {
     "accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8,application/signed-exchange;v=b3;q=0.7",
     "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"9ba9361607ae0f227927e6478ea7dc8c\"",
+    "cache-control": "max-age=0",
+    "if-none-match": "W/\"b2bce925566fb36a0ffc1485e1875a47\"",
     "priority": "u=0, i",
     "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
     "sec-ch-ua-mobile": "?1",
     "sec-ch-ua-platform": "\"Android\"",
     "sec-fetch-dest": "document",
     "sec-fetch-mode": "navigate",
-    "sec-fetch-site": "none",
+    "sec-fetch-site": "same-origin",
     "sec-fetch-user": "?1",
     "upgrade-insecure-requests": "1",
     "cookie": "sidebar:state=true"
@@ -17,11 +18,11 @@ fetch("https://stage-builder-9hh.pages.dev/dashboard", {
   "body": null,
   "method": "GET"
 }); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/index-BSiXbJnw.js", {
+fetch("https://stage-builder-9hh.pages.dev/assets/index-BMqx5Vrx.js", {
   "headers": {
     "accept": "*/*",
     "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"d998fefa8d3852a77e4fb50c7694aa58\"",
+    "if-none-match": "W/\"2579aecf67e8aa55c38e87a6b78f8515\"",
     "priority": "u=1",
     "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
     "sec-ch-ua-mobile": "?1",
@@ -35,11 +36,11 @@ fetch("https://stage-builder-9hh.pages.dev/assets/index-BSiXbJnw.js", {
   "body": null,
   "method": "GET"
 }); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css", {
+fetch("https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css", {
   "headers": {
     "accept": "text/css,*/*;q=0.1",
     "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"3a6b326c46c3019fdf8dfa7b5722ece0\"",
+    "if-none-match": "W/\"0b5ece9f93ed89f1e8ac5c703a747e11\"",
     "priority": "u=0",
     "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
     "sec-ch-ua-mobile": "?1",
@@ -50,11 +51,6 @@ fetch("https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css", {
     "cookie": "sidebar:state=true",
     "Referer": "https://stage-builder-9hh.pages.dev/dashboard"
   },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("chrome-extension://iidnbdjijdkbmajdffnidomddglmieko/quillbot-content.js", {
-  "referrer": "",
   "body": null,
   "method": "GET"
 }); ;
@@ -71,8 +67,13 @@ fetch("https://stage-builder-9hh.pages.dev/assets/inter-latin-400-normal-C38fXH4
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     "cookie": "sidebar:state=true",
-    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css"
+    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css"
   },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("chrome-extension://iidnbdjijdkbmajdffnidomddglmieko/quillbot-content.js", {
+  "referrer": "",
   "body": null,
   "method": "GET"
 }); ;
@@ -107,97 +108,120 @@ fetch("https://stage-builder.antmwes104-1.workers.dev/api/auth/me", {
   "body": null,
   "method": "GET"
 }); ;
+fetch("https://stage-builder-9hh.pages.dev/favicon.ico", {
+  "headers": {
+    "accept": "image/avif,image/webp,image/apng,image/svg+xml,image/*,*/*;q=0.8",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"86a7fd6e896800febd8fe8e3628ec57a\"",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "image",
+    "sec-fetch-mode": "no-cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true",
+    "Referer": "https://stage-builder-9hh.pages.dev/dashboard"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("chrome-extension://iidnbdjijdkbmajdffnidomddglmieko/executor.js", {
+  "referrer": "",
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/DailyAnchorView-BCcd56DE.js", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"a9160b4c34509daa58a493259e6434c9\"",
+    "priority": "u=1",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "script",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/useHymnContent-_Gt7m1J9.js", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"180b776fc5f48fafcf2e5a1df4a4b102\"",
+    "priority": "u=1",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "script",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/users-DylL95-y.js", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"2c466ec09c9c40a512fc89fd62a3d0f4\"",
+    "priority": "u=1",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "script",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/sparkles-BhlhOjwf.js", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"f7e148f9d57c7a6378c4ab16c0b9c688\"",
+    "priority": "u=1",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "script",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/loader-circle-DFf51efv.js", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "W/\"4595c2b87434911626f4202b12748f5e\"",
+    "priority": "u=1",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "script",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
 fetch("https://lh3.googleusercontent.com/a/ACg8ocLOL9SH7yykX50Iq6aPf9sRPoxqrAyKCvFYv1cg7ofxPedn49e6=s96-c", {
   "headers": {
     "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
     "sec-ch-ua-mobile": "?1",
     "sec-ch-ua-platform": "\"Android\"",
     "Referer": "https://stage-builder-9hh.pages.dev/"
-  },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/DailyAnchorView-BsDi8Yxx.js", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"0d06eba9a02180ed8d50ec6cd0089654\"",
-    "priority": "u=1",
-    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-    "sec-ch-ua-mobile": "?1",
-    "sec-ch-ua-platform": "\"Android\"",
-    "sec-fetch-dest": "script",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "cookie": "sidebar:state=true"
-  },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/useHymnContent-CtAFFakf.js", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"c65d8a02b6d334902e3ca2ebc0adccd1\"",
-    "priority": "u=1",
-    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-    "sec-ch-ua-mobile": "?1",
-    "sec-ch-ua-platform": "\"Android\"",
-    "sec-fetch-dest": "script",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "cookie": "sidebar:state=true"
-  },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/users-DsoO4YuH.js", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"fbcc52d4209957713bc0509d57cc4f33\"",
-    "priority": "u=1",
-    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-    "sec-ch-ua-mobile": "?1",
-    "sec-ch-ua-platform": "\"Android\"",
-    "sec-fetch-dest": "script",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "cookie": "sidebar:state=true"
-  },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/sparkles-BZiEVVS3.js", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"5b127d3fb4c8c027cedc497eeab7f84b\"",
-    "priority": "u=1",
-    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-    "sec-ch-ua-mobile": "?1",
-    "sec-ch-ua-platform": "\"Android\"",
-    "sec-fetch-dest": "script",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "cookie": "sidebar:state=true"
-  },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("https://stage-builder-9hh.pages.dev/assets/loader-circle-LyQBrnnB.js", {
-  "headers": {
-    "accept": "*/*",
-    "accept-language": "en-US,en;q=0.9",
-    "if-none-match": "W/\"d50799cd5b00594a1da6b8fff1363f0f\"",
-    "priority": "u=1",
-    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
-    "sec-ch-ua-mobile": "?1",
-    "sec-ch-ua-platform": "\"Android\"",
-    "sec-fetch-dest": "script",
-    "sec-fetch-mode": "cors",
-    "sec-fetch-site": "same-origin",
-    "cookie": "sidebar:state=true"
   },
   "body": null,
   "method": "GET"
@@ -246,7 +270,7 @@ fetch("https://stage-builder-9hh.pages.dev/assets/plus-jakarta-sans-latin-700-no
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     "cookie": "sidebar:state=true",
-    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css"
+    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css"
   },
   "body": null,
   "method": "GET"
@@ -264,7 +288,7 @@ fetch("https://stage-builder-9hh.pages.dev/assets/inter-latin-500-normal-Cerq10X
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     "cookie": "sidebar:state=true",
-    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css"
+    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css"
   },
   "body": null,
   "method": "GET"
@@ -282,7 +306,7 @@ fetch("https://stage-builder-9hh.pages.dev/assets/inter-latin-600-normal-LgqL8mu
     "sec-fetch-mode": "cors",
     "sec-fetch-site": "same-origin",
     "cookie": "sidebar:state=true",
-    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-BhHSbzJU.css"
+    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css"
   },
   "body": null,
   "method": "GET"
@@ -320,11 +344,6 @@ fetch("https://stage-builder.antmwes104-1.workers.dev/api/auth/me", {
     "sec-fetch-site": "cross-site",
     "Referer": "https://stage-builder-9hh.pages.dev/"
   },
-  "body": null,
-  "method": "GET"
-}); ;
-fetch("chrome-extension://iidnbdjijdkbmajdffnidomddglmieko/executor.js", {
-  "referrer": "",
   "body": null,
   "method": "GET"
 }); ;
@@ -345,4 +364,102 @@ fetch("https://stage-builder.antmwes104-1.workers.dev/api/anchor/today", {
   },
   "body": null,
   "method": "GET"
-}); 
+}); ;
+fetch("https://stage-builder.antmwes104-1.workers.dev/api/anchor/today", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTE3Njg4NDcxMTAyMTItMm5pMjN5dHRvIiwiZW1haWwiOiJhbnRtd2VzMTA0LjFAZ21haWwuY29tIiwibmFtZSI6IkFudGhvbnkgSnIuIE13ZXNpZ3dhIiwiaG91c2Vob2xkX2lkIjoiaGgtMTc2ODg0NzExMDgwMC16c2JobWx3N3QiLCJyb2xlIjoicGFyZW50Iiwic3R1ZGVudF9pZCI6bnVsbCwiZXhwIjoxNzcyMjA0MTc2LCJpYXQiOjE3Njk2MTIxNzZ9.qqTqQbXh9zVYS0qgUuFMYJkNTDPuCE8kjGUZrenl1oY",
+    "content-type": "application/json",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "Referer": "https://stage-builder-9hh.pages.dev/"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder.antmwes104-1.workers.dev/api/auth/me", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "priority": "u=1, i",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "Referer": "https://stage-builder-9hh.pages.dev/"
+  },
+  "body": null,
+  "method": "OPTIONS"
+}); ;
+fetch("https://stage-builder.antmwes104-1.workers.dev/api/auth/me", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTE3Njg4NDcxMTAyMTItMm5pMjN5dHRvIiwiZW1haWwiOiJhbnRtd2VzMTA0LjFAZ21haWwuY29tIiwibmFtZSI6IkFudGhvbnkgSnIuIE13ZXNpZ3dhIiwiaG91c2Vob2xkX2lkIjoiaGgtMTc2ODg0NzExMDgwMC16c2JobWx3N3QiLCJyb2xlIjoicGFyZW50Iiwic3R1ZGVudF9pZCI6bnVsbCwiZXhwIjoxNzcyMjA0MTc2LCJpYXQiOjE3Njk2MTIxNzZ9.qqTqQbXh9zVYS0qgUuFMYJkNTDPuCE8kjGUZrenl1oY",
+    "content-type": "application/json",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "Referer": "https://stage-builder-9hh.pages.dev/"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder.antmwes104-1.workers.dev/api/anchor/today", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "authorization": "Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOiJ1c2VyLTE3Njg4NDcxMTAyMTItMm5pMjN5dHRvIiwiZW1haWwiOiJhbnRtd2VzMTA0LjFAZ21haWwuY29tIiwibmFtZSI6IkFudGhvbnkgSnIuIE13ZXNpZ3dhIiwiaG91c2Vob2xkX2lkIjoiaGgtMTc2ODg0NzExMDgwMC16c2JobWx3N3QiLCJyb2xlIjoicGFyZW50Iiwic3R1ZGVudF9pZCI6bnVsbCwiZXhwIjoxNzcyMjA0MTc2LCJpYXQiOjE3Njk2MTIxNzZ9.qqTqQbXh9zVYS0qgUuFMYJkNTDPuCE8kjGUZrenl1oY",
+    "content-type": "application/json",
+    "priority": "u=1, i",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "Referer": "https://stage-builder-9hh.pages.dev/"
+  },
+  "body": null,
+  "method": "GET"
+}); ;
+fetch("https://stage-builder.antmwes104-1.workers.dev/api/anchor/today", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "priority": "u=1, i",
+    "sec-fetch-dest": "empty",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "cross-site",
+    "Referer": "https://stage-builder-9hh.pages.dev/"
+  },
+  "body": null,
+  "method": "OPTIONS"
+}); ;
+fetch("https://stage-builder-9hh.pages.dev/assets/inter-latin-700-normal-Yt3aPRUw.woff2", {
+  "headers": {
+    "accept": "*/*",
+    "accept-language": "en-US,en;q=0.9",
+    "if-none-match": "\"7949b2b8c4f79eae4de6b4c75d52112d\"",
+    "priority": "u=0",
+    "sec-ch-ua": "\"Not(A:Brand\";v=\"8\", \"Chromium\";v=\"144\", \"Google Chrome\";v=\"144\"",
+    "sec-ch-ua-mobile": "?1",
+    "sec-ch-ua-platform": "\"Android\"",
+    "sec-fetch-dest": "font",
+    "sec-fetch-mode": "cors",
+    "sec-fetch-site": "same-origin",
+    "cookie": "sidebar:state=true",
+    "Referer": "https://stage-builder-9hh.pages.dev/assets/index-CVc38YJh.css"
+  },
+  "body": null,
+  "method": "GET"
+});

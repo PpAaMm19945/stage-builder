@@ -70,7 +70,7 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                     </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 font-medium">
-                    {data.theme}
+                    {data?.theme || "Daily Formation"}
                 </p>
             </CardHeader>
 
@@ -83,9 +83,9 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                         Morning Liturgy
                     </h4>
                     <div className="space-y-2.5 bg-background/40 p-3 rounded-lg border border-border/40">
-                        {renderLiturgyItem(<MusicNotes className="w-4 h-4" />, "Hymn", data.liturgy.hymn)}
-                        {renderLiturgyItem(<Scroll className="w-4 h-4" />, "Proverb", data.liturgy.scripture)}
-                        {renderLiturgyItem(<BookOpen className="w-4 h-4" />, "Catechism", data.liturgy.catechism)}
+                        {renderLiturgyItem(<MusicNotes className="w-4 h-4" />, "Hymn", data?.liturgy?.hymn)}
+                        {renderLiturgyItem(<Scroll className="w-4 h-4" />, "Proverb", data?.liturgy?.scripture)}
+                        {renderLiturgyItem(<BookOpen className="w-4 h-4" />, "Catechism", data?.liturgy?.catechism)}
                     </div>
                 </div>
 

@@ -94,8 +94,32 @@ You are a creative homeschooling assistant. Generate a specific "Daily Anchor" p
 Extract the specific activity, reading, and catechism focus for TODAY based on the Arc Plan.
 Assign specific roles for each child based on the activity.
 
-Output JSON only matching the DailyAnchor interface.
-Reasoning field is required.
+Output JSON only matching this schema efficiently:
+{
+  "theme": "string",
+  "liturgy": {
+    "hymn": "string",
+    "catechism_q": number,
+    "catechism_question": "string",
+    "catechism_a": "string",
+    "scripture": "string"
+  },
+  "family_activity": {
+     "title": "string",
+     "description": "string",
+     "skill_domain": "string",
+     "formation_lens": "string",
+     "materials": ["string"],
+     "levels": [{"child_name": "string", "role": "string", "instruction": "string"}]
+  },
+  "book_nook": {
+     "title": "string",
+     "author": "string",
+     "cover_image": "string",
+     "discussion_prompt": "string"
+  },
+  "reasoning": "string"
+}
 `;
 
         const userPrompt = `
