@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect, useCallback } from 'react';
 import { useQueryClient } from '@tanstack/react-query';
-import { ai, auth } from '@/lib/api';
+import { ai, auth, anchor } from '@/lib/api';
 import { sanitizeMessage, validateMessage } from '@/lib/chat-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -15,7 +15,7 @@ import {
     TooltipTrigger,
 } from "@/components/ui/tooltip";
 
-import { useChatState, Message } from './hooks';
+import { useChatState } from './hooks';
 import { chatStorage } from '@/lib/chat-storage';
 import { useChatStream } from './hooks/useChatStream';
 import { useKeyboardHeight } from './hooks/useKeyboardHeight';
@@ -26,8 +26,10 @@ import {
     BookCardMessage,
     ActivityCardMessage,
     ActionConfirmCard,
-    ScheduleCardMessage
+    ScheduleCardMessage,
+    AnchorBriefingMessage
 } from './messages';
+import { Message } from '@/types/ChatTypes';
 
 import { BookReader } from '@/components/books/BookReader';
 import { Book } from '@/types';
@@ -89,7 +91,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         }
     }, [messages, chatState.mode, chatState.thinkingText]);
 
-    // Load history on mount
+    // Load history on mount + Check for Daily Anchor
     useEffect(() => {
         const initializeChat = async () => {
             try {
@@ -98,39 +100,80 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                 if (!user?.id) return;
                 setUserId(user.id);
 
-                // 2. Try loading local session
+                // 2. Check for Daily Anchor (First load of day)
+                const today = new Date().toISOString().split('T')[0];
+                const lastFetch = localStorage.getItem(`anchor_fetch_${user.id}`);
+
+                let anchorMessage: Message | null = null;
+
+                if (lastFetch !== today) {
+                    try {
+                        console.log('[Chat] Fetching Daily Anchor...');
+                        const anchorData = await anchor.getToday();
+                        if (anchorData) {
+                            anchorMessage = {
+                                role: 'assistant',
+                                content: '', // Content is in the payload
+                                anchorPayload: anchorData
+                            };
+                            localStorage.setItem(`anchor_fetch_${user.id}`, today);
+                            console.log('[Chat] Received Anchor:', anchorData);
+                        }
+                    } catch (err) {
+                        console.error('[Chat] Failed to fetch daily anchor:', err);
+                    }
+                }
+
+                // 3. Try loading local session
                 const localSession = await chatStorage.loadSession(user.id);
                 if (localSession && localSession.length > 0) {
-                    setMessages(localSession);
+                    // If we have a new anchor, append it to the session if not already there
+                    // (Simple check: is the last message an anchor from today? Logic can be refined)
+                    if (anchorMessage) {
+                        setMessages([...localSession, anchorMessage]);
+                        chatStorage.saveSession(user.id, [...localSession, anchorMessage]);
+                    } else {
+                        setMessages(localSession);
+                    }
                     return;
                 }
 
-                // 3. Fallback: Load from server logs
+                // 4. Fallback: Load from server logs
                 const logs = await ai.getInteractionLog();
-                if (logs.length === 0) return;
 
-                const historyMessages: Message[] = logs.flatMap(log => {
-                    const userMsg: Message = { role: 'user', content: log.question };
+                let historyMessages: Message[] = [];
+                if (logs.length > 0) {
+                    historyMessages = logs.flatMap(log => {
+                        const userMsg: Message = { role: 'user', content: log.question };
 
-                    // Parse context for action cards
-                    let actionCard = undefined;
-                    if (log.context && log.context.intent) {
-                        actionCard = {
-                            type: log.context.intent,
-                            data: { results: log.context.results }
+                        // Parse context for action cards
+                        let actionCard = undefined;
+                        if (log.context && log.context.intent) {
+                            actionCard = {
+                                type: log.context.intent,
+                                data: { results: log.context.results }
+                            };
+                        }
+
+                        const aiMsg: Message = {
+                            role: 'assistant',
+                            content: log.answer,
+                            actionCard
                         };
-                    }
 
-                    const aiMsg: Message = {
-                        role: 'assistant',
-                        content: log.answer,
-                        actionCard
-                    };
+                        return [userMsg, aiMsg];
+                    }).reverse();
+                }
 
-                    return [userMsg, aiMsg];
-                }).reverse();
+                // Inject anchor if we have one and no history or just loaded history
+                if (anchorMessage) {
+                    historyMessages.push(anchorMessage);
+                }
 
-                setMessages(historyMessages);
+                if (historyMessages.length > 0) {
+                    setMessages(historyMessages);
+                }
+
             } catch (e) {
                 console.warn('Failed to initialize chat', e);
             }
@@ -167,6 +210,29 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         });
 
         setInput('');
+
+        // Check for anchor adjustment
+        const isRegen = trimmedInput.toLowerCase().includes("adjust") || trimmedInput.toLowerCase().includes("regenerate");
+
+        if (isRegen && trimmedInput.length < 200) { // Safety check to not trap long unrelated queries
+            try {
+                chatState.startThinking();
+                const newAnchor = await anchor.regenerate(trimmedInput);
+
+                const resultMsg: Message = {
+                    role: 'assistant',
+                    content: "I've updated the plan based on your request.",
+                    anchorPayload: newAnchor
+                };
+
+                handleMessageUpdate(resultMsg);
+                chatState.goIdle();
+                return;
+            } catch (e) {
+                console.error("Failed to regenerate, falling back to chat", e);
+                // Fall through to normal chat
+            }
+        }
 
         await sendMessage([...messages, userMessage], { page: 'dashboard' });
     };
@@ -319,6 +385,25 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                         </div>
                                     )}
                                 </div>
+
+                                {/* Custom Payload Messages (Anchor, etc) */}
+                                {msg.anchorPayload && (
+                                    <div className="mt-3 pl-11">
+                                        <AnchorBriefingMessage
+                                            data={msg.anchorPayload}
+                                            onAdjust={() => {
+                                                if (inputRef.current) {
+                                                    inputRef.current.focus();
+                                                    setInput("I'd like to adjust the plan: ");
+                                                }
+                                            }}
+                                            onLooksGood={() => {
+                                                // Optimistic update or just a toast
+                                                toast.success("Great! Have a blessed day.");
+                                            }}
+                                        />
+                                    </div>
+                                )}
 
 
 

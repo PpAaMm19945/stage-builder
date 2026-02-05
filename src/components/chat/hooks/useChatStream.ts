@@ -2,15 +2,7 @@ import { useCallback, useRef } from 'react';
 import { ai } from '@/lib/api';
 import { UseChatStateReturn, PendingAction, ExecutionStep } from './useChatState';
 
-export interface Message {
-    role: 'user' | 'assistant' | 'system';
-    content: string;
-    actionCard?: {
-        type: string;
-        data: any;
-    };
-    steps?: ExecutionStep[];
-}
+import { Message } from '@/types/ChatTypes';
 
 const STREAM_TIMEOUT = 30000;
 

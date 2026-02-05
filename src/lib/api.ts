@@ -1,6 +1,7 @@
 // SchoolOS API Client for Cloudflare Worker
 
 import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
+import { AnchorPayload } from '@/types/ChatTypes';
 
 export interface WeeklyReport {
   week_start: string;
@@ -747,5 +748,15 @@ export const reports = {
     apiRequest<WeeklyReport>(`/api/reports/weekly${weekStart ? `/${weekStart}` : ''}`),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy };
+// Daily Anchor
+export const anchor = {
+  getToday: () => apiRequest<AnchorPayload>('/api/anchor/today'),
+  regenerate: (adjustments: string) =>
+    apiRequest<AnchorPayload>('/api/anchor/regenerate', {
+      method: 'POST',
+      body: JSON.stringify({ adjustments }),
+    }),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor };
 export default api;

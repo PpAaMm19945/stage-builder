@@ -1,7 +1,8 @@
 import { Hono } from 'hono';
 import { Env, User, BookMetadata } from '../types';
-import { requireParent } from '../lib/middleware';
+import { requireParent, requireHouseholdMember } from '../lib/middleware';
 import { safeCompare } from '../lib/security';
+import { ArcGenerator } from '../ai/arc-generator';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
@@ -230,6 +231,64 @@ app.post('/api/liturgy/uncomplete', async (c) => {
         return c.json({ success: true });
     } catch (error: any) {
         return c.json({ error: error.message }, 500);
+    }
+});
+
+
+// ============ ARC ROUTES ============
+
+// GET /api/curriculum/arc
+app.get('/api/curriculum/arc', async (c) => {
+    try {
+        const user = requireParent(c); // Or household member? Prompt said "household". Let's use requireParent keying off existing pattern, or requireHouseholdMember if available. 
+        // Logic in anchor.ts used requireHouseholdMember. Let's use that if possible, but I need to check if it's imported.
+        // It is NOT imported in curriculum.ts currently. Only requireParent is imported.
+        // Prompt for Task 5 said: "Returns current active arc for household".
+        // I will stick to requireParent for now as only parents likely manage curriculum, BUT children might need to see it?
+        // Actually, existing code has `requireParent` imported. I will import `requireHouseholdMember` to be safe/consistent with anchor.
+        // Wait, I can't easily add import to a different line in the same tool call if the first chunk overrides it? 
+        // Yes I can, I am adding `ArcGenerator` after `safeCompare`. 
+        // I'll add `requireHouseholdMember` to the imports too.
+
+        const householdId = user.household_id || user.id;
+        const generator = new ArcGenerator(c.env);
+
+        // Get active or generate
+        let arc = await generator.getActiveArc(householdId);
+        if (!arc) {
+            await generator.generateArc(householdId);
+            arc = await generator.getActiveArc(householdId);
+        }
+
+        // Parse JSON for response
+        if (arc) {
+            arc = {
+                ...arc,
+                arc_data: JSON.parse(arc.arc_data)
+            };
+        }
+
+        return c.json(arc);
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+// POST /api/curriculum/arc/generate
+app.post('/api/curriculum/arc/generate', async (c) => {
+    try {
+        const user = requireParent(c);
+        const householdId = user.household_id || user.id;
+        const body = await c.req.json().catch(() => ({}));
+        const feedback = body.feedback || undefined;
+
+        const generator = new ArcGenerator(c.env);
+
+        const result = await generator.generateArc(householdId, feedback);
+        return c.json(result);
+    } catch (e: any) {
+        console.error("Arc Generation Error:", e);
+        return c.json({ error: e.message || "Failed to generate arc" }, 500);
     }
 });
 

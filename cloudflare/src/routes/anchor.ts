@@ -1,29 +1,45 @@
 import { Hono } from 'hono';
 import { Env, User } from '../types';
-import { Cortex } from '../ai/cortex';
-import { ContextBuilder } from '../ai/context';
-import { requireHouseholdMember } from '../lib/middleware';
+import { requireHouseholdMember, requireParent } from '../lib/middleware';
+import { AnchorGenerator } from '../ai/anchor-generator';
 
 const anchor = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // GET /api/anchor/today
 anchor.get('/today', async (c) => {
     const user = requireHouseholdMember(c);
-    const cortex = new Cortex(c.env);
+    const householdId = user.household_id || user.id; // Fallback for legacy
 
-    // Build context
-    const contextBuilder = new ContextBuilder(c.env.DB);
-    // User ID is guaranteed by requireHouseholdMember.
-    // household_id might be undefined on legacy users, but ContextBuilder likely needs it.
-    // We pass user.id as fallback if household_id is missing to avoid crashing,
-    // assuming ContextBuilder handles or fails gracefully, or we might want to throw if missing.
-    // For now, using optional chaining fallback to satisfy types.
-    const context = await contextBuilder.buildUserContext(user.id, user.household_id || user.id);
+    const generator = new AnchorGenerator(c.env);
 
-    // Generate (or fetch cached)
-    const anchor = await cortex.generateFamilyAnchor(context);
+    try {
+        const anchor = await generator.getTodayAnchor(householdId);
+        return c.json(anchor);
+    } catch (e: any) {
+        console.error("Anchor Generation Error:", e);
+        return c.json({ error: e.message || "Failed to generate anchor" }, 500);
+    }
+});
 
-    return c.json(anchor);
+// POST /api/anchor/regenerate
+anchor.post('/regenerate', async (c) => {
+    const user = requireParent(c); // Only parents can regenerate
+    const householdId = user.household_id || user.id;
+
+    const body = await c.req.json().catch(() => ({}));
+    const adjustments = body.adjustments || undefined;
+
+    const generator = new AnchorGenerator(c.env);
+    const date = new Date().toISOString().split('T')[0];
+
+    try {
+        // Force regeneration for today
+        const anchor = await generator.generateAnchor(householdId, date, adjustments);
+        return c.json(anchor);
+    } catch (e: any) {
+        console.error("Anchor Regeneration Error:", e);
+        return c.json({ error: e.message || "Failed to regenerate anchor" }, 500);
+    }
 });
 
 export default anchor;
