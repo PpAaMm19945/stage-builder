@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
-import { Users, CalendarDots, TrendUp, Path, CircleNotch } from '@phosphor-icons/react';
+import { Users, CalendarDots, TrendUp, Path, CircleNotch, LockKey, DownloadSimple, ShieldCheck, ArrowRight } from '@phosphor-icons/react';
 import { Link } from 'react-router-dom';
 
 export default function Login() {
@@ -66,22 +66,22 @@ export default function Login() {
           {/* Trust Badges */}
           <div className="flex items-center justify-center gap-4 md:gap-8 pb-8 text-xs text-muted-foreground">
             <div className="flex items-center gap-1.5">
-              <span className="text-base">🔒</span>
+              <LockKey className="h-4 w-4" aria-hidden="true" />
               <span>Your data is never sold</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">📤</span>
+              <DownloadSimple className="h-4 w-4" aria-hidden="true" />
               <span>Export anytime</span>
             </div>
             <div className="flex items-center gap-1.5">
-              <span className="text-base">🛡️</span>
+              <ShieldCheck className="h-4 w-4" aria-hidden="true" />
               <span>AI you control</span>
             </div>
           </div>
 
           <div className="pb-4">
             <Link to="/trust" className="text-sm font-medium text-primary hover:underline flex items-center justify-center gap-1">
-              Read our promise to families <span aria-hidden="true">→</span>
+              Read our promise to families <ArrowRight className="h-3 w-3" aria-hidden="true" />
             </Link>
           </div>
 
