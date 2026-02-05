@@ -23,7 +23,8 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         : null;
 
     // Use hook to resolve cover URL (manifest -> R2 -> API fallback)
-    const { data: resolvedCover } = useBookAssetUrl(book.series, book.id, 'cover');
+    // ⚡ Performance: Skip if we already have a valid external cover URL (prevents N queries)
+    const { data: resolvedCover } = useBookAssetUrl(book.series, book.id, 'cover', { enabled: !externalCover });
 
     // If external is explicit, use it. Otherwise use resolved.
     const coverUrl = externalCover || resolvedCover;

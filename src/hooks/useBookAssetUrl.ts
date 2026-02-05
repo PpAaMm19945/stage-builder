@@ -8,7 +8,7 @@ export function useBookAssetUrl(
     series: string,
     bookId: string,
     type: AssetType,
-    options?: { pageNum?: number; assetPath?: string }
+    options?: { pageNum?: number; assetPath?: string; enabled?: boolean }
 ) {
     return useQuery({
         queryKey: ['book-asset', series, bookId, type, options?.pageNum, options?.assetPath],
@@ -45,7 +45,7 @@ export function useBookAssetUrl(
             return '';
         },
         staleTime: 1000 * 60 * 60, // 1 hour
-        enabled: !!series && !!bookId,
+        enabled: !!series && !!bookId && (options?.enabled ?? true),
     });
 }
 

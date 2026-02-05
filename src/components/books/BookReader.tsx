@@ -278,7 +278,10 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
 
     // Use hooks for asset URLs
     const { data: pageUrls, isLoading: isLoadingPages } = useBookPageUrls(book?.series || '', book?.id || '', book?.pageCount || 0);
-    const { data: resolvedCover } = useBookAssetUrl(book?.series || '', book?.id || '', 'cover');
+
+    const hasExternalCover = !!(book?.coverUrl && !book.coverUrl.includes('/api/books/') && (book.coverUrl.startsWith('http') || book.coverUrl.startsWith('/')));
+    const { data: resolvedCover } = useBookAssetUrl(book?.series || '', book?.id || '', 'cover', { enabled: !hasExternalCover });
+
     const { data: resolvedPdf } = useBookAssetUrl(book?.series || '', book?.id || '', 'pdf');
 
     const imagePages = useMemo(() => {
