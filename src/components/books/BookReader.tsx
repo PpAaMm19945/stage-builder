@@ -397,6 +397,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                     <div
                         className={cn(
                             "flex items-center justify-between p-2 sm:p-4 text-white z-50 bg-gradient-to-b from-black/80 to-transparent transition-all duration-300",
+                            "focus-within:translate-y-0 focus-within:opacity-100", // Show on focus
                             isFullscreen ? "absolute top-0 left-0 right-0" : "",
                             isFullscreen && !showControls ? "-translate-y-full opacity-0" : "translate-y-0 opacity-100"
                         )}
@@ -672,6 +673,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     <TooltipTrigger asChild>
                                         <CarouselPrevious className={cn(
                                             "left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                            "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
                                             isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
                                         )} />
                                     </TooltipTrigger>
@@ -684,6 +686,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     <TooltipTrigger asChild>
                                         <CarouselNext className={cn(
                                             "right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                            "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
                                             isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
                                         )} />
                                     </TooltipTrigger>

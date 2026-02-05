@@ -61,3 +61,7 @@
 ## 2026-10-02 - Semantic Links
 **Learning:** Using 'onClick' with 'window.location.href' for internal routes breaks client-side navigation (causing full reloads) and lacks semantic link behavior (no new-tab support).
 **Action:** Use 'Button asChild' wrapping a 'Link' component for button-styled internal navigation to ensure accessibility and performance.
+
+## 2026-10-06 - Immersive Mode Accessibility
+**Learning:** Hiding UI controls for "immersive" modes (like book readers) often traps keyboard users if the controls become `pointer-events-none` or `opacity-0`. They can't see or interact with navigation.
+**Action:** Use `focus-visible:opacity-100` and `focus-within:translate-y-0` (or similar) to ensure that hidden controls automatically reveal themselves when they receive keyboard focus, preserving both immersion and accessibility.
