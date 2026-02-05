@@ -3,7 +3,7 @@ import { Env, User } from '../types';
 import { requireHouseholdMember, requireParent, requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { getSmartWeekStart } from '../planner';
-import { RhythmGenerator } from '../ai/rhythm-generator';
+import { RhythmGenerator } from '../ai/_legacy_rhythm-generator';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();

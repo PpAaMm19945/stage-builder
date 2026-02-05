@@ -1,6 +1,6 @@
 
 import { Env } from '../types';
-import { RhythmGenerator } from './rhythm-generator';
+import { RhythmGenerator } from './_legacy_rhythm-generator';
 import { GeminiService, GeminiContent, GeminiTool } from './gemini';
 
 export interface ChatMessage {

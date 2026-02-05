@@ -1,7 +1,7 @@
-# HomeLine Academy
+# FamilyPath
 > **Powered by Gemini 3 Deep Reasoning**
 
-A "Living Curriculum" engine that adapts to your family's chaos. HomeLine Academy replaces static PDF lesson plans with a dynamic, reasoning-based API that builds 2-week Formation Arcs and delivers daily "Anchors" via chat.
+A "Living Curriculum" engine that adapts to your family's chaos. FamilyPath replaces static PDF lesson plans with a dynamic, reasoning-based API that builds 2-week Formation Arcs and delivers daily "Anchors" via chat.
 
 ## The Problem
 Parents spend hours every Sunday trying to adapt rigid curricula to their specific children (ages, needs, moods). When life happens (sickness, busy days), the plan breaks, and guilt sets in.

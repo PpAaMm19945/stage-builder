@@ -42,4 +42,31 @@ anchor.post('/regenerate', async (c) => {
     }
 });
 
+// POST /api/anchor/complete
+anchor.post('/complete', async (c) => {
+    const user = requireParent(c);
+    const householdId = user.household_id || user.id;
+    const body = await c.req.json().catch(() => ({}));
+    const date = body.date || new Date().toISOString().split('T')[0];
+
+    try {
+        const { success } = await c.env.DB.prepare(
+            `UPDATE daily_anchors 
+             SET status = 'completed'
+             WHERE household_id = ? AND anchor_date = ?`
+        )
+            .bind(householdId, date)
+            .run();
+
+        if (!success) {
+            throw new Error("Failed to update anchor status");
+        }
+
+        return c.json({ success: true, date });
+    } catch (e: any) {
+        console.error("Anchor Completion Error:", e);
+        return c.json({ error: e.message || "Failed to complete anchor" }, 500);
+    }
+});
+
 export default anchor;

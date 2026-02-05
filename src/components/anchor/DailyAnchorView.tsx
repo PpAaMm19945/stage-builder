@@ -31,9 +31,33 @@ export const DailyAnchorView: React.FC = () => {
         );
     }
 
+    const handleComplete = async () => {
+        try {
+            const res = await fetch('/api/anchor/complete', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ date: anchor?.date }) // Send explicit date if available
+            });
+
+            if (!res.ok) throw new Error('Failed to complete anchor');
+
+            // Re-fetch to get updated status (or we could optimistically update local state here)
+            // For now, simple re-fetch or just letting the user know is enough.
+            // Ideally, the AnchorCard would handle the "completed" visual state if we passed `isCompleted` prop,
+            // but AnchorCard seems to only take `onComplete`. 
+            // We can just rely on the button action for now.
+            // A better UX might be to force a refresh or show a toast.
+            refetch();
+
+        } catch (e) {
+            console.error("Completion failed", e);
+            alert("Failed to mark as complete. Please try again.");
+        }
+    };
+
     return (
         <div className="min-h-screen bg-slate-50/50">
-            <AnchorCard anchor={anchor} />
+            <AnchorCard anchor={anchor} onComplete={handleComplete} />
         </div>
     );
 };

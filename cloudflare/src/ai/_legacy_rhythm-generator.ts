@@ -1,4 +1,5 @@
 
+// @deprecated System A (Rhythm) is replaced by System B (Anchor). Do not use for new features.
 import { Env } from '../types';
 import { GeminiService } from './gemini';
 

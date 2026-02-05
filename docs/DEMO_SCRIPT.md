@@ -1,4 +1,4 @@
-# Hackathon Demo Script: HomeLine Academy
+# Hackathon Demo Script: FamilyPath
 
 **Theme:** Deep Reasoning for Living Education
 **Duration:** ~2 minutes
@@ -7,7 +7,7 @@
 *Showing the Home Landing Page (Dashboard)*
 
 **Voiceover:**
-"Static curricula fail our kids. Random activities feel disjointed. Meet **HomeLine Academy**."
+"Static curricula fail our kids. Random activities feel disjointed. Meet **FamilyPath**."
 "We've built the first **Living Curriculum Engine**, powered by **Gemini 3**."
 
 ## 2. Deep Reasoning Showcase (45s)
@@ -46,8 +46,8 @@
 *Action: Show response: "I've swapped the outdoor game for a quiet story time."*
 
 ## 4. Closing (15s)
-*Back to Dashboard or nice "HomeLine Academy" logo.*
+*Back to Dashboard or nice "FamilyPath" logo.*
 
 **Voiceover:**
 "Adaptability. Deep Reasoning. A curriculum that lives and breathes with your family."
-"This is HomeLine Academy. Powered by Gemini 3."
+"This is FamilyPath. Powered by Gemini 3."
