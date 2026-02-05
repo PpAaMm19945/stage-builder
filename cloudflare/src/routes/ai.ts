@@ -57,6 +57,16 @@ app.post('/api/chat', async (c) => {
 app.post('/api/chat/execute', async (c) => {
     try {
         const user = requireHouseholdMember(c);
+
+        // Rate limiting: 20 actions per minute per user
+        const rateCheck = checkRateLimit(user.id, 20, 60000);
+        if (!rateCheck.allowed) {
+            return c.json({
+                error: 'Rate limit exceeded. Please wait a moment before executing more actions.',
+                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
         const { actionPayload, context: clientContext } = await c.req.json();
 
         if (!actionPayload) {
@@ -105,6 +115,16 @@ app.get('/api/chat/actions', async (c) => {
 app.post('/api/chat/confirm', async (c) => {
     try {
         const user = requireHouseholdMember(c);
+
+        // Rate limiting: 20 confirmations per minute per user
+        const rateCheck = checkRateLimit(user.id, 20, 60000);
+        if (!rateCheck.allowed) {
+            return c.json({
+                error: 'Rate limit exceeded. Please wait a moment.',
+                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
         const { actionId } = await c.req.json();
 
         // Retrieve action
@@ -149,6 +169,16 @@ app.post('/api/chat/confirm', async (c) => {
 app.post('/api/chat/reject', async (c) => {
     try {
         const user = requireHouseholdMember(c);
+
+        // Rate limiting: 20 rejections per minute per user
+        const rateCheck = checkRateLimit(user.id, 20, 60000);
+        if (!rateCheck.allowed) {
+            return c.json({
+                error: 'Rate limit exceeded. Please wait a moment.',
+                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
         const { actionId } = await c.req.json();
 
         // Retrieve action
