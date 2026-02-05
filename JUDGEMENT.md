@@ -4,11 +4,11 @@
 **Project:** HomeLine Academy (SchoolOS)
 
 ## 1. Executive Summary
-**Final Score: 7.8 / 10**
+**Final Score: 6.5 / 10**
 
-This project is an ambitious, modern "Living Curriculum" engine that leverages the edge (Cloudflare Workers) and AI (Gemini) to solve a complex family logistics problem. The codebase exhibits high engineering standards in terms of stack selection and individual component quality. However, it currently suffers from a critical architectural "air gap" between its AI planning brain and its execution body, leaving the core promise of "adaptivity" unfulfilled.
+This project is a modern "Living Curriculum" engine built on Cloudflare Workers and React. While the engineering standards (Typescript, Shadcn, Hono) are high, the application suffers from a critical **"Split Brain" Architecture**. The codebase contains two distinct, parallel generation pipelines ("Rhythm" vs. "Anchor") that are not integrated. The active frontend feature ("Daily Anchor") relies on the newer "Arc/Anchor" pipeline but is currently **read-only**, lacking any feedback loop to the backend.
 
-It is a **High-Quality MVP** that is 80% complete but missing the critical 20% of connective logic that makes it a true "system."
+It is a **High-Quality UI Prototype** backed by disjointed backend logic, rather than a cohesive system.
 
 ---
 
@@ -18,9 +18,9 @@ It is a **High-Quality MVP** that is 80% complete but missing the critical 20% o
 |----------|-------|--------|----------|
 | **Architecture & Tech Stack** | 9/10 | 25% | 2.25 |
 | **Code Quality & Standards** | 8/10 | 25% | 2.00 |
-| **Feature Completeness (The "Glue")** | 6/10 | 25% | 1.50 |
-| **Security & Reliability** | 8/10 | 25% | 2.00 |
-| **TOTAL** | | | **7.75** |
+| **Feature Completeness (The "Glue")** | 3/10 | 25% | 0.75 |
+| **Security & Reliability** | 6/10 | 25% | 1.50 |
+| **TOTAL** | | | **6.50** |
 
 ---
 
@@ -28,48 +28,57 @@ It is a **High-Quality MVP** that is 80% complete but missing the critical 20% o
 
 ### A. Architecture & Tech Stack (9/10)
 **Strengths:**
-*   **Edge-Native:** The use of Cloudflare Workers + D1 + R2 is excellent for this use case. It ensures low latency and high availability for a globally distributed family app.
-*   **Separation of Concerns:** The backend (`cloudflare/`) and frontend (`src/`) are cleanly separated workspaces.
-*   **Modern Frontend:** React + Vite + Tailwind + Shadcn/Radix is the current gold standard. Using React Query (`@tanstack/react-query`) for data fetching is the correct choice.
-*   **AI Integration:** The `RhythmGenerator` (using Gemini) correctly delegates the "messy" reasoning tasks while keeping the core logic deterministic.
-
-**Weaknesses:**
-*   **Monolithic Files:** `cloudflare/src/routes/library.ts` is approaching 850 lines, mixing R2 storage logic, manifest caching, and route handling. This should be refactored into controllers and services.
+*   **Edge-Native:** The use of Cloudflare Workers + D1 + R2 is excellent for this use case.
+*   **Separation of Concerns:** Clean workspace separation between `cloudflare/` (backend) and `src/` (frontend).
+*   **Modern Frontend:** React + Vite + Tailwind + Shadcn/Radix is the current gold standard.
+*   **AI Integration:** The use of specialized generators (`ArcGenerator`, `AnchorGenerator`) demonstrates a sophisticated approach to prompting.
 
 ### B. Code Quality (8/10)
 **Strengths:**
-*   **Type Safety:** TypeScript is used consistently. Interfaces like `FamilyContext`, `RhythmItem`, and `BookMetadata` are well-defined.
-*   **Error Handling:** The `AuthContext.tsx` implements robust retry logic with exponential backoff. The backend uses `safeError` wrappers.
-*   **Performance:** Extensive use of caching (`MANIFEST_CACHE`, `BOOKS_CACHE`, `PAGES_CACHE`) in the worker demonstrates a concern for performance and R2 cost optimization.
+*   **Type Safety:** TypeScript is used consistently with shared interfaces (though duplications exist).
+*   **Component Design:** `DailyAnchorView` and `AnchorCard` are well-structured, aesthetic components.
 
-**Weaknesses:**
-*   **Hardcoded Values:** The `RhythmGenerator.ts` contains `content_id: "placeholder"`, indicating unfinished implementation.
-*   **Lack of Tests:** The `verification/` folder is sparse (`verify_timer.py`). There is no comprehensive test suite (Vitest/Jest) visible for the critical business logic.
+### C. Scope Analysis: The "Split Brain" (Crucial Finding)
+The codebase reveals two competing architectures for generating daily content:
 
-### C. Feature Completeness (6/10)
-**The "Split Personality" Issue:**
-As correctly identified in the internal `ARCHITECTURAL_REPORT.md`, the system is currently two disconnected halves:
-1.  **The Planner:** Generates schedules but often hallucinates content or uses placeholders because it doesn't fully query the `formations` inventory.
-2.  **The Tracker:** Records completions (`/api/liturgy/complete`) but **never calls `advancePathForItem`**.
+**System A: The "Rhythm" (Legacy/Parallel)**
+*   **Logic:** `RhythmGenerator.ts` generates a `WeeklyPlan` stored in `weekly_plans_v2`.
+*   **API:** `/api/family/today` serves this data.
+*   **Frontend:** Likely intended for a "Dashboard" view (`src/pages/Dashboard.tsx` or similar), but **not used** by the main "Anchor" component.
 
-**Impact:**
-*   Users can complete tasks, but the system doesn't "learn." The next generated schedule will not know the user has progressed.
-*   The "Inventory Bridge" is missing: Books uploaded to R2 are not automatically seeded into the database, leading to potential 404s if the AI suggests them.
+**System B: The "Anchor" (Active)**
+*   **Logic:** `ArcGenerator.ts` creates a 2-week `FormationArc`. `AnchorGenerator.ts` then generates a single `DailyAnchor` for a specific day within that arc, stored in `daily_anchors`.
+*   **API:** `/api/anchor/today` serves this data.
+*   **Frontend:** Consumed by `DailyAnchorView.tsx` via `useAnchor` hook.
 
-### D. Security & Reliability (8/10)
+**The Disconnect:**
+The active frontend experience (`DailyAnchorView`) uses **System B**. However, it ignores **System A** entirely. There is no code linking `RhythmGenerator` (which handles schedule/availability) to `AnchorGenerator` (which handles content).
+
+### D. Feature Completeness (3/10)
+**The Missing Feedback Loop:**
+The `DailyAnchorView` renders an `AnchorCard`. While `AnchorCard` has an `onComplete` prop, **`DailyAnchorView` does not pass a callback to it**.
+*   **Result:** The "Complete Today's Anchor" button does not render or function. The view is effectively read-only.
+*   **Consequence:** The system cannot track progress, meaning the "Arc" cannot adapt. The "Living Curriculum" is currently static.
+
+### E. Security & Reliability (6/10)
 **Strengths:**
 *   **Auth:** Middleware (`requireParent`, `requireAuth`) is consistently applied.
-*   **Validation:** Input validation (e.g., `isValidPathSegment`, `isAllowedFile`) in `library.ts` is thorough, preventing directory traversal and malicious uploads.
-*   **Rate Limiting:** Memory context indicates rate limiting is implemented (though not explicitly audited in this pass, the patterns suggest it).
+*   **Validation:** Input validation (e.g., `isValidPathSegment`, `isAllowedFile`) in `library.ts` is thorough.
 
 **Weaknesses:**
-*   **Manual Consistency Checks:** The system relies on runtime checks (like in `complete` endpoints) to catch data inconsistencies rather than enforcing them via database constraints or transactions.
+*   **Incomplete Logic:** The existence of dead code paths (`RhythmGenerator`) and incomplete loops (`onComplete`) poses a reliability risk, as future developers might hook into the wrong system.
+*   **Manual Consistency:** The system lacks database-level constraints to ensure "Arc" and "Anchor" data remain consistent if one is regenerated.
 
 ---
 
 ## 4. Final Verdict
 
-The "HomeLine Academy" codebase is a **Solid Foundation**. It is not "spaghetti code"; it is "interrupted code." The developer clearly knows what they are doing but likely ran out of time or shifted focus before closing the loop between the AI planner and the persistence layer.
+The developer has pivoted from a "Weekly Schedule" (Rhythm) model to a "Daily Arc" (Anchor) model but left the code in a transitional state.
+
+**Status:**
+*   **Rhythm/Weekly Plan:** Code exists but appears dormant for the main view.
+*   **Anchor/Arc:** Active but incomplete (Read-Only).
 
 **Recommendation:**
-Prioritize **Phase 1 (Fixing the Feedback Loop)** from the architectural report. Connect `POST /complete` -> `advancePath` -> `RhythmGenerator`. Without this, the app is just a fancy static schedule. With it, it becomes the "Living Curriculum" it promises to be.
+1.  **Acknowledge the Pivot:** Officially deprecate or integrate the `RhythmGenerator`. Focus on the `Arc` -> `Anchor` pipeline.
+2.  **Close the Loop:** Implement the `onComplete` handler in `DailyAnchorView`. Connect it to an API endpoint (e.g., `POST /api/anchor/complete`) that updates the `daily_anchors` status and potentially advances the `FormationArc` progress.
