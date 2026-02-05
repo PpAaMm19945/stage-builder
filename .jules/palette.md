@@ -57,3 +57,7 @@
 ## 2026-06-28 - Design System consistency
 **Learning:** Found raw HTML inputs used in modals despite a robust accessible component library being available. This creates inconsistent keyboard behavior and visual styles.
 **Action:** When auditing forms, search for `<input` tags to find deviations from the design system, especially for checkboxes and radio buttons which have complex accessibility requirements handled by the library.
+
+## 2026-10-02 - Semantic Links
+**Learning:** Using 'onClick' with 'window.location.href' for internal routes breaks client-side navigation (causing full reloads) and lacks semantic link behavior (no new-tab support).
+**Action:** Use 'Button asChild' wrapping a 'Link' component for button-styled internal navigation to ensure accessibility and performance.

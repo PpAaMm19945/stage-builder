@@ -13,6 +13,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { toast } from 'sonner';
 import { FundingWidget } from '@/components/funding/FundingWidget';
 import { ExternalLink } from 'lucide-react';
+import { Link } from 'react-router-dom';
 
 export function SettingsAccount() {
     const { user, logout } = useAuth();
@@ -104,16 +105,16 @@ export function SettingsAccount() {
                 </CardHeader>
                 <CardContent>
                     <div className="space-y-2">
-                        <Button variant="link" className="px-0 h-auto font-semibold text-primary" onClick={() => window.location.href = '/trust'}>
-                            The Trust Covenant
+                        <Button asChild variant="link" className="px-0 h-auto font-semibold text-primary">
+                            <Link to="/trust">The Trust Covenant</Link>
                         </Button>
                         <br />
-                        <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/privacy'}>
-                            Privacy Policy
+                        <Button asChild variant="link" className="px-0 h-auto">
+                            <Link to="/privacy">Privacy Policy</Link>
                         </Button>
                         <br />
-                        <Button variant="link" className="px-0 h-auto" onClick={() => window.location.href = '/terms'}>
-                            Terms of Service
+                        <Button asChild variant="link" className="px-0 h-auto">
+                            <Link to="/terms">Terms of Service</Link>
                         </Button>
                     </div>
                     <Separator className="my-4" />
