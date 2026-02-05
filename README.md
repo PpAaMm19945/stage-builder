@@ -1,136 +1,50 @@
-# FamilyPath
+# HomeLine Academy
+> **Powered by Gemini 3 Deep Reasoning**
 
-> A library for faithful families—hymns, books, activities, and daily rhythms.
+A "Living Curriculum" engine that adapts to your family's chaos. HomeLine Academy replaces static PDF lesson plans with a dynamic, reasoning-based API that builds 2-week Formation Arcs and delivers daily "Anchors" via chat.
 
-FamilyPath is a library-first app that helps Christian families learn together. Browse hymns. Read picture books. Work through developmental activities with your toddler. Subscribe to Learning Paths for structured daily rhythms. Track your family's journey through 100+ hymns, 100+ books, and the Westminster Catechism.
+## The Problem
+Parents spend hours every Sunday trying to adapt rigid curricula to their specific children (ages, needs, moods). When life happens (sickness, busy days), the plan breaks, and guilt sets in.
 
-Simple on the surface. Powerful underneath.
+## The Solution: Deep Reasoning
+We use **Gemini 3 Flash (Preview)** to do what static logic cannot: **Reason about the connection between theology, child development, and daily reality.**
 
-## The Vision
+### Architecture
+1.  **Formation Arc (Strategy):**
+    Gemini 3 analyzes each child (e.g., "Sarah, 5yo, Reading Level 2") and the family's values to build a 2-week roadmap. It doesn't just slot in activities; it explains *why* this specific hymn pairs with this specific history book for these specific children.
 
-**A vintage car with a beast of an engine.**
+2.  **Daily Anchor (Tactics):**
+    Every morning at 4 AM, a Cloudflare Worker generates a "Daily Anchor"—highly specific activities for the day.
 
-- **Passive Mode:** Browse the library. Play hymns while cooking. Read bedtime stories. No pressure.
-- **Active Mode:** Subscribe to Learning Paths. Get a combined daily rhythm. Track completion.
+3.  **Chat Feedback (Adaptation):**
+    The "Anchor" isn't a command; it's a conversation. Parents can chat with the engine to adjust:
+    *   *"James is sick today."* -> Gemini swaps the outdoor game for a quiet story.
+    *   *"We only have 15 minutes."* -> Gemini compresses the liturgy.
 
-The engine (smart age-based suggestions, child profiles, domain balancing) stays dormant until you need it.
+## How it Works (Under the Hood)
+-   **Backend:** Cloudflare Workers (High performance, low latency)
+-   **Database:** Cloudflare D1 (SQLite) containing our library of 500+ books and hymns.
+-   **AI Engine:** Google Gemini 3 Flash Preview (via Cloudflare AI Gateway).
+-   **Frontend:** React + Tailwind + Phosphor Icons.
+
+## Models Used
+*   **`gemini-2.0-flash-thinking-exp-01-21` & `gemini-1.5-flash`**: Used for the deep reasoning required to build Formation Arcs and generate context-aware Daily Anchors. The model's ability to hold complex family context (multiple children, reading levels, theological alignment) is the core of our engine.
 
 ---
-
-## Quick Context for AI Assistants
-
-**What this is:** A React + Cloudflare Workers library app for family formation. Parents add children, browse content, and optionally subscribe to Learning Paths that generate daily rhythms.
-
-**Key concept:** Library-First. All content (books, hymns, catechism, activities) lives in the library. Learning Paths are curated journeys through library content. Completion = finishing parts of the library.
-
-**Theology matters:** Reformed Christian. Authority hierarchy: Scripture → Parent → Curriculum → AI. See `/docs/AI_GOVERNANCE_AND_ETHICS.md`.
-
-**Age Stages:** Seedling (0-3), Sprout (4-6), Sapling (7-10), Tree (11-14), Oak (15-18).
-
-**Key tables:** `formations` (all library content), `evidences` (completion tracking), `family_preferences` (settings).
-
----
-
-## Tech Stack
-
-| Layer | Technology |
-|-------|------------|
-| Frontend | React 18, Vite, TypeScript, Tailwind CSS, shadcn/ui |
-| Backend | Cloudflare Workers, D1 (SQLite), R2 (Storage) |
-| AI | Google Gemini API (via Cloudflare AI Gateway) |
-| Auth | Google OAuth |
 
 ## Local Development
 
 ```bash
-# Prerequisites: Node.js 18+, npm
-
-# 1. Clone and install
-git clone <repo-url>
-cd stage-builder
+# Frontend
 npm install
-
-# 2. Start frontend dev server
 npm run dev
 
-# 3. Start Cloudflare Worker (separate terminal)
+# Backend (Worker)
 cd cloudflare
 npm install
 npm run dev
 ```
 
-## Project Structure
-
-```
-stage-builder/
-├── src/                    # React frontend
-│   ├── components/         # UI components
-│   ├── pages/              # Route pages
-│   ├── lib/                # Utilities, API client
-│   └── types/              # TypeScript types
-├── cloudflare/             # Backend
-│   ├── src/index.ts        # Main worker entry
-│   ├── src/planner.ts      # The "beast engine" for smart scheduling
-│   └── migrations/         # D1 SQL migrations
-├── public/
-│   └── books/              # Book content (markdown, images)
-├── docs/                   # Philosophy, roadmap, guides
-└── scripts/                # Build and utility scripts
-```
-
-## Documentation
-
-| Document | Purpose |
-|----------|---------|
-| [ROADMAP.md](./docs/ROADMAP.md) | Development phases: Library → Paths → Engine |
-| [PRODUCT_VISION.md](./docs/PRODUCT_VISION.md) | The vintage car / beast engine philosophy |
-| [PEDAGOGICAL_PHILOSOPHY.md](./docs/PEDAGOGICAL_PHILOSOPHY.md) | Theological foundation |
-| [AI_GOVERNANCE_AND_ETHICS.md](./docs/AI_GOVERNANCE_AND_ETHICS.md) | AI behavior constraints |
-
-## Current Phase
-
-**Phase 1: The Library** (In Progress)
-
-Building the core library experience:
-- 100+ Hymns for listening and memorization
-- 100+ Picture Books (history, faith, formation)
-- Westminster Shorter Catechism with age progressions
-- Developmental Activities for toddlers
-- African History (Young Historians + Full Course)
-
-**Next:** Phase 2 - Learning Paths (subscriptions, combined daily view)
-
-See [ROADMAP.md](./docs/ROADMAP.md) for full details.
-
----
-
-## What We're Building
-
-| Content | Status |
-|---------|--------|
-| Hymn Library (100+) | Building |
-| Book Library (100+) | Building |
-| Catechism (WSC Q1-107) | ✅ Complete |
-| Memory Verses (52+) | ✅ Complete |
-| Toddler Activities | ✅ Complete |
-| African History | Building |
-
-## What We're NOT Building (Yet)
-
-- ❌ Math, Science, Language Arts curricula
-- ❌ Apprenticeship tracking
-- ❌ Graduation and transcripts
-- ❌ AI tutoring for children
-- ❌ Gamification
-
-These may come in a future "Full School" phase. For now: **Library. Paths. Rhythm.**
-
----
-
 ## License
-
 Proprietary. All rights reserved.
-
-## Author
-
-Anthony Jr. Mwesigwa
+Hackathon Submission by Anthony Jr. Mwesigwa.

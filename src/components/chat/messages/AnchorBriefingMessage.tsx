@@ -138,22 +138,24 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
 
                 {/* AI Reasoning Collapsible */}
                 {data.reasoning && (
-                    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full">
+                    <Collapsible open={isOpen} onOpenChange={setIsOpen} className="w-full mt-2">
                         <CollapsibleTrigger asChild>
                             <Button
                                 variant="ghost"
                                 size="sm"
-                                className="w-full justify-between h-8 px-2 text-xs text-muted-foreground hover:text-primary hover:bg-primary/5 mt-2"
+                                className="w-full justify-between h-9 px-3 text-xs font-medium text-indigo-600 hover:text-indigo-700 hover:bg-indigo-50/50 transition-colors border border-indigo-100/50 rounded-md bg-indigo-50/30"
                             >
-                                <span className="flex items-center gap-1.5">
-                                    <Sparkle className="w-3.5 h-3.5" />
-                                    Why this plan? (AI Insight)
+                                <span className="flex items-center gap-2">
+                                    <Badge variant="secondary" className="bg-white/80 text-indigo-600 border-indigo-200 shadow-sm px-1.5 py-0 h-5">
+                                        ✨ AI Insight
+                                    </Badge>
+                                    <span className="text-muted-foreground/80 font-normal">Why this plan?</span>
                                 </span>
-                                {isOpen ? <CaretUp className="w-3.5 h-3.5" /> : <CaretDown className="w-3.5 h-3.5" />}
+                                {isOpen ? <CaretUp className="w-3.5 h-3.5 opacity-50" /> : <CaretDown className="w-3.5 h-3.5 opacity-50" />}
                             </Button>
                         </CollapsibleTrigger>
                         <CollapsibleContent>
-                            <div className="mt-2 p-3 text-xs leading-relaxed text-muted-foreground bg-amber-50/50 dark:bg-amber-900/10 rounded-md border border-amber-100/50 dark:border-amber-900/20">
+                            <div className="mt-2 p-3.5 text-xs sm:text-sm leading-relaxed text-indigo-900/80 bg-gradient-to-br from-indigo-50 to-white dark:from-indigo-950/30 dark:to-background rounded-md border border-indigo-100 dark:border-indigo-900/50 shadow-inner">
                                 {data.reasoning}
                             </div>
                         </CollapsibleContent>
