@@ -12,7 +12,7 @@ import { errorHandler } from './middleware/error-handler';
 import { PdfService } from './services/pdf-service';
 import { handleArchiveExport, handleSignedDownload } from './export';
 import { Env, User, BookMetadata, JWTPayload } from './types';
-import { escapeHtml, isValidPathSegment, safeCompare, MAX_UPLOAD_SIZE, isAllowedFile, getContentType } from './lib/security';
+import { escapeHtml, isValidPathSegment, safeCompare, MAX_UPLOAD_SIZE, isAllowedFile, getContentType, createSizeLimitStream } from './lib/security';
 import { signJWT, verifyJWT } from './lib/auth';
 import { requireAuth, requireParent, requireHouseholdMember } from './lib/middleware';
 import { generateId, generateInviteCode } from './lib/utils';
@@ -607,12 +607,12 @@ app.put('/api/portfolio/upload-handler', async (c) => {
       return c.json({ error: 'File too large (max 10MB)' }, 413);
     }
 
-    const body = await c.req.arrayBuffer();
-
-    // Security: Body size check
-    if (body.byteLength > MAX_UPLOAD_SIZE) {
-      return c.json({ error: 'File too large (max 10MB)' }, 413);
+    const bodyStream = c.req.raw.body;
+    if (!bodyStream) {
+      return c.json({ error: 'No file body' }, 400);
     }
+
+    const limitedStream = bodyStream.pipeThrough(createSizeLimitStream(MAX_UPLOAD_SIZE));
 
     const contentType = getContentType(key);
 
@@ -620,7 +620,7 @@ app.put('/api/portfolio/upload-handler', async (c) => {
     // Ideally we add PORTFOLIO_BUCKET to Env
     // For now, let's assume BOOKS_BUCKET or we need to add it to wrangler.toml
     // Using BOOKS_BUCKET for now as "storage" bucket
-    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, body, {
+    await c.env.BOOKS_BUCKET.put(`portfolio/${key}`, limitedStream, {
       httpMetadata: { contentType }
     });
 
