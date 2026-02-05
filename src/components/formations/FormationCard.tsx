@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, memo } from 'react';
 import { Formation } from '@/types';
 import { cn } from '@/lib/utils';
 import { Card, CardHeader } from '@/components/ui/card';
@@ -72,7 +72,7 @@ interface FormationCardProps {
     isLoved?: boolean;
 }
 
-export function FormationCard({
+export const FormationCard = memo(function FormationCard({
     formation,
     onComplete,
     isCompleted = false,
@@ -344,4 +344,4 @@ export function FormationCard({
             </Card>
         </Collapsible>
     );
-}
+});

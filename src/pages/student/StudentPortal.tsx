@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useCallback } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { studentView } from '@/lib/api';
 import { useAuth } from '@/contexts/AuthContext';
@@ -24,7 +24,7 @@ export default function StudentPortal() {
         enabled: !!studentId,
     });
 
-    const completeMutation = useMutation({
+    const { mutate: markComplete } = useMutation({
         mutationFn: (activityId: string) => studentView.markComplete(studentId!, activityId),
         onSuccess: () => {
             toast.success('Great job!');
@@ -32,6 +32,10 @@ export default function StudentPortal() {
         },
         onError: () => toast.error('Could not mark complete.')
     });
+
+    const handleComplete = useCallback((id: string) => {
+        markComplete(id);
+    }, [markComplete]);
 
     if (!studentId) {
         return (
@@ -132,7 +136,7 @@ export default function StudentPortal() {
                             key={task.id}
                             formation={task}
                             variant="full"
-                            onComplete={permissions.canMarkComplete ? (id) => completeMutation.mutate(id) : undefined}
+                            onComplete={permissions.canMarkComplete ? handleComplete : undefined}
                         />
                     ))}
                 </div>
