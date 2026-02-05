@@ -64,11 +64,12 @@ export class AnchorGenerator {
             return JSON.parse(cached.anchor_data);
         }
 
+        console.log('[AnchorGenerator] getTodayAnchor called for household:', householdId);
         return this.generateAnchor(householdId, today);
     }
 
     async generateAnchor(householdId: string, date: string, adjustments?: string): Promise<DailyAnchor> {
-        console.log('[AnchorGenerator] Generating anchor for household:', householdId, 'Date:', date);
+        console.log('[AnchorGenerator] 🚀 START Generating anchor for household:', householdId, 'Date:', date);
 
         // 1. Get Active Arc
         let activeArc = await this.arcGenerator.getActiveArc(householdId);

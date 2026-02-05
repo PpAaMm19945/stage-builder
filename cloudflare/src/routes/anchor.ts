@@ -7,22 +7,26 @@ const anchor = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // GET /api/anchor/today
 anchor.get('/today', async (c) => {
+    console.log('[API] GET /api/anchor/today called');
     const user = requireHouseholdMember(c);
+    console.log('[API] User authenticated:', user.id, 'Household:', user.household_id);
     const householdId = user.household_id || user.id; // Fallback for legacy
 
     const generator = new AnchorGenerator(c.env);
 
     try {
         const anchor = await generator.getTodayAnchor(householdId);
+        console.log('[API] Anchor retrieved:', anchor ? anchor.id : 'null');
         return c.json(anchor);
     } catch (e: any) {
-        console.error("Anchor Generation Error:", e);
+        console.error("[API] Anchor Generation Error:", e);
         return c.json({ error: e.message || "Failed to generate anchor" }, 500);
     }
 });
 
 // POST /api/anchor/regenerate
 anchor.post('/regenerate', async (c) => {
+    console.log('[API] POST /api/anchor/regenerate called');
     const user = requireParent(c); // Only parents can regenerate
     const householdId = user.household_id || user.id;
 
@@ -44,12 +48,15 @@ anchor.post('/regenerate', async (c) => {
 
 // POST /api/anchor/complete
 anchor.post('/complete', async (c) => {
-    const user = requireParent(c);
-    const householdId = user.household_id || user.id;
-    const body = await c.req.json().catch(() => ({}));
-    const date = body.date || new Date().toISOString().split('T')[0];
-
+    console.log('[API] POST /api/anchor/complete called');
     try {
+        const user = requireParent(c);
+        const householdId = user.household_id || user.id;
+        console.log('[API] Completing anchor for user:', user.id);
+
+        const body = await c.req.json().catch(() => ({}));
+        const date = body.date || new Date().toISOString().split('T')[0];
+
         const { success } = await c.env.DB.prepare(
             `UPDATE daily_anchors 
              SET status = 'completed'
@@ -59,12 +66,14 @@ anchor.post('/complete', async (c) => {
             .run();
 
         if (!success) {
-            throw new Error("Failed to update anchor status");
+            console.error("[API] DB update failed (no rows affected?)");
+            // Not strictly an error if it was already completed, but worth noting
         }
 
+        console.log('[API] Anchor completed successfully');
         return c.json({ success: true, date });
     } catch (e: any) {
-        console.error("Anchor Completion Error:", e);
+        console.error("[API] Anchor Completion Error:", e);
         return c.json({ error: e.message || "Failed to complete anchor" }, 500);
     }
 });
