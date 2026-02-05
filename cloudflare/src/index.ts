@@ -1101,6 +1101,11 @@ app.get('/api/library/stats', async (c) => {
     const hymnSub = subs.find((s: any) => s.path_type === 'hymn_journey') as any;
     const catechismSub = subs.find((s: any) => s.path_type === 'catechism') as any;
 
+    // Get completed books count from reading sessions
+    const bookCompletion = await c.env.DB.prepare(
+      "SELECT COUNT(DISTINCT book_id) as count FROM reading_sessions WHERE parent_id = ?"
+    ).bind(user.id).first() as any;
+
     const stats = {
       hymns: {
         completed: hymnSub ? (hymnSub.completed_at ? hymnSub.total_items : hymnSub.current_position - 1) : 0,
@@ -1111,7 +1116,7 @@ app.get('/api/library/stats', async (c) => {
         total: catechismCount?.count || 107,
       },
       books: {
-        completed: 0, // TODO: Track from evidences or reading table
+        completed: bookCompletion?.count || 0,
         total: bookCount?.count || 100,
       },
     };

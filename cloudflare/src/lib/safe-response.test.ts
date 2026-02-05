@@ -56,4 +56,59 @@ describe('safeError', () => {
         expect(res.status).toBe(400);
         expect(res.data).toEqual({ error: 'Bad Request' });
     });
+
+    it('should handle thrown string values safely', () => {
+        const c = mockContext('development') as any;
+        const err = "String Error";
+
+        const res = safeError(c, err, 500);
+
+        expect(res.status).toBe(500);
+        // Current implementation treats non-objects with message as 'Unknown Error'
+        expect(res.data).toEqual({ error: 'Unknown Error' });
+    });
+
+    it('should handle thrown objects safely', () => {
+        const c = mockContext('development') as any;
+        const err = { foo: 'bar' };
+
+        const res = safeError(c, err, 500);
+
+        expect(res.status).toBe(500);
+        expect(res.data).toEqual({ error: 'Unknown Error' });
+    });
+
+    it('should handle empty error message', () => {
+        const c = mockContext('development') as any;
+        const err = new Error('');
+
+        const res = safeError(c, err, 500);
+
+        expect(res.status).toBe(500);
+        expect(res.data).toEqual({ error: 'Unknown Error' });
+    });
+
+    it('should default to safe behavior if environment is undefined', () => {
+        const c = mockContext(undefined as any) as any;
+        const err = new Error('Some Error');
+
+        const res = safeError(c, err, 500);
+
+        // Undefined env !== 'production', so it shows error (development behavior)
+        expect(res.status).toBe(500);
+        expect(res.data).toEqual({ error: 'Some Error' });
+    });
+
+    it('should respect explicit status override even with special messages', () => {
+        const c = mockContext('production') as any;
+        const err = new Error('Unauthorized');
+
+        // If status is NOT 500, we don't auto-map 'Unauthorized' to 401?
+        // Let's check logic: if (effectiveStatus === 500) { ... }
+        // So if we pass 400, it stays 400.
+        const res = safeError(c, err, 400);
+
+        expect(res.status).toBe(400);
+        expect(res.data).toEqual({ error: 'Unauthorized' });
+    });
 });

@@ -43,20 +43,20 @@ The engine (smart age-based suggestions, child profiles, domain balancing) stays
 ## Local Development
 
 ```bash
-# Prerequisites: Node.js 18+, npm
+# Prerequisites: Node.js 18+, pnpm
 
 # 1. Clone and install
 git clone <repo-url>
 cd stage-builder
-npm install
+pnpm install
 
 # 2. Start frontend dev server
-npm run dev
+pnpm run dev
 
 # 3. Start Cloudflare Worker (separate terminal)
 cd cloudflare
-npm install
-npm run dev
+pnpm install
+pnpm run dev
 ```
 
 ## Project Structure

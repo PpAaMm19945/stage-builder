@@ -102,7 +102,7 @@ The fear of the Lord is the beginning of knowledge. This is not a cliché; it is
 
 Holistic education builds on this bedrock. It does not excuse laziness but rather provides a foundation for all the muscle we place into the education of our children. The biblical path is narrower. It looks like fathers training sons to govern themselves for the day they'll step out of the home. It looks like mothers forming daughters in wisdom to become responsible and God fearing  mothers and wives. It involves working harder than everyone else and rejecting entertainment as a lifestyle.
 
-Will my child learn math and science?? Will they learn how to write well and discuss big ideas in front of a multitude of people?? Will they grow up to life a fruitful and successful life?? While the schools give no such assurance either I'll say this, obedience must come first then we must labor to teach them everything else in our power to teach them. We must trust that in obeying God is where true blessedness will rise. We must fear him because it is to him that we will give account. 
+Will my child learn math and science?? Will they learn how to write well and discuss big ideas in front of a multitude of people?? Will they grow up to live a fruitful and successful life?? While the schools give no such assurance either I'll say this, obedience must come first then we must labor to teach them everything else in our power to teach them. We must trust that in obeying God is where true blessedness will rise. We must fear him because it is to him that we will give account.
 
 The hope for Uganda does not begin with better schools, but with parents who fear God more than they fear poverty and the uncertainty of the future.
 
