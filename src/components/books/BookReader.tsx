@@ -404,7 +404,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                     >
                         <div>
                             <DialogTitle className="text-lg font-medium">{book.title}</DialogTitle>
-                            {!isPdf && (
+                            {!isPdf ? (
                                 <DialogDescription className="text-gray-400 text-xs">
                                     {isLoadingPages ? (
                                         <span className="flex items-center gap-2">
@@ -420,6 +420,10 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                             )}
                                         </>
                                     )}
+                                </DialogDescription>
+                            ) : (
+                                <DialogDescription className="sr-only">
+                                    PDF Reader for {book.title}
                                 </DialogDescription>
                             )}
                         </div>

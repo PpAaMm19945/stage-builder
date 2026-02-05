@@ -55,6 +55,7 @@ app.use('*', corsMiddleware);
 app.use('/api/*', authMiddleware);
 
 // Mount Auth Routes
+app.route('/api/anchor', anchorRoutes); // [MOVED UP & EXPLICIT]
 app.route('/', authRoutes);
 app.route('/', profileRoutes);
 app.route('/', familyRoutes);
@@ -70,7 +71,7 @@ app.route('/', reportsRoutes);
 app.route('/', adminRoutes);
 app.route('/', pathsRoutes);
 app.route('/', aiRoutes);           // [NEW]
-app.route('/api/anchor', anchorRoutes); // [NEW]
+// app.route('/api/anchor', anchorRoutes); // [MOVED UP]
 
 // Global error handler with CORS
 app.onError(errorHandler);

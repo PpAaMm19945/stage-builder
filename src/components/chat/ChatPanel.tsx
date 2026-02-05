@@ -126,20 +126,40 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
                 // 3. Try loading local session
                 const localSession = await chatStorage.loadSession(user.id);
-                if (localSession && localSession.length > 0) {
+
+                // AUTO-FIX: Clear stale "lions" or "demo" data
+                const hasStaleData = localSession?.some(m =>
+                    m.content.toLowerCase().includes('lions') ||
+                    (m.actionCard && m.actionCard.type === 'SEARCH_BOOKS' && m.actionCard.data?.results?.length === 0)
+                );
+
+                if (localSession && localSession.length > 0 && !hasStaleData) {
                     // If we have a new anchor, append it to the session if not already there
-                    // (Simple check: is the last message an anchor from today? Logic can be refined)
                     if (anchorMessage) {
-                        setMessages([...localSession, anchorMessage]);
-                        chatStorage.saveSession(user.id, [...localSession, anchorMessage]);
+                        // Check if today's anchor is already in the last few messages
+                        const hasRecentAnchor = localSession.slice(-3).some(m =>
+                            m.anchorPayload && m.anchorPayload.date === today
+                        );
+
+                        if (!hasRecentAnchor) {
+                            setMessages([...localSession, anchorMessage]);
+                            chatStorage.saveSession(user.id, [...localSession, anchorMessage]);
+                        } else {
+                            setMessages(localSession);
+                        }
                     } else {
                         setMessages(localSession);
                     }
                     return;
+                } else if (hasStaleData) {
+                    console.log('[Chat] Clearing stale/demo session data');
+                    chatStorage.clearSession(user.id);
+                    // Continue to load anchor...
                 }
 
                 // 4. Fallback: Load from server logs
                 const logs = await ai.getInteractionLog();
+                // ... (rest of logic)
 
                 let historyMessages: Message[] = [];
                 if (logs.length > 0) {
