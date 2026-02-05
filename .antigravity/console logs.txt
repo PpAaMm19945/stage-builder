@@ -1,0 +1,311 @@
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+index-BSiXbJnw.js:68 [API] isAuthenticated called. Result: true
+index-BSiXbJnw.js:69 [AuthContext] refreshAuth called. isAuthenticated: true
+index-BSiXbJnw.js:69 [AuthContext] Calling auth.getMe(). Attempt 1
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+index-BSiXbJnw.js:69 [AuthContext] auth.getMe() success: {user: {…}, children: Array(1)}
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+index-BSiXbJnw.js:249 [Chat] Fetching Daily Anchor...
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+index-BSiXbJnw.js:249 [Chat] Fetching Daily Anchor...
+index-BSiXbJnw.js:68 [API] getAuthToken called. Token exists: true
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+onSubscribe @ index-BSiXbJnw.js:41
+subscribe @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+o3 @ index-BSiXbJnw.js:39
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+index-BSiXbJnw.js:68  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+ae @ index-BSiXbJnw.js:68
+getToday @ index-BSiXbJnw.js:68
+(anonymous) @ index-BSiXbJnw.js:249
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:249
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+index-BSiXbJnw.js:249 [Chat] Failed to fetch daily anchor: Error: Gemini API Error 404: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-2.0-flash-thinking-exp-1219 is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+    at ae (index-BSiXbJnw.js:68:4003)
+    at async index-BSiXbJnw.js:249:76141
+(anonymous) @ index-BSiXbJnw.js:249
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:249
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+index-BSiXbJnw.js:68  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+ae @ index-BSiXbJnw.js:68
+getToday @ index-BSiXbJnw.js:68
+(anonymous) @ index-BSiXbJnw.js:249
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:249
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+index-BSiXbJnw.js:249 [Chat] Failed to fetch daily anchor: Error: Gemini API Error 404: {
+  "error": {
+    "code": 404,
+    "message": "models/gemini-2.0-flash-thinking-exp-1219 is not found for API version v1beta, or is not supported for generateContent. Call ListModels to see the list of available models and their supported methods.",
+    "status": "NOT_FOUND"
+  }
+}
+
+    at ae (index-BSiXbJnw.js:68:4003)
+    at async index-BSiXbJnw.js:249:76141
+(anonymous) @ index-BSiXbJnw.js:249
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:249
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+onSubscribe @ index-BSiXbJnw.js:41
+subscribe @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+o3 @ index-BSiXbJnw.js:39
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+onSubscribe @ index-BSiXbJnw.js:41
+subscribe @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+o3 @ index-BSiXbJnw.js:39
+nd @ index-BSiXbJnw.js:41
+Pi @ index-BSiXbJnw.js:41
+Y8 @ index-BSiXbJnw.js:41
+qo @ index-BSiXbJnw.js:39
+ik @ index-BSiXbJnw.js:41
+la @ index-BSiXbJnw.js:41
+D3 @ index-BSiXbJnw.js:41
+E @ index-BSiXbJnw.js:26
+I @ index-BSiXbJnw.js:26
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
+DailyAnchorView-BsDi8Yxx.js:38  GET https://stage-builder.antmwes104-1.workers.dev/api/anchor/today 500 (Internal Server Error)
+queryFn @ DailyAnchorView-BsDi8Yxx.js:38
+a @ index-BSiXbJnw.js:41
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.then
+(anonymous) @ index-BSiXbJnw.js:41
+Promise.catch
+g @ index-BSiXbJnw.js:41
+start @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+Ks @ index-BSiXbJnw.js:41
+fetch @ index-BSiXbJnw.js:41
+refetch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+batch @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+await in (anonymous)
+(anonymous) @ index-BSiXbJnw.js:41
+onFocus @ index-BSiXbJnw.js:41
+(anonymous) @ index-BSiXbJnw.js:41
+n @ index-BSiXbJnw.js:41
