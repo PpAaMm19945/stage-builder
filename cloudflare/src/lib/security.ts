@@ -121,3 +121,18 @@ export function getContentType(filename: string): string {
     if (lower.endsWith('.pdf')) return 'application/pdf';
     return 'application/octet-stream';
 }
+
+// Security helper: Stream size limiter to prevent memory exhaustion
+export function createSizeLimitStream(maxSize: number): TransformStream {
+    let bytesRead = 0;
+    return new TransformStream({
+        transform(chunk, controller) {
+            bytesRead += chunk.length;
+            if (bytesRead > maxSize) {
+                controller.error(new Error(`File too large (exceeds ${maxSize} bytes)`));
+            } else {
+                controller.enqueue(chunk);
+            }
+        }
+    });
+}

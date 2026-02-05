@@ -1,6 +1,6 @@
 import { Hono } from 'hono';
 import { Env, BookMetadata, User } from '../types';
-import { isValidPathSegment, safeCompare, sanitizeFilename, isAllowedFile, getContentType, MAX_UPLOAD_SIZE } from '../lib/security';
+import { isValidPathSegment, safeCompare, sanitizeFilename, isAllowedFile, getContentType, MAX_UPLOAD_SIZE, createSizeLimitStream } from '../lib/security';
 import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
@@ -1154,14 +1154,14 @@ app.put('/api/books/upload', async (c) => {
     }
 
     try {
-        const body = await c.req.arrayBuffer();
-
-        // Security: Validate size (Actual body check)
-        if (body.byteLength > MAX_UPLOAD_SIZE) {
-            return c.json({ error: 'File too large (body). Max 10MB.' }, 413);
+        const bodyStream = c.req.raw.body;
+        if (!bodyStream) {
+            return c.json({ error: 'No file body' }, 400);
         }
 
-        await c.env.BOOKS_BUCKET.put(path, body, {
+        const limitedStream = bodyStream.pipeThrough(createSizeLimitStream(MAX_UPLOAD_SIZE));
+
+        await c.env.BOOKS_BUCKET.put(path, limitedStream, {
             httpMetadata: {
                 contentType: getContentType(path),
             }
