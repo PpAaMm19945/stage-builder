@@ -2,6 +2,7 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
+import { bookManifest } from '@/lib/book-manifest';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useAuth } from '@/contexts/AuthContext';
@@ -27,6 +28,13 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
         staleTime: 1000 * 60 * 5, // 5 minutes
     });
 
+    // ⚡ Performance: Fetch manifest once to avoid N requests in BookCard
+    const { data: manifest } = useQuery({
+        queryKey: ['book-manifest'],
+        queryFn: () => bookManifest.getManifest() as Promise<Record<string, string>>,
+        staleTime: 1000 * 60 * 60, // 1 hour
+    });
+
     // Combine API books and Local Bible books
     const displayBooks = useMemo(() => {
         let books = [...allBooks, ...PAPERBACK_BIBLE_BOOKS, ...CURTIS_KNAPP_BOOKS];
@@ -34,8 +42,27 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             b.renderFormat !== 'hymnal' &&
             b.renderFormat !== 'catechism'
         );
+
+        // Optimization: Pre-resolve cover URLs if manifest is available
+        // This prevents each BookCard from triggering a separate useBookAssetUrl query
+        if (manifest) {
+            const r2Url = import.meta.env.VITE_R2_PUBLIC_URL;
+            books = books.map(book => {
+                // If book already has an external URL, skip (e.g. Paperback Bible)
+                if (book.coverUrl && !book.coverUrl.includes('/api/books/')) return book;
+
+                const key = `${book.series}/${book.id}/cover`;
+                const r2Path = manifest[key];
+
+                if (r2Path) {
+                    return { ...book, coverUrl: `${r2Url}/${r2Path}` };
+                }
+                return book;
+            });
+        }
+
         return books;
-    }, [allBooks]);
+    }, [allBooks, manifest]);
 
     // Group books by series
     const booksBySeries = useMemo(() => {
