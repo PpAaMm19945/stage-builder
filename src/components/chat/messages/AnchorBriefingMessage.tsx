@@ -98,42 +98,51 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                         Family Activity
                     </h4>
 
-                    <div className="space-y-2">
-                        <div className="font-medium text-sm text-foreground">
-                            {data.activity.title}
-                        </div>
-                        <p className="text-sm text-muted-foreground leading-relaxed">
-                            {data.activity.description}
-                        </p>
+                    {/* Support both field names for safety */}
+                    {(() => {
+                        const activity = data.activity || (data as any).family_activity;
+                        if (!activity) return <div className="text-sm text-muted-foreground italic">No activity scheduled today.</div>;
 
-                        {/* Materials */}
-                        {data.activity.materials.length > 0 && (
-                            <div className="flex flex-wrap gap-1.5 mt-2">
-                                {data.activity.materials.map((m, i) => (
-                                    <Badge key={i} variant="secondary" className="text-[10px] px-1.5 h-5 bg-background/60 text-muted-foreground border-border/40 font-normal">
-                                        {m}
-                                    </Badge>
-                                ))}
-                            </div>
-                        )}
+                        return (
+                            <div className="space-y-2">
+                                <div className="font-medium text-sm text-foreground">
+                                    {activity.title}
+                                </div>
+                                <p className="text-sm text-muted-foreground leading-relaxed">
+                                    {activity.description}
+                                </p>
 
-                        {/* Child Roles */}
-                        {data.activity.roles.length > 0 && (
-                            <div className="mt-3 grid grid-cols-2 gap-2">
-                                {data.activity.roles.map((role, i) => (
-                                    <div key={i} className="flex items-center gap-2 text-xs bg-background/30 p-1.5 rounded border border-border/30">
-                                        <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px]">
-                                            {role.childName.charAt(0)}
-                                        </div>
-                                        <div className="flex flex-col">
-                                            <span className="font-medium text-foreground/90">{role.childName}</span>
-                                            <span className="text-[10px] text-muted-foreground">{role.role}</span>
-                                        </div>
+                                {/* Materials */}
+                                {activity.materials && activity.materials.length > 0 && (
+                                    <div className="flex flex-wrap gap-1.5 mt-2">
+                                        {activity.materials.map((m: string, i: number) => (
+                                            <Badge key={i} variant="secondary" className="text-[10px] px-1.5 h-5 bg-background/60 text-muted-foreground border-border/40 font-normal">
+                                                {m}
+                                            </Badge>
+                                        ))}
                                     </div>
-                                ))}
+                                )}
+
+                                {/* Child Roles */}
+                                {activity.roles && activity.roles.length > 0 && (
+                                    <div className="mt-3 grid grid-cols-2 gap-2">
+                                        {activity.roles.map((role: any, i: number) => (
+                                            <div key={i} className="flex items-center gap-2 text-xs bg-background/30 p-1.5 rounded border border-border/30">
+                                                <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px]">
+                                                    {role.childName ? role.childName.charAt(0) : '?'}
+                                                </div>
+                                                <div className="flex flex-col">
+                                                    <span className="font-medium text-foreground/90">{role.childName || (role as any).child_name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{role.role}</span>
+                                                    {role.instruction && <span className="text-[9px] text-muted-foreground italic">{role.instruction}</span>}
+                                                </div>
+                                            </div>
+                                        ))}
+                                    </div>
+                                )}
                             </div>
-                        )}
-                    </div>
+                        );
+                    })()}
                 </div>
 
                 {/* AI Reasoning Collapsible */}
