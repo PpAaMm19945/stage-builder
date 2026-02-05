@@ -5,8 +5,9 @@ import { books as booksApi } from '@/lib/api';
 import { bookManifest } from '@/lib/book-manifest';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Book as BookIcon } from '@phosphor-icons/react';
+import { Book as BookIcon, WarningCircle } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 import { CURTIS_KNAPP_BOOKS } from '@/data/curtis-knapp-books';
 import { GuestBanner, useGuestViewTracker } from '@/components/library/GuestBanner';
@@ -22,7 +23,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
     // Fetch ALL books without age filtering
-    const { data: allBooks = [], isLoading, error } = useQuery({
+    const { data: allBooks = [], isLoading, error, refetch } = useQuery({
         queryKey: ['books', 'all'],
         queryFn: () => booksApi.list({}),
         staleTime: 1000 * 60 * 5, // 5 minutes
@@ -107,8 +108,22 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     if (error) {
         return (
-            <div className="text-center py-12">
-                <p className="text-muted-foreground">Unable to load books. Please try again later.</p>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-full">
+                    <WarningCircle className="h-8 w-8 text-red-500" weight="duotone" />
+                </div>
+                <div className="text-center">
+                    <h3 className="font-semibold text-lg">Unable to load library</h3>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">
+                        We encountered an issue fetching the books.
+                    </p>
+                </div>
+                <Button
+                    onClick={() => refetch()}
+                    variant="outline"
+                >
+                    Try Again
+                </Button>
             </div>
         );
     }
