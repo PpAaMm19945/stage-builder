@@ -2,10 +2,12 @@ import { useState, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { Book } from '@/types';
 import { books as booksApi } from '@/lib/api';
+import { bookManifest } from '@/lib/book-manifest';
 import { BookReader } from './BookReader';
 import { Skeleton } from '@/components/ui/skeleton';
+import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
-import { Book as BookIcon } from '@phosphor-icons/react';
+import { Book as BookIcon, WarningCircle } from '@phosphor-icons/react';
 import { PAPERBACK_BIBLE_BOOKS } from '@/data/bible-books';
 import { CURTIS_KNAPP_BOOKS } from '@/data/curtis-knapp-books';
 import { GuestBanner, useGuestViewTracker } from '@/components/library/GuestBanner';
@@ -21,10 +23,17 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
     const [selectedBook, setSelectedBook] = useState<Book | null>(null);
 
     // Fetch ALL books without age filtering
-    const { data: allBooks = [], isLoading, error } = useQuery({
+    const { data: allBooks = [], isLoading, error, refetch } = useQuery({
         queryKey: ['books', 'all'],
         queryFn: () => booksApi.list({}),
         staleTime: 1000 * 60 * 5, // 5 minutes
+    });
+
+    // ⚡ Performance: Fetch manifest once to avoid N requests in BookCard
+    const { data: manifest } = useQuery({
+        queryKey: ['book-manifest'],
+        queryFn: () => bookManifest.getManifest() as Promise<Record<string, string>>,
+        staleTime: 1000 * 60 * 60, // 1 hour
     });
 
     // Combine API books and Local Bible books
@@ -34,8 +43,27 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
             b.renderFormat !== 'hymnal' &&
             b.renderFormat !== 'catechism'
         );
+
+        // Optimization: Pre-resolve cover URLs if manifest is available
+        // This prevents each BookCard from triggering a separate useBookAssetUrl query
+        if (manifest) {
+            const r2Url = import.meta.env.VITE_R2_PUBLIC_URL;
+            books = books.map(book => {
+                // If book already has an external URL, skip (e.g. Paperback Bible)
+                if (book.coverUrl && !book.coverUrl.includes('/api/books/')) return book;
+
+                const key = `${book.series}/${book.id}/cover`;
+                const r2Path = manifest[key];
+
+                if (r2Path) {
+                    return { ...book, coverUrl: `${r2Url}/${r2Path}` };
+                }
+                return book;
+            });
+        }
+
         return books;
-    }, [allBooks]);
+    }, [allBooks, manifest]);
 
     // Group books by series
     const booksBySeries = useMemo(() => {
@@ -80,8 +108,22 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
 
     if (error) {
         return (
-            <div className="text-center py-12">
-                <p className="text-muted-foreground">Unable to load books. Please try again later.</p>
+            <div className="flex flex-col items-center justify-center py-12 space-y-4">
+                <div className="bg-red-50 dark:bg-red-900/10 p-4 rounded-full">
+                    <WarningCircle className="h-8 w-8 text-red-500" weight="duotone" />
+                </div>
+                <div className="text-center">
+                    <h3 className="font-semibold text-lg">Unable to load library</h3>
+                    <p className="text-muted-foreground text-sm max-w-xs mx-auto mt-1">
+                        We encountered an issue fetching the books.
+                    </p>
+                </div>
+                <Button
+                    onClick={() => refetch()}
+                    variant="outline"
+                >
+                    Try Again
+                </Button>
             </div>
         );
     }

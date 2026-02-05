@@ -1,3 +1,5 @@
+import { Context, Next } from 'hono';
+
 // Simple in-memory rate limiting middleware
 // Note: In a multi-worker environment, consider using Durable Objects for accurate limits
 
@@ -41,4 +43,18 @@ export function checkRateLimit(
 
     limit.count++;
     return { allowed: true, remaining: maxRequests - limit.count, resetAt: limit.resetAt };
+}
+
+export function createRateLimiter(maxRequests: number, windowMs: number) {
+    return async (c: Context, next: Next) => {
+        const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+        const rateLimit = checkRateLimit(ip, maxRequests, windowMs);
+
+        if (!rateLimit.allowed) {
+            c.header('Retry-After', Math.ceil((rateLimit.resetAt - Date.now()) / 1000).toString());
+            return c.json({ error: 'Too many requests' }, 429);
+        }
+
+        await next();
+    };
 }

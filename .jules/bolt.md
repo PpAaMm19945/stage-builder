@@ -63,3 +63,7 @@
 ## 2026-06-06 - Skipping Redundant Asset URL Queries
 **Learning:** The `BookCard` component was firing `useBookAssetUrl` for every book in the library (O(N)), even when the book object already contained a valid, fully-resolved cover URL (passed from the API). This caused hundreds of unnecessary query initiations and effect setups during the initial render of the library.
 **Action:** Modified `useBookAssetUrl` to accept an `{ enabled: boolean }` option and updated `BookCard` (and `BookReader`) to pass `enabled: !externalCover`. This ensures the query hook remains idle when the data is already present, significantly reducing the initial render overhead.
+
+## 2026-06-07 - Bulk Resolution of Book Covers
+**Learning:** The `BookCard` component was individually querying `useBookAssetUrl` for every book in the library (N books), causing N+1 network requests (or at least N query observers) to resolve cover URLs via the manifest. Even with `enabled: false` optimization, the overhead of creating N observers remained, and for books without pre-resolved covers, N fetches were still occurring.
+**Action:** Implemented bulk cover resolution in `BookLibrary.tsx` by fetching the manifest once (`useQuery`) and mapping over the book list to inject the resolved R2 URL into the `book` object. This allows `BookCard` to skip the individual query entirely, reducing N+1 fetches to 1 fetch (the manifest).

@@ -5,8 +5,10 @@ import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 import { safeError } from '../lib/safe-response';
+import { createRateLimiter } from '../middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+const rateLimiter = createRateLimiter(60, 60000);
 
 // ============ HELPERS ============
 
@@ -363,7 +365,7 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
 // ============ BOOKS & SERIES ROUTES ============
 
 // List all books
-app.get('/api/books', async (c) => {
+app.get('/api/books', rateLimiter, async (c) => {
     try {
         c.header('Cache-Control', 'public, max-age=3600, stale-while-revalidate=86400');
 
@@ -390,7 +392,7 @@ app.get('/api/books', async (c) => {
 });
 
 // List all series
-app.get('/api/series', async (c) => {
+app.get('/api/series', rateLimiter, async (c) => {
     try {
         const bucket = c.env.BOOKS_BUCKET;
         const seriesList: any[] = [];
@@ -444,7 +446,7 @@ app.get('/api/series', async (c) => {
 });
 
 // Get series details
-app.get('/api/series/:seriesId', async (c) => {
+app.get('/api/series/:seriesId', rateLimiter, async (c) => {
     try {
         const seriesId = c.req.param('seriesId');
 
@@ -912,7 +914,7 @@ app.get('/api/books/:series/:bookId/pdf', async (c) => {
 });
 
 // Get book pages list (New dynamic endpoint)
-app.get('/api/books/:series/:bookId/pages', async (c) => {
+app.get('/api/books/:series/:bookId/pages', rateLimiter, async (c) => {
     try {
         const series = decodeURIComponent(c.req.param('series'));
         const bookId = decodeURIComponent(c.req.param('bookId'));
