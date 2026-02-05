@@ -5,8 +5,13 @@ import { requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 import { safeError } from '../lib/safe-response';
+import { createRateLimiter } from '../middleware/rate-limit';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+
+// Rate limit public endpoints to prevent abuse
+app.use('/api/books/*', createRateLimiter(60, 60000, 'library'));
+app.use('/api/series/*', createRateLimiter(60, 60000, 'library'));
 
 // ============ HELPERS ============
 

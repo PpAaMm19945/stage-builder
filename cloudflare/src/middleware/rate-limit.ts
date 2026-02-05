@@ -1,3 +1,5 @@
+import { Context, Next } from 'hono';
+
 // Simple in-memory rate limiting middleware
 // Note: In a multi-worker environment, consider using Durable Objects for accurate limits
 
@@ -20,18 +22,18 @@ function cleanupOldEntries() {
 }
 
 export function checkRateLimit(
-    userId: string,
+    key: string,
     maxRequests: number = 20,
     windowMs: number = 60000
 ): { allowed: boolean; remaining: number; resetAt: number } {
     cleanupOldEntries();
 
     const now = Date.now();
-    const limit = rateLimits.get(userId);
+    const limit = rateLimits.get(key);
 
     if (!limit || now > limit.resetAt) {
         const resetAt = now + windowMs;
-        rateLimits.set(userId, { count: 1, resetAt });
+        rateLimits.set(key, { count: 1, resetAt });
         return { allowed: true, remaining: maxRequests - 1, resetAt };
     }
 
@@ -41,4 +43,26 @@ export function checkRateLimit(
 
     limit.count++;
     return { allowed: true, remaining: maxRequests - limit.count, resetAt: limit.resetAt };
+}
+
+export function createRateLimiter(maxRequests: number, windowMs: number, namespace: string) {
+    return async (c: Context, next: Next) => {
+        const ip = c.req.header('CF-Connecting-IP') || 'unknown';
+        const key = `${namespace}:${ip}`;
+
+        const result = checkRateLimit(key, maxRequests, windowMs);
+
+        c.header('X-RateLimit-Limit', maxRequests.toString());
+        c.header('X-RateLimit-Remaining', result.remaining.toString());
+        c.header('X-RateLimit-Reset', Math.ceil(result.resetAt / 1000).toString());
+
+        if (!result.allowed) {
+            return c.json({
+                error: 'Too many requests',
+                retryAfter: Math.ceil((result.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
+        await next();
+    };
 }

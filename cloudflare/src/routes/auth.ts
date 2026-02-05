@@ -13,7 +13,7 @@ app.get('/auth/google', (c) => {
     // Security: Rate limit login attempts to prevent abuse
     // Use CF-Connecting-IP if available, otherwise fallback to 'unknown' (dev environment)
     const ip = c.req.header('CF-Connecting-IP') || 'unknown';
-    const rateLimit = checkRateLimit(ip, 5, 60000); // 5 attempts per minute
+    const rateLimit = checkRateLimit(`auth:${ip}`, 5, 60000); // 5 attempts per minute
 
     if (!rateLimit.allowed) {
         return c.text('Too many login attempts. Please try again later.', 429);
