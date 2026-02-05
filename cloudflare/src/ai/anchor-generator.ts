@@ -48,7 +48,7 @@ export class AnchorGenerator {
 
     constructor(env: Env) {
         this.db = env.DB;
-        this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp');
+        this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-3-flash-preview');
         this.arcGenerator = new ArcGenerator(env);
     }
 

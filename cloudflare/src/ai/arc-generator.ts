@@ -34,7 +34,7 @@ export class ArcGenerator {
         // Prompt said: "Gemini Model to Use: gemini-3-flash-preview"
         // I'll override the model in the constructor call if the service supports it.
         // The existing GeminiService takes (apiKey, model).
-        this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-2.0-flash-exp'); // Using standard Flash 2.0 model
+        this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-3-flash-preview'); // Using Gemini 3 Preview
     }
 
     async generateArc(householdId: string, feedback?: string): Promise<{ arc: FormationArc; reasoning: string }> {
