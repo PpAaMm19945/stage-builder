@@ -139,6 +139,14 @@ export class Cortex {
                             break;
 
                         case 'skip':
+                            if (anchor) {
+                                const skipReason = originalMessage?.trim();
+                                await self.anchorGenerator.skipAnchor(
+                                    householdId,
+                                    anchor.id,
+                                    skipReason || 'Cortex skip: no reason provided'
+                                );
+                            }
                             response = "No problem! Rest is important too. I'll save today's activity for another time. 💛\n\nWould you like a simpler alternative, or shall we pick up tomorrow?";
                             break;
 
