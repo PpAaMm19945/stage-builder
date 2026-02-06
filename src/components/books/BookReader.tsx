@@ -494,13 +494,13 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                         size="icon"
                                         onClick={handleCloseRequest}
                                         className="text-white hover:bg-white/20 rounded-full"
-                                        aria-label="Close reader"
+                                        aria-label="Close reader (Esc)"
                                     >
                                         <X className="w-6 h-6" />
                                     </Button>
                                 </TooltipTrigger>
                                 <TooltipContent side="bottom" className="z-[60]">
-                                    <p>Close reader</p>
+                                    <p>Close reader (Esc)</p>
                                 </TooltipContent>
                             </Tooltip>
                         </div>
@@ -675,27 +675,33 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <CarouselPrevious className={cn(
-                                            "left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
-                                            "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
-                                            isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
-                                        )} />
+                                        <CarouselPrevious
+                                            className={cn(
+                                                "left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                                "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
+                                                isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
+                                            )}
+                                            aria-label="Previous Page (←)"
+                                        />
                                     </TooltipTrigger>
                                     <TooltipContent side="right" className="z-[60]">
-                                        <p>Previous Page</p>
+                                        <p>Previous Page (←)</p>
                                     </TooltipContent>
                                 </Tooltip>
 
                                 <Tooltip>
                                     <TooltipTrigger asChild>
-                                        <CarouselNext className={cn(
-                                            "right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
-                                            "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
-                                            isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
-                                        )} />
+                                        <CarouselNext
+                                            className={cn(
+                                                "right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
+                                                "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
+                                                isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
+                                            )}
+                                            aria-label="Next Page (→)"
+                                        />
                                     </TooltipTrigger>
                                     <TooltipContent side="left" className="z-[60]">
-                                        <p>Next Page</p>
+                                        <p>Next Page (→)</p>
                                     </TooltipContent>
                                 </Tooltip>
                             </Carousel>
