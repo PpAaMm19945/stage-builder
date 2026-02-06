@@ -10,6 +10,11 @@ import { fetchAllHymns, fetchCatechism, HymnData, CatechismData } from '@/lib/bo
 import { useBookAssetUrl, useBookPageUrls } from '@/hooks/useBookAssetUrl';
 import { bookManifest } from '@/lib/book-manifest';
 
+interface BookMetadataPage {
+    text?: string | string[];
+    type?: string;
+}
+
 interface PDFDownloadButtonProps {
     book: Book;
     pages?: string[]; // Markdown pages
@@ -77,7 +82,9 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
                                         response = fbResponse;
                                         break;
                                     }
-                                } catch (e) {}
+                                } catch (e) {
+                                    // Ignore errors in fallback chain
+                                }
                             }
                         }
                     }
@@ -175,8 +182,8 @@ export function PDFDownloadButton({ book, pages, catechismData: prefetchedCatech
                     const metadata = await res.json();
                     if (metadata.pages && Array.isArray(metadata.pages)) {
                         const extractedPages = metadata.pages
-                            .filter((p: any) => p.text || p.type === 'content')
-                            .map((p: any) => Array.isArray(p.text) ? p.text.join('\n\n') : (p.text || ''))
+                            .filter((p: BookMetadataPage) => p.text || p.type === 'content')
+                            .map((p: BookMetadataPage) => Array.isArray(p.text) ? p.text.join('\n\n') : (p.text || ''))
                             .filter((text: string) => text.trim().length > 0);
 
                         if (extractedPages.length > 0) {
