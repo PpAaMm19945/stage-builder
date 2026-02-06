@@ -328,12 +328,13 @@ Materials should be common household items only.`;
         const startTime = Date.now();
 
         try {
-            const responseText = await this.gemini.generateContent(
+            const result = await this.gemini.generateContent(
                 [{ role: 'user', parts: [{ text: userPrompt }] }],
                 systemPrompt,
                 null,
                 'application/json'
             );
+            const responseText = result.text;
 
             console.log(`[ArcGenerator] Gemini responded in ${Date.now() - startTime}ms`);
 

@@ -296,12 +296,13 @@ export class RhythmGenerator {
         };
 
         try {
-            const responseText = await this.gemini.generateContent(
+            const result = await this.gemini.generateContent(
                 [{ role: 'user', parts: [{ text: "Generate the weekly rhythm plan." }] }],
                 systemPrompt,
                 responseSchema,
                 'application/json'
             );
+            const responseText = result.text;
 
             const generatedData = JSON.parse(responseText);
 
