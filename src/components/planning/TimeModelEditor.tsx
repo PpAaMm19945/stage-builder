@@ -15,6 +15,8 @@ import {
 } from '@phosphor-icons/react';
 import { WeeklyTimeModel, DayOfWeek } from '@/types';
 
+type ExtendedTimeModel = Partial<WeeklyTimeModel> & { eveningMinutes?: number };
+
 const DAYS: { id: DayOfWeek; label: string }[] = [
     { id: 'Mon', label: 'Monday' },
     { id: 'Tue', label: 'Tuesday' },
@@ -45,19 +47,19 @@ export function TimeModelEditor() {
         if (serverModel) {
             setModel({
                 ...serverModel,
-                eveningMinutes: (serverModel as any).eveningMinutes || 0
+                eveningMinutes: (serverModel as ExtendedTimeModel).eveningMinutes || 0
             });
         }
     }, [serverModel]);
 
     const updateMutation = useMutation({
-        mutationFn: (data: any) => timeModel.update(data),
+        mutationFn: (data: ExtendedTimeModel) => timeModel.update(data),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ['time-model'] });
             queryClient.invalidateQueries({ queryKey: ['weekly-plan'] });
             toast.success('Schedule updated', { description: 'Weekly plan will be regenerated.' });
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             toast.error('Failed to save schedule', { description: err.message });
         }
     });

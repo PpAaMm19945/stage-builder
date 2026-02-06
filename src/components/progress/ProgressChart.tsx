@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { Badge } from '@/components/ui/badge';
 import { ChartLineUp, TrendUp, Calendar, Target } from '@phosphor-icons/react';
 import { DOMAIN_LABELS, DOMAIN_TO_VIRTUE, type PrimaryVirtue, type EarlyYearsDomain, VIRTUE_LABELS } from '@/types';
+import { Observation } from '@/types/api-responses';
 import {
     LineChart,
     Line,
@@ -69,7 +70,7 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
             monthEnd.setMonth(monthEnd.getMonth() + 1);
 
             // Count activities per virtue for this month
-            const monthObs = observationsData.filter((obs: any) => {
+            const monthObs = observationsData.filter((obs: Observation) => {
                 const obsDate = new Date(obs.created_at);
                 return obsDate >= monthStart && obsDate < monthEnd;
             });
@@ -82,9 +83,9 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
                 'Wonder': 0,
             };
 
-            monthObs.forEach((obs: any) => {
+            monthObs.forEach((obs: Observation) => {
                 // Map legacy domain to virtue if necessary
-                const virtue = obs.primary_virtue || DOMAIN_TO_VIRTUE[obs.domain as string] || 'Wisdom';
+                const virtue = (obs.primary_virtue as PrimaryVirtue) || DOMAIN_TO_VIRTUE[obs.domain as string] || 'Wisdom';
                 if (virtueCounts[virtue] !== undefined) {
                     virtueCounts[virtue]++;
                 }
@@ -313,7 +314,7 @@ export function ProgressChart({ studentId, months = 6 }: ProgressChartProps) {
                                                 return (
                                                     <div className="bg-popover border rounded-lg shadow-lg p-3">
                                                         <p className="font-medium text-foreground mb-2">{label}</p>
-                                                        {payload.map((entry: any) => (
+                                                        {payload.map((entry: { dataKey: string; color: string; value: number }) => (
                                                             <div key={entry.dataKey} className="flex items-center gap-2 text-sm">
                                                                 <span
                                                                     className="w-2 h-2 rounded-full"

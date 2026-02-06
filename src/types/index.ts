@@ -28,7 +28,7 @@ export type LearningStage =
 // 1. USERS & STUDENTS (Auth)
 // ============================================
 
-export type UserRole = 'parent' | 'student';
+export type UserRole = 'parent' | 'student' | 'teacher' | 'admin';
 
 export interface User {
   id: string;

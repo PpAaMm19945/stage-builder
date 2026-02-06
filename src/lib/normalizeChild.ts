@@ -15,7 +15,7 @@ type RawChild = Partial<Student> & {
     avatarUrl?: string;
     pending_login_email?: string;
     pendingLoginEmail?: string;
-    independence_settings?: Student['independence_settings'];
+    independence_settings?: Student['independence_settings'] | Record<string, unknown>;
     pace_overrides?: Student['pace_overrides'];
     is_graduated?: boolean;
     isGraduated?: boolean;
@@ -32,7 +32,7 @@ export function normalizeChild(raw: RawChild): Student {
         id: raw.id || `temp-${Date.now()}`,
         householdId: raw.household_id || raw.householdId || 'unknown-household',
         name: raw.name || 'Unnamed Child',
-        // @ts-expect-error - dateOfBirth is defined as string in types but can be null at runtime
+        // dateOfBirth is defined as string in types but can be null at runtime
         dateOfBirth: raw.date_of_birth || raw.dateOfBirth || null,
         ageInMonths: raw.age_in_months ?? raw.ageInMonths ?? 0,
         currentStage: raw.current_stage || raw.currentStage || 'early-years',

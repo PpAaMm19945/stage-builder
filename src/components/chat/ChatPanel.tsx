@@ -43,6 +43,21 @@ interface ChatPanelProps {
  * Main chat panel component with rich message support and BookReader integration.
  * Uses ephemeral state (no persistence) with action logging.
  */
+
+interface SearchResultBook {
+    id: string;
+    title: string;
+    description?: string;
+    metadata?: {
+        coverUrl?: string;
+        series?: string;
+        pageCount?: number;
+        renderFormat?: 'image' | 'pdf';
+        minAgeMonths?: number;
+        maxAgeMonths?: number;
+    };
+}
+
 export function ChatPanel({ className, onClose }: ChatPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
     const [userId, setUserId] = useState<string | null>(null);
@@ -292,7 +307,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         chatState.cancelAction();
     };
 
-    const handleOpenBook = useCallback((book: any) => {
+    const handleOpenBook = useCallback((book: SearchResultBook) => {
         // Convert search result to Book type for BookReader
         const bookData: Book = {
             id: book.id,
@@ -420,20 +435,20 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                 {/* Action card for search results */}
                                 {msg.actionCard && (
                                     <div className="mt-3 pl-11">
-                                        {msg.actionCard.type === 'SEARCH_BOOKS' && msg.actionCard.data?.results && (
+                                        {msg.actionCard.type === 'SEARCH_BOOKS' && (msg.actionCard.data as { results: any[] })?.results && (
                                             <BookCardMessage
-                                                books={msg.actionCard.data.results}
+                                                books={(msg.actionCard.data as { results: any[] }).results}
                                                 onOpenBook={handleOpenBook}
                                             />
                                         )}
-                                        {msg.actionCard.type === 'SEARCH_ACTIVITIES' && msg.actionCard.data?.results && (
+                                        {msg.actionCard.type === 'SEARCH_ACTIVITIES' && (msg.actionCard.data as { results: any[] })?.results && (
                                             <ActivityCardMessage
-                                                activities={msg.actionCard.data.results}
+                                                activities={(msg.actionCard.data as { results: any[] }).results}
                                             />
                                         )}
-                                        {msg.actionCard.type === 'GET_TODAY_SCHEDULE' && msg.actionCard.data?.results && (
+                                        {msg.actionCard.type === 'GET_TODAY_SCHEDULE' && (msg.actionCard.data as { results: any[] })?.results && (
                                             <ScheduleCardMessage
-                                                items={msg.actionCard.data.results}
+                                                items={(msg.actionCard.data as { results: any[] }).results}
                                             />
                                         )}
                                     </div>

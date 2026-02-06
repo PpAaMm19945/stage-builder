@@ -2,6 +2,14 @@
 
 import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
 import { AnchorPayload } from '@/types/ChatTypes';
+import { OverrideType, OverrideConstraints, WeeklyTimeModel, ParsedOverrideResponse } from '@/types/overrides';
+import {
+  AuthMeResponse, StudentRecord, StudentProgress, Observation, FormationListItem,
+  RhythmTodayResponse, RhythmWeekResponse, RhythmReadjustResponse, FamilyProfile,
+  ChatMessage, ChatContext, ChatActionPayload, PlanSlot, StrategicInsightResponse,
+  ExplainResponse, WorkEntry, Apprenticeship, Notification, Hymn, CatechismQuestion,
+  PortfolioItem
+} from '@/types/api-responses';
 
 export interface WeeklyReport {
   week_start: string;
@@ -53,6 +61,15 @@ function clearAuthToken(): void {
   localStorage.removeItem('schoolos_token');
 }
 
+// Custom error class for auth errors
+export class AuthError extends Error {
+  isAuthError = true;
+  constructor(message: string) {
+    super(message);
+    this.name = 'AuthError';
+  }
+}
+
 async function apiRequest<T>(
   endpoint: string,
   options: RequestInit = {}
@@ -73,10 +90,7 @@ async function apiRequest<T>(
     if (response.status === 401) {
       console.warn('[API] 401 Unauthorized encountered.');
       // Do NOT clear token here. Let AuthContext decide how to handle it (e.g. logout).
-      // clearAuthToken();
-      const error = new Error('Session expired');
-      (error as any).isAuthError = true;
-      throw error;
+      throw new AuthError('Session expired');
     }
 
     const error = await response.json().catch(() => ({ error: 'Request failed' }));
@@ -94,7 +108,7 @@ export const auth = {
     setAuthToken(token);
   },
 
-  getMe: () => apiRequest<{ user: any; children: any[] }>('/api/auth/me'),
+  getMe: () => apiRequest<AuthMeResponse>('/api/auth/me'),
 
   logout: () => {
     clearAuthToken();
@@ -110,10 +124,10 @@ export const auth = {
 
 // Students
 export const students = {
-  list: () => apiRequest<any[]>('/api/students'),
+  list: () => apiRequest<StudentRecord[]>('/api/students'),
 
   create: (data: { name: string; dateOfBirth: string }) =>
-    apiRequest<any>('/api/students', {
+    apiRequest<StudentRecord>('/api/students', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -131,7 +145,7 @@ export const students = {
     is_graduated?: boolean;
     graduation_date?: string;
   }) =>
-    apiRequest<any>(`/api/students/${id}`, {
+    apiRequest<StudentRecord>(`/api/students/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     }),
@@ -147,10 +161,10 @@ export const students = {
   },
 
   getProgress: (studentId: string) =>
-    apiRequest<any>(`/api/students/${studentId}/progress`),
+    apiRequest<StudentProgress>(`/api/students/${studentId}/progress`),
 
   getObservations: (studentId: string, domain?: string) =>
-    apiRequest<any[]>(`/api/students/${studentId}/observations${domain ? `?domain=${domain}` : ''}`),
+    apiRequest<Observation[]>(`/api/students/${studentId}/observations${domain ? `?domain=${domain}` : ''}`),
 
   delete: (id: string) => apiRequest<{ success: boolean }>(`/api/students/${id}`, {
     method: 'DELETE',
@@ -171,12 +185,12 @@ export const formations = {
     if (params?.ageMonths) query.set('ageMonths', String(params.ageMonths));
     if (params?.formationType) query.set('formationType', params.formationType);
     if (params?.context) query.set('context', params.context);
-    return apiRequest<any[]>('/api/formations?' + query.toString());
+    return apiRequest<FormationListItem[]>('/api/formations?' + query.toString());
   },
 
-  get: (id: string) => apiRequest<any>(`/api/formations/${id}`),
+  get: (id: string) => apiRequest<FormationListItem>(`/api/formations/${id}`),
 
-  export: () => apiRequest<any[]>('/api/formations/export'),
+  export: () => apiRequest<FormationListItem[]>('/api/formations/export'),
 };
 
 export const activities = formations; // Alias for backward compatibility during refactor
@@ -189,7 +203,7 @@ export const family = {
   getMaterials: async () => {
     const res = await apiRequest<{ materials: MaterialItem[] }>('/api/family/materials');
     // Backend returns { materials: [...] }, so we must unwrap it
-    // @ts-ignore - The type expects array but runtime gets object
+    // Backend returns { materials: [...] }, so we must unwrap it
     return res.materials || [];
   },
 
@@ -200,13 +214,13 @@ export const family = {
     }),
 
   swapActivity: (data: { activityId: string }) =>
-    apiRequest<{ session: any }>('/api/family/swap', {
+    apiRequest<{ session: Record<string, unknown> }>('/api/family/swap', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
 
   swapAndPersist: (data: { oldActivityId: string | null; newActivityId: string; day: string; weekStart: string }) =>
-    apiRequest<{ success: boolean; newActivity: any }>('/api/family/swap-persist', {
+    apiRequest<{ success: boolean; newActivity: FormationListItem }>('/api/family/swap-persist', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -217,7 +231,7 @@ export const family = {
   getWeekSummary: (weekStart: string) =>
     apiRequest<{ days: Record<string, { completed: number; total: number; domains: string[] }> }>(`/api/family/week-summary?weekStart=${weekStart}`),
 
-  getTomorrowPreview: () => apiRequest<any>('/api/family/tomorrow-preview'),
+  getTomorrowPreview: () => apiRequest<RhythmTodayResponse>('/api/family/tomorrow-preview'),
 
   sendPassionSignal: (data: { studentId: string; activityId: string; domain: string; loved?: boolean; notes?: string }) =>
     apiRequest<{ success: boolean; id?: string }>('/api/passion-signals', {
@@ -246,7 +260,7 @@ export const evidences = {
     duration_minutes?: number;
     loved_it?: boolean;
   }) =>
-    apiRequest<any>('/api/evidences', {
+    apiRequest<{ id: string; stage: string }>('/api/evidences', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -302,7 +316,7 @@ export const activityCompletions = {
 };
 // Use evidences directly in components instead.
 export const activityCompletions_deprecated = {
-  create: (data: any) => console.warn('Deprecated activityCompletions used', data)
+  create: (data: Record<string, unknown>) => console.warn('Deprecated activityCompletions used', data)
 };
 
 function slugify(text: string): string {
@@ -311,8 +325,8 @@ function slugify(text: string): string {
     .toLowerCase()
     .trim()
     .replace(/\s+/g, '-')     // Replace spaces with -
-    .replace(/[^\w\-]+/g, '') // Remove all non-word chars
-    .replace(/\-\-+/g, '-')   // Replace multiple - with single -
+    .replace(/[^\w-]+/g, '')  // Remove all non-word chars
+    .replace(/--+/g, '-')     // Replace multiple - with single -
     .replace(/^-+/, '')       // Trim - from start of text
     .replace(/-+$/, '');      // Trim - from end of text
 }
@@ -402,32 +416,32 @@ export const liturgy = {
 
 // Hymns
 export const hymns = {
-  list: () => apiRequest<any[]>('/api/hymns'),
+  list: () => apiRequest<Hymn[]>('/api/hymns'),
 };
 
 // Catechism
 export const catechism = {
-  list: () => apiRequest<any[]>('/api/catechism'),
+  list: () => apiRequest<CatechismQuestion[]>('/api/catechism'),
 };
 
 // Overrides
 export const overrides = {
-  list: () => apiRequest<any[]>('/api/overrides'),
-  create: (data: { studentId?: string; overrideType: any; description: string; constraints: any }) =>
-    apiRequest<any>('/api/overrides', { method: 'POST', body: JSON.stringify(data) }),
-  update: (id: string, data: { isActive?: boolean; constraints?: any }) =>
-    apiRequest<any>(`/api/overrides/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
+  list: () => apiRequest<Array<{ id: string; overrideType: OverrideType; description: string; constraints: OverrideConstraints; isActive: boolean }>>('/api/overrides'),
+  create: (data: { studentId?: string; overrideType: OverrideType; description: string; constraints: OverrideConstraints }) =>
+    apiRequest<{ id: string; success: boolean }>('/api/overrides', { method: 'POST', body: JSON.stringify(data) }),
+  update: (id: string, data: { isActive?: boolean; constraints?: OverrideConstraints }) =>
+    apiRequest<{ success: boolean }>(`/api/overrides/${id}`, { method: 'PUT', body: JSON.stringify(data) }),
   delete: (id: string) =>
     apiRequest<{ success: boolean }>(`/api/overrides/${id}`, { method: 'DELETE' }),
   parse: (freeText: string, studentId?: string) =>
-    apiRequest<any>('/api/overrides/parse', { method: 'POST', body: JSON.stringify({ freeText, studentId }) }),
+    apiRequest<ParsedOverrideResponse>('/api/overrides/parse', { method: 'POST', body: JSON.stringify({ freeText, studentId }) }),
 };
 
 // Time Model
 export const timeModel = {
-  get: () => apiRequest<any>('/api/time-model'),
-  update: (data: Partial<any>) =>
-    apiRequest<any>('/api/time-model', { method: 'PUT', body: JSON.stringify(data) }),
+  get: () => apiRequest<WeeklyTimeModel>('/api/time-model'),
+  update: (data: Partial<WeeklyTimeModel>) =>
+    apiRequest<WeeklyTimeModel>('/api/time-model', { method: 'PUT', body: JSON.stringify(data) }),
 };
 
 // Weekly Plan
@@ -437,13 +451,13 @@ export const weeklyPlan = {
   regenerate: (params?: { balancePreference?: 'baby_focused' | 'mixed' | 'older_focused'; weekStart?: string }) =>
     apiRequest<WeeklyPlanResponse>('/api/family/weekly-plan/regenerate', { method: 'POST', body: JSON.stringify(params || {}) }),
 
-  getStrategicInsights: (plan: any, children: any[]) =>
-    apiRequest<any>('/api/family/weekly-plan/strategic-insight', { method: 'POST', body: JSON.stringify({ plan, children }) }),
+  getStrategicInsights: (plan: Record<string, unknown>, children: StudentRecord[]) =>
+    apiRequest<StrategicInsightResponse>('/api/family/weekly-plan/strategic-insight', { method: 'POST', body: JSON.stringify({ plan, children }) }),
 };
 
 // AI
 export const ai = {
-  chat: async (messages: any[], context: any) => {
+  chat: async (messages: ChatMessage[], context: ChatContext) => {
     const token = getAuthToken();
     const response = await fetch(`${API_URL}/api/chat`, {
       method: 'POST',
@@ -457,12 +471,12 @@ export const ai = {
     return response.body;
   },
 
-  getActions: () => apiRequest<any[]>('/api/chat/actions'),
+  getActions: () => apiRequest<ChatActionPayload[]>('/api/chat/actions'),
 
   confirmAction: (actionId: string) =>
     apiRequest<{ success: boolean }>('/api/chat/confirm', { method: 'POST', body: JSON.stringify({ actionId }) }),
 
-  executeAction: async (actionPayload: any, context?: any) => {
+  executeAction: async (actionPayload: ChatActionPayload, context?: ChatContext) => {
     const token = getAuthToken();
     const response = await fetch(`${API_URL}/api/chat/execute`, {
       method: 'POST',
@@ -479,14 +493,14 @@ export const ai = {
   rejectAction: (actionId: string) =>
     apiRequest<{ success: boolean }>('/api/chat/reject', { method: 'POST', body: JSON.stringify({ actionId }) }),
 
-  explainPlan: (slot: any, childId: string) =>
-    apiRequest<any>('/api/ai/explain-plan', {
+  explainPlan: (slot: PlanSlot, childId: string) =>
+    apiRequest<ExplainResponse>('/api/ai/explain-plan', {
       method: 'POST',
       body: JSON.stringify({ slot, childId }),
     }),
 
   explain: (question: string, context?: { activityId?: string; domain?: string; childAge?: number }) =>
-    apiRequest<any>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
+    apiRequest<ExplainResponse>('/api/explain', { method: 'POST', body: JSON.stringify({ question, context }) }),
   // narrate removed as it was unused and WeeklySummary component was deleted
 
   // Phase 2: Weekly summaries
@@ -578,7 +592,7 @@ export const portfolio = {
     relatedActivityId?: string;
     milestoneTag?: string;
   }) => {
-    return apiRequest<any>('/api/portfolio/items', {
+    return apiRequest<PortfolioItem>('/api/portfolio/items', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -596,7 +610,7 @@ export const portfolio = {
     if (filters?.itemType) query.set('itemType', filters.itemType);
     if (filters?.timePeriod) query.set('timePeriod', filters.timePeriod);
     if (filters?.milestoneOnly) query.set('milestoneOnly', 'true');
-    return apiRequest<any[]>(`/api/portfolio/${studentId}?${query}`);
+    return apiRequest<PortfolioItem[]>(`/api/portfolio/${studentId}?${query}`);
   },
 
   // Delete item
@@ -608,10 +622,10 @@ export const portfolio = {
 };
 
 export const rhythm = {
-  getToday: () => apiRequest<any>('/api/rhythm/today'), // Use new endpoint
-  getWeek: () => apiRequest<any>('/api/rhythm/week'),
+  getToday: () => apiRequest<RhythmTodayResponse>('/api/rhythm/today'),
+  getWeek: () => apiRequest<RhythmWeekResponse>('/api/rhythm/week'),
   regenerate: (options?: { frozenDays?: string[] }) =>
-    apiRequest<any>('/api/rhythm/regenerate', { method: 'POST', body: JSON.stringify(options || {}) }),
+    apiRequest<RhythmWeekResponse>('/api/rhythm/regenerate', { method: 'POST', body: JSON.stringify(options || {}) }),
 
   readjust: (instruction: string, weekStart?: string) => {
     // Calculate Monday of current week if not provided
@@ -621,7 +635,7 @@ export const rhythm = {
     const monday = new Date(today.setDate(diff));
     const defaultWeekStart = monday.toISOString().split('T')[0];
 
-    return apiRequest<{ success: boolean; plan: any }>('/api/rhythm/readjust', {
+    return apiRequest<RhythmReadjustResponse>('/api/rhythm/readjust', {
       method: 'POST',
       body: JSON.stringify({
         prompt: instruction,
@@ -644,15 +658,15 @@ export const progress = {
   transfer: (activityId: string, toDate: string, type?: string, fromDate?: string) =>
     apiRequest<{ success: boolean }>('/api/progress/transfer', { method: 'POST', body: JSON.stringify({ activityId, toDate, type, fromDate }) }),
 
-  save: (activityId: string, progressData: any, type?: string, date?: string) =>
+  save: (activityId: string, progressData: Record<string, unknown>, type?: string, date?: string) =>
     apiRequest<{ success: boolean }>('/api/progress/save', { method: 'POST', body: JSON.stringify({ activityId, progressData, type, date }) }),
 
   get: (activityId: string) =>
-    apiRequest<{ progress: { status: string; data: any; updatedAt: string } | null }>(`/api/progress/${activityId}`),
+    apiRequest<{ progress: { status: string; data: Record<string, unknown>; updatedAt: string } | null }>(`/api/progress/${activityId}`),
 };
 
 export const notifications = {
-  list: () => apiRequest<any[]>('/api/notifications'),
+  list: () => apiRequest<Notification[]>('/api/notifications'),
 };
 
 // Formation System (Unified Rhythm & Progress)
@@ -668,9 +682,9 @@ export const formation = {
 };
 
 export const profile = {
-  get: () => apiRequest<any>('/api/profile'),
-  update: (data: Partial<any>) =>
-    apiRequest<any>('/api/profile', { method: 'PUT', body: JSON.stringify(data) }),
+  get: () => apiRequest<FamilyProfile>('/api/profile'),
+  update: (data: Partial<FamilyProfile>) =>
+    apiRequest<FamilyProfile>('/api/profile', { method: 'PUT', body: JSON.stringify(data) }),
   updateGoals: (goals: string[]) =>
     apiRequest<void>('/api/profile/goals', { method: 'POST', body: JSON.stringify({ goals }) })
 };
@@ -685,7 +699,7 @@ export const work = {
 
   // Get pending logs (parent)
   getPending: () =>
-    apiRequest<any[]>('/api/work/pending'),
+    apiRequest<WorkEntry[]>('/api/work/pending'),
 
   // Approve/Reject
   approve: (id: string, status: 'approved' | 'rejected', supervisorNote?: string) =>
@@ -696,7 +710,7 @@ export const work = {
 
   // Get Active Apprenticeships
   getActiveApprenticeships: () =>
-    apiRequest<any[]>('/api/apprenticeships'),
+    apiRequest<Apprenticeship[]>('/api/apprenticeships'),
 };
 
 // Learning Paths

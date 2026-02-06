@@ -43,7 +43,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
     setError(null);
 
     let retries = 3;
-    let lastError: any = null;
+    let lastError: unknown = null;
 
     while (retries > 0) {
       try {
@@ -56,13 +56,13 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
           name: response.user.name,
           avatarUrl: response.user.avatar_url,
           provider: 'google',
-          role: response.user.role || 'parent',
+          role: (response.user.role || 'parent') as 'parent' | 'teacher' | 'admin',
           householdId: response.user.household_id || response.user.id, // Fallback to user id
           createdAt: response.user.created_at,
           updatedAt: response.user.updated_at,
         };
 
-        const childrenData: Student[] = (response.children || []).map((child: any) => {
+        const childrenData: Student[] = (response.children || []).map((child) => {
           const student = normalizeChild(child);
           // Ensure householdId falls back to user context if missing on child
           if (student.householdId === 'unknown-household') {
@@ -77,14 +77,15 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         setError(null);
         setIsLoading(false);
         return; // Success!
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('[AuthContext] auth.getMe() failed:', err);
         lastError = err;
 
         // Immediate failure for auth errors
-        if (err?.isAuthError || err?.status === 401 || err?.message?.includes('Unauthorized')) {
-           console.log('[AuthContext] Auth error detected. Breaking retry loop.');
-           break; // Exit retry loop to handle auth failure
+        const isAuth = err instanceof Error && ('isAuthError' in err || err.message?.includes('Unauthorized'));
+        if (isAuth) {
+          console.log('[AuthContext] Auth error detected. Breaking retry loop.');
+          break; // Exit retry loop to handle auth failure
         }
 
         console.warn(`Auth refresh attempt failed (${retries} retries left):`, err);
@@ -100,16 +101,19 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
 
     // Enhanced logging to diagnose refresh issues
     console.error('Failed to fetch user data:', fatalError);
+
+    // Type guards for unknown error
+    const errorMessage = fatalError instanceof Error ? fatalError.message : String(fatalError);
+    const isAuthErrorFlag = fatalError instanceof Error && 'isAuthError' in fatalError;
+
     console.log('Auth error details:', {
-      isAuthError: fatalError?.isAuthError,
-      message: fatalError?.message,
-      status: fatalError?.status,
+      isAuthError: isAuthErrorFlag,
+      message: errorMessage,
     });
 
-    const isAuthError = fatalError?.isAuthError ||
-                        fatalError?.status === 401 ||
-                        fatalError?.message?.includes('Session expired') ||
-                        fatalError?.message?.includes('Unauthorized');
+    const isAuthError = isAuthErrorFlag ||
+      errorMessage.includes('Session expired') ||
+      errorMessage.includes('Unauthorized');
 
     if (isAuthError) {
       console.log('[AuthContext] Handling fatal auth error. Logging out.');
@@ -130,7 +134,7 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
       // Non-auth error (Network, 500, etc)
       // Do NOT clear token. Do NOT logout.
       // Set error state so UI can show "Retry"
-      setError(fatalError || new Error('Unknown error'));
+      setError(fatalError instanceof Error ? fatalError : new Error(errorMessage));
       setIsLoading(false);
     }
   }, []);
