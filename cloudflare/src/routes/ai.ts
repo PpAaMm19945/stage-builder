@@ -84,10 +84,10 @@ app.post('/api/chat/execute', async (c) => {
             userState: user
         };
 
-        // Use Cortex to execute action (via streaming response for status steps)
+        // Use Cortex for action execution
         const cortex = new Cortex(c.env);
-        // We pass empty message/history as we are bypassing NLU
-        const stream = await cortex.chat('', [], fullContext, actionPayload);
+        // Pass action type as message for Cortex to handle
+        const stream = await cortex.chat(`[ACTION:${actionPayload.type}] ${JSON.stringify(actionPayload)}`, [], fullContext);
 
         return new Response(stream, {
             headers: {
@@ -148,13 +148,22 @@ app.post('/api/chat/confirm', async (c) => {
                 VALUES (?, ?, 'unknown', ?, ?, 'skipped')
             `).bind(crypto.randomUUID(), user.household_id, data.activity_id, new Date().toISOString().split('T')[0]).run();
         } else if (action.action_type === 'UPDATE_PREFERENCES') {
-            // [FIX] Execute preference update
-            const cortex = new Cortex(c.env);
-            await cortex.executeUpdatePreferences(user.id, data);
+            // Execute preference update directly
+            await c.env.DB.prepare(`
+                UPDATE family_preferences SET overrides_json = ? WHERE parent_id = ?
+            `).bind(JSON.stringify(data), user.id).run();
         } else if (action.action_type === 'TOGGLE_BASKET_ITEM') {
-            // [FIX] Execute basket toggle
-            const cortex = new Cortex(c.env);
-            await cortex.executeToggleBasket(user.id, data);
+            // Execute basket toggle directly
+            if (data.action === 'add') {
+                await c.env.DB.prepare(`
+                    INSERT OR IGNORE INTO family_basket (id, parent_id, formation_id, created_at)
+                    VALUES (?, ?, ?, datetime('now'))
+                `).bind(crypto.randomUUID(), user.id, data.formationId).run();
+            } else {
+                await c.env.DB.prepare(`
+                    DELETE FROM family_basket WHERE parent_id = ? AND formation_id = ?
+                `).bind(user.id, data.formationId).run();
+            }
         }
 
         // Update log status

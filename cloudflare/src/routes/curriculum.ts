@@ -261,12 +261,8 @@ app.get('/api/curriculum/arc', async (c) => {
         }
 
         // Parse JSON for response
-        if (arc) {
-            arc = {
-                ...arc,
-                arc_data: JSON.parse(arc.arc_data)
-            };
-        }
+        // New format: arc already contains daily_plans directly
+        // (getActiveArc returns parsed FormationArc, not raw DB row)
 
         return c.json(arc);
     } catch (e: any) {

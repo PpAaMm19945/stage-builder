@@ -127,13 +127,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                 // 3. Try loading local session
                 const localSession = await chatStorage.loadSession(user.id);
 
-                // AUTO-FIX: Clear stale "lions" or "demo" data
-                const hasStaleData = localSession?.some(m =>
-                    m.content.toLowerCase().includes('lions') ||
-                    (m.actionCard && m.actionCard.type === 'SEARCH_BOOKS' && m.actionCard.data?.results?.length === 0)
-                );
-
-                if (localSession && localSession.length > 0 && !hasStaleData) {
+                if (localSession && localSession.length > 0) {
                     // If we have a new anchor, append it to the session if not already there
                     if (anchorMessage) {
                         // Check if today's anchor is already in the last few messages
@@ -151,10 +145,6 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         setMessages(localSession);
                     }
                     return;
-                } else if (hasStaleData) {
-                    console.log('[Chat] Clearing stale/demo session data');
-                    chatStorage.clearSession(user.id);
-                    // Continue to load anchor...
                 }
 
                 // 4. Fallback: Load from server logs
@@ -324,7 +314,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                 <CardHeader className="h-14 flex flex-row items-center justify-between p-0 px-4 border-b border-border/50 space-y-0 shrink-0">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <Robot className="w-5 h-5 text-primary" />
-                        Frontdesk Officer
+                        Anchor Companion
                     </CardTitle>
                     <div className="flex items-center gap-1">
                         <TooltipProvider>
@@ -369,8 +359,8 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         {messages.length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <Robot className="w-12 h-12 mx-auto mb-3 text-primary/30" />
-                                <p className="text-sm">Hi! I'm your Frontdesk Officer.</p>
-                                <p className="text-xs mt-1">Ask me to find books, activities, or help with your schedule.</p>
+                                <p className="text-sm">Good morning! I'm your Anchor Companion.</p>
+                                <p className="text-xs mt-1">I'll help guide your family through today's learning anchor.</p>
                             </div>
                         )}
 

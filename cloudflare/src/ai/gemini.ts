@@ -30,7 +30,7 @@ export interface GeminiTool {
 export class GeminiService {
     private apiKey: string;
     private baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models';
-    private model = 'gemini-2.0-flash-exp'; // User confirmed compatibility
+    private model = 'gemini-3-flash-preview'; // Unified model for all AI calls
 
     constructor(apiKey: string, model?: string) {
         this.apiKey = apiKey;
@@ -143,7 +143,6 @@ export class GeminiService {
 
                     try {
                         const chunk = JSON.parse(jsonStr);
-                        // console.log('[GeminiService] Stream chunk:', JSON.stringify(chunk).slice(0, 100)); // Debug log
                         const candidate = chunk.candidates?.[0];
 
                         if (candidate) {
@@ -160,10 +159,43 @@ export class GeminiService {
                             }
                         }
                     } catch (e) {
-                        // console.warn('Stream parse error', e);
+                        // Ignore parse errors on stream chunks
                     }
                 }
             }
         }
+    }
+
+    /**
+     * Stream content and return a ReadableStream (for SSE endpoints)
+     */
+    async streamContent(
+        contents: GeminiContent[],
+        systemInstruction?: string
+    ): Promise<ReadableStream> {
+        const self = this;
+        const encoder = new TextEncoder();
+
+        return new ReadableStream({
+            async start(controller) {
+                try {
+                    const generator = self.streamGenerateContent(contents, systemInstruction);
+
+                    for await (const chunk of generator) {
+                        if (chunk.text) {
+                            controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: chunk.text })}\n\n`));
+                        }
+                    }
+
+                    controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+                    controller.close();
+                } catch (error) {
+                    console.error('[GeminiService] Stream error:', error);
+                    controller.enqueue(encoder.encode(`data: ${JSON.stringify({ content: 'Error generating response.' })}\n\n`));
+                    controller.enqueue(encoder.encode(`data: [DONE]\n\n`));
+                    controller.close();
+                }
+            }
+        });
     }
 }

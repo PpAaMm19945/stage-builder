@@ -55,26 +55,86 @@ anchor.post('/complete', async (c) => {
         console.log('[API] Completing anchor for user:', user.id);
 
         const body = await c.req.json().catch(() => ({}));
-        const date = body.date || new Date().toISOString().split('T')[0];
+        const { anchorId, rating, notes, lovedIt } = body;
 
-        const { success } = await c.env.DB.prepare(
-            `UPDATE daily_anchors 
-             SET status = 'completed'
-             WHERE household_id = ? AND anchor_date = ?`
-        )
-            .bind(householdId, date)
-            .run();
-
-        if (!success) {
-            console.error("[API] DB update failed (no rows affected?)");
-            // Not strictly an error if it was already completed, but worth noting
+        if (!anchorId) {
+            return c.json({ error: 'anchorId required' }, 400);
         }
 
-        console.log('[API] Anchor completed successfully');
-        return c.json({ success: true, date });
+        const generator = new AnchorGenerator(c.env);
+        await generator.completeAnchor(householdId, anchorId, {
+            rating,
+            notes,
+            lovedIt
+        });
+
+        console.log('[API] Anchor completed with feedback:', anchorId);
+        return c.json({ success: true, anchorId });
     } catch (e: any) {
         console.error("[API] Anchor Completion Error:", e);
         return c.json({ error: e.message || "Failed to complete anchor" }, 500);
+    }
+});
+
+// POST /api/anchor/skip
+anchor.post('/skip', async (c) => {
+    console.log('[API] POST /api/anchor/skip called');
+    try {
+        const user = requireParent(c);
+        const householdId = user.household_id || user.id;
+
+        const body = await c.req.json().catch(() => ({}));
+        const { anchorId, reason } = body;
+
+        if (!anchorId) {
+            return c.json({ error: 'anchorId required' }, 400);
+        }
+
+        await c.env.DB.prepare(`
+            UPDATE daily_anchors 
+            SET status = 'skipped',
+                skipped_at = CURRENT_TIMESTAMP,
+                skip_reason = ?
+            WHERE id = ? AND household_id = ?
+        `).bind(reason || 'No reason given', anchorId, householdId).run();
+
+        console.log('[API] Anchor skipped:', anchorId);
+        return c.json({ success: true, anchorId });
+    } catch (e: any) {
+        console.error("[API] Anchor Skip Error:", e);
+        return c.json({ error: e.message || "Failed to skip anchor" }, 500);
+    }
+});
+
+// GET /api/anchor/history - Get completed/skipped anchors for feedback analysis
+anchor.get('/history', async (c) => {
+    try {
+        const user = requireHouseholdMember(c);
+        const householdId = user.household_id || user.id;
+
+        const { results } = await c.env.DB.prepare(`
+            SELECT id, anchor_date, anchor_data, status, completion_feedback, 
+                   completed_at, skipped_at, skip_reason
+            FROM daily_anchors 
+            WHERE household_id = ? AND status IN ('completed', 'skipped')
+            ORDER BY anchor_date DESC LIMIT 14
+        `).bind(householdId).all();
+
+        const history = results.map((r: any) => ({
+            id: r.id,
+            date: r.anchor_date,
+            theme: JSON.parse(r.anchor_data)?.theme,
+            status: r.status,
+            feedback: r.completion_feedback ? JSON.parse(r.completion_feedback) : null,
+            completedAt: r.completed_at,
+            skippedAt: r.skipped_at,
+            skipReason: r.skip_reason
+        }));
+
+        return c.json(history);
+    } catch (e: any) {
+        console.error("[API] Anchor History Error:", e);
+        return c.json({ error: e.message }, 500);
     }
 });
 
