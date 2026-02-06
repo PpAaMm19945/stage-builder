@@ -2,6 +2,7 @@ import { Hono } from 'hono';
 import { Env, User } from '../types';
 import { requireHouseholdMember, requireParent } from '../lib/middleware';
 import { AnchorGenerator } from '../ai/anchor-generator';
+import { checkRateLimit } from '../middleware/rate-limit';
 
 const anchor = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
@@ -9,6 +10,16 @@ const anchor = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 anchor.get('/today', async (c) => {
     console.log('[API] GET /api/anchor/today called');
     const user = requireHouseholdMember(c);
+
+    // Rate limiting: 60 requests per minute (Standard API)
+    const rateLimit = checkRateLimit(user.id, 60, 60000);
+    if (!rateLimit.allowed) {
+        return c.json({
+            error: 'Too many requests. Please wait a moment.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
+        }, 429);
+    }
+
     console.log('[API] User authenticated:', user.id, 'Household:', user.household_id);
     const householdId = user.household_id || user.id; // Fallback for legacy
 
@@ -28,6 +39,16 @@ anchor.get('/today', async (c) => {
 anchor.post('/regenerate', async (c) => {
     console.log('[API] POST /api/anchor/regenerate called');
     const user = requireParent(c); // Only parents can regenerate
+
+    // Security: Strict rate limiting for AI generation (10 per hour) to prevent cost exhaustion
+    const rateLimit = checkRateLimit(user.id, 10, 60 * 60 * 1000);
+    if (!rateLimit.allowed) {
+        return c.json({
+            error: 'Regeneration limit exceeded. Please try again later.',
+            retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
+        }, 429);
+    }
+
     const householdId = user.household_id || user.id;
 
     const body = await c.req.json().catch(() => ({}));
@@ -51,6 +72,16 @@ anchor.post('/complete', async (c) => {
     console.log('[API] POST /api/anchor/complete called');
     try {
         const user = requireParent(c);
+
+        // Rate limiting: 60 requests per minute
+        const rateLimit = checkRateLimit(user.id, 60, 60000);
+        if (!rateLimit.allowed) {
+            return c.json({
+                error: 'Too many requests.',
+                retryAfter: Math.ceil((rateLimit.resetAt - Date.now()) / 1000)
+            }, 429);
+        }
+
         const householdId = user.household_id || user.id;
         console.log('[API] Completing anchor for user:', user.id);
 

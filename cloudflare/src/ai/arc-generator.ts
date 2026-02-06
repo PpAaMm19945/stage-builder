@@ -136,7 +136,11 @@ Generate a 2-week Formation Arc.
             console.log('[ArcGenerator] Arc Generated:', arc.id, arc.theme);
 
             return { arc, reasoning };
+        } catch (e: any) {
+            console.error('[ArcGenerator] Error generating arc:', e);
+            throw e;
         }
+    }
 
     async getActiveArc(householdId: string) {
             return await safeQueryFirst<any>(
