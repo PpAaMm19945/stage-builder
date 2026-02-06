@@ -242,9 +242,10 @@ debug.get('/logs', async (c) => {
         // This returns what we can from interaction logs
         const logsResult = await c.env.DB.prepare(`
             SELECT * FROM ai_interaction_logs 
+            WHERE parent_id = ?
             ORDER BY created_at DESC 
             LIMIT 50
-        `).all();
+        `).bind(user.id).all();
 
         return c.json(logsResult.results);
 
