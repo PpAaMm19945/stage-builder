@@ -1,4 +1,4 @@
-import { Message } from '../components/chat/hooks';
+import { Message } from '../types/ChatTypes';
 
 const DB_NAME = 'familypath-chat';
 const STORE_NAME = 'sessions';
