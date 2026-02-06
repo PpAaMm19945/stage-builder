@@ -17,6 +17,7 @@ import { ThemeProvider } from "@/components/theme/ThemeProvider";
 // Components
 import { GlobalAudioPlayer } from "@/components/audio/GlobalAudioPlayer";
 import { PageLoader } from "@/components/ui/PageLoader";
+import { Toaster } from "@/components/ui/sonner";
 
 // Layouts
 import { MainLayout } from "@/components/layout/MainLayout";
@@ -54,6 +55,7 @@ const App = () => (
         <AuthProvider>
           <AudioPlayerProvider>
             <TooltipProvider>
+              <Toaster />
               <GlobalAudioPlayer />
               <BrowserRouter>
                 <Suspense fallback={<PageLoader />}>

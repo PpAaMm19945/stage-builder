@@ -1,10 +1,12 @@
-import React from 'react';
+import React, { useState } from 'react';
 import AnchorCard from './AnchorCard';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 import { useAnchor } from '@/hooks/useAnchor';
 
 export const DailyAnchorView: React.FC = () => {
     const { data: anchor, isLoading, error, refetch } = useAnchor();
+    const [isCompleting, setIsCompleting] = useState(false);
 
     if (isLoading) {
         return (
@@ -32,6 +34,7 @@ export const DailyAnchorView: React.FC = () => {
     }
 
     const handleComplete = async () => {
+        setIsCompleting(true);
         try {
             const res = await fetch('/api/anchor/complete', {
                 method: 'POST',
@@ -41,23 +44,23 @@ export const DailyAnchorView: React.FC = () => {
 
             if (!res.ok) throw new Error('Failed to complete anchor');
 
-            // Re-fetch to get updated status (or we could optimistically update local state here)
-            // For now, simple re-fetch or just letting the user know is enough.
-            // Ideally, the AnchorCard would handle the "completed" visual state if we passed `isCompleted` prop,
-            // but AnchorCard seems to only take `onComplete`. 
-            // We can just rely on the button action for now.
-            // A better UX might be to force a refresh or show a toast.
+            toast.success("Anchor completed!");
             refetch();
-
         } catch (e) {
             console.error("Completion failed", e);
-            alert("Failed to mark as complete. Please try again.");
+            toast.error("Failed to mark as complete. Please try again.");
+        } finally {
+            setIsCompleting(false);
         }
     };
 
     return (
         <div className="min-h-screen bg-slate-50/50">
-            <AnchorCard anchor={anchor} onComplete={handleComplete} />
+            <AnchorCard
+                anchor={anchor}
+                onComplete={handleComplete}
+                isCompleting={isCompleting}
+            />
         </div>
     );
 };

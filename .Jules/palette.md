@@ -65,3 +65,7 @@
 ## 2026-10-06 - Immersive Mode Accessibility
 **Learning:** Hiding UI controls for "immersive" modes (like book readers) often traps keyboard users if the controls become `pointer-events-none` or `opacity-0`. They can't see or interact with navigation.
 **Action:** Use `focus-visible:opacity-100` and `focus-within:translate-y-0` (or similar) to ensure that hidden controls automatically reveal themselves when they receive keyboard focus, preserving both immersion and accessibility.
+
+## 2026-10-24 - Async Action Feedback
+**Learning:** Using `alert()` for error handling disrupts the user experience and feels archaic. Furthermore, missing loading states on async actions (like button clicks) leaves users uncertain if their action was registered.
+**Action:** Replace `alert()` with non-blocking toast notifications (using `sonner`) and always implement visual loading states (spinners, disabled buttons) for async operations to provide immediate and clear feedback.
