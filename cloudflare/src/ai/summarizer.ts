@@ -1,5 +1,10 @@
 import { Env } from '../types';
 
+type ChatMessage = {
+    role: string;
+    content: string;
+};
+
 export class Summarizer {
     constructor(private env: Env) { }
 
@@ -7,7 +12,7 @@ export class Summarizer {
      * Summarize the conversation history if it exceeds a certain length.
      * Returns a new history array with the summary and the most recent messages.
      */
-    async compressIfNeeded(history: any[], maxMessages = 15, keepRecent = 10): Promise<any[]> {
+    async compressIfNeeded(history: ChatMessage[], maxMessages = 15, keepRecent = 10): Promise<ChatMessage[]> {
         if (history.length <= maxMessages) {
             return history;
         }
@@ -38,7 +43,7 @@ export class Summarizer {
         }
     }
 
-    private async generateSummary(messages: any[]): Promise<string> {
+    private async generateSummary(messages: ChatMessage[]): Promise<string> {
         // Format messages for the summarizer
         const conversationText = messages
             .map(m => `${m.role.toUpperCase()}: ${m.content}`)
@@ -51,7 +56,10 @@ export class Summarizer {
             stream: false
         });
 
-        // @ts-ignore - CF AI types might be imperfect
-        return response.response || "User asked some questions.";
+        if (response && typeof response === 'object' && 'response' in response && typeof response.response === 'string') {
+            return response.response;
+        }
+
+        return "User asked some questions.";
     }
 }

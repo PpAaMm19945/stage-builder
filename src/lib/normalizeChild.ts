@@ -1,11 +1,38 @@
 import { Student } from '@/types';
 
-export function normalizeChild(raw: any): Student {
+type RawChild = Partial<Student> & {
+    id?: string;
+    household_id?: string;
+    householdId?: string;
+    name?: string;
+    date_of_birth?: string | null;
+    dateOfBirth?: string | null;
+    age_in_months?: number;
+    ageInMonths?: number;
+    current_stage?: string;
+    currentStage?: string;
+    avatar_url?: string;
+    avatarUrl?: string;
+    pending_login_email?: string;
+    pendingLoginEmail?: string;
+    independence_settings?: Student['independence_settings'];
+    pace_overrides?: Student['pace_overrides'];
+    is_graduated?: boolean;
+    isGraduated?: boolean;
+    graduation_date?: string;
+    graduationDate?: string;
+    created_at?: string;
+    createdAt?: string;
+    updated_at?: string;
+    updatedAt?: string;
+};
+
+export function normalizeChild(raw: RawChild): Student {
     return {
         id: raw.id || `temp-${Date.now()}`,
         householdId: raw.household_id || raw.householdId || 'unknown-household',
         name: raw.name || 'Unnamed Child',
-        // @ts-ignore - dateOfBirth is defined as string in types but can be null at runtime
+        // @ts-expect-error - dateOfBirth is defined as string in types but can be null at runtime
         dateOfBirth: raw.date_of_birth || raw.dateOfBirth || null,
         ageInMonths: raw.age_in_months ?? raw.ageInMonths ?? 0,
         currentStage: raw.current_stage || raw.currentStage || 'early-years',
