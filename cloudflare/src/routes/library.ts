@@ -41,6 +41,19 @@ let MANIFEST_BOOKS_CACHE: {
     manifest: Record<string, string>;
 } | null = null;
 
+// Legacy Structure Cache (Optimization to avoid expensive listings)
+interface LegacyBookLocation {
+    series: string;
+    bookId: string;
+    metadataKey: string;
+}
+
+let LEGACY_STRUCTURE_CACHE: {
+    data: LegacyBookLocation[];
+    timestamp: number;
+} | null = null;
+const LEGACY_STRUCTURE_TTL = 3600 * 1000; // 1 hour
+
 // Helper: Check if two manifests are equal
 function areManifestsEqual(a: Record<string, string>, b: Record<string, string>): boolean {
     if (a === b) return true;
@@ -160,8 +173,8 @@ async function listAllPrefixes(bucket: R2Bucket, options: R2ListOptions): Promis
     return prefixes;
 }
 
-// Helper: Find metadata file in a book directory (case-insensitive)
-async function findMetadataFile(bucket: R2Bucket, bookPrefix: string): Promise<R2ObjectBody | null> {
+// Helper: Find metadata file key in a book directory (case-insensitive)
+async function findMetadataKey(bucket: R2Bucket, bookPrefix: string): Promise<string | null> {
     const result = await bucket.list({ prefix: bookPrefix });
 
     const metadataKey = result.objects.find(obj =>
@@ -169,10 +182,7 @@ async function findMetadataFile(bucket: R2Bucket, bookPrefix: string): Promise<R
         obj.key.toLowerCase() === 'metadata.json'
     )?.key;
 
-    if (metadataKey) {
-        return bucket.get(metadataKey);
-    }
-    return null;
+    return metadataKey || null;
 }
 
 // Helper: Fetch All Books
@@ -276,57 +286,87 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
             const loadedIds = new Set(books.map(b => `${b.series}/${b.id}`));
 
             // 2. Legacy Listing (fallback for non-manifest items)
-            const rootList = await bucket.list({ delimiter: '/' });
-            const rootPrefixes = rootList.delimitedPrefixes || [];
+            // Optimization: Use Legacy Structure Cache to avoid expensive bucket listing
+            let legacyLocations: LegacyBookLocation[] = [];
 
-            let rootPath = '';
-            if (rootPrefixes.includes('books/')) {
-                rootPath = 'books/';
-            }
-            console.log(`Detected root path: '${rootPath}'`);
+            if (LEGACY_STRUCTURE_CACHE && (now - LEGACY_STRUCTURE_CACHE.timestamp < LEGACY_STRUCTURE_TTL)) {
+                console.log('Using cached legacy structure');
+                legacyLocations = LEGACY_STRUCTURE_CACHE.data;
+            } else {
+                console.log('Crawling bucket for legacy structure...');
+                const rootList = await bucket.list({ delimiter: '/' });
+                const rootPrefixes = rootList.delimitedPrefixes || [];
 
-            const seriesPrefixes = await listAllPrefixes(bucket, {
-                prefix: rootPath,
-                delimiter: '/'
-            });
+                let rootPath = '';
+                if (rootPrefixes.includes('books/')) {
+                    rootPath = 'books/';
+                }
+                console.log(`Detected root path: '${rootPath}'`);
 
-            const seriesBookLists = await Promise.all(seriesPrefixes.map(async (seriesPrefix) => {
-                const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
-                const bookPrefixes = await listAllPrefixes(bucket, {
-                    prefix: seriesPrefix,
+                const seriesPrefixes = await listAllPrefixes(bucket, {
+                    prefix: rootPath,
                     delimiter: '/'
                 });
-                return { seriesName, seriesPrefix, bookPrefixes };
-            }));
 
-            const allBookTasks = seriesBookLists.flatMap(({ seriesName, seriesPrefix, bookPrefixes }) =>
-                bookPrefixes.map(bookPrefix => ({ seriesName, seriesPrefix, bookPrefix }))
-            );
+                const seriesBookLists = await Promise.all(seriesPrefixes.map(async (seriesPrefix) => {
+                    const seriesName = seriesPrefix.replace(rootPath, '').replace(/\/$/, '');
+                    const bookPrefixes = await listAllPrefixes(bucket, {
+                        prefix: seriesPrefix,
+                        delimiter: '/'
+                    });
+                    return { seriesName, seriesPrefix, bookPrefixes };
+                }));
 
-            const bookResults = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
-                const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
+                const allBookTasks = seriesBookLists.flatMap(({ seriesName, seriesPrefix, bookPrefixes }) =>
+                    bookPrefixes.map(bookPrefix => ({ seriesName, seriesPrefix, bookPrefix }))
+                );
 
-                // Skip if already loaded from manifest
-                if (loadedIds.has(`${seriesName}/${bookId}`)) return null;
+                const foundLocations = await Promise.all(allBookTasks.map(async ({ seriesName, seriesPrefix, bookPrefix }) => {
+                    const bookId = bookPrefix.replace(seriesPrefix, '').replace(/\/$/, '');
 
+                    try {
+                        const metadataKey = await findMetadataKey(bucket, bookPrefix);
+
+                        if (metadataKey) {
+                            return { series: seriesName, bookId, metadataKey };
+                        }
+                    } catch (e) {
+                        console.warn(`Failed to find metadata key for ${bookId}:`, e);
+                    }
+                    return null;
+                }));
+
+                legacyLocations = foundLocations.filter((l): l is LegacyBookLocation => l !== null);
+
+                // Update Legacy Cache
+                LEGACY_STRUCTURE_CACHE = {
+                    data: legacyLocations,
+                    timestamp: Date.now()
+                };
+            }
+
+            // Filter locations to fetch (exclude manifest books)
+            const locationsToFetch = legacyLocations.filter(loc => !loadedIds.has(`${loc.series}/${loc.bookId}`));
+
+            const legacyBooks = await Promise.all(locationsToFetch.map(async (loc) => {
                 try {
-                    const object = await findMetadataFile(bucket, bookPrefix);
+                    const object = await bucket.get(loc.metadataKey);
 
                     if (object) {
                         const data = await object.json() as any;
                         const ageRange = parseAgeRange(data.ageRange || '2-5 years');
 
-                        let coverUrl = `/api/books/${encodeURIComponent(seriesName)}/${encodeURIComponent(bookId)}/cover`;
-                        const coverKey = manifest[`${seriesName}/${bookId}/cover`];
+                        let coverUrl = `/api/books/${encodeURIComponent(loc.series)}/${encodeURIComponent(loc.bookId)}/cover`;
+                        const coverKey = manifest[`${loc.series}/${loc.bookId}/cover`];
                         if (r2PublicUrl && coverKey) {
                             coverUrl = `${r2PublicUrl}/${coverKey}`;
                         }
 
                         return {
-                            id: bookId,
-                            series: seriesName,
-                            seriesTitle: data.series || seriesName,
-                            title: data.title || bookId,
+                            id: loc.bookId,
+                            series: loc.series,
+                            seriesTitle: data.series || loc.series,
+                            title: data.title || loc.bookId,
                             author: data.author,
                             illustrator: data.illustrator,
                             description: data.description || '',
@@ -340,12 +380,12 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
                         } as BookMetadata;
                     }
                 } catch (e) {
-                    console.warn(`Failed to load book ${bookId}:`, e);
+                    console.warn(`Failed to load legacy book ${loc.bookId}:`, e);
                 }
                 return null;
             }));
 
-            books.push(...bookResults.filter((b): b is BookMetadata => b !== null));
+            books.push(...legacyBooks.filter((b): b is BookMetadata => b !== null));
 
             // Update Cache
             BOOKS_CACHE = { data: books, timestamp: Date.now() };
@@ -1168,6 +1208,11 @@ app.put('/api/books/upload', async (c) => {
                 contentType: getContentType(path),
             }
         });
+
+        // Invalidate Caches
+        BOOKS_CACHE = null;
+        LEGACY_STRUCTURE_CACHE = null;
+
         return c.json({ success: true, path });
     } catch (error: any) {
         return safeError(c, error);
