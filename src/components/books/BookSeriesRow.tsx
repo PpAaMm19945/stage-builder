@@ -16,9 +16,10 @@ interface BookSeriesRowProps {
     series: string;
     books: Book[];
     onBookClick: (book: Book) => void;
+    allowCoverResolution?: boolean;
 }
 
-export const BookSeriesRow = memo(function BookSeriesRow({ series, books, onBookClick }: BookSeriesRowProps) {
+export const BookSeriesRow = memo(function BookSeriesRow({ series, books, onBookClick, allowCoverResolution = true }: BookSeriesRowProps) {
     const displayName = getSeriesDisplayName(series);
     const isLandscape = isLandscapeSeries(series);
     const isPaperbackBible = series.toLowerCase().includes('paperback');
@@ -71,6 +72,7 @@ export const BookSeriesRow = memo(function BookSeriesRow({ series, books, onBook
                                     book={book}
                                     onClick={onBookClick}
                                     landscape={isLandscape}
+                                    allowCoverResolution={allowCoverResolution}
                                 />
                             </CarouselItem>
                         ))}

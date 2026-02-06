@@ -168,6 +168,7 @@ export function BookLibrary({ initialStage }: BookLibraryProps) {
                     series={series}
                     books={booksBySeries[series]}
                     onBookClick={handleBookClick}
+                    allowCoverResolution={false}
                 />
             ))}
 

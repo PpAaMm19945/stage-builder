@@ -10,9 +10,15 @@ interface BookCardProps {
     onClick?: (book: Book) => void;
     /** Use landscape aspect ratio for picture books */
     landscape?: boolean;
+    /**
+     * Allow individual cover resolution via React Query.
+     * Disable this if the parent component has already resolved covers in bulk.
+     * @default true
+     */
+    allowCoverResolution?: boolean;
 }
 
-export const BookCard = memo(function BookCard({ book, onClick, landscape }: BookCardProps) {
+export const BookCard = memo(function BookCard({ book, onClick, landscape, allowCoverResolution = true }: BookCardProps) {
     const [imageLoaded, setImageLoaded] = useState(false);
     const [imageError, setImageError] = useState(false);
 
@@ -23,11 +29,14 @@ export const BookCard = memo(function BookCard({ book, onClick, landscape }: Boo
         : null;
 
     // Use hook to resolve cover URL (manifest -> R2 -> API fallback)
-    // ⚡ Performance: Skip if we already have a valid external cover URL (prevents N queries)
-    const { data: resolvedCover } = useBookAssetUrl(book.series, book.id, 'cover', { enabled: !externalCover });
+    // ⚡ Performance: Skip if we already have a valid external cover URL OR if resolution is explicitly disabled
+    const { data: resolvedCover } = useBookAssetUrl(book.series, book.id, 'cover', {
+        enabled: allowCoverResolution && !externalCover
+    });
 
     // If external is explicit, use it. Otherwise use resolved.
-    const coverUrl = externalCover || resolvedCover;
+    // If resolution is disabled, fall back to the raw book.coverUrl (likely the API proxy)
+    const coverUrl = externalCover || resolvedCover || (!allowCoverResolution ? book.coverUrl : null);
 
     // Format title: use book.title, but clean it if it looks like a folder name
     const displayTitle = book.title.includes('_') || book.title.includes('-')
