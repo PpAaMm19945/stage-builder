@@ -248,3 +248,100 @@ This can be seeded by AI once (admin action), then manually curated. The daily a
 3. One context (today's anchor injected into every chat message)
 4. One curriculum (data table, not random selection)
 5. One feedback loop (completion → progress → next anchor)
+
+---
+
+## 9. Additional Analysis: Arc Generator (My Assessment)
+
+### A. What the Arc Generator Is *Actually* Doing Today
+
+The current `ArcGenerator` is a **one-shot curriculum inventor**, not a curriculum executor. It asks Gemini to assemble a brand‑new 2‑week plan from raw ingredients (books, skills, catechism) without any deterministic spine or progression logic. This means:
+
+- Each arc is a fresh, unbounded invention.
+- There is no consistent sequence of literacy, character, or habit formation.
+- You cannot audit whether a child’s progression is coherent over months.
+
+### B. Core Issues (Why This Breaks Real Learning)
+
+| Issue | Evidence | Impact |
+|------|----------|--------|
+| **No curriculum spine** | System prompt asks Gemini to "Create a 2‑week Formation Arc" from scratch | The arc is *creative*, not *instructional*. Literacy and habit progression becomes random. |
+| **No learning state** | Only `catechism_position` persists across arcs | The system does not know what the child has mastered or practiced. |
+| **No closure or progression** | Arcs expire after 14 days with no completion logic | Progress is invisible and doesn’t influence the next arc. |
+| **No age‑specific mastery model** | Stages are labels only | Stages don’t map to concrete milestones (e.g., phonological awareness → letter‑sound mapping). |
+| **Arc is isolated** | Arc feeds Anchor; Anchor completion doesn't flow back | The core feedback loop is missing, so the system can’t adapt. |
+
+### C. The Fundamental Design Choice (This Must Be Decided)
+
+**Is the Arc Generator supposed to create the curriculum, or execute it?**
+
+Right now it creates it. For reliable early‑years education (0–6), it **must execute a deterministic spine** and only adapt the *delivery* to the family.
+
+**In other words:**
+- Curriculum = data (fixed, auditable, sequential)
+- AI = personalization (pacing, adaptation, engagement, tone)
+
+### D. What a *Correct* Arc Generator Should Do
+
+The Arc Generator should function like a **sequencer and adapter**, not a writer. It should:
+
+1. **Read from a curriculum spine**
+   - A structured plan for weeks 1–312 (or a smaller demo scope)
+   - Each week specifies required goals, books, catechism, and skill targets
+
+2. **Map targets to each child**
+   - Same spine, different adaptations per age stage
+   - E.g., a 4‑year‑old and a 1‑year‑old can share a theme, but with different activities
+
+3. **Use progress evidence**
+   - If phoneme blending is “emerging,” repeat or scaffold
+   - If a skill is “mastered,” move forward within the spine
+
+4. **Write a coherent explanation**
+   - Why this week, why this sequence, why these adaptations
+
+### E. Proposed Architecture Fix (Minimal, Demo‑Ready)
+
+**Option A: Curator Model (Recommended for Demo)**
+
+| Component | Responsibility |
+|----------|----------------|
+| `curriculum_spine` table | Defines the sequence (week → goals → resources) |
+| `ArcGenerator` | Selects week slice + adapts per family |
+| `AnchorGenerator` | Decomposes week arc into daily anchors |
+| `Anchor completion` | Writes progress evidence |
+| `Next arc` | Reads progress evidence + spine |
+
+**Option B: Generative Model (Not Recommended Yet)**
+
+- Keep AI inventing the curriculum, but add deep tracking and reinforcement logic.
+- This is **research‑grade complexity**, not a hackathon‑grade deliverable.
+
+### F. Concrete Action Plan (Arc Generator Only)
+
+1. **Fix the syntax bug** (missing catch/finally)  
+2. **Create a minimal spine** (4–8 weeks) for early‑years literacy and formation  
+3. **Change arc generation** to *select* from that spine rather than invent it  
+4. **Add progress tracking** to anchors and feed it into the next arc  
+5. **Log reasoning** to make arcs auditable by parents  
+
+### G. Example: Early Literacy Spine (Minimal Demo)
+
+| Week | Focus | Sample Targets |
+|------|-------|----------------|
+| 1 | Phonological Awareness | Rhyming, syllable clapping |
+| 2 | Print Concepts | Left‑to‑right tracking, book handling |
+| 3 | Letter Recognition | Letters in name, letter shapes |
+| 4 | Letter‑Sound | “M is /m/” with multisensory play |
+
+The Arc Generator should *pick week 1–2* and adapt those targets across children. It should **not** invent new targets ad hoc.
+
+---
+
+## 10. Final Opinion on the Arc Generator
+
+The Arc Generator **must become deterministic** or the system will never deliver consistent literacy outcomes. AI is excellent at personalization, not curriculum sequencing. The right framing is:
+
+> **“AI is the tutor, not the textbook.”**
+
+Once that decision is made, the architecture becomes clear: spine → arc → anchor → feedback → next arc.
