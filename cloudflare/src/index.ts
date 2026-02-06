@@ -44,7 +44,8 @@ app.use('*', securityHeaders);
 
 
 app.get('/', async (c) => {
-  return c.text('FamilyPath API');
+  const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+  return c.redirect(frontendUrl);
 });
 
 // CORS middleware - allows Cloudflare Pages and Lovable preview

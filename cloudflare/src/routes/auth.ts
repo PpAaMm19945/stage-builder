@@ -9,14 +9,19 @@ import { checkRateLimit } from '../middleware/rate-limit';
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
 // Redirect to Google OAuth
+// Redirect to Google OAuth
 app.get('/auth/google', (c) => {
+    // 1. Capture return capability (optional, defaults to env FRONTEND_URL)
+    const returnTo = c.req.query('return_to');
+
     // Security: Rate limit login attempts to prevent abuse
-    // Use CF-Connecting-IP if available, otherwise fallback to 'unknown' (dev environment)
     const ip = c.req.header('CF-Connecting-IP') || 'unknown';
     const rateLimit = checkRateLimit(ip, 5, 60000); // 5 attempts per minute
 
     if (!rateLimit.allowed) {
-        return c.text('Too many login attempts. Please try again later.', 429);
+        // Even for rate limits, try to redirect back if possible, or show simple HTML
+        const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+        return c.redirect(`${frontendUrl}/login?error=too_many_attempts`);
     }
 
     const clientId = c.env.GOOGLE_CLIENT_ID;
@@ -26,7 +31,11 @@ app.get('/auth/google', (c) => {
     const scope = 'https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile';
     const state = crypto.randomUUID(); // Recommended for security
 
+    // Debug logging
+    console.log(`[Auth] Starting OAuth flow. IP: ${ip}, State generated: ${state}`);
+
     // Security: Store state in HttpOnly cookie to prevent CSRF
+    // IMPORTANT: SameSite=Lax is crucial for the callback to read the cookie after redirect
     setCookie(c, 'oauth_state', state, {
         httpOnly: true,
         path: '/',
@@ -34,6 +43,17 @@ app.get('/auth/google', (c) => {
         sameSite: 'Lax',
         secure: c.env.ENVIRONMENT === 'production',
     });
+
+    // Also store return_to if present
+    if (returnTo) {
+        setCookie(c, 'return_to', returnTo, {
+            httpOnly: true,
+            path: '/',
+            maxAge: 600,
+            sameSite: 'Lax',
+            secure: c.env.ENVIRONMENT === 'production',
+        });
+    }
 
     const url = `https://accounts.google.com/o/oauth2/v2/auth?client_id=${clientId}&redirect_uri=${encodeURIComponent(redirectUri)}&response_type=code&scope=${encodeURIComponent(scope)}&state=${state}&access_type=offline&prompt=consent`;
 
@@ -44,18 +64,27 @@ app.get('/auth/google', (c) => {
 app.get('/auth/google/callback', async (c) => {
     const code = c.req.query('code');
     const state = c.req.query('state');
+    const storedState = getCookie(c, 'oauth_state');
+    const returnTo = getCookie(c, 'return_to');
+
+    // Ensure we always have a place to send the user back to
+    const frontendUrl = returnTo || c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+
+    console.log(`[Auth] Callback received. Code: ${!!code}, State: ${state}, StoredState: ${storedState}`);
 
     // Security: Verify state parameter to prevent CSRF
-    const storedState = getCookie(c, 'oauth_state');
     if (!state || !storedState || state !== storedState) {
-        return c.text('Invalid state parameter (CSRF check failed)', 400);
+        console.error(`[Auth] CSRF Mismatch! Received: ${state}, Stored: ${storedState}`);
+        // Redirect with error instead of blocking user on backend
+        return c.redirect(`${frontendUrl}/login?error=csrf_mismatch&message=Security check failed. Please try again.`);
     }
 
-    // Clean up state cookie
+    // Clean up cookies
     deleteCookie(c, 'oauth_state', { path: '/', secure: c.env.ENVIRONMENT === 'production' });
+    deleteCookie(c, 'return_to', { path: '/', secure: c.env.ENVIRONMENT === 'production' });
 
     if (!code) {
-        return c.text('Missing code', 400);
+        return c.redirect(`${frontendUrl}/login?error=missing_code`);
     }
 
     try {
@@ -89,6 +118,8 @@ app.get('/auth/google/callback', async (c) => {
 
         if (!email) throw new Error('No email provided by Google');
 
+        console.log(`[Auth] Authenticated email: ${email}`);
+
         // Security: Whitelist Check
         const ALLOWED_EMAILS = [
             'antmwes104.1@gmail.com',
@@ -97,13 +128,15 @@ app.get('/auth/google/callback', async (c) => {
         ];
 
         if (!ALLOWED_EMAILS.includes(email)) {
-            return c.text('Access Denied: This email is not authorized for the beta.', 403);
+            console.warn(`[Auth] Access denied for: ${email}`);
+            return c.redirect(`${frontendUrl}/login?error=access_denied&message=Beta access is currently limited.`);
         }
 
         // Find or Create User
         let user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE email = ?', [email]);
 
         if (!user) {
+            console.log(`[Auth] Creating new user for: ${email}`);
             // New user - Create User & Household
             const userId = generateId('user');
             const householdId = generateId('house');
@@ -143,8 +176,6 @@ app.get('/auth/google/callback', async (c) => {
 
         const token = await signJWT(payload, c.env.JWT_SECRET);
 
-        // Redirect to Frontend
-        const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
         // Security: Pass token in hash fragment to prevent leakage in server logs
         return c.redirect(`${frontendUrl}/auth/callback#token=${token}`);
 
@@ -153,7 +184,6 @@ app.get('/auth/google/callback', async (c) => {
 
         // Check for D1-specific errors and provide retry guidance
         if (error.message?.includes('D1_ERROR') || error.message?.includes('Network')) {
-            const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
             return c.redirect(`${frontendUrl}/login?error=temporary&message=Database temporarily unavailable. Please try again.`);
         }
 
@@ -161,7 +191,7 @@ app.get('/auth/google/callback', async (c) => {
             ? 'Authentication failed. Please try again.'
             : error.message;
 
-        return c.text(`Authentication Failed: ${errorMessage}`, 500);
+        return c.redirect(`${frontendUrl}/login?error=server_error&message=${encodeURIComponent(errorMessage)}`);
     }
 });
 

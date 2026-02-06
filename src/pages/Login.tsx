@@ -1,11 +1,16 @@
-import { useState } from 'react';
+import { useEffect } from 'react'; // Added useEffect
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
 import { Users, CalendarDots, TrendUp, Path, CircleNotch, LockKey, DownloadSimple, ShieldCheck, ArrowRight } from '@phosphor-icons/react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom'; // Added useSearchParams
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert components
+import { ExclamationTriangle } from '@phosphor-icons/react'; // Added Icon
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
+  const [searchParams] = useSearchParams();
+  const error = searchParams.get('error');
+  const message = searchParams.get('message');
 
   const handleLogin = () => {
     setIsLoading(true);
@@ -40,6 +45,17 @@ export default function Login() {
               and get age-specific suggestions from our library.
             </p>
           </div>
+
+          {/* Error Message */}
+          {error && (
+            <Alert variant="destructive" className="mx-auto max-w-sm text-left">
+              <ExclamationTriangle className="h-4 w-4" />
+              <AlertTitle>Authentication Failed</AlertTitle>
+              <AlertDescription>
+                {message || 'An unknown error occurred. Please try again.'}
+              </AlertDescription>
+            </Alert>
+          )}
 
           {/* Features - What signing in unlocks */}
           <div className="grid grid-cols-3 gap-4 py-8">

@@ -102,7 +102,10 @@ async function apiRequest<T>(
 
 // Auth
 export const auth = {
-  getLoginUrl: () => `${API_URL}/auth/google`,
+  getLoginUrl: () => {
+    const returnTo = window.location.origin;
+    return `${API_URL}/auth/google?return_to=${encodeURIComponent(returnTo)}`;
+  },
 
   handleCallback: (token: string) => {
     setAuthToken(token);
