@@ -420,7 +420,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
         const filtered = materials.filter(m => {
             const normalized = m.toLowerCase().trim();
             const allowed = MATERIAL_WHITELIST.some(allowedItem =>
-                normalized.includes(allowed) || allowed.includes(normalized)
+                normalized.includes(allowedItem) || allowedItem.includes(normalized)
             );
             if (!allowed) {
                 violations.push(normalized);
