@@ -38,11 +38,6 @@ anchor.post('/regenerate', async (c) => {
     const date = new Date().toISOString().split('T')[0];
 
     try {
-        if (adjustments && context?.adjustments !== adjustments) {
-            console.warn('[API] Adjustments failed to propagate to anchor context');
-            return c.json({ error: 'Adjustments could not be applied' }, 400);
-        }
-
         // Force regeneration for today
         const anchor = await generator.generateAnchor(householdId, date, context);
         return c.json(anchor);
@@ -96,13 +91,9 @@ anchor.post('/skip', async (c) => {
             return c.json({ error: 'anchorId required' }, 400);
         }
 
-        await c.env.DB.prepare(`
-            UPDATE daily_anchors 
-            SET status = 'skipped',
-                skipped_at = CURRENT_TIMESTAMP,
-                skip_reason = ?
-            WHERE id = ? AND household_id = ?
-        `).bind(reason || 'No reason given', anchorId, householdId).run();
+        // Use the generator method instead of inline SQL for consistency
+        const generator = new AnchorGenerator(c.env);
+        await generator.skipAnchor(householdId, anchorId, reason);
 
         console.log('[API] Anchor skipped:', anchorId);
         return c.json({ success: true, anchorId });

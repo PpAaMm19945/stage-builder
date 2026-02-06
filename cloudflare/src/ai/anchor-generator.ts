@@ -346,6 +346,8 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
         }
         if (context.parentMood === 'tired') {
             parts.push('Parent mood: Suggest low-prep activities today');
+        } else if (context.parentMood === 'energetic') {
+            parts.push('Parent mood: Suggest active, outdoor, or hands-on activities today');
         }
 
         return parts.length ? `\nCONTEXT:\n${parts.join('\n')}` : '';
@@ -405,6 +407,13 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
         anchorId: string,
         feedback?: { rating?: number; notes?: string; lovedIt?: boolean }
     ): Promise<void> {
+        // Get anchor data to extract skills practiced
+        const anchorRow = await safeQueryFirst<any>(
+            this.db,
+            "SELECT anchor_data FROM daily_anchors WHERE id = ? AND household_id = ?",
+            [anchorId, householdId]
+        );
+
         // Update anchor status
         await safeRun(this.db, `
             UPDATE daily_anchors 
@@ -419,6 +428,39 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
         ]);
 
         console.log('[AnchorGenerator] Marked anchor complete:', anchorId);
+
+        // Record progress for each child if we have anchor data
+        if (anchorRow?.anchor_data) {
+            try {
+                const anchor: DailyAnchor = JSON.parse(anchorRow.anchor_data);
+                const activity = anchor.family_activity;
+
+                if (activity?.levels && activity.targets_covered?.length) {
+                    // Parse targets into subject:skill pairs
+                    const skillsPracticed = activity.targets_covered
+                        .map(target => {
+                            const [subject, skill_target] = target.split(':');
+                            return subject && skill_target ? { subject, skill_target } : null;
+                        })
+                        .filter((s): s is { subject: string; skill_target: string } => s !== null);
+
+                    // Record progress for each child
+                    for (const level of activity.levels) {
+                        if (level.child_id && skillsPracticed.length) {
+                            await this.arcGenerator.recordChildProgress(
+                                level.child_id,
+                                anchorId,
+                                skillsPracticed,
+                                feedback?.notes
+                            );
+                            console.log('[AnchorGenerator] Recorded progress for child:', level.child_name);
+                        }
+                    }
+                }
+            } catch (e) {
+                console.warn('[AnchorGenerator] Could not record child progress:', e);
+            }
+        }
     }
 
     /**

@@ -46,7 +46,7 @@ debug.get('/status', async (c) => {
 
         // Check curriculum positions
         const positionsResult = await c.env.DB.prepare(`
-            SELECT subject_id, current_week 
+            SELECT subject, current_week 
             FROM family_curriculum_position 
             WHERE household_id = ?
         `).bind(householdId).all();
@@ -211,7 +211,7 @@ debug.get('/progress', async (c) => {
         // Get progress for each child
         const childProgress = await Promise.all(childrenResult.results.map(async (child: any) => {
             const progressResult = await c.env.DB.prepare(`
-                SELECT subject_id, skill_code, mastery_level, practice_count
+                SELECT subject, skill_target, mastery_level, practice_count
                 FROM child_progress 
                 WHERE child_id = ?
                 ORDER BY updated_at DESC
