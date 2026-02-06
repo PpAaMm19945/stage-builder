@@ -2,7 +2,7 @@ import crypto from 'node:crypto';
 
 // Polyfill for Cloudflare-specific or missing WebCrypto methods in Node environment
 if (globalThis.crypto && globalThis.crypto.subtle && !('timingSafeEqual' in globalThis.crypto.subtle)) {
-    // @ts-ignore
+    // @ts-expect-error - Cloudflare-specific extension not in standard WebCrypto typings.
     globalThis.crypto.subtle.timingSafeEqual = (a: ArrayBuffer, b: ArrayBuffer) => {
         return crypto.timingSafeEqual(Buffer.from(a), Buffer.from(b));
     };
@@ -12,7 +12,7 @@ import app from '../src/routes/console';
 
 const mockDB = {
   prepare: (query: string) => ({
-    bind: (...args: any[]) => ({
+    bind: (...args: unknown[]) => ({
       first: async () => ({ count: 10 }),
       all: async () => ({ results: [] }),
       run: async () => ({})
