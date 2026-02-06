@@ -32,8 +32,54 @@ export interface AnchorPayload {
 
 export interface ActionCard {
     type: ChatActionType | string;
-    data: Formation | LiturgyItem | Record<string, unknown>;
+    data: ActionCardData;
 }
+
+export interface BookSearchResult {
+    id: string;
+    title: string;
+    description?: string;
+    metadata?: {
+        coverUrl?: string;
+        ageRange?: string;
+        domain?: string;
+        series?: string;
+        pageCount?: number;
+        renderFormat?: 'image' | 'pdf';
+        minAgeMonths?: number;
+        maxAgeMonths?: number;
+    };
+}
+
+export interface ActivitySearchResult {
+    id: string;
+    title: string;
+    description?: string;
+    metadata?: {
+        domain?: string;
+        materials?: string;
+    };
+}
+
+export interface ScheduleItemResult {
+    id: string;
+    title: string;
+    description?: string;
+    metadata?: {
+        period?: 'morning' | 'evening';
+        duration?: number;
+        status?: string;
+        contentType?: string;
+    };
+}
+
+export type ActionCardData =
+    | Formation
+    | LiturgyItem
+    | { results: BookSearchResult[] }
+    | { results: ActivitySearchResult[] }
+    | { results: ScheduleItemResult[] }
+    | Record<string, unknown>;
 
 export interface Message {
     role: 'user' | 'assistant' | 'system';

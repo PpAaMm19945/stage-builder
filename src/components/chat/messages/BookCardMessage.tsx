@@ -1,21 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Book } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-
-interface BookResult {
-    id: string;
-    title: string;
-    description: string;
-    metadata?: {
-        coverUrl?: string;
-        ageRange?: string;
-        domain?: string;
-    };
-}
+import { BookSearchResult } from '@/types/ChatTypes';
 
 interface BookCardMessageProps {
-    books: BookResult[];
-    onOpenBook: (book: BookResult) => void;
+    books: BookSearchResult[];
+    onOpenBook: (book: BookSearchResult) => void;
     className?: string;
 }
 
@@ -57,7 +47,7 @@ export function BookCardMessage({ books, onOpenBook, className }: BookCardMessag
                                 {book.title}
                             </p>
                             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                {book.description}
+                                {book.description || 'No description available.'}
                             </p>
                             {book.metadata?.domain && (
                                 <span className="inline-block mt-1 text-xs bg-primary/10 text-primary px-1.5 py-0.5 rounded">
@@ -73,8 +63,8 @@ export function BookCardMessage({ books, onOpenBook, className }: BookCardMessag
 }
 
 interface SingleBookCardProps {
-    book: BookResult;
-    onOpenBook: (book: BookResult) => void;
+    book: BookSearchResult;
+    onOpenBook: (book: BookSearchResult) => void;
     className?: string;
 }
 
