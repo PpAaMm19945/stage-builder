@@ -105,7 +105,14 @@ spineRoutes.post('/api/admin/spine/generate', async (c) => {
         }
 
         const generator = new SpineGenerator(c.env);
-        const result = await generator.generateSpine(subject, startWeek, endWeek, stage, sources);
+        const result = await generator.generateSpine(
+            subject,
+            startWeek,
+            endWeek,
+            stage,
+            sources,
+            c.executionCtx.waitUntil.bind(c.executionCtx)
+        );
 
         return c.json({
             success: true,

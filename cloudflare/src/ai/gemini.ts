@@ -49,7 +49,7 @@ export class GeminiService {
         systemInstruction?: string,
         responseSchema?: object | null, // For constrained decoding
         responseMimeType: 'text/plain' | 'application/json' = 'text/plain'
-    ): Promise<string> {
+    ): Promise<{ text: string; usage?: GeminiResponse['usageMetadata'] }> {
         const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
 
         const removeSystemRoles = contents; // GeminiContent role is only user|model, system is separate prompt
@@ -93,7 +93,7 @@ export class GeminiService {
             throw new Error('Gemini returned empty response');
         }
 
-        return text;
+        return { text, usage: data.usageMetadata };
     }
 
     /**

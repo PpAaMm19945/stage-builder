@@ -290,6 +290,11 @@ export interface GeminiResponse {
             parts?: { text?: string }[];
         };
     }[];
+    usageMetadata?: {
+        promptTokenCount: number;
+        candidatesTokenCount: number;
+        totalTokenCount: number;
+    };
 }
 
 export interface StreamChunk {

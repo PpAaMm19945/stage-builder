@@ -1,6 +1,7 @@
 import { Env } from '../types';
 import { GeminiService } from './gemini';
 import { ActivityProgressRecord, FormationRecord, StudentDbRecord } from './types';
+import { AITelemetryService } from '../services/ai-telemetry';
 
 interface CombinedActivityData {
     type: string;
@@ -70,15 +71,17 @@ export interface WeeklyReport {
 export class ReportGenerator {
     private env: Env;
     private gemini: GeminiService | null = null;
+    private telemetry: AITelemetryService;
 
     constructor(env: Env) {
         this.env = env;
+        this.telemetry = new AITelemetryService(env.DB);
         if (env.GOOGLE_API_KEY) {
             this.gemini = new GeminiService(env.GOOGLE_API_KEY);
         }
     }
 
-    async generateReport(familyId: string, weekStart: string): Promise<WeeklyReport> {
+    async generateReport(familyId: string, weekStart: string, waitUntil?: (p: Promise<any>) => void): Promise<WeeklyReport> {
         const weekEnd = new Date(new Date(weekStart).getTime() + 6 * 24 * 60 * 60 * 1000).toISOString().split('T')[0];
 
         // 1. Load Data
@@ -89,7 +92,7 @@ export class ReportGenerator {
         const stats = this.calculateStats(data);
 
         // 3. Generate Insights (AI)
-        const insights = await this.generateInsights(stats, children, data.activities);
+        const insights = await this.generateInsights(stats, children, data.activities, waitUntil);
 
         // 4. Build Report
         return {
@@ -198,7 +201,7 @@ export class ReportGenerator {
         };
     }
 
-    private async generateInsights(stats: ReportStats, children: StudentDbRecord[], activities: CombinedActivityData[]): Promise<{ insights: string[], efficiency_note: string }> {
+    private async generateInsights(stats: ReportStats, children: StudentDbRecord[], activities: CombinedActivityData[], waitUntil?: (p: Promise<any>) => void): Promise<{ insights: string[], efficiency_note: string }> {
         // If no Gemini key, fall back to basic
         if (!this.gemini) {
             return {
@@ -223,14 +226,34 @@ export class ReportGenerator {
     }`;
 
         try {
-            const responseText = await this.gemini.generateContent(
+            const startTime = Date.now();
+            const result = await this.gemini.generateContent(
                 [{ role: 'user', parts: [{ text: "Generate weekly report insights." }] }],
                 systemPrompt,
                 null,
                 'application/json'
             );
-            return JSON.parse(responseText);
+
+            this.telemetry.logTelemetry({
+                feature: 'report_generation',
+                model: 'gemini-3-flash-preview',
+                request_tokens: result.usage?.promptTokenCount,
+                response_tokens: result.usage?.candidatesTokenCount,
+                latency_ms: Date.now() - startTime,
+                status: 'success',
+                metadata: { statsSummary: stats.summary }
+            });
+
+            return JSON.parse(result.text);
         } catch (e) {
+            this.telemetry.logTelemetry({
+                feature: 'report_generation',
+                model: 'gemini-3-flash-preview',
+                latency_ms: 0,
+                status: 'error',
+                error_type: e instanceof Error ? e.message : 'Unknown error',
+                metadata: { statsSummary: stats.summary }
+            });
             console.error("Failed to generate insights", e);
             return {
                 insights: ["Weekly report generated successfully."],

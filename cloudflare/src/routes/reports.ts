@@ -13,7 +13,7 @@ app.get('/api/reports/weekly', async (c) => {
     const generator = new ReportGenerator(c.env);
     const start = getSmartWeekStart();
     try {
-        const report = await generator.generateReport(user.id, start);
+        const report = await generator.generateReport(user.id, start, c.executionCtx.waitUntil.bind(c.executionCtx));
         return c.json(report);
     } catch (e: any) {
         return c.text(`Error generating report: ${e.message}`, 500);
@@ -29,7 +29,7 @@ app.get('/api/reports/weekly/:date', async (c) => {
     // Ensure date is a valid Monday or adjust it
     const start = getSmartWeekStart(date);
     try {
-        const report = await generator.generateReport(user.id, start);
+        const report = await generator.generateReport(user.id, start, c.executionCtx.waitUntil.bind(c.executionCtx));
         return c.json(report);
     } catch (e: any) {
         return c.text(`Error generating report: ${e.message}`, 500);

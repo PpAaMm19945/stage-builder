@@ -5,6 +5,7 @@ import { Env } from '../types';
 import { ArcGenerator, DailyPlan, FormationArc } from './arc-generator';
 import { CATECHISM_DATA } from './data';
 import { AnchorDbRecord } from './types';
+import { AITelemetryService } from '../services/ai-telemetry';
 
 /**
  * Anchor Generator with Guardrails
@@ -99,17 +100,19 @@ export class AnchorGenerator {
     private db: D1Database;
     private gemini: GeminiService;
     private arcGenerator: ArcGenerator;
+    private telemetry: AITelemetryService;
 
     constructor(env: Env) {
         this.db = env.DB;
         this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-3-flash-preview');
         this.arcGenerator = new ArcGenerator(env);
+        this.telemetry = new AITelemetryService(env.DB);
     }
 
     /**
      * Get today's anchor (cached or generated)
      */
-    async getTodayAnchor(householdId: string, context?: AnchorContext): Promise<DailyAnchor | null> {
+    async getTodayAnchor(householdId: string, context?: AnchorContext, waitUntil?: (p: Promise<any>) => void): Promise<DailyAnchor | null> {
         const today = new Date().toISOString().split('T')[0];
 
         // Check cache first
@@ -121,17 +124,24 @@ export class AnchorGenerator {
 
         if (cached && !context?.adjustments) {
             console.log('[AnchorGenerator] Returning cached anchor');
+            // Log cache hit telemetry
+            this.telemetry.logTelemetry({
+                feature: 'anchor_generation',
+                status: 'success',
+                latency_ms: 0,
+                metadata: { type: 'cache_hit', householdId }
+            }, waitUntil);
             return JSON.parse(cached.anchor_data);
         }
 
         console.log('[AnchorGenerator] Generating new anchor for:', householdId);
-        return this.generateAnchor(householdId, today, context);
+        return this.generateAnchor(householdId, today, context, waitUntil);
     }
 
     /**
      * Generate anchor with guardrails and context awareness
      */
-    async generateAnchor(householdId: string, date: string, context?: AnchorContext): Promise<DailyAnchor> {
+    async generateAnchor(householdId: string, date: string, context?: AnchorContext, waitUntil?: (p: Promise<any>) => void): Promise<DailyAnchor> {
         console.log('[AnchorGenerator] 🚀 START - Household:', householdId, 'Date:', date);
 
         // 1. Get Active Arc
@@ -162,7 +172,7 @@ export class AnchorGenerator {
             console.log('[AnchorGenerator] Using pre-built plan for day', dayInArc);
         } else {
             // Generate with AI (with guardrails)
-            anchor = await this.generateWithAI(householdId, activeArc, dayInArc, date, prebuiltPlan, context);
+            anchor = await this.generateWithAI(householdId, activeArc, dayInArc, date, prebuiltPlan, context, waitUntil);
         }
 
         // 4. Validate materials against whitelist
@@ -234,7 +244,8 @@ export class AnchorGenerator {
         dayInArc: number,
         date: string,
         basePlan: DailyPlan | undefined,
-        context?: AnchorContext
+        context?: AnchorContext,
+        waitUntil?: (p: Promise<any>) => void
     ): Promise<DailyAnchor> {
         // Build context string
         const contextStr = this.buildContextString(context);
@@ -284,13 +295,39 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
 
         console.log('[AnchorGenerator] Calling Gemini with guardrails...');
         const startTime = Date.now();
+        let responseText: string;
+        let usage: any;
 
-        const responseText = await this.gemini.generateContent(
-            [{ role: 'user', parts: [{ text: userPrompt }] }],
-            systemPrompt,
-            null,
-            'application/json'
-        );
+        try {
+            const result = await this.gemini.generateContent(
+                [{ role: 'user', parts: [{ text: userPrompt }] }],
+                systemPrompt,
+                null,
+                'application/json'
+            );
+            responseText = result.text;
+            usage = result.usage;
+
+            this.telemetry.logTelemetry({
+                feature: 'anchor_generation',
+                model: 'gemini-3-flash-preview',
+                request_tokens: usage?.promptTokenCount,
+                response_tokens: usage?.candidatesTokenCount,
+                latency_ms: Date.now() - startTime,
+                status: 'success',
+                metadata: { type: 'generation', householdId, dayInArc, hasBasePlan: !!basePlan }
+            }, waitUntil);
+        } catch (error) {
+            this.telemetry.logTelemetry({
+                feature: 'anchor_generation',
+                model: 'gemini-3-flash-preview',
+                latency_ms: Date.now() - startTime,
+                status: 'error',
+                error_type: error instanceof Error ? error.message : 'Unknown error',
+                metadata: { type: 'generation', householdId, dayInArc }
+            }, waitUntil);
+            throw error;
+        }
 
         console.log(`[AnchorGenerator] Gemini responded in ${Date.now() - startTime}ms`);
 

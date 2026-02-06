@@ -1,7 +1,7 @@
-import { D1Database } from '@cloudflare/workers-types';
 import { safeQuery, safeRun } from '../lib/db';
 import { GeminiService, GeminiContent } from './gemini';
 import { Env } from '../types';
+import { AITelemetryService } from '../services/ai-telemetry';
 
 /**
  * SpineGenerator: Multi-call consensus pipeline for AI-first curriculum generation
@@ -48,10 +48,12 @@ export interface ConflictReport {
 export class SpineGenerator {
     private db: D1Database;
     private gemini: GeminiService;
+    private telemetry: AITelemetryService;
 
     constructor(env: Env) {
         this.db = env.DB;
         this.gemini = new GeminiService(env.GOOGLE_API_KEY, 'gemini-3-flash-preview');
+        this.telemetry = new AITelemetryService(env.DB);
     }
 
     /**
@@ -63,7 +65,8 @@ export class SpineGenerator {
         startWeek: number,
         endWeek: number,
         stage: SpineEntry['stage'],
-        sources: { name: string; content: string }[]
+        sources: { name: string; content: string }[],
+        waitUntil?: (p: Promise<any>) => void
     ): Promise<{
         version: string;
         drafts: SpineDraft[];
@@ -77,7 +80,7 @@ export class SpineGenerator {
         const drafts: SpineDraft[] = [];
         for (let i = 0; i < 3; i++) {
             console.log(`[SpineGenerator] Generating draft ${i + 1}/3...`);
-            const draft = await this.generateDraft(subject, startWeek, endWeek, stage, sources, i);
+            const draft = await this.generateDraft(subject, startWeek, endWeek, stage, sources, i, waitUntil);
             drafts.push(draft);
         }
 
@@ -100,7 +103,8 @@ export class SpineGenerator {
         endWeek: number,
         stage: SpineEntry['stage'],
         sources: { name: string; content: string }[],
-        draftIndex: number
+        draftIndex: number,
+        waitUntil?: (p: Promise<any>) => void
     ): Promise<SpineDraft> {
         const sourcesSummary = sources.map(s => `[${s.name}]: ${s.content}`).join('\n\n');
 
@@ -134,12 +138,40 @@ Generate one entry per week. Each entry should have:
 - confidence: 'research' if directly from sources, 'consensus' if inferred, 'experimental' if novel
 - source_citations: which sources support this entry`;
 
-        const response = await this.gemini.generateContent(
-            [{ role: 'user', parts: [{ text: userPrompt }] }],
-            systemPrompt,
-            null,
-            'application/json'
-        );
+        const startTime = Date.now();
+        let response: string;
+        let usage: any;
+
+        try {
+            const result = await this.gemini.generateContent(
+                [{ role: 'user', parts: [{ text: userPrompt }] }],
+                systemPrompt,
+                null,
+                'application/json'
+            );
+            response = result.text;
+            usage = result.usage;
+
+            this.telemetry.logTelemetry({
+                feature: 'spine_generation',
+                model: 'gemini-3-flash-preview',
+                request_tokens: usage?.promptTokenCount,
+                response_tokens: usage?.candidatesTokenCount,
+                latency_ms: Date.now() - startTime,
+                status: 'success',
+                metadata: { subject, stage, week: startWeek, draftIndex }
+            }, waitUntil);
+        } catch (error) {
+            this.telemetry.logTelemetry({
+                feature: 'spine_generation',
+                model: 'gemini-3-flash-preview',
+                latency_ms: Date.now() - startTime,
+                status: 'error',
+                error_type: error instanceof Error ? error.message : 'Unknown error',
+                metadata: { subject, stage, week: startWeek, draftIndex }
+            });
+            throw error;
+        }
 
         let entries: SpineEntry[] = [];
         try {

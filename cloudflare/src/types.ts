@@ -73,6 +73,8 @@ export interface Env {
     GOOGLE_API_KEY: string;
     LOVABLE_API_KEY?: string;
     R2_PUBLIC_URL?: string;
+    ADMIN_TEST_API_KEY?: string;
+    ADMIN_EMAIL_ALLOWLIST?: string;
 }
 
 export interface User {

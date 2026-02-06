@@ -775,5 +775,25 @@ export const anchor = {
     }),
 };
 
-export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor };
+export const adminAi = {
+  getTelemetry: (params?: { feature?: string; startDate?: string; endDate?: string; limit?: number }) => {
+    const query = new URLSearchParams();
+    if (params?.feature) query.set('feature', params.feature);
+    if (params?.startDate) query.set('startDate', params.startDate);
+    if (params?.endDate) query.set('endDate', params.endDate);
+    if (params?.limit) query.set('limit', String(params.limit));
+    return apiRequest<{ telemetry: any[] }>(`/api/admin/ai/telemetry?${query}`);
+  },
+
+  getAnchors: (limit?: number) =>
+    apiRequest<{ anchors: any[] }>(`/api/admin/ai/anchors?limit=${limit || 20}`),
+
+  getSpineStats: () =>
+    apiRequest<{ stats: any; pendingConflicts: any[] }>('/api/admin/ai/spine/telemetry'),
+
+  getActivities: () =>
+    apiRequest<{ totalAnalyzed: number; totalActivities: number; domainCounts: Record<string, number>; topMaterials: { name: string; count: number }[] }>('/api/admin/ai/activities'),
+};
+
+export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor, adminAi };
 export default api;

@@ -15,7 +15,7 @@ anchor.get('/today', async (c) => {
     const generator = new AnchorGenerator(c.env);
 
     try {
-        const anchor = await generator.getTodayAnchor(householdId);
+        const anchor = await generator.getTodayAnchor(householdId, undefined, c.executionCtx.waitUntil.bind(c.executionCtx));
         console.log('[API] Anchor retrieved:', anchor ? anchor.id : 'null');
         return c.json(anchor);
     } catch (e: any) {
@@ -39,7 +39,7 @@ anchor.post('/regenerate', async (c) => {
 
     try {
         // Force regeneration for today
-        const anchor = await generator.generateAnchor(householdId, date, context);
+        const anchor = await generator.generateAnchor(householdId, date, context, c.executionCtx.waitUntil.bind(c.executionCtx));
         return c.json(anchor);
     } catch (e: any) {
         console.error("Anchor Regeneration Error:", e);

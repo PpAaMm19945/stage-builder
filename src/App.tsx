@@ -44,6 +44,7 @@ const TermsOfService = lazy(() => import("./pages/legal/TermsOfService"));
 const SupportPage = lazy(() => import("./pages/SupportPage"));
 const TrustCovenant = lazy(() => import("./pages/TrustCovenant"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
+const AIDashboard = lazy(() => import("./pages/admin/AIDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -95,6 +96,8 @@ const App = () => (
                         <Route path="/early-years/reading" element={<Reading />} />
                         <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
                       </Route>
+
+                      <Route path="/admin/ai" element={<ProtectedRoute><AIDashboard /></ProtectedRoute>} />
                     </Route>
 
                     {/* Backward Compatibility Redirects */}

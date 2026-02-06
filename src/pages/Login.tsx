@@ -1,10 +1,9 @@
-import { useEffect } from 'react'; // Added useEffect
+import { useEffect, useState } from 'react'; // Added useEffect
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
-import { Users, CalendarDots, TrendUp, Path, CircleNotch, LockKey, DownloadSimple, ShieldCheck, ArrowRight } from '@phosphor-icons/react';
-import { Link, useSearchParams } from 'react-router-dom'; // Added useSearchParams
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert'; // Added Alert components
-import { ExclamationTriangle } from '@phosphor-icons/react'; // Added Icon
+import { Users, CalendarDots, TrendUp, Path, CircleNotch, LockKey, DownloadSimple, ShieldCheck, ArrowRight, Warning } from '@phosphor-icons/react';
+import { Link, useSearchParams } from 'react-router-dom';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -49,7 +48,7 @@ export default function Login() {
           {/* Error Message */}
           {error && (
             <Alert variant="destructive" className="mx-auto max-w-sm text-left">
-              <ExclamationTriangle className="h-4 w-4" />
+              <Warning className="h-4 w-4" />
               <AlertTitle>Authentication Failed</AlertTitle>
               <AlertDescription>
                 {message || 'An unknown error occurred. Please try again.'}
