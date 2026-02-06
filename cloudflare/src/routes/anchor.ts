@@ -32,13 +32,19 @@ anchor.post('/regenerate', async (c) => {
 
     const body = await c.req.json().catch(() => ({}));
     const adjustments = body.adjustments || undefined;
+    const context = adjustments ? { adjustments } : undefined;
 
     const generator = new AnchorGenerator(c.env);
     const date = new Date().toISOString().split('T')[0];
 
     try {
+        if (adjustments && context?.adjustments !== adjustments) {
+            console.warn('[API] Adjustments failed to propagate to anchor context');
+            return c.json({ error: 'Adjustments could not be applied' }, 400);
+        }
+
         // Force regeneration for today
-        const anchor = await generator.generateAnchor(householdId, date, adjustments);
+        const anchor = await generator.generateAnchor(householdId, date, context);
         return c.json(anchor);
     } catch (e: any) {
         console.error("Anchor Regeneration Error:", e);
