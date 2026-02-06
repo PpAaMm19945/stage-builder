@@ -21,7 +21,6 @@ import { useChatStream } from './hooks/useChatStream';
 import { useKeyboardHeight } from './hooks/useKeyboardHeight';
 import {
     TextMessage,
-    ThinkingMessage,
     BotActivityLog,
     BookCardMessage,
     ActivityCardMessage,
@@ -29,7 +28,12 @@ import {
     ScheduleCardMessage,
     AnchorBriefingMessage
 } from './messages';
-import { Message } from '@/types/ChatTypes';
+import {
+    ActivitySearchResult,
+    BookSearchResult,
+    Message,
+    ScheduleItemResult
+} from '@/types/ChatTypes';
 
 import { BookReader } from '@/components/books/BookReader';
 import { Book } from '@/types';
@@ -44,19 +48,22 @@ interface ChatPanelProps {
  * Uses ephemeral state (no persistence) with action logging.
  */
 
-interface SearchResultBook {
-    id: string;
-    title: string;
-    description?: string;
-    metadata?: {
-        coverUrl?: string;
-        series?: string;
-        pageCount?: number;
-        renderFormat?: 'image' | 'pdf';
-        minAgeMonths?: number;
-        maxAgeMonths?: number;
-    };
-}
+const hasResults = (data: unknown): data is { results: unknown[] } => {
+    if (!data || typeof data !== 'object') {
+        return false;
+    }
+    return 'results' in data && Array.isArray((data as { results?: unknown }).results);
+};
+
+const getActionResults = <T,>(actionCard: Message['actionCard'], type: string): T[] | null => {
+    if (!actionCard || actionCard.type !== type) {
+        return null;
+    }
+    if (!hasResults(actionCard.data)) {
+        return null;
+    }
+    return actionCard.data.results as T[];
+};
 
 export function ChatPanel({ className, onClose }: ChatPanelProps) {
     const [messages, setMessages] = useState<Message[]>([]);
@@ -307,7 +314,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         chatState.cancelAction();
     };
 
-    const handleOpenBook = useCallback((book: SearchResultBook) => {
+    const handleOpenBook = useCallback((book: BookSearchResult) => {
         // Convert search result to Book type for BookReader
         const bookData: Book = {
             id: book.id,
@@ -433,26 +440,36 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
 
                                 {/* Action card for search results */}
-                                {msg.actionCard && (
-                                    <div className="mt-3 pl-11">
-                                        {msg.actionCard.type === 'SEARCH_BOOKS' && (msg.actionCard.data as { results: any[] })?.results && (
-                                            <BookCardMessage
-                                                books={(msg.actionCard.data as { results: any[] }).results}
-                                                onOpenBook={handleOpenBook}
-                                            />
-                                        )}
-                                        {msg.actionCard.type === 'SEARCH_ACTIVITIES' && (msg.actionCard.data as { results: any[] })?.results && (
-                                            <ActivityCardMessage
-                                                activities={(msg.actionCard.data as { results: any[] }).results}
-                                            />
-                                        )}
-                                        {msg.actionCard.type === 'GET_TODAY_SCHEDULE' && (msg.actionCard.data as { results: any[] })?.results && (
-                                            <ScheduleCardMessage
-                                                items={(msg.actionCard.data as { results: any[] }).results}
-                                            />
-                                        )}
-                                    </div>
-                                )}
+                                {msg.actionCard && (() => {
+                                    const bookResults = getActionResults<BookSearchResult>(msg.actionCard, 'SEARCH_BOOKS');
+                                    const activityResults = getActionResults<ActivitySearchResult>(msg.actionCard, 'SEARCH_ACTIVITIES');
+                                    const scheduleResults = getActionResults<ScheduleItemResult>(msg.actionCard, 'GET_TODAY_SCHEDULE');
+
+                                    if (!bookResults && !activityResults && !scheduleResults) {
+                                        return null;
+                                    }
+
+                                    return (
+                                        <div className="mt-3 pl-11">
+                                            {bookResults && (
+                                                <BookCardMessage
+                                                    books={bookResults}
+                                                    onOpenBook={handleOpenBook}
+                                                />
+                                            )}
+                                            {activityResults && (
+                                                <ActivityCardMessage
+                                                    activities={activityResults}
+                                                />
+                                            )}
+                                            {scheduleResults && (
+                                                <ScheduleCardMessage
+                                                    items={scheduleResults}
+                                                />
+                                            )}
+                                        </div>
+                                    );
+                                })()}
                             </div>
                         ))}
 

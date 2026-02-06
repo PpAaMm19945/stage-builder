@@ -99,6 +99,8 @@ export interface Observation {
     formation_id?: string;
     title?: string;
     stage?: string;
+    domain?: string;
+    primary_virtue?: string;
     mastery_level?: string;
     parent_notes?: string;
     created_at: string;

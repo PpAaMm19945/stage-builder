@@ -2,21 +2,10 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { Sun, Moon, Clock, CheckCircle, Circle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-
-interface ScheduleItem {
-    id: string;
-    title: string;
-    description: string;
-    metadata?: {
-        period?: 'morning' | 'evening';
-        duration?: number;
-        status?: string;
-        contentType?: string;
-    };
-}
+import { ScheduleItemResult } from '@/types/ChatTypes';
 
 interface ScheduleCardMessageProps {
-    items: ScheduleItem[];
+    items: ScheduleItemResult[];
     className?: string;
 }
 
@@ -36,7 +25,7 @@ export function ScheduleCardMessage({ items, className }: ScheduleCardMessagePro
     const eveningItems = items.filter(i => i.metadata?.period === 'evening');
     const otherItems = items.filter(i => !i.metadata?.period);
 
-    const renderSection = (title: string, sectionItems: ScheduleItem[], icon: React.ReactNode) => {
+    const renderSection = (title: string, sectionItems: ScheduleItemResult[], icon: React.ReactNode) => {
         if (sectionItems.length === 0) return null;
         return (
             <div className="space-y-2">
@@ -50,7 +39,7 @@ export function ScheduleCardMessage({ items, className }: ScheduleCardMessagePro
                             <div className="flex justify-between items-start gap-2">
                                 <div>
                                     <p className="font-medium text-sm">{item.title}</p>
-                                    <p className="text-xs text-muted-foreground mt-0.5">{item.description}</p>
+                                    <p className="text-xs text-muted-foreground mt-0.5">{item.description || 'No description available.'}</p>
                                 </div>
                                 <div className="text-right shrink-0">
                                     {item.metadata?.duration && (

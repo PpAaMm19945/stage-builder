@@ -1,20 +1,11 @@
 import { Card, CardContent } from '@/components/ui/card';
 import { GameController } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-
-interface ActivityResult {
-    id: string;
-    title: string;
-    description: string;
-    metadata?: {
-        domain?: string;
-        materials?: string;
-    };
-}
+import { ActivitySearchResult } from '@/types/ChatTypes';
 
 interface ActivityCardMessageProps {
-    activities: ActivityResult[];
-    onSelectActivity?: (activity: ActivityResult) => void;
+    activities: ActivitySearchResult[];
+    onSelectActivity?: (activity: ActivitySearchResult) => void;
     className?: string;
 }
 
@@ -53,7 +44,7 @@ export function ActivityCardMessage({ activities, onSelectActivity, className }:
                                 {activity.title}
                             </p>
                             <p className="text-xs text-muted-foreground line-clamp-2 mt-0.5">
-                                {activity.description}
+                                {activity.description || 'No description available.'}
                             </p>
                             <div className="flex gap-1 mt-1 flex-wrap">
                                 {activity.metadata?.domain && (
