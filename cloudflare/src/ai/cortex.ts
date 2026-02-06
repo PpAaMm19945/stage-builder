@@ -18,10 +18,10 @@ import { CATECHISM_DATA } from './data';
 // Feedback patterns to detect in messages
 const FEEDBACK_PATTERNS = {
     COMPLETE: /\[COMPLETE\]|we did it|done|finished|completed|✓/i,
-    SKIP: /\[SKIP\]|skip today|not today|can't do|too busy/i,
-    ADJUST: /\[ADJUST\]|can we|instead|different|change|modify|something else/i,
+    SKIP: /\[SKIP\]|skip today|skip this|not today|can't do|too busy/i,
+    ADJUST: /\[ADJUST\]|adjust the plan|can we|instead|different|change|modify|something else/i,
     FEEDBACK: /\[FEEDBACK:([^\]]+)\]|loved it|didn't work|too hard|too easy/i,
-    REGENERATE: /\[REGENERATE\]|new activity|try again|regenerate/i
+    REGENERATE: /\[REGENERATE\]|give me a new plan|new activity|try again|regenerate/i
 };
 
 interface ChatResponse {
