@@ -1,5 +1,5 @@
 import React, { memo } from 'react';
-import Markdown from 'react-markdown';
+import Markdown, { Components } from 'react-markdown';
 import { cn } from '@/lib/utils';
 import { Book } from '@/types';
 
@@ -10,6 +10,24 @@ interface MarkdownBookSlideProps {
     totalChars?: number;
     book: Book;
 }
+
+// ⚡ Bolt: Define components outside render to avoid re-creation on every render
+const MARKDOWN_COMPONENTS: Components = {
+    // Custom image renderer for hybrid books
+    img: (props) => (
+        <div className="my-4 flex justify-center">
+            <img
+                {...props}
+                className="rounded-lg shadow-md max-h-[40vh] object-contain"
+                alt={props.alt || 'Book illustration'}
+            />
+        </div>
+    ),
+    // Typography enhancements
+    h1: ({ node, ...props }) => <h1 className="text-3xl font-bold mb-6 text-primary" {...props} />,
+    h2: ({ node, ...props }) => <h2 className="text-2xl font-semibold mb-4 text-primary/80" {...props} />,
+    p: ({ node, ...props }) => <p className="mb-4" {...props} />,
+};
 
 // ⚡ Bolt: Memoized to prevent expensive markdown re-parsing on parent re-renders
 export const MarkdownBookSlide = memo(function MarkdownBookSlide({ content, styleProfile, pageIndex, book }: MarkdownBookSlideProps) {
@@ -40,22 +58,7 @@ export const MarkdownBookSlide = memo(function MarkdownBookSlide({ content, styl
                 isStory && "font-sans text-xl leading-relaxed"
             )}>
                 <Markdown
-                    components={{
-                        // Custom image renderer for hybrid books
-                        img: (props) => (
-                            <div className="my-4 flex justify-center">
-                                <img
-                                    {...props}
-                                    className="rounded-lg shadow-md max-h-[40vh] object-contain"
-                                    alt={props.alt || 'Book illustration'}
-                                />
-                            </div>
-                        ),
-                        // Typography enhancements
-                        h1: ({node, ...props}) => <h1 className="text-3xl font-bold mb-6 text-primary" {...props} />,
-                        h2: ({node, ...props}) => <h2 className="text-2xl font-semibold mb-4 text-primary/80" {...props} />,
-                        p: ({node, ...props}) => <p className="mb-4" {...props} />,
-                    }}
+                    components={MARKDOWN_COMPONENTS}
                 >
                     {content}
                 </Markdown>

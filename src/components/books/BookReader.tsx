@@ -30,7 +30,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { reading, progress } from '@/lib/api';
 import { useBookAssetUrl, useBookPageUrls } from '@/hooks/useBookAssetUrl';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
-import { MarkdownBookSlide } from './MarkdownBookSlide';
+import { MarkdownReaderSlide } from './MarkdownReaderSlide';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import { ChildSelectionModal } from './ChildSelectionModal';
@@ -588,28 +588,16 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     </CarouselItem>
 
                                     {/* Pages - Markdown Mode */}
-                                    {isMarkdown && parsedPages.map((content, index) => {
-                                        const isNearby = Math.abs(index + 1 - current) <= RENDER_WINDOW;
-                                        return (
-                                            <CarouselItem key={index} className="flex items-center justify-center h-full">
-                                                {isNearby ? (
-                                                    <div
-                                                        className="w-full h-full p-4 md:p-8 flex items-center justify-center bg-background rounded-lg overflow-hidden"
-                                                        onClick={() => isFullscreen && setShowControls(!showControls)}
-                                                    >
-                                                        <MarkdownBookSlide
-                                                            content={content}
-                                                            styleProfile={book.styleProfile}
-                                                            pageIndex={index}
-                                                            book={book}
-                                                        />
-                                                    </div>
-                                                ) : (
-                                                    <div className="w-full h-full" />
-                                                )}
-                                            </CarouselItem>
-                                        );
-                                    })}
+                                    {isMarkdown && parsedPages.map((content, index) => (
+                                        <MarkdownReaderSlide
+                                            key={index}
+                                            index={index}
+                                            content={content}
+                                            current={current}
+                                            book={book}
+                                            onToggleControls={handleToggleControls}
+                                        />
+                                    ))}
 
                                     {/* Pages - Image Mode */}
                                     {!isMarkdown && imagePages.map((pageUrl, index) => (
