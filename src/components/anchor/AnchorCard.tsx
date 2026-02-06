@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Book, Anchor, Sun, Heart, ChevronDown, Sparkles, Music, Users, Crown, User, Check, BookOpenText } from 'lucide-react';
+import { Book, Anchor, Sun, Heart, ChevronDown, Sparkles, Music, Users, Crown, User, Check, BookOpenText, Loader2 } from 'lucide-react';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
@@ -65,6 +65,17 @@ const Star = ({ delay, x, y, size }: { delay: number; x: string; y: string; size
 
 export const AnchorCard: React.FC<AnchorCardProps> = ({ anchor, onComplete }) => {
     const [expandedSection, setExpandedSection] = useState<'liturgy' | 'activity' | 'book' | null>('liturgy');
+    const [isCompleting, setIsCompleting] = useState(false);
+
+    const handleComplete = async () => {
+        if (!onComplete) return;
+        setIsCompleting(true);
+        try {
+            await onComplete();
+        } finally {
+            setIsCompleting(false);
+        }
+    };
 
     const toggleSection = (section: 'liturgy' | 'activity' | 'book') => {
         setExpandedSection(expandedSection === section ? null : section);
@@ -242,11 +253,16 @@ export const AnchorCard: React.FC<AnchorCardProps> = ({ anchor, onComplete }) =>
                     {onComplete && (
                         <div className="px-6 pb-6">
                             <button
-                                onClick={onComplete}
-                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white dark:text-slate-900 font-bold text-lg transition-all duration-300 shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2"
+                                onClick={handleComplete}
+                                disabled={isCompleting}
+                                className="w-full py-4 rounded-2xl bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 disabled:opacity-70 disabled:cursor-not-allowed text-white dark:text-slate-900 font-bold text-lg transition-all duration-300 shadow-lg shadow-amber-500/30 flex items-center justify-center gap-2"
                             >
-                                <Sparkles className="w-5 h-5" />
-                                Complete Today's Anchor
+                                {isCompleting ? (
+                                    <Loader2 className="w-5 h-5 animate-spin" />
+                                ) : (
+                                    <Sparkles className="w-5 h-5" />
+                                )}
+                                {isCompleting ? "Completing..." : "Complete Today's Anchor"}
                             </button>
                         </div>
                     )}
