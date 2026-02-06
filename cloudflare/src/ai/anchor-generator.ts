@@ -420,4 +420,27 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
 
         console.log('[AnchorGenerator] Marked anchor complete:', anchorId);
     }
+
+    /**
+     * Mark anchor as skipped and record the reason
+     */
+    async skipAnchor(
+        householdId: string,
+        anchorId: string,
+        reason?: string
+    ): Promise<void> {
+        await safeRun(this.db, `
+            UPDATE daily_anchors 
+            SET status = 'skipped',
+                skipped_at = CURRENT_TIMESTAMP,
+                skip_reason = ?
+            WHERE id = ? AND household_id = ?
+        `, [
+            reason || 'Cortex skip: no reason provided',
+            anchorId,
+            householdId
+        ]);
+
+        console.log('[AnchorGenerator] Marked anchor skipped:', anchorId);
+    }
 }
