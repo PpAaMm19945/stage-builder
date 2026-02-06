@@ -99,7 +99,7 @@ function ChildProgressCard({ child }: { child: Student }) {
 
   // Calculate domains with activity
   const activeDomains = Array.isArray(progressData?.byDomain)
-    ? progressData.byDomain.filter((d: any) => d.count > 0).length
+    ? progressData.byDomain.filter((d: { domain: string; count: number }) => d.count > 0).length
     : 0;
 
   return (
@@ -144,7 +144,7 @@ function ChildProgressCard({ child }: { child: Student }) {
               {(Object.keys(DOMAIN_LABELS) as EarlyYearsDomain[]).map((domain) => {
                 const Icon = domainIcons[domain];
                 const domainData = Array.isArray(progressData?.byDomain)
-                  ? progressData.byDomain.find((d: any) => d.domain === domain)
+                  ? progressData.byDomain.find((d: { domain: string; count: number }) => d.domain === domain)
                   : undefined;
                 const count = domainData?.count || 0;
 

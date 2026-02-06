@@ -1,7 +1,9 @@
 
 // @deprecated System A (Rhythm) is replaced by System B (Anchor). Do not use for new features.
+import { D1Database } from '@cloudflare/workers-types';
 import { Env } from '../types';
 import { GeminiService } from './gemini';
+import { StudentDbRecord, ProfileDbRecord, FamilyPreferencesRecord, ParentOverrideRecord, FormationRecord, LearningPathRecord, PathSubscriptionRecord } from './types';
 
 export interface FamilyContext {
     children: Array<{
@@ -14,7 +16,7 @@ export interface FamilyContext {
     evening_minutes: number;
     available_days: string[];
     goals: string[];
-    preferences: any;
+    preferences: Record<string, unknown>;
     progress: {
         catechism_position: number;
         hymn_position: number;
@@ -27,7 +29,7 @@ export interface FamilyContext {
         habit?: PathItem;
     };
     family_id: string; // Added for plan lookup
-    accommodations?: any[]; // Added for Phase 4
+    accommodations?: ParentOverrideRecord[]; // Added for Phase 4
 }
 
 export interface RhythmItem {
@@ -45,7 +47,7 @@ export interface PathItem {
     id: string;
     title: string;
     type: string;
-    data: any;
+    data: FormationRecord;
     position: number;
     total: number;
 }
@@ -64,7 +66,7 @@ export interface WeeklyPlan {
     theme: string;
     generated_at: string;
     frozen_through: string | null;
-    slots?: any[];
+    slots?: Record<string, unknown>[];
 }
 
 export class RhythmGenerator {
@@ -77,17 +79,17 @@ export class RhythmGenerator {
     // Helper to get next item for a path
     private async getNextPathItem(db: D1Database, userId: string, pathId: string): Promise<PathItem | undefined> {
         // 1. Get Subscription (or default to pos 1)
-        const sub = await db.prepare('SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?').bind(userId, pathId).first<any>();
+        const sub = await db.prepare('SELECT * FROM family_path_subscriptions WHERE parent_id = ? AND path_id = ?').bind(userId, pathId).first<PathSubscriptionRecord>();
         const position = sub?.current_position || 1;
 
         // 2. Get Path Definition
-        const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ?').bind(pathId).first<any>();
+        const path = await db.prepare('SELECT * FROM learning_paths WHERE id = ?').bind(pathId).first<LearningPathRecord>();
         if (!path) return undefined;
 
         // 3. Build Query
-        const filter = JSON.parse(path.content_filter || '{}');
+        const filter = JSON.parse(path.content_filter || '{}') as Record<string, string>;
         let query = "SELECT * FROM formations WHERE is_active = 1";
-        const params: any[] = [];
+        const params: (string | number)[] = [];
 
         if (filter.cluster_tag) {
             query += " AND cluster_tag = ?";
@@ -100,7 +102,7 @@ export class RhythmGenerator {
         query += " ORDER BY COALESCE(sequence_number, 999999), title LIMIT 1 OFFSET ?";
         params.push(position - 1);
 
-        const item = await db.prepare(query).bind(...params).first<any>();
+        const item = await db.prepare(query).bind(...params).first<FormationRecord>();
 
         if (!item) return undefined;
 
@@ -118,18 +120,18 @@ export class RhythmGenerator {
         const db = this.env.DB;
 
         // 1. Get User & Household
-        const user = await db.prepare('SELECT household_id FROM users WHERE id = ?').bind(userId).first<any>();
+        const user = await db.prepare('SELECT household_id FROM users WHERE id = ?').bind(userId).first<{ household_id: string }>();
         if (!user?.household_id) throw new Error('User not in household');
         const householdId = user.household_id;
 
         // 2. Get Profile Settings
-        const profile = await db.prepare('SELECT * FROM family_profiles WHERE parent_id = ?').bind(userId).first<any>();
+        const profile = await db.prepare('SELECT * FROM family_profiles WHERE parent_id = ?').bind(userId).first<ProfileDbRecord>();
 
         // 3. Get Children
-        const studentsResult = await db.prepare('SELECT id, name, date_of_birth FROM students WHERE household_id = ?').bind(householdId).all<any>();
+        const studentsResult = await db.prepare('SELECT id, name, date_of_birth FROM students WHERE household_id = ?').bind(householdId).all<StudentDbRecord>();
         const students = studentsResult.results || [];
 
-        const children = students.map((s: any) => {
+        const children = students.map((s) => {
             const birth = new Date(s.date_of_birth);
             const now = new Date();
             const ageMonths = (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
@@ -147,28 +149,28 @@ export class RhythmGenerator {
             };
         });
 
-        const preferences = JSON.parse(profile?.preferences || '{}');
+        const preferences = JSON.parse(profile?.preferences || '{}') as Record<string, unknown>;
 
         // [PHASE 4] BRAIN TRANSPLANT: Fetch new preferences (Time Model) and Overrides (Accommodations)
         // 1. Get Family Preferences (Schedule)
-        const familyPrefs = await db.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?').bind(userId).first<any>();
-        let scheduleOverrides: any = {};
+        const familyPrefs = await db.prepare('SELECT overrides_json FROM family_preferences WHERE parent_id = ?').bind(userId).first<FamilyPreferencesRecord>();
+        let scheduleOverrides: Record<string, unknown> = {};
         if (familyPrefs?.overrides_json) {
-            try { scheduleOverrides = JSON.parse(familyPrefs.overrides_json); } catch (e) { }
+            try { scheduleOverrides = JSON.parse(familyPrefs.overrides_json); } catch { /* Empty catch - fallback to empty overrides */ }
         }
 
         // 2. Get Parent Overrides (Accommodations)
-        const accommodationResults = await db.prepare('SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1').bind(userId).all<any>();
+        const accommodationResults = await db.prepare('SELECT * FROM parent_overrides WHERE parent_id = ? AND is_active = 1').bind(userId).all<ParentOverrideRecord>();
         const accommodations = accommodationResults.results || [];
 
         // 3. Merge Schedule (New Preferences take precedence over Legacy Profile)
-        const morningMinutes = scheduleOverrides.morning_minutes ?? profile?.morning_minutes ?? 15;
-        const eveningMinutes = scheduleOverrides.evening_minutes ?? profile?.evening_minutes ?? 0;
-        const availableDays = scheduleOverrides.available_days ?? (profile?.available_days ? JSON.parse(profile.available_days) : ["Mon", "Tue", "Wed", "Thu", "Fri"]);
+        const morningMinutes = (scheduleOverrides.morning_minutes as number | undefined) ?? profile?.morning_minutes ?? 15;
+        const eveningMinutes = (scheduleOverrides.evening_minutes as number | undefined) ?? profile?.evening_minutes ?? 0;
+        const availableDays = (scheduleOverrides.available_days as string | undefined) ?? (profile?.available_days ? JSON.parse(profile.available_days) : ["Mon", "Tue", "Wed", "Thu", "Fri"]);
 
 
         // 4. Fetch Basket Items (The Ingredients)
-        const basketItems: any = {};
+        const basketItems: FamilyContext['basket_items'] = {};
 
         // Hymns (Default: ON)
         if (preferences.includeHymns !== false) {
@@ -207,11 +209,11 @@ export class RhythmGenerator {
         if (frozenDays.length > 0) {
             const existingPlan = await this.env.DB.prepare(
                 'SELECT days FROM weekly_plans WHERE family_id = ? AND week_start = ?'
-            ).bind(context.family_id, weekStart).first<any>();
+            ).bind(context.family_id, weekStart).first<{ days: string | DailyRhythm[] }>();
 
             if (existingPlan?.days) {
                 const parsed = typeof existingPlan.days === 'string' ? JSON.parse(existingPlan.days) : existingPlan.days;
-                existingDays = parsed.filter((d: any) => frozenDays.includes(d.day));
+                existingDays = (parsed as DailyRhythm[]).filter((d) => frozenDays.includes(d.day));
             }
 
             // Filter context.available_days so AI only plans for remaining days
@@ -228,7 +230,7 @@ export class RhythmGenerator {
     
     CRITICAL ACCOMMODATIONS (You MUST respect these):
     ${context.accommodations && context.accommodations.length > 0
-                ? context.accommodations.map((a: any) => `- ${a.description} (${JSON.stringify(a.constraints)})`).join('\n')
+                ? context.accommodations.map((a) => `- ${a.description} (${JSON.stringify(a.constraints)})`).join('\n')
                 : 'None'}
 
     WEEKLY BASKET INGREDIENTS (Use these specifically):

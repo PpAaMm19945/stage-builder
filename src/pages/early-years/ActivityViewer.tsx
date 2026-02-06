@@ -187,11 +187,11 @@ export default function ActivityViewer() {
     },
   });
 
-  const activity = activityData ? mapApiFormation(activityData as any) : undefined;
+  const activity = activityData ? mapApiFormation(activityData as ApiFormation) : undefined;
 
   // Check if activity was completed by looking at observations
   const previousResult = observationsData?.find(
-    (obs: any) => obs.activity_id === id
+    (obs: { activity_id?: string; created_at: string; parent_notes?: string; title?: string }) => obs.activity_id === id
   );
   const isCompleted = !!previousResult;
 
@@ -612,7 +612,7 @@ export default function ActivityViewer() {
           toast.success('Added to portfolio!');
         }}
         relatedActivityId={activity.id}
-        preselectedDomain={activity.primaryVirtue as any}
+        preselectedDomain={activity.primaryVirtue as EarlyYearsDomain}
       />
 
       <div className="pt-8 border-t">

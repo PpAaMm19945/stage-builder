@@ -32,7 +32,7 @@ export interface AnchorPayload {
 
 export interface ActionCard {
     type: ChatActionType | string;
-    data: any;
+    data: Formation | LiturgyItem | Record<string, unknown>;
 }
 
 export interface Message {

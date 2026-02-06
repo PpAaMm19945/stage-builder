@@ -1,5 +1,6 @@
 
 import { D1Database } from '@cloudflare/workers-types';
+import { WeeklyPlanRecord, SearchMetadata, ParsedDailyRhythm, RhythmDayItem } from './types';
 
 export interface SearchResult {
     type: 'book' | 'activity' | 'schedule_item';
@@ -7,7 +8,7 @@ export interface SearchResult {
     title: string;
     description: string;
     relevance: number;
-    metadata?: any;
+    metadata?: SearchMetadata;
 }
 
 export async function getTodaySchedule(db: D1Database, familyId: string): Promise<SearchResult[]> {
@@ -28,26 +29,26 @@ export async function getTodaySchedule(db: D1Database, familyId: string): Promis
     // 2. Fetch active plan
     const plan = await db.prepare(
         'SELECT * FROM weekly_plans WHERE family_id = ? AND week_start = ?'
-    ).bind(familyId, weekStart).first<any>();
+    ).bind(familyId, weekStart).first<WeeklyPlanRecord>();
 
     if (!plan || !plan.days) return [];
 
     // 3. Parse and find today's items
-    let parsedDays: any[] = [];
+    let parsedDays: ParsedDailyRhythm[] = [];
     try {
         parsedDays = typeof plan.days === 'string' ? JSON.parse(plan.days) : plan.days;
-    } catch (e) {
-        console.error('Error parsing plan days', e);
+    } catch {
+        console.error('Error parsing plan days');
         return [];
     }
 
-    const todayRhythm = parsedDays.find((d: any) => d.day === currentDayName);
+    const todayRhythm = parsedDays.find((d) => d.day === currentDayName);
     if (!todayRhythm) return [];
 
     const items: SearchResult[] = [];
 
     // Helper to map items
-    const mapItem = (item: any, period: 'morning' | 'evening') => ({
+    const mapItem = (item: RhythmDayItem, period: 'morning' | 'evening'): SearchResult => ({
         type: 'schedule_item' as const,
         id: item.id || crypto.randomUUID(),
         title: item.title,
@@ -55,17 +56,17 @@ export async function getTodaySchedule(db: D1Database, familyId: string): Promis
         relevance: 1,
         metadata: {
             period,
-            duration: item.duration_minutes,
+            duration: item.duration_minutes || item.duration,
             contentType: item.type,
             status: item.status || 'upcoming'
         }
     });
 
     if (todayRhythm.morning) {
-        items.push(...todayRhythm.morning.map((i: any) => mapItem(i, 'morning')));
+        items.push(...todayRhythm.morning.map((i) => mapItem(i, 'morning')));
     }
     if (todayRhythm.evening) {
-        items.push(...todayRhythm.evening.map((i: any) => mapItem(i, 'evening')));
+        items.push(...todayRhythm.evening.map((i) => mapItem(i, 'evening')));
     }
 
     return items;
@@ -92,7 +93,7 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
     `;
 
     // 3. Prepare params: key1, key1, key1, key2, key2, key2...
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     keywords.forEach(k => {
         const like = `%${k}%`;
         params.push(like, like, like);
@@ -107,16 +108,16 @@ export async function searchBooks(db: D1Database, query: string, ageMonths?: num
 
     const { results } = await db.prepare(sql).bind(...params).all();
 
-    return results.map((b: any) => ({
-        type: 'book',
-        id: b.id,
-        title: b.title,
-        description: b.description,
+    return results.map((b) => ({
+        type: 'book' as const,
+        id: String(b.id),
+        title: String(b.title),
+        description: String(b.description || ''),
         relevance: 1,
         metadata: {
             ageRange: `${b.min_age_months}-${b.max_age_months}m`,
-            domain: b.domain,
-            coverUrl: b.cover_image_url
+            domain: String(b.domain || ''),
+            coverUrl: b.cover_image_url ? String(b.cover_image_url) : undefined
         }
     }));
 }
@@ -138,7 +139,7 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
         LIMIT 7
     `;
 
-    const params: any[] = [];
+    const params: (string | number)[] = [];
     keywords.forEach(k => {
         const like = `%${k}%`;
         params.push(like, like, like);
@@ -146,15 +147,15 @@ export async function searchActivities(db: D1Database, query: string): Promise<S
 
     const { results } = await db.prepare(sql).bind(...params).all();
 
-    return results.map((a: any) => ({
-        type: 'activity',
-        id: a.id,
-        title: a.title,
-        description: a.description,
+    return results.map((a) => ({
+        type: 'activity' as const,
+        id: String(a.id),
+        title: String(a.title),
+        description: String(a.description || ''),
         relevance: 1,
         metadata: {
-            domain: a.domain,
-            materials: a.materials
+            domain: String(a.domain || ''),
+            materials: a.materials ? String(a.materials) : undefined
         }
     }));
 }

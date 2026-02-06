@@ -11,14 +11,14 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { students } from '@/lib/api';
 import { DOMAIN_LABELS, DOMAIN_TO_VIRTUE, VIRTUE_LABELS, type EarlyYearsDomain, type ApiActivity, type PrimaryVirtue } from '@/types';
 import { AddChildForm } from '@/components/children/AddChildForm';
-import { 
-  Star, 
-  Clock, 
-  ArrowRight, 
-  ArrowsClockwise, 
-  UserPlus, 
-  Target, 
-  Compass 
+import {
+  Star,
+  Clock,
+  ArrowRight,
+  ArrowsClockwise,
+  UserPlus,
+  Target,
+  Compass
 } from '@phosphor-icons/react';
 
 const virtueColors: Record<PrimaryVirtue, string> = {
@@ -284,7 +284,7 @@ export default function Today() {
               Activities suitable for all your children to do together
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {data.familyActivities.map((familyActivity: any) => (
+              {data.familyActivities.map((familyActivity: { activity: ApiActivity; childTiers?: unknown[]; reasoning?: string }) => (
                 <Card
                   key={familyActivity.activity.id}
                   className="cursor-pointer hover:border-accent/40 hover:shadow-md transition-all border-accent/20"
@@ -294,8 +294,8 @@ export default function Today() {
                     <div className="flex items-start justify-between gap-2">
                       {(() => {
                         const virtue = familyActivity.activity.primary_virtue ||
-                                      (familyActivity.activity.domain ? DOMAIN_TO_VIRTUE[familyActivity.activity.domain as string] : 'Wisdom') ||
-                                      'Wisdom';
+                          (familyActivity.activity.domain ? DOMAIN_TO_VIRTUE[familyActivity.activity.domain as string] : 'Wisdom') ||
+                          'Wisdom';
                         return (
                           <Badge variant="outline" className={virtueColors[virtue]}>
                             {VIRTUE_LABELS[virtue]}

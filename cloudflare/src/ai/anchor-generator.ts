@@ -4,6 +4,7 @@ import { GeminiService } from './gemini';
 import { Env } from '../types';
 import { ArcGenerator, DailyPlan, FormationArc } from './arc-generator';
 import { CATECHISM_DATA } from './data';
+import { AnchorDbRecord } from './types';
 
 /**
  * Anchor Generator with Guardrails
@@ -112,7 +113,7 @@ export class AnchorGenerator {
         const today = new Date().toISOString().split('T')[0];
 
         // Check cache first
-        const cached = await safeQueryFirst<any>(
+        const cached = await safeQueryFirst<AnchorDbRecord>(
             this.db,
             "SELECT * FROM daily_anchors WHERE household_id = ? AND anchor_date = ? AND status = 'active'",
             [householdId, today]

@@ -73,7 +73,7 @@ export function getRecommendedBooks(books: Book[], student: Student): Book[] {
     const gender = 'male'; // Placeholder, would come from Student profile
 
     // Normalize age - handle both snake_case (API) and camelCase
-    const childAgeMonths = (student as any).age_in_months ?? student.ageInMonths ?? 0;
+    const childAgeMonths = (student as Student & { age_in_months?: number }).age_in_months ?? student.ageInMonths ?? 0;
 
     return books
         .map(book => ({
@@ -81,7 +81,7 @@ export function getRecommendedBooks(books: Book[], student: Student): Book[] {
             score: scoreBookSuitability(book, {
                 childAgeMonths,
                 childInterests: mockInterests,
-                childGender: gender as any
+                childGender: gender
             })
         }))
         .sort((a, b) => b.score - a.score)

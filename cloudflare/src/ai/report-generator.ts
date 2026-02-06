@@ -1,5 +1,40 @@
 import { Env } from '../types';
 import { GeminiService } from './gemini';
+import { ActivityProgressRecord, FormationRecord, StudentDbRecord } from './types';
+
+interface CombinedActivityData {
+    type: string;
+    title: string;
+    duration_minutes: number;
+    status: string;
+    formation_id?: string;
+    [key: string]: unknown;
+}
+
+interface ReportStats {
+    summary: {
+        total: number;
+        completed: number;
+        skipped: number;
+        transferred: number;
+        completion_rate: number;
+    };
+    by_type: {
+        catechism: number;
+        hymns: number;
+        books: number;
+        scripture: number;
+        skill: number;
+        habit: number;
+        service: number;
+        rest: number;
+        liturgy_other: number;
+    };
+    time_invested: {
+        total_minutes: number;
+        daily_average: number;
+    };
+}
 
 export interface WeeklyReport {
     week_start: string;
@@ -81,7 +116,7 @@ export class ReportGenerator {
              SELECT household_id FROM users WHERE id = ?
         )
       )
-    `).bind(`${start} 00:00:00`, `${end} 23:59:59`, familyId).all<any>();
+    `).bind(`${start} 00:00:00`, `${end} 23:59:59`, familyId).all<ActivityProgressRecord>();
 
         // Also fetch formations to get types and durations
         // Assuming activity_progress has formation_id
@@ -92,19 +127,19 @@ export class ReportGenerator {
         // Since we don't know exact schema, let's try a safe approach:
         // Fetch formations for the IDs we found.
 
-        const activityIds = results.map((r: any) => r.formation_id).filter((id: any) => id);
-        let formations: any[] = [];
+        const activityIds = results.map((r) => r.formation_id).filter((id): id is string => Boolean(id));
+        let formations: FormationRecord[] = [];
 
         if (activityIds.length > 0) {
             const placeholders = activityIds.map(() => '?').join(',');
             const fResult = await this.env.DB.prepare(`
         SELECT id, type, title, duration_minutes FROM formations WHERE id IN (${placeholders})
-      `).bind(...activityIds).all<any>();
+      `).bind(...activityIds).all<FormationRecord>();
             formations = fResult.results;
         }
 
         // Map formations to results
-        const combined = results.map((r: any) => {
+        const combined: CombinedActivityData[] = results.map((r) => {
             const f = formations.find(form => form.id === r.formation_id);
             return {
                 ...r,
@@ -121,11 +156,11 @@ export class ReportGenerator {
         const { results } = await this.env.DB.prepare(`
         SELECT id, name, age_in_months FROM students 
         WHERE household_id = (SELECT household_id FROM users WHERE id = ?)
-    `).bind(familyId).all<any>();
+    `).bind(familyId).all<StudentDbRecord>();
         return results;
     }
 
-    private calculateStats(data: { activities: any[] }) {
+    private calculateStats(data: { activities: CombinedActivityData[] }): ReportStats {
         const activities = data.activities;
         const completed = activities.filter(a => a.status === 'completed');
 
@@ -163,7 +198,7 @@ export class ReportGenerator {
         };
     }
 
-    private async generateInsights(stats: any, children: any[], activities: any[]): Promise<{ insights: string[], efficiency_note: string }> {
+    private async generateInsights(stats: ReportStats, children: StudentDbRecord[], activities: CombinedActivityData[]): Promise<{ insights: string[], efficiency_note: string }> {
         // If no Gemini key, fall back to basic
         if (!this.gemini) {
             return {

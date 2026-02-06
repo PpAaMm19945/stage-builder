@@ -51,7 +51,7 @@ export interface TodayPathItem {
   item_type: 'hymn' | 'catechism' | 'activity' | 'book' | 'liturgy';
   item_id: string;
   item_title: string;
-  item_data: any; // Formation, Book, Hymn, etc.
+  item_data: Record<string, unknown>; // Formation, Book, Hymn, etc.
   position: number;
   total: number;
 }

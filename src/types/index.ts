@@ -368,7 +368,7 @@ export interface DailyRhythmItem {
 export interface WeeklyPlan {
   id: string;
   weekStart: string;
-  plan: any; // JSON blob of the plan structure
+  plan: Record<string, unknown>; // JSON blob of the plan structure
   balancePreference: string;
 }
 
@@ -383,7 +383,7 @@ export interface AIInteractionLog {
   interactionType: 'explain' | 'socratic' | 'feedback' | 'search';
   question: string;
   answer: string;
-  context?: any;
+  context?: Record<string, unknown>;
   createdAt: string;
   // Joined field for display
   studentName?: string;
@@ -482,7 +482,7 @@ export interface MaterialItem {
 // Legacy Family Session (often just wraps a Formation)
 export interface FamilySession {
   activity: Formation;
-  childTiers: any[];
+  childTiers: Record<string, unknown>[];
   reasoning?: string;
 }
 
@@ -741,7 +741,7 @@ export const LITURGY_TYPE_LABELS: Record<LiturgyType, string> = {
 export interface WeeklyPlanResponse {
   id: string;
   weekStart: string;
-  plan: any;
+  plan: Record<string, unknown>;
   balancePreference: string;
   createdAt?: string;
 }
@@ -805,10 +805,10 @@ export interface LiturgyItem {
 export type ProtagonistGender = 'male' | 'female' | 'neutral' | 'animal' | 'mixed';
 
 // WeeklyPlanResponse extended
-export interface WeeklyPlanResponse {
+export interface ExtendedWeeklyPlanResponse {
   id: string;
   weekStart: string;
-  plan: any;
+  plan: Record<string, unknown>;
   balancePreference: string;
   createdAt?: string;
   completions?: Record<string, boolean>;

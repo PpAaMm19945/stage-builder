@@ -3,6 +3,23 @@ import { Context } from 'hono';
 import { Env, User } from './types';
 import { isValidPathSegment } from './lib/security';
 
+interface StudentExportRecord {
+    id: string;
+    name?: string;
+    [key: string]: unknown;
+}
+
+interface ApprenticeshipRecord {
+    id: string;
+    student_id: string;
+    [key: string]: unknown;
+}
+
+interface PortfolioItemRecord {
+    r2_key?: string;
+    [key: string]: unknown;
+}
+
 // Helper: Generate a signed URL for a file
 // We use HMAC-SHA256 to sign the key and expiration time
 async function generateSignedUrl(
@@ -102,17 +119,17 @@ export async function handleArchiveExport(c: Context<{ Bindings: Env; Variables:
 
         // 4. Fetch Work Logs (Phase 5)
         // Need to find all apprenticeships for household students first
-        const studentIds = students.results.map((s: any) => s.id);
-        let apprenticeships: any[] = [];
-        let workEntries: any[] = [];
+        const studentIds = (students.results as StudentExportRecord[]).map((s) => s.id);
+        let apprenticeships: ApprenticeshipRecord[] = [];
+        let workEntries: Record<string, unknown>[] = [];
 
         if (studentIds.length > 0) {
             const placeholders = studentIds.map(() => '?').join(',');
             const apprenticeshipResult = await c.env.DB.prepare(`SELECT * FROM apprenticeships WHERE student_id IN (${placeholders})`).bind(...studentIds).all();
-            apprenticeships = apprenticeshipResult.results;
+            apprenticeships = apprenticeshipResult.results as ApprenticeshipRecord[];
 
             if (apprenticeships.length > 0) {
-                const appIds = apprenticeships.map((a: any) => a.id);
+                const appIds = apprenticeships.map((a) => a.id);
                 const appPlaceholders = appIds.map(() => '?').join(',');
                 const entriesResult = await c.env.DB.prepare(`SELECT * FROM work_entries WHERE apprenticeship_id IN (${appPlaceholders})`).bind(...appIds).all();
                 workEntries = entriesResult.results;
@@ -124,7 +141,7 @@ export async function handleArchiveExport(c: Context<{ Bindings: Env; Variables:
 
         // 6. Process Portfolio Items to add Signed URLs
         // This is the "Media Packaging" step
-        const portfolioItems = await Promise.all(portfolioItemsRaw.results.map(async (item: any) => {
+        const portfolioItems = await Promise.all((portfolioItemsRaw.results as PortfolioItemRecord[]).map(async (item) => {
             let downloadUrl = null;
             if (item.r2_key) {
                 // Generate valid signed URL for 7 days
@@ -172,9 +189,10 @@ export async function handleArchiveExport(c: Context<{ Bindings: Env; Variables:
             }
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const errorMessage = e instanceof Error ? e.message : 'Unknown error';
         console.error('Export error:', e);
-        return c.json({ error: e.message }, 500);
+        return c.json({ error: errorMessage }, 500);
     }
 }
 
@@ -228,8 +246,9 @@ export async function handleSignedDownload(c: Context<{ Bindings: Env }>) {
             headers,
         });
 
-    } catch (e: any) {
+    } catch (e: unknown) {
+        const downloadErrorMsg = e instanceof Error ? e.message : 'Unknown error';
         console.error('Download error:', e);
-        return c.text('Server error during download', 500);
+        return c.text(`Download failed: ${downloadErrorMsg}`, 500);
     }
 }

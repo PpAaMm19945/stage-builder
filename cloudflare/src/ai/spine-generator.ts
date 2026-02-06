@@ -143,22 +143,23 @@ Generate one entry per week. Each entry should have:
 
         let entries: SpineEntry[] = [];
         try {
-            const parsed = JSON.parse(response);
-            entries = (Array.isArray(parsed) ? parsed : parsed.entries || []).map((e: any, idx: number) => ({
+            const parsed = JSON.parse(response) as { entries?: SpineEntry[] } | SpineEntry[];
+            entries = (Array.isArray(parsed) ? parsed : parsed.entries || []).map((e, idx: number) => ({
                 id: crypto.randomUUID(),
                 spine_version: '', // Will be set during storage
                 subject,
                 week_number: startWeek + idx,
                 stage,
-                focus_area: e.focus_area || '',
-                skill_targets: e.skill_targets || [],
-                faith_framing: e.faith_framing || null,
-                resources: e.resources || [],
-                confidence: e.confidence || 'experimental',
-                source_citations: e.source_citations || []
+                focus_area: (e as { focus_area?: string }).focus_area || '',
+                skill_targets: (e as { skill_targets?: string[] }).skill_targets || [],
+                faith_framing: (e as { faith_framing?: string }).faith_framing || undefined,
+                resources: (e as { resources?: string[] }).resources || [],
+                confidence: ((e as { confidence?: string }).confidence || 'experimental') as 'research' | 'consensus' | 'experimental',
+                source_citations: (e as { source_citations?: string[] }).source_citations || []
             }));
-        } catch (e) {
-            console.error('[SpineGenerator] Failed to parse draft:', e);
+        } catch {
+            // Empty catch - AI response parsing failed, continue with empty entries
+            console.error('[SpineGenerator] Failed to parse draft');
         }
 
         return {

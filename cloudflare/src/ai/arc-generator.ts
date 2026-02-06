@@ -3,6 +3,7 @@ import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 import { GeminiService } from './gemini';
 import { BOOKS_DATA, CATECHISM_DATA } from './data';
 import { Env } from '../types';
+import { StudentDbRecord, ProfileDbRecord, FamilyPreferencesRecord, SkillProgressRecord, CurriculumPositionRecord, SpineRecord } from './types';
 
 /**
  * Unified Anchor Model
@@ -126,13 +127,13 @@ export class ArcGenerator {
      * Get children aged 0-6 years
      */
     private async getEligibleChildren(householdId: string): Promise<ChildData[]> {
-        const result = await safeQuery<any>(this.db,
+        const result = await safeQuery<StudentDbRecord>(this.db,
             'SELECT * FROM students WHERE household_id = ?',
             [householdId]
         );
 
         return (result.results || [])
-            .map((c: any) => {
+            .map((c) => {
                 const ageMonths = this.calculateAgeMonths(c.date_of_birth);
                 return {
                     id: c.id,
@@ -148,11 +149,11 @@ export class ArcGenerator {
     /**
      * Get progress for each child
      */
-    private async getChildProgressMap(children: ChildData[]): Promise<Map<string, any[]>> {
-        const progressMap = new Map<string, any[]>();
+    private async getChildProgressMap(children: ChildData[]): Promise<Map<string, SkillProgressRecord[]>> {
+        const progressMap = new Map<string, SkillProgressRecord[]>();
 
         for (const child of children) {
-            const result = await safeQuery<any>(this.db,
+            const result = await safeQuery<SkillProgressRecord>(this.db,
                 `SELECT subject, skill_target, mastery_level, practice_count 
                  FROM child_progress WHERE child_id = ?`,
                 [child.id]
@@ -172,7 +173,7 @@ export class ArcGenerator {
 
         for (const subject of subjects) {
             // Get family's current position for this subject
-            const position = await safeQueryFirst<any>(this.db,
+            const position = await safeQueryFirst<CurriculumPositionRecord>(this.db,
                 `SELECT current_week, spine_version FROM family_curriculum_position 
                  WHERE household_id = ? AND subject = ?`,
                 [householdId, subject]
@@ -182,9 +183,9 @@ export class ArcGenerator {
             const spineVersion = position?.spine_version;
 
             // Get spine entry for this week
-            let spineEntry: any = null;
+            let spineEntry: SpineRecord | null = null;
             if (spineVersion) {
-                spineEntry = await safeQueryFirst<any>(this.db,
+                spineEntry = await safeQueryFirst<SpineRecord>(this.db,
                     `SELECT * FROM curriculum_spine 
                      WHERE spine_version = ? AND subject = ? AND week_number = ?`,
                     [spineVersion, subject, currentWeek]
@@ -213,13 +214,13 @@ export class ArcGenerator {
      * Get current liturgy position (hymn, catechism question)
      */
     private async getLiturgyPosition(householdId: string): Promise<{ hymn_index: number; catechism_q: number }> {
-        const profile = await safeQueryFirst<any>(this.db,
+        const profile = await safeQueryFirst<ProfileDbRecord>(this.db,
             'SELECT catechism_position FROM family_profiles WHERE id = ?',
             [householdId]
         );
 
         // Try getting from family_preferences too
-        const prefs = await safeQueryFirst<any>(this.db,
+        const prefs = await safeQueryFirst<FamilyPreferencesRecord>(this.db,
             'SELECT overrides_json FROM family_preferences WHERE parent_id IN (SELECT parent_id FROM households WHERE id = ?)',
             [householdId]
         );
@@ -227,9 +228,9 @@ export class ArcGenerator {
         let hymnIndex = 0;
         if (prefs?.overrides_json) {
             try {
-                const overrides = JSON.parse(prefs.overrides_json);
-                hymnIndex = overrides.hymn_index || 0;
-            } catch (e) { }
+                const overrides = JSON.parse(prefs.overrides_json) as Record<string, unknown>;
+                hymnIndex = (overrides.hymn_index as number) || 0;
+            } catch { /* Empty catch - fallback to default hymn index */ }
         }
 
         return {
@@ -245,7 +246,7 @@ export class ArcGenerator {
         householdId: string,
         children: ChildData[],
         targets: WeeklyTargets[],
-        progressMap: Map<string, any[]>,
+        progressMap: Map<string, SkillProgressRecord[]>,
         liturgyPosition: { hymn_index: number; catechism_q: number },
         feedback?: string
     ): Promise<FormationArc> {
@@ -279,8 +280,8 @@ Output ONLY valid JSON matching the FormationArc interface.`;
             age_months: c.age_months,
             stage: c.stage,
             mastered_skills: (progressMap.get(c.id) || [])
-                .filter((p: any) => p.mastery_level === 'mastered')
-                .map((p: any) => p.skill_target)
+                .filter((p) => p.mastery_level === 'mastered')
+                .map((p) => p.skill_target)
         }));
 
         const targetsSummary = targets.map(t => ({
@@ -398,7 +399,7 @@ Materials should be common household items only.`;
     ): Promise<void> {
         for (const skill of skillsPracticed) {
             // Check if skill already exists
-            const existing = await safeQueryFirst<any>(this.db,
+            const existing = await safeQueryFirst<SkillProgressRecord & { id: string }>(this.db,
                 `SELECT id, practice_count, mastery_level FROM child_progress 
                  WHERE child_id = ? AND subject = ? AND skill_target = ?`,
                 [childId, skill.subject, skill.skill_target]
@@ -456,7 +457,7 @@ Materials should be common household items only.`;
 
         try {
             return JSON.parse(result.arc_data);
-        } catch (e) {
+        } catch {
             console.error('[ArcGenerator] Failed to parse stored arc');
             return null;
         }

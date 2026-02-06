@@ -1,4 +1,6 @@
 
+import { GeminiResponse, StreamChunk } from './types';
+
 export interface GeminiMessage {
     role: 'user' | 'model' | 'system';
     parts: { text: string }[];
@@ -45,14 +47,18 @@ export class GeminiService {
     async generateContent(
         contents: GeminiContent[],
         systemInstruction?: string,
-        responseSchema?: any, // For constrained decoding
+        responseSchema?: object | null, // For constrained decoding
         responseMimeType: 'text/plain' | 'application/json' = 'text/plain'
-    ) {
+    ): Promise<string> {
         const url = `${this.baseUrl}/${this.model}:generateContent?key=${this.apiKey}`;
 
         const removeSystemRoles = contents; // GeminiContent role is only user|model, system is separate prompt
 
-        const body: any = {
+        const body: {
+            contents: GeminiContent[];
+            systemInstruction?: { parts: { text: string }[] };
+            generationConfig: { responseMimeType: string; responseSchema?: object };
+        } = {
             contents: removeSystemRoles,
             generationConfig: {
                 responseMimeType: responseMimeType
@@ -80,7 +86,7 @@ export class GeminiService {
             throw new Error(`Gemini API Error ${response.status}: ${errorText}`);
         }
 
-        const data = await response.json() as any;
+        const data = await response.json() as GeminiResponse;
         const text = data.candidates?.[0]?.content?.parts?.[0]?.text;
 
         if (!text) {
@@ -97,10 +103,14 @@ export class GeminiService {
         contents: GeminiContent[],
         systemInstruction?: string,
         tools?: GeminiTool[]
-    ): AsyncGenerator<any> { // Yields chunks or tool call objects
+    ): AsyncGenerator<StreamChunk> { // Yields chunks or tool call objects
         const url = `${this.baseUrl}/${this.model}:streamGenerateContent?alt=sse&key=${this.apiKey}`;
 
-        const body: any = {
+        const body: {
+            contents: GeminiContent[];
+            systemInstruction?: { parts: { text: string }[] };
+            tools?: GeminiTool[];
+        } = {
             contents: contents
         };
 
@@ -173,13 +183,12 @@ export class GeminiService {
         contents: GeminiContent[],
         systemInstruction?: string
     ): Promise<ReadableStream> {
-        const self = this;
         const encoder = new TextEncoder();
+        const generator = this.streamGenerateContent(contents, systemInstruction);
 
         return new ReadableStream({
-            async start(controller) {
+            start: async (controller) => {
                 try {
-                    const generator = self.streamGenerateContent(contents, systemInstruction);
 
                     for await (const chunk of generator) {
                         if (chunk.text) {

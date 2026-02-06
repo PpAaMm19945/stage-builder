@@ -14,6 +14,7 @@ import { GeminiService } from './gemini';
 import { AnchorGenerator, DailyAnchor, AnchorContext } from './anchor-generator';
 import { ArcGenerator } from './arc-generator';
 import { CATECHISM_DATA } from './data';
+import { ChatHistoryMessage, ChatContext, ChildRecord } from './types';
 
 // Feedback patterns to detect in messages
 const FEEDBACK_PATTERNS = {
@@ -28,7 +29,7 @@ interface ChatResponse {
     message: string;
     action?: {
         type: 'complete' | 'skip' | 'regenerate' | 'feedback';
-        payload?: any;
+        payload?: string | Record<string, unknown>;
     };
     anchor?: DailyAnchor;
 }
@@ -47,7 +48,7 @@ export class Cortex {
     /**
      * Main chat entry point - streams response
      */
-    async chat(message: string, history: any[], context: any): Promise<ReadableStream> {
+    async chat(message: string, history: ChatHistoryMessage[], context: ChatContext): Promise<ReadableStream> {
         const encoder = new TextEncoder();
         const householdId = context.householdId || context.user?.household_id || context.userState?.household_id;
 
@@ -86,7 +87,7 @@ export class Cortex {
     /**
      * Detect intent from message
      */
-    private detectIntent(message: string): { type: string; payload?: any } {
+    private detectIntent(message: string): { type: string; payload?: string } {
         if (FEEDBACK_PATTERNS.COMPLETE.test(message)) {
             return { type: 'complete' };
         }
@@ -113,23 +114,21 @@ export class Cortex {
      * Handle special intents (complete, skip, regenerate, etc.)
      */
     private async handleIntent(
-        intent: { type: string; payload?: any },
+        intent: { type: string; payload?: string },
         householdId: string,
         anchor: DailyAnchor | null,
         encoder: TextEncoder,
         originalMessage: string
     ): Promise<ReadableStream> {
-        const self = this;
-
         return new ReadableStream({
-            async start(controller) {
+            start: async (controller) => {
                 try {
                     let response = '';
 
                     switch (intent.type) {
                         case 'complete':
                             if (anchor) {
-                                await self.anchorGenerator.completeAnchor(householdId, anchor.id, {
+                                await this.anchorGenerator.completeAnchor(householdId, anchor.id, {
                                     notes: originalMessage
                                 });
                                 response = `🎉 Wonderful! I've marked today's anchor as complete.\n\nGreat job working on "${anchor.theme}" together! Your children practiced: ${anchor.family_activity.targets_covered?.join(', ') || 'valuable skills'}.\n\nSee you tomorrow for a new adventure!`;
@@ -141,7 +140,7 @@ export class Cortex {
                         case 'skip':
                             if (anchor) {
                                 const skipReason = originalMessage?.trim();
-                                await self.anchorGenerator.skipAnchor(
+                                await this.anchorGenerator.skipAnchor(
                                     householdId,
                                     anchor.id,
                                     skipReason || 'Cortex skip: no reason provided'
@@ -150,27 +149,29 @@ export class Cortex {
                             response = "No problem! Rest is important too. I'll save today's activity for another time. 💛\n\nWould you like a simpler alternative, or shall we pick up tomorrow?";
                             break;
 
-                        case 'regenerate':
-                            const newAnchor = await self.anchorGenerator.generateAnchor(
+                        case 'regenerate': {
+                            const newAnchor = await this.anchorGenerator.generateAnchor(
                                 householdId,
                                 new Date().toISOString().split('T')[0],
                                 { adjustments: 'Generate a completely different activity' }
                             );
                             response = `Here's a fresh activity for today:\n\n**${newAnchor.theme}**\n\n${newAnchor.family_activity.description}\n\nMaterials: ${newAnchor.family_activity.materials?.join(', ') || 'None needed'}`;
                             break;
+                        }
 
-                        case 'adjust':
-                            const adjustedAnchor = await self.anchorGenerator.generateAnchor(
+                        case 'adjust': {
+                            const adjustedAnchor = await this.anchorGenerator.generateAnchor(
                                 householdId,
                                 new Date().toISOString().split('T')[0],
                                 { adjustments: intent.payload }
                             );
                             response = `I've adjusted today's anchor based on your request:\n\n**${adjustedAnchor.theme}**\n\n${adjustedAnchor.family_activity.description}`;
                             break;
+                        }
 
                         case 'feedback':
                             if (anchor) {
-                                await self.anchorGenerator.completeAnchor(householdId, anchor.id, {
+                                await this.anchorGenerator.completeAnchor(householdId, anchor.id, {
                                     notes: intent.payload
                                 });
                             }
@@ -199,16 +200,16 @@ export class Cortex {
      */
     private async anchorChat(
         message: string,
-        history: any[],
+        history: ChatHistoryMessage[],
         anchor: DailyAnchor | null,
-        context: any,
+        context: ChatContext,
         encoder: TextEncoder
     ): Promise<ReadableStream> {
         const systemPrompt = this.buildAnchorSystemPrompt(anchor, context);
 
         // Build messages for Gemini
-        const geminiHistory: any[] = history.slice(-10).map(m => ({
-            role: m.role === 'assistant' ? 'model' : 'user',
+        const geminiHistory = history.slice(-10).map(m => ({
+            role: (m.role === 'assistant' ? 'model' : 'user') as 'user' | 'model',
             parts: [{ text: m.content }]
         }));
 
@@ -224,9 +225,9 @@ export class Cortex {
     /**
      * Build system prompt with today's anchor
      */
-    private buildAnchorSystemPrompt(anchor: DailyAnchor | null, context: any): string {
+    private buildAnchorSystemPrompt(anchor: DailyAnchor | null, context: ChatContext): string {
         const childrenInfo = context.children?.length
-            ? context.children.map((c: any) => `${c.name} (${Math.floor(c.age_months / 12)} years)`).join(', ')
+            ? context.children.map((c: ChildRecord) => `${c.name} (${Math.floor((c.age_months || 0) / 12)} years)`).join(', ')
             : 'your children';
 
         let prompt = `You are the Anchor Companion, a warm and encouraging Christian homeschool assistant.
