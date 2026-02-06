@@ -90,7 +90,7 @@ const DEFAULT_SOURCES = {
  * POST /api/admin/spine/generate
  * Trigger multi-call spine generation for a subject
  */
-spineRoutes.post('/generate', async (c) => {
+spineRoutes.post('/api/admin/spine/generate', async (c) => {
     try {
         const body = await c.req.json();
         const { subject, startWeek, endWeek, stage } = body;
@@ -127,7 +127,7 @@ spineRoutes.post('/generate', async (c) => {
  * GET /api/admin/spine/conflicts
  * Get pending conflicts for a spine version
  */
-spineRoutes.get('/conflicts', async (c) => {
+spineRoutes.get('/api/admin/spine/conflicts', async (c) => {
     const version = c.req.query('version');
     if (!version) {
         return c.json({ error: 'Missing version parameter' }, 400);
@@ -143,7 +143,7 @@ spineRoutes.get('/conflicts', async (c) => {
  * POST /api/admin/spine/resolve
  * Resolve a conflict by selecting preferred draft
  */
-spineRoutes.post('/resolve', async (c) => {
+spineRoutes.post('/api/admin/spine/resolve', async (c) => {
     const body = await c.req.json();
     const { version, weekNumber, selectedDraftId, resolvedBy } = body;
 
@@ -161,7 +161,7 @@ spineRoutes.post('/resolve', async (c) => {
  * POST /api/admin/spine/approve
  * Approve and freeze a spine version
  */
-spineRoutes.post('/approve', async (c) => {
+spineRoutes.post('/api/admin/spine/approve', async (c) => {
     const body = await c.req.json();
     const { version, approvedBy } = body;
 
@@ -179,7 +179,7 @@ spineRoutes.post('/approve', async (c) => {
  * GET /api/admin/spine/list
  * List all spine versions and their status
  */
-spineRoutes.get('/list', async (c) => {
+spineRoutes.get('/api/admin/spine/list', async (c) => {
     const result = await safeQuery<any>(c.env.DB, `
         SELECT spine_version, status, total_weeks, subjects, approved_by, approved_at, created_at
         FROM spine_metadata
@@ -203,7 +203,7 @@ spineRoutes.get('/list', async (c) => {
  * GET /api/admin/spine/entries
  * Get entries for a specific spine version
  */
-spineRoutes.get('/entries', async (c) => {
+spineRoutes.get('/api/admin/spine/entries', async (c) => {
     const version = c.req.query('version');
     const subject = c.req.query('subject');
 

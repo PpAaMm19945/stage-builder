@@ -89,6 +89,17 @@ app.get('/auth/google/callback', async (c) => {
 
         if (!email) throw new Error('No email provided by Google');
 
+        // Security: Whitelist Check
+        const ALLOWED_EMAILS = [
+            'antmwes104.1@gmail.com',
+            'test@gmail.com',
+            'test_parent@example.com' // Allow mock user email if needed
+        ];
+
+        if (!ALLOWED_EMAILS.includes(email)) {
+            return c.text('Access Denied: This email is not authorized for the beta.', 403);
+        }
+
         // Find or Create User
         let user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE email = ?', [email]);
 
@@ -223,6 +234,59 @@ app.get('/api/debug/auth', async (c) => {
         userLookup,
         manualVerify
     });
+});
+
+// MOCK LOGIN FOR TESTING
+app.get('/auth/mock-login', async (c) => {
+    try {
+        // 1. Create/Get Test User
+        const email = 'test_parent@example.com';
+        const name = 'Test Parent';
+
+        // Check if user exists
+        let user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE email = ?', [email]);
+
+        if (!user) {
+            const userId = 'user_test_mock';
+            const householdId = 'house_test_mock';
+
+            // Create household
+            await safeRun(c.env.DB,
+                'INSERT OR IGNORE INTO households (id, name, invite_code) VALUES (?, ?, ?)',
+                [householdId, 'Test Family', 'TEST-CODE']
+            );
+
+            // Create user
+            await safeRun(c.env.DB,
+                'INSERT INTO users (id, email, name, role, household_id, provider, avatar_url) VALUES (?, ?, ?, ?, ?, ?, ?)',
+                [userId, email, name, 'parent', householdId, 'mock', 'https://ui-avatars.com/api/?name=Test+Parent']
+            );
+
+            user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE id = ?', [userId]);
+        }
+
+        if (!user) throw new Error('Failed to create mock user');
+
+        // 2. Generate Token
+        const payload: Omit<JWTPayload, 'iat'> = {
+            sub: user.id,
+            email: user.email,
+            name: user.name,
+            household_id: user.household_id,
+            role: user.role,
+            student_id: user.student_id,
+            exp: Math.floor(Date.now() / 1000) + (60 * 60 * 24 * 30), // 30 days
+        };
+
+        const token = await signJWT(payload, c.env.JWT_SECRET);
+
+        // 3. Redirect to Frontend
+        const frontendUrl = c.env.FRONTEND_URL || 'https://stage-builder-9hh.pages.dev';
+        return c.redirect(`${frontendUrl}/auth/callback#token=${token}`);
+
+    } catch (e: any) {
+        return c.text(`Mock Login Failed: ${e.message}`, 500);
+    }
 });
 
 export default app;

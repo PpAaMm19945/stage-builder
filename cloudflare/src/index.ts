@@ -73,7 +73,7 @@ app.route('/', reportsRoutes);
 app.route('/', adminRoutes);
 app.route('/', pathsRoutes);
 app.route('/', aiRoutes);           // [NEW]
-app.route('/api/admin/spine', spineRoutes); // [NEW] Curriculum spine admin
+app.route('/', spineRoutes);        // [CHANGED] Mounted at root to fix nesting
 app.route('/api/debug', debugRoutes);       // [NEW] Debug routes
 // app.route('/api/anchor', anchorRoutes); // [MOVED UP]
 

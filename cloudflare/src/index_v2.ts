@@ -32,6 +32,8 @@ import adminRoutes from './routes/admin';
 import pathsRoutes from './routes/paths';
 import aiRoutes from './routes/ai';                 // [NEW]
 import anchorRoutes from './routes/anchor';         // [NEW]
+import spineRoutes from './routes/spine';           // [NEW] Curriculum spine admin
+import debugRoutes from './routes/debug';           // [NEW] Debug routes
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null; nonce: string } }>();
 
@@ -71,6 +73,8 @@ app.route('/', adminRoutes);
 app.route('/', pathsRoutes);
 app.route('/', aiRoutes);           // [NEW]
 app.route('/api/anchor', anchorRoutes); // [NEW]
+app.route('/', spineRoutes);        // [NEW] Curriculum spine admin (mounted at root for full path support)
+app.route('/api/debug', debugRoutes);       // [NEW] Debug routes
 
 // Global error handler with CORS
 app.onError(errorHandler);
