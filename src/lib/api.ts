@@ -776,6 +776,11 @@ export const anchor = {
 };
 
 export const adminAi = {
+  getOverview: (days?: number) =>
+    apiRequest<{ overview: any; topFeatures: { feature: string; count: number }[]; startDate: string; days: number }>(
+      `/api/admin/ai/overview${days ? `?days=${days}` : ''}`
+    ),
+
   getTelemetry: (params?: { feature?: string; startDate?: string; endDate?: string; limit?: number }) => {
     const query = new URLSearchParams();
     if (params?.feature) query.set('feature', params.feature);

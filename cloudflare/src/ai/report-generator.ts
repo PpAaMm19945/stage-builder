@@ -242,7 +242,7 @@ export class ReportGenerator {
                 latency_ms: Date.now() - startTime,
                 status: 'success',
                 metadata: { statsSummary: stats.summary }
-            });
+            }, waitUntil);
 
             return JSON.parse(result.text);
         } catch (e) {
@@ -253,7 +253,7 @@ export class ReportGenerator {
                 status: 'error',
                 error_type: e instanceof Error ? e.message : 'Unknown error',
                 metadata: { statsSummary: stats.summary }
-            });
+            }, waitUntil);
             console.error("Failed to generate insights", e);
             return {
                 insights: ["Weekly report generated successfully."],

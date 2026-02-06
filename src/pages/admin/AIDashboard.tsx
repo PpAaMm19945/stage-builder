@@ -11,6 +11,7 @@ const AIDashboard = () => {
     const [stats, setStats] = useState<any>(null);
     const [telemetry, setTelemetry] = useState<any[]>([]);
     const [anchors, setAnchors] = useState<any[]>([]);
+    const [overview, setOverview] = useState<any>(null);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -21,16 +22,18 @@ const AIDashboard = () => {
     const loadData = async () => {
         try {
             setLoading(true);
-            const [spineRes, telRes, anchorRes, activityRes] = await Promise.all([
+            const [spineRes, telRes, anchorRes, activityRes, overviewRes] = await Promise.all([
                 api.adminAi.getSpineStats(),
                 api.adminAi.getTelemetry({ limit: 50 }),
                 api.adminAi.getAnchors(20),
-                api.adminAi.getActivities()
+                api.adminAi.getActivities(),
+                api.adminAi.getOverview(30)
             ]);
 
             setStats({ ...spineRes, activities: activityRes });
             setTelemetry(telRes.telemetry);
             setAnchors(anchorRes.anchors);
+            setOverview(overviewRes);
             setError(null);
         } catch (err: any) {
             console.error(err);
@@ -56,14 +59,14 @@ const AIDashboard = () => {
                 </div>
             </header>
 
-            <div className="grid gap-4 md:grid-cols-3">
+            <div className="grid gap-4 md:grid-cols-4">
                 <Card>
                     <CardHeader className="pb-2">
-                        <CardTitle className="text-sm font-medium">Total Spine Gens</CardTitle>
+                        <CardTitle className="text-sm font-medium">Total AI Calls</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{stats?.stats?.total_generations || 0}</div>
-                        <p className="text-xs text-muted-foreground">Lifetime generations</p>
+                        <div className="text-2xl font-bold">{overview?.overview?.total_calls || 0}</div>
+                        <p className="text-xs text-muted-foreground">Last {overview?.days || 30} days</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -71,8 +74,8 @@ const AIDashboard = () => {
                         <CardTitle className="text-sm font-medium">Avg Latency</CardTitle>
                     </CardHeader>
                     <CardContent>
-                        <div className="text-2xl font-bold">{Math.round(stats?.stats?.avg_latency || 0)}ms</div>
-                        <p className="text-xs text-muted-foreground">Per request</p>
+                        <div className="text-2xl font-bold">{Math.round(overview?.overview?.avg_latency || 0)}ms</div>
+                        <p className="text-xs text-muted-foreground">Across AI features</p>
                     </CardContent>
                 </Card>
                 <Card>
@@ -81,20 +84,59 @@ const AIDashboard = () => {
                     </CardHeader>
                     <CardContent>
                         <div className="text-2xl font-bold">
-                            {stats?.stats?.total_generations ? Math.round(((stats.stats.error_count || 0) / stats.stats.total_generations) * 100) : 0}%
+                            {overview?.overview?.total_calls ? Math.round(((overview.overview.error_count || 0) / overview.overview.total_calls) * 100) : 0}%
                         </div>
                         <p className="text-xs text-muted-foreground">Failure rate</p>
+                    </CardContent>
+                </Card>
+                <Card>
+                    <CardHeader className="pb-2">
+                        <CardTitle className="text-sm font-medium">Total Tokens</CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                        <div className="text-2xl font-bold">
+                            {(overview?.overview?.total_request_tokens || 0) + (overview?.overview?.total_response_tokens || 0)}
+                        </div>
+                        <p className="text-xs text-muted-foreground">Prompt + response</p>
                     </CardContent>
                 </Card>
             </div>
 
             <Tabs defaultValue="telemetry">
                 <TabsList>
+                    <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="telemetry">Telemetry Log</TabsTrigger>
                     <TabsTrigger value="anchors">Anchor Monitor</TabsTrigger>
                     <TabsTrigger value="spine">Spine Conflicts</TabsTrigger>
                     <TabsTrigger value="activities">Activity Monitoring</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="overview" className="space-y-4">
+                    <Card>
+                        <CardHeader>
+                            <CardTitle>Top Features</CardTitle>
+                            <CardDescription>Most active AI features in the last {overview?.days || 30} days</CardDescription>
+                        </CardHeader>
+                        <CardContent>
+                            <Table>
+                                <TableHeader>
+                                    <TableRow>
+                                        <TableHead>Feature</TableHead>
+                                        <TableHead>Calls</TableHead>
+                                    </TableRow>
+                                </TableHeader>
+                                <TableBody>
+                                    {(overview?.topFeatures || []).map((feature: any) => (
+                                        <TableRow key={feature.feature}>
+                                            <TableCell>{feature.feature}</TableCell>
+                                            <TableCell>{feature.count}</TableCell>
+                                        </TableRow>
+                                    ))}
+                                </TableBody>
+                            </Table>
+                        </CardContent>
+                    </Card>
+                </TabsContent>
 
                 <TabsContent value="telemetry" className="space-y-4">
                     <Card>
@@ -146,8 +188,8 @@ const AIDashboard = () => {
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
-                                    {anchors.map((anchor) => (
-                                        <TableRow key={anchor.id}>
+                                    {anchors.map((anchor, index) => (
+                                        <TableRow key={`${anchor.date}-${index}`}>
                                             <TableCell>{anchor.date}</TableCell>
                                             <TableCell>{anchor.data?.theme || 'N/A'}</TableCell>
                                             <TableCell className="max-w-xs truncate" title={anchor.reasoning}>{anchor.reasoning}</TableCell>

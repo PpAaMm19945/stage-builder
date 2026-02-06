@@ -90,6 +90,11 @@ export class SpineGenerator {
 
         // 3. Store in database (as draft status)
         await this.storeDraftSpine(version, subject, consensusEntries, drafts, conflicts);
+        await this.telemetry.logContentAudit({
+            feature: 'spine',
+            content_id: version,
+            content_excerpt: this.buildSpineAuditExcerpt(subject, startWeek, endWeek, stage, consensusEntries)
+        }, waitUntil);
 
         return { version, drafts, consensusEntries, conflicts };
     }
@@ -169,7 +174,7 @@ Generate one entry per week. Each entry should have:
                 status: 'error',
                 error_type: error instanceof Error ? error.message : 'Unknown error',
                 metadata: { subject, stage, week: startWeek, draftIndex }
-            });
+            }, waitUntil);
             throw error;
         }
 
@@ -311,6 +316,22 @@ Generate one entry per week. Each entry should have:
         }
 
         console.log(`[SpineGenerator] Stored ${entries.length} entries as version ${version}`);
+    }
+
+    private buildSpineAuditExcerpt(
+        subject: SpineEntry['subject'],
+        startWeek: number,
+        endWeek: number,
+        stage: SpineEntry['stage'],
+        entries: SpineEntry[]
+    ): string {
+        const focusAreas = entries.slice(0, 5).map(entry => `${entry.week_number}: ${entry.focus_area}`);
+        return [
+            `Subject: ${subject}`,
+            `Stage: ${stage}`,
+            `Weeks: ${startWeek}-${endWeek}`,
+            `Focus areas: ${focusAreas.join('; ')}`
+        ].join(' | ').slice(0, 1000);
     }
 
     /**
