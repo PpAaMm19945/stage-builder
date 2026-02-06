@@ -29,6 +29,41 @@ app.use('*', async (c, next) => {
 });
 
 /**
+ * GET /api/admin/ai/overview
+ * Aggregate AI ops stats (default last 30 days).
+ */
+app.get('/overview', async (c) => {
+    try {
+        const days = Math.min(Number(c.req.query('days')) || 30, 90);
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+        const overview = await c.env.DB.prepare(`
+            SELECT 
+                COUNT(*) as total_calls,
+                AVG(latency_ms) as avg_latency,
+                SUM(request_tokens) as total_request_tokens,
+                SUM(response_tokens) as total_response_tokens,
+                SUM(case when status = 'error' then 1 else 0 end) as error_count
+            FROM ai_telemetry
+            WHERE timestamp >= ?
+        `).bind(startDate).first();
+
+        const { results: topFeatures } = await c.env.DB.prepare(`
+            SELECT feature, COUNT(*) as count
+            FROM ai_telemetry
+            WHERE timestamp >= ?
+            GROUP BY feature
+            ORDER BY count DESC
+            LIMIT 5
+        `).bind(startDate).all();
+
+        return c.json({ overview, topFeatures, startDate, days });
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+/**
  * GET /api/admin/ai/telemetry
  * Filter by feature, date range.
  */
@@ -83,7 +118,7 @@ app.get('/anchors', async (c) => {
         const limit = Math.min(Number(c.req.query('limit')) || 20, 50);
 
         const { results } = await c.env.DB.prepare(`
-            SELECT id, household_id, anchor_date, anchor_data, status, generation_reasoning 
+            SELECT anchor_date, anchor_data, status, generation_reasoning 
             FROM daily_anchors 
             ORDER BY anchor_date DESC 
             LIMIT ?
@@ -92,21 +127,34 @@ app.get('/anchors', async (c) => {
         const anchors = results.map((row: any) => {
             let data: any = {};
             try {
-                data = JSON.parse(row.anchor_data);
-                // Sanitize PII
-                if (data.family_activity?.levels) {
-                    data.family_activity.levels = data.family_activity.levels.map((l: any) => ({
-                        ...l,
-                        child_name: '[REDACTED]',
-                        child_id: l.child_id // Keep ID for debugging
-                    }));
-                }
+                const parsed = JSON.parse(row.anchor_data);
+                data = {
+                    theme: parsed.theme,
+                    liturgy: parsed.liturgy ? {
+                        hymn: parsed.liturgy.hymn,
+                        catechism_q: parsed.liturgy.catechism_q,
+                        scripture: parsed.liturgy.scripture
+                    } : null,
+                    family_activity: parsed.family_activity ? {
+                        title: parsed.family_activity.title,
+                        description: parsed.family_activity.description,
+                        skill_domain: parsed.family_activity.skill_domain,
+                        targets_covered: parsed.family_activity.targets_covered,
+                        formation_lens: parsed.family_activity.formation_lens,
+                        materials: parsed.family_activity.materials,
+                        duration_minutes: parsed.family_activity.duration_minutes,
+                        location: parsed.family_activity.location
+                    } : null,
+                    book_nook: parsed.book_nook ? {
+                        title: parsed.book_nook.title,
+                        discussion_prompt: parsed.book_nook.discussion_prompt
+                    } : null
+                };
             } catch (e) {
                 data = { error: 'Failed to parse anchor data' };
             }
 
             return {
-                id: row.id,
                 date: row.anchor_date,
                 status: row.status,
                 reasoning: row.generation_reasoning,

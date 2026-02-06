@@ -62,7 +62,7 @@ export class AITelemetryService {
     /**
      * Log content for audit purposes.
      */
-    async logContentAudit(data: ContentAuditLog): Promise<void> {
+    async logContentAudit(data: ContentAuditLog, waitUntil?: (promise: Promise<any>) => void): Promise<void> {
         const id = crypto.randomUUID();
         const created_at = new Date().toISOString();
 
@@ -75,7 +75,7 @@ export class AITelemetryService {
             VALUES (?, ?, ?, ?, ?)
         `;
 
-        await this.db.prepare(query)
+        const promise = this.db.prepare(query)
             .bind(
                 id,
                 data.feature,
@@ -84,5 +84,11 @@ export class AITelemetryService {
                 created_at
             )
             .run();
+
+        if (waitUntil) {
+            waitUntil(promise);
+        } else {
+            await promise;
+        }
     }
 }

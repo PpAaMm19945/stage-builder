@@ -129,7 +129,7 @@ export class AnchorGenerator {
                 feature: 'anchor_generation',
                 status: 'success',
                 latency_ms: 0,
-                metadata: { type: 'cache_hit', householdId }
+                metadata: { type: 'cache_hit' }
             }, waitUntil);
             return JSON.parse(cached.anchor_data);
         }
@@ -170,16 +170,37 @@ export class AnchorGenerator {
             // Use pre-built plan directly (more efficient)
             anchor = this.convertPlanToAnchor(prebuiltPlan, activeArc.id, date, dayInArc);
             console.log('[AnchorGenerator] Using pre-built plan for day', dayInArc);
+            this.telemetry.logTelemetry({
+                feature: 'anchor_generation',
+                status: 'success',
+                latency_ms: 0,
+                metadata: { type: 'prebuilt_plan', dayInArc, hasBasePlan: true }
+            }, waitUntil);
         } else {
             // Generate with AI (with guardrails)
             anchor = await this.generateWithAI(householdId, activeArc, dayInArc, date, prebuiltPlan, context, waitUntil);
         }
 
         // 4. Validate materials against whitelist
-        anchor.family_activity.materials = this.validateMaterials(anchor.family_activity.materials);
+        const { materials, violations } = this.validateMaterials(anchor.family_activity.materials);
+        anchor.family_activity.materials = materials;
+        if (violations.length > 0) {
+            this.telemetry.logTelemetry({
+                feature: 'anchor_guardrails',
+                status: 'error',
+                latency_ms: 0,
+                error_type: 'invalid_materials',
+                metadata: { invalidMaterials: violations.slice(0, 10) }
+            }, waitUntil);
+        }
 
         // 5. Store anchor
         await this.storeAnchor(householdId, activeArc.id, date, anchor);
+        await this.telemetry.logContentAudit({
+            feature: 'anchor',
+            content_id: anchor.id,
+            content_excerpt: this.buildAnchorAuditExcerpt(anchor)
+        }, waitUntil);
 
         return anchor;
     }
@@ -315,7 +336,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
                 response_tokens: usage?.candidatesTokenCount,
                 latency_ms: Date.now() - startTime,
                 status: 'success',
-                metadata: { type: 'generation', householdId, dayInArc, hasBasePlan: !!basePlan }
+                metadata: { type: 'generation', dayInArc, hasBasePlan: !!basePlan }
             }, waitUntil);
         } catch (error) {
             this.telemetry.logTelemetry({
@@ -324,7 +345,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
                 latency_ms: Date.now() - startTime,
                 status: 'error',
                 error_type: error instanceof Error ? error.message : 'Unknown error',
-                metadata: { type: 'generation', householdId, dayInArc }
+                metadata: { type: 'generation', dayInArc }
             }, waitUntil);
             throw error;
         }
@@ -394,13 +415,29 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
     /**
      * Validate materials against whitelist
      */
-    private validateMaterials(materials: string[]): string[] {
-        return materials.filter(m => {
+    private validateMaterials(materials: string[]): { materials: string[]; violations: string[] } {
+        const violations: string[] = [];
+        const filtered = materials.filter(m => {
             const normalized = m.toLowerCase().trim();
-            return MATERIAL_WHITELIST.some(allowed =>
-                normalized.includes(allowed) || allowed.includes(normalized)
+            const allowed = MATERIAL_WHITELIST.some(allowedItem =>
+                normalized.includes(allowedItem) || allowedItem.includes(normalized)
             );
+            if (!allowed) {
+                violations.push(normalized);
+            }
+            return allowed;
         });
+        return { materials: filtered, violations };
+    }
+
+    private buildAnchorAuditExcerpt(anchor: DailyAnchor): string {
+        const lines = [
+            `Theme: ${anchor.theme}`,
+            `Activity: ${anchor.family_activity.title}`,
+            `Domain: ${anchor.family_activity.skill_domain}`,
+            `Materials: ${anchor.family_activity.materials.join(', ')}`
+        ];
+        return lines.join(' | ').slice(0, 1000);
     }
 
     /**
