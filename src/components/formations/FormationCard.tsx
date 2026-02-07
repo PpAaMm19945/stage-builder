@@ -28,7 +28,9 @@ import { FormationTimer, useFormationTimer } from './FormationTimer';
 
 type ExtendedFormationType = Formation['formation_type'];
 
-const TYPE_ICONS: Record<ExtendedFormationType, any> = {
+type IconType = typeof Lightning;
+
+const TYPE_ICONS: Record<ExtendedFormationType, IconType> = {
     skill: Lightning,
     habit: Leaf,
     liturgy: HandsPraying,
@@ -325,7 +327,7 @@ export const FormationCard = memo(function FormationCard({
 
                     {/* READING VIEW */}
                     {type === 'reading' && (
-                        // @ts-ignore - Assuming formation extendedProps might have reading fields for now, or leveraging description
+                        // @ts-expect-error - Assuming formation extendedProps might have reading fields for now, or leveraging description
                         <div className="flex gap-4 pt-2">
                             {/* Fallback Reading Visual or actual cover if mapped */}
                             <div className="w-16 h-24 bg-sky-100 dark:bg-sky-900/30 rounded flex items-center justify-center shrink-0">
