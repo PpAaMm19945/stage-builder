@@ -68,8 +68,8 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
             await profile.update({
                 morning_minutes: morningMinutes,
                 evening_minutes: eveningMinutes,
-                available_days: JSON.stringify(selectedDays),
-                goals: JSON.stringify(selectedGoals),
+                available_days: selectedDays,
+                goals: selectedGoals,
                 onboarding_mode: onboardingMode || 'guided'
             });
             return weeklyPlan.regenerate(prefs);

@@ -26,6 +26,8 @@ export interface ChatContext {
     userState?: {
         household_id?: string;
     };
+    mode?: string;
+    page?: string;
     children?: Array<{
         id: string;
         name: string;

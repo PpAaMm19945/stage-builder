@@ -55,7 +55,7 @@ function InteractionCard({ log, isExpanded, onToggle }: InteractionCardProps) {
                                 <>
                                     <span>•</span>
                                     <span className="text-purple-600 dark:text-purple-400">
-                                        {log.context.activityTitle}
+                                        {log.context.activityTitle as string}
                                     </span>
                                 </>
                             )}

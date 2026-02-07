@@ -28,10 +28,10 @@ export function MomentumRings() {
     }
 
     const days = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
-    const slots = planData?.plan?.slots || [];
+    const slots = (planData?.plan?.slots || []) as Array<{ day: string; activityId?: string }>;
 
     const rings = days.map(day => {
-        const hasActivities = slots.some((s: any) => s.day === day && s.activityId);
+        const hasActivities = slots.some((s) => s.day === day && s.activityId);
         return {
             day,
             status: hasActivities ? 'planned' : 'empty'
