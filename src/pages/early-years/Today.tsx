@@ -284,17 +284,17 @@ export default function Today() {
               Activities suitable for all your children to do together
             </p>
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              {data.familyActivities.map((familyActivity: { activity: ApiActivity; childTiers?: unknown[]; reasoning?: string }) => (
+              {data.familyActivities.map((activity: ApiActivity) => (
                 <Card
-                  key={familyActivity.activity.id}
+                  key={activity.id}
                   className="cursor-pointer hover:border-accent/40 hover:shadow-md transition-all border-accent/20"
-                  onClick={() => navigate(`/early-years/activities/${familyActivity.activity.id}`)}
+                  onClick={() => navigate(`/early-years/activities/${activity.id}`)}
                 >
                   <CardContent className="p-4 space-y-3">
                     <div className="flex items-start justify-between gap-2">
                       {(() => {
-                        const virtue = familyActivity.activity.primary_virtue ||
-                          (familyActivity.activity.domain ? DOMAIN_TO_VIRTUE[familyActivity.activity.domain as string] : 'Wisdom') ||
+                        const virtue = activity.primary_virtue ||
+                          (activity.domain ? DOMAIN_TO_VIRTUE[activity.domain as string] : 'Wisdom') ||
                           'Wisdom';
                         return (
                           <Badge variant="outline" className={virtueColors[virtue]}>
@@ -307,14 +307,14 @@ export default function Today() {
                       </Badge>
                     </div>
                     <h3 className="font-medium text-foreground leading-tight">
-                      {familyActivity.activity.title}
+                      {activity.title}
                     </h3>
                     <p className="text-sm text-muted-foreground line-clamp-2">
-                      {familyActivity.activity.description}
+                      {activity.description}
                     </p>
                     <div className="flex items-center gap-2 text-xs text-muted-foreground pt-1">
                       <Clock className="h-3 w-3" weight="duotone" />
-                      <span>{familyActivity.activity.duration_minutes} mins</span>
+                      <span>{activity.duration_minutes} mins</span>
                     </div>
                   </CardContent>
                 </Card>

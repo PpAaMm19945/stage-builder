@@ -7,7 +7,8 @@ import { Badge } from '@/components/ui/badge';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { format } from 'date-fns';
-import { PortfolioItem, DOMAIN_LABELS, EarlyYearsDomain } from '@/types';
+import { DOMAIN_LABELS, EarlyYearsDomain } from '@/types';
+import { PortfolioItem } from '@/types/api-responses';
 
 interface PortfolioFilters {
     domain?: string;
@@ -206,31 +207,31 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
                             <CardHeader className="p-4">
                                 <CardTitle className="text-lg flex justify-between items-start gap-2">
                                     <div className="flex items-center gap-2 min-w-0">
-                                        {item.milestoneTag && (
+                                        {item.milestone_tag && (
                                             <Star className="h-4 w-4 text-amber-500 flex-shrink-0" weight="fill" />
                                         )}
                                         <span className="truncate">{item.title}</span>
                                     </div>
                                     <span className="text-xs font-normal text-muted-foreground whitespace-nowrap">
-                                        {format(new Date(item.createdAt), 'MMM d, yyyy')}
+                                        {format(new Date(item.created_at || new Date()), 'MMM d, yyyy')}
                                     </span>
                                 </CardTitle>
                             </CardHeader>
                             <CardContent className="p-4 pt-0">
                                 <div className="aspect-video bg-muted rounded-md flex items-center justify-center mb-4 overflow-hidden relative">
-                                    {item.itemType === 'image' && item.publicUrl ? (
-                                        <img src={item.publicUrl} alt={item.title} className="w-full h-full object-cover" />
+                                    {item.item_type === 'image' && item.public_url ? (
+                                        <img src={item.public_url} alt={item.title} className="w-full h-full object-cover" />
                                     ) : (
                                         <div className="flex flex-col items-center text-muted-foreground">
-                                            {item.itemType === 'audio' && <FileAudio className="h-12 w-12 mb-2" />}
-                                            {item.itemType === 'document' && <FileText className="h-12 w-12 mb-2" />}
-                                            {item.itemType === 'text' && <FileText className="h-12 w-12 mb-2" />}
-                                            {item.itemType === 'image' && !item.publicUrl && <ImageIcon className="h-12 w-12 mb-2" />}
-                                            <span className="text-xs uppercase">{item.itemType}</span>
+                                            {item.item_type === 'audio' && <FileAudio className="h-12 w-12 mb-2" />}
+                                            {item.item_type === 'document' && <FileText className="h-12 w-12 mb-2" />}
+                                            {item.item_type === 'text' && <FileText className="h-12 w-12 mb-2" />}
+                                            {item.item_type === 'image' && !item.public_url && <ImageIcon className="h-12 w-12 mb-2" />}
+                                            <span className="text-xs uppercase">{item.item_type}</span>
                                         </div>
                                     )}
-                                    {item.publicUrl && item.itemType !== 'image' && (
-                                        <a href={item.publicUrl} target="_blank" rel="noopener noreferrer" className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors">
+                                    {item.public_url && item.item_type !== 'image' && (
+                                        <a href={item.public_url} target="_blank" rel="noopener noreferrer" className="absolute inset-0 flex items-center justify-center bg-black/5 hover:bg-black/10 transition-colors">
                                             <span className="sr-only">Open</span>
                                         </a>
                                     )}
@@ -244,9 +245,9 @@ export function PortfolioGallery({ studentId, refreshTrigger }: PortfolioGallery
                                             {item.domain.replace(/_/g, ' ')}
                                         </Badge>
                                     )}
-                                    {item.milestoneTag && (
+                                    {item.milestone_tag && (
                                         <Badge variant="outline" className="text-xs bg-amber-50 text-amber-700 dark:bg-amber-900/20 dark:text-amber-300">
-                                            {item.milestoneTag}
+                                            {item.milestone_tag}
                                         </Badge>
                                     )}
                                 </div>

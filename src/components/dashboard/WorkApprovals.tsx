@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { api } from '@/lib/api';
 import { CheckCircle, XCircle, Clock, Briefcase, AlertCircle, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { WorkEntry } from '@/types';
+import { WorkEntry } from '@/types/api-responses';
 
 // Extended type from API response
 interface PendingEntry extends WorkEntry {

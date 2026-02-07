@@ -98,7 +98,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
             if (!book) return null;
             const res = await progress.get(book.id);
             if (res.progress && res.progress.status === 'in_progress' && res.progress.data?.current_page) {
-                setRestoredPage(res.progress.data.current_page);
+                setRestoredPage(res.progress.data.current_page as number);
             }
             setInitialProgressChecked(true);
             return res.progress;
