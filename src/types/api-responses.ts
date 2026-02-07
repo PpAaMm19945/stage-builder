@@ -188,6 +188,7 @@ export interface FamilyProfile {
     preferences?: Record<string, unknown>;
     catechism_position?: number;
     hymn_position?: number;
+    onboarding_mode?: string;
 }
 
 // ============================================
@@ -230,6 +231,9 @@ export interface WorkEntry {
     status: 'pending' | 'approved' | 'rejected';
     supervisor_note?: string;
     created_at?: string;
+    apprenticeship_title?: string;
+    student_name?: string;
+    student_avatar?: string;
 }
 
 export interface Apprenticeship {

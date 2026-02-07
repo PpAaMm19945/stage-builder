@@ -4,15 +4,8 @@ import { CheckCircle, XCircle, Clock, Briefcase, AlertCircle, Loader2 } from 'lu
 import { Button } from '@/components/ui/button';
 import { WorkEntry } from '@/types/api-responses';
 
-// Extended type from API response
-interface PendingEntry extends WorkEntry {
-    apprenticeship_title: string;
-    student_name: string;
-    student_avatar?: string;
-}
-
 export function WorkApprovals() {
-    const [entries, setEntries] = useState<PendingEntry[]>([]);
+    const [entries, setEntries] = useState<WorkEntry[]>([]);
     const [loading, setLoading] = useState(true);
     const [processingId, setProcessingId] = useState<string | null>(null);
     const [error, setError] = useState<string | null>(null);
@@ -110,21 +103,21 @@ export function WorkApprovals() {
                                 {entry.student_avatar ? (
                                     <img
                                         src={entry.student_avatar}
-                                        alt={`${entry.student_name}'s avatar`}
+                                        alt={`${entry.student_name || 'Student'}'s avatar`}
                                         className="w-8 h-8 rounded-full border border-amber-200"
                                     />
                                 ) : (
                                     <div
                                         className="w-8 h-8 rounded-full bg-amber-200 flex items-center justify-center text-amber-800 text-xs font-bold"
-                                        aria-label={`${entry.student_name}'s initials`}
+                                        aria-label={`${entry.student_name || 'Student'}'s initials`}
                                     >
-                                        {entry.student_name.charAt(0)}
+                                        {(entry.student_name || '?').charAt(0)}
                                     </div>
                                 )}
                                 <div>
-                                    <div className="text-sm font-medium text-amber-900">{entry.apprenticeship_title}</div>
+                                    <div className="text-sm font-medium text-amber-900">{entry.apprenticeship_title || 'Unknown Role'}</div>
                                     <div className="text-xs text-amber-600 flex items-center gap-1">
-                                        {entry.student_name} &bull; {new Date(entry.date).toLocaleDateString()}
+                                        {entry.student_name || 'Unknown Student'} &bull; {new Date(entry.date).toLocaleDateString()}
                                     </div>
                                 </div>
                             </div>
@@ -175,7 +168,7 @@ export function WorkApprovals() {
                                         variant="destructive"
                                         size="sm"
                                         className="text-xs h-7 px-3 gap-1"
-                                        aria-label={`Confirm rejection for ${entry.student_name}'s entry`}
+                                        aria-label={`Confirm rejection for ${entry.student_name || 'student'}'s entry`}
                                     >
                                         {processingId === entry.id ? (
                                             <>
@@ -197,7 +190,7 @@ export function WorkApprovals() {
                                     size="sm"
                                     className="text-gray-500 hover:text-red-600 hover:bg-red-50 h-8 gap-1"
                                     aria-expanded={false}
-                                    aria-label={`Reject entry from ${entry.student_name}`}
+                                    aria-label={`Reject entry from ${entry.student_name || 'student'}`}
                                 >
                                     <XCircle className="w-4 h-4" />
                                     Reject
@@ -207,7 +200,7 @@ export function WorkApprovals() {
                                     disabled={!!processingId}
                                     size="sm"
                                     className="bg-green-600 hover:bg-green-700 h-8 gap-1 text-white"
-                                    aria-label={`Approve entry from ${entry.student_name}`}
+                                    aria-label={`Approve entry from ${entry.student_name || 'student'}`}
                                 >
                                     {processingId === entry.id ? (
                                         <Loader2 className="w-4 h-4 animate-spin" />

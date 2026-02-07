@@ -6,7 +6,7 @@
 
 ## 1. Executive Summary
 
-**Score: 8.0/10** (up from 5.5/10 in the original audit)
+**Score: 8.5/10** (up from 5.5/10 in the original audit)
 
 The three-engine disconnect has been resolved. Legacy files (`frontdesk.ts`, `router.ts`, `triage.ts`, `planner.ts`) are deleted. The codebase now runs on a single model (`gemini-3-flash-preview`) with a single identity (Anchor Companion). The core pipeline — **Spine → Arc → Anchor → Feedback** — is structurally complete, with real progress tracking wired into anchor completion.
 
@@ -237,9 +237,9 @@ The frontend build is now **clean**. All TypeScript build errors have been resol
 - `StudentAiChat.tsx`, `FrontdeskChat.tsx`: Updated `ChatContext` type.
 - `BookReader.tsx`: Fixed progress data typing.
 - `MomentumRings.tsx`: Fixed slots typing.
-- `WorkApprovals.tsx`: Aligned `WorkEntry` type import.
+- `WorkApprovals.tsx`: Fixed missing properties on `WorkEntry` and removed `PendingEntry`.
 - `FormationCard.tsx`: Removed unused ts-expect-error.
-- `WelcomeFlow.tsx`: Fixed JSON stringify usage.
+- `WelcomeFlow.tsx`: Fixed JSON stringify usage and added `onboarding_mode` to `FamilyProfile`.
 - `PortfolioGallery.tsx`: Updated `PortfolioItem` type and property usage (snake_case).
 - `Today.tsx`: Fixed map callback typing.
 
@@ -256,7 +256,7 @@ The architecture is now **correct and unified**. The original audit's core criti
 2. No automatic curriculum advancement
 3. Feedback aggregation table is unused
 
-**Path from 8.0 to 9/10:**
+**Path from 8.5 to 9/10:**
 1. Seed 4-8 weeks of curriculum spine data → activates deterministic curriculum
 2. Wire `advanceCurriculumPosition()` to arc completion → closes the progression loop
 3. Implement feedback summary aggregation → enables data-driven arc improvement
