@@ -229,6 +229,103 @@ The three-engine disconnect has been resolved. Legacy files (`frontdesk.ts`, `ro
 
 ---
 
+## 6A. Completion Plan (Detailed, Practical)
+
+Below is a concrete, end-to-end plan to close every remaining gap. It is ordered by dependency and impact, with clear implementation steps, verification, and suggested sequencing.
+
+### Phase 1 — Curriculum Backbone (Highest leverage)
+
+**Goal:** Make the spine → arc → anchor pipeline deterministic and self-advancing.
+
+1. **Seed curriculum spine data (4–8 weeks minimum)**
+   - **Scope:** Populate `curriculum_spine` with a first slice of realistic weekly content (subject, stage, focus_area, skill_targets, faith_framing, liturgy hooks).
+   - **Steps:**
+     1. Draft a canonical seed format (CSV/JSON) aligned to the migration columns.
+     2. Add a seed script (or a one-time SQL migration) to insert week 1–8 rows for each stage.
+     3. Validate with `arc-generator.ts` by forcing an arc and confirming it reads spine targets.
+   - **Verification:** `force-arc` returns targets sourced from `curriculum_spine` (not `getDefaultTargets()`).
+
+2. **Auto-advance curriculum position**
+   - **Scope:** Wire `advanceCurriculumPosition()` to arc completion.
+   - **Steps:**
+     1. Define completion criteria (e.g., 14 anchors completed OR all required targets met).
+     2. In `completeAnchor()` (or a daily job), check if the active arc is complete.
+     3. When complete, call `advanceCurriculumPosition()` and record the week transition.
+   - **Verification:** After completing the 14th day, the family’s week increments and new arc uses next spine week.
+
+3. **Feedback aggregation (activate `anchor_feedback_summary`)**
+   - **Scope:** Aggregate `anchor_feedback` into summary metrics for weekly iteration.
+   - **Steps:**
+     1. Implement a batch job (cron or on arc generation) that groups by week/subject.
+     2. Store averages (rating, completion, difficulty) and common notes.
+     3. Use summary in the arc prompt (optional) for continuous improvement.
+   - **Verification:** Summary table populated after feedback is collected; arc generation can read it.
+
+### Phase 2 — Safe & Honest Outputs (Trust upgrades)
+
+4. **Runtime age safety validation**
+   - **Scope:** Enforce post-generation validation for unsafe assignments.
+   - **Steps:**
+     1. Add explicit rules (age gates for scissors, heat, sharp tools, etc.).
+     2. Run validation after AI output and before returning to the user.
+     3. On violation, regenerate or fallback to a safe template.
+   - **Verification:** Automated tests prove unsafe roles are rejected.
+
+5. **Tighten material matching**
+   - **Scope:** Prevent `includes()` loopholes in `validateMaterials()`.
+   - **Steps:**
+     1. Replace substring checks with token/word-boundary matching.
+     2. Maintain a “disallowed terms” list for sharp or hazardous modifiers.
+     3. Add tests for edge cases like “sharp scissors.”
+   - **Verification:** Test suite fails on unsafe variations and passes on safe ones.
+
+### Phase 3 — Product Surface Cleanup (Reduce confusing paths)
+
+6. **Clean up `ai.ts` legacy actions**
+   - **Scope:** Remove dead `confirm`/`reject` logic or constrain to active intents.
+   - **Steps:**
+     1. Audit current frontend usage (if any).
+     2. Delete legacy handlers or return a clear 410 for deprecated actions.
+   - **Verification:** No references to `TOGGLE_BASKET_ITEM` or `schedule_change`.
+
+7. **Add frontend context passing to `/api/anchor/today`**
+   - **Scope:** Send `AnchorContext` (mood, weather, materials) from UI.
+   - **Steps:**
+     1. Identify where “Today’s Anchor” is requested.
+     2. Attach available context to the request body or query.
+     3. Update any server validation to accept optional fields.
+   - **Verification:** Logs show context received; anchors reflect it when present.
+
+8. **Production gate debug routes**
+   - **Scope:** Disable `/debug/*` in production.
+   - **Steps:**
+     1. Add `ENVIRONMENT === 'production'` guards per route.
+     2. Provide a consistent 403 response.
+   - **Verification:** Debug routes blocked in production, accessible elsewhere.
+
+### Phase 4 — Cleanup & Hygiene (Low-risk tidying)
+
+9. **Remove `_legacy_rhythm-generator.ts`**
+   - **Scope:** Delete unused legacy file.
+   - **Steps:** Confirm no imports; remove file.
+   - **Verification:** Build passes without the file.
+
+---
+
+## Suggested Execution Order (Checklist)
+
+1. Seed spine data (weeks 1–8)
+2. Auto-advance curriculum position
+3. Feedback aggregation job
+4. Runtime age validation + tests
+5. Tighten material matching + tests
+6. Clean up `ai.ts` legacy actions
+7. Frontend context passing
+8. Production gate debug routes
+9. Delete `_legacy_rhythm-generator.ts`
+
+---
+
 ## 7. Build Health
 
 The frontend build is now **clean**. All TypeScript build errors have been resolved, ensuring a stable development baseline.
