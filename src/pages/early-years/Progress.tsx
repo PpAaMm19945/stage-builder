@@ -2,13 +2,11 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useAuth } from '@/contexts/AuthContext';
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
-import { Badge } from '@/components/ui/badge';
-import { ErrorState } from '@/components/ui/ErrorState';
 import { useQuery } from '@tanstack/react-query';
-import { students } from '@/lib/api';
+import { AuthError, students } from '@/lib/api';
 import { DOMAIN_LABELS, type EarlyYearsDomain, type Student } from '@/types';
 import {
   TrendUp,
@@ -17,7 +15,6 @@ import {
   BookOpen,
   HandGrabbing,
   Sparkle,
-  ChartBar,
   CaretDown,
   CaretUp,
   ChatCircleText,
@@ -76,22 +73,78 @@ function FamilyHealthCheck({ children }: { children: Student[] }) {
 function ChildProgressCard({ child }: { child: Student }) {
   const navigate = useNavigate();
   const [isOpen, setIsOpen] = useState(false);
+  const { isAuthenticated } = useAuth();
 
   // Fetch progress for this specific child
-  const { data: progressData, isLoading } = useQuery({
+  const {
+    data: progressData,
+    isLoading: isProgressLoading,
+    isError: isProgressError,
+    error: progressError,
+    refetch: refetchProgress,
+  } = useQuery({
     queryKey: ['progress', child.id],
     queryFn: () => students.getProgress(child.id),
+    enabled: isAuthenticated && !!child.id,
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => !(error instanceof AuthError) && failureCount < 2,
   });
 
-  const { data: observations } = useQuery({
+  const {
+    data: observations,
+    isError: isObservationsError,
+    error: observationsError,
+    refetch: refetchObservations,
+  } = useQuery({
     queryKey: ['observations', child.id],
     queryFn: () => students.getObservations(child.id),
+    enabled: isAuthenticated && !!child.id,
     staleTime: 5 * 60 * 1000,
+    retry: (failureCount, error) => !(error instanceof AuthError) && failureCount < 2,
   });
 
-  if (isLoading) {
+  if (isProgressLoading) {
     return <Skeleton className="h-24 w-full rounded-xl" />;
+  }
+
+  if (isProgressError || isObservationsError) {
+    const isAuthIssue = progressError instanceof AuthError || observationsError instanceof AuthError;
+    return (
+      <Card className="border-destructive/40 bg-destructive/5">
+        <CardContent className="py-6">
+          <div className="flex items-start gap-3">
+            <div className="mt-1 rounded-full bg-destructive/10 p-2">
+              <WarningCircle className="h-5 w-5 text-destructive" />
+            </div>
+            <div className="space-y-2">
+              <div className="font-semibold text-foreground">
+                {isAuthIssue ? 'Session expired' : 'Unable to load progress'}
+              </div>
+              <p className="text-sm text-muted-foreground">
+                {isAuthIssue
+                  ? 'Please sign in again to view progress updates for this child.'
+                  : 'We ran into a problem loading progress details. Please try again.'}
+              </p>
+              <div className="flex flex-wrap gap-2">
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    refetchProgress();
+                    refetchObservations();
+                  }}
+                >
+                  Try again
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => navigate('/early-years/today')}>
+                  Go to Home
+                </Button>
+              </div>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+    );
   }
 
   const totalActivities = progressData?.totalCompleted || 0;
