@@ -53,16 +53,16 @@ export function AuthProvider({ children: childrenProp }: { children: ReactNode }
         const userData: User = {
           id: response.user.id,
           email: response.user.email,
-          name: response.user.name,
+          name: response.user.name || 'Parent',
           avatarUrl: response.user.avatar_url,
           provider: 'google',
           role: (response.user.role || 'parent') as 'parent' | 'teacher' | 'admin',
           householdId: response.user.household_id || response.user.id, // Fallback to user id
-          createdAt: response.user.created_at,
-          updatedAt: response.user.updated_at,
+          createdAt: response.user.created_at || new Date().toISOString(),
+          updatedAt: response.user.updated_at || new Date().toISOString(),
         };
 
-        const childrenData: Student[] = (response.children || []).map((child) => {
+        const childrenData: Student[] = (response.children || []).map((child: any) => {
           const student = normalizeChild(child);
           // Ensure householdId falls back to user context if missing on child
           if (student.householdId === 'unknown-household') {

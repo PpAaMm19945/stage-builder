@@ -154,6 +154,14 @@ export interface RhythmTodayResponse {
     };
 }
 
+export interface TomorrowPreviewResponse {
+    date: string;
+    activities?: FormationListItem[];
+    summary: string;
+    restDay?: boolean;
+    needsPlan?: boolean;
+}
+
 export interface RhythmWeekResponse {
     weekStart: string;
     days: DailyRhythm[];

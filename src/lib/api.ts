@@ -1,11 +1,11 @@
 // SchoolOS API Client for Cloudflare Worker
 
-import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData } from '@/types';
+import { TodaysLearningResponse, FamilyTodayResponse, MaterialItem, Book, ReadingSession, ParentComment, LiturgyType, LiturgyTodayResponse, FamilyLiturgySettings, WeeklyPlanResponse, IndependenceSettings, AIInteractionLog, StudentViewData, FamilySession } from '@/types';
 import { AnchorPayload } from '@/types/ChatTypes';
 import { OverrideType, OverrideConstraints, WeeklyTimeModel, ParsedOverrideResponse } from '@/types/overrides';
 import {
   AuthMeResponse, StudentRecord, StudentProgress, Observation, FormationListItem,
-  RhythmTodayResponse, RhythmWeekResponse, RhythmReadjustResponse, FamilyProfile,
+  RhythmTodayResponse, TomorrowPreviewResponse, RhythmWeekResponse, RhythmReadjustResponse, FamilyProfile,
   ChatMessage, ChatContext, ChatActionPayload, PlanSlot, StrategicInsightResponse,
   ExplainResponse, WorkEntry, Apprenticeship, Notification, Hymn, CatechismQuestion,
   PortfolioItem
@@ -217,7 +217,7 @@ export const family = {
     }),
 
   swapActivity: (data: { activityId: string }) =>
-    apiRequest<{ session: Record<string, unknown> }>('/api/family/swap', {
+    apiRequest<{ session: FamilySession }>('/api/family/swap', {
       method: 'POST',
       body: JSON.stringify(data),
     }),
@@ -234,7 +234,7 @@ export const family = {
   getWeekSummary: (weekStart: string) =>
     apiRequest<{ days: Record<string, { completed: number; total: number; domains: string[] }> }>(`/api/family/week-summary?weekStart=${weekStart}`),
 
-  getTomorrowPreview: () => apiRequest<RhythmTodayResponse>('/api/family/tomorrow-preview'),
+  getTomorrowPreview: () => apiRequest<TomorrowPreviewResponse>('/api/family/tomorrow-preview'),
 
   sendPassionSignal: (data: { studentId: string; activityId: string; domain: string; loved?: boolean; notes?: string }) =>
     apiRequest<{ success: boolean; id?: string }>('/api/passion-signals', {
