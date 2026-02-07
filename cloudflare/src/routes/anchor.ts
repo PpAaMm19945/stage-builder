@@ -11,6 +11,9 @@ anchor.get('/today', async (c) => {
     const user = requireHouseholdMember(c);
     console.log('[API] User authenticated:', user.id, 'Household:', user.household_id);
     const householdId = user.household_id || user.id; // Fallback for legacy
+    if (!householdId) {
+        return c.json({ error: 'Missing household id' }, 400);
+    }
 
     const generator = new AnchorGenerator(c.env);
 
@@ -29,6 +32,9 @@ anchor.post('/regenerate', async (c) => {
     console.log('[API] POST /api/anchor/regenerate called');
     const user = requireParent(c); // Only parents can regenerate
     const householdId = user.household_id || user.id;
+    if (!householdId) {
+        return c.json({ error: 'Missing household id' }, 400);
+    }
 
     const body = await c.req.json().catch(() => ({}));
     const adjustments = body.adjustments || undefined;
@@ -54,6 +60,9 @@ anchor.post('/complete', async (c) => {
         const user = requireParent(c);
         const householdId = user.household_id || user.id;
         console.log('[API] Completing anchor for user:', user.id);
+        if (!householdId) {
+            return c.json({ error: 'Missing household id' }, 400);
+        }
 
         const body = await c.req.json().catch(() => ({}));
         const { anchorId, rating, notes, lovedIt } = body;
@@ -83,6 +92,9 @@ anchor.post('/skip', async (c) => {
     try {
         const user = requireParent(c);
         const householdId = user.household_id || user.id;
+        if (!householdId) {
+            return c.json({ error: 'Missing household id' }, 400);
+        }
 
         const body = await c.req.json().catch(() => ({}));
         const { anchorId, reason } = body;
@@ -108,6 +120,9 @@ anchor.get('/history', async (c) => {
     try {
         const user = requireHouseholdMember(c);
         const householdId = user.household_id || user.id;
+        if (!householdId) {
+            return c.json({ error: 'Missing household id' }, 400);
+        }
 
         const { results } = await c.env.DB.prepare(`
             SELECT id, anchor_date, anchor_data, status, completion_feedback, 
