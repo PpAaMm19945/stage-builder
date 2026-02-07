@@ -266,7 +266,11 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
             }
         }
 
-        await sendMessage([...messages, userMessage], { page: 'dashboard' });
+        const outboundMessages = [...messages, userMessage]
+            .filter(message => message.content && message.content.trim().length > 0)
+            .map(({ role, content }) => ({ role, content }));
+
+        await sendMessage(outboundMessages, { page: 'dashboard' });
     };
 
     const handleConfirmAction = async () => {
