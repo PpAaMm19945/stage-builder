@@ -51,6 +51,18 @@ export function useBookAssetUrl(
 
 import { API_URL } from '@/lib/api';
 
+interface BookPage {
+    index: number;
+    url: string;
+    filename: string;
+}
+
+interface BookPageResponse {
+    count: number;
+    pages: BookPage[];
+    [key: string]: unknown;
+}
+
 export function useBookPageUrls(series: string, bookId: string, pageCount: number) {
     return useQuery({
         queryKey: ['book-pages', series, bookId], // Removed pageCount dependency as source of truth is now API
@@ -59,10 +71,10 @@ export function useBookPageUrls(series: string, bookId: string, pageCount: numbe
             try {
                 const res = await fetch(`${API_URL}/api/books/${encodeURIComponent(series)}/${encodeURIComponent(bookId)}/pages`);
                 if (!res.ok) throw new Error('Failed to fetch pages url');
-                const data = await res.json();
+                const data = await res.json() as BookPageResponse;
 
                 if (data.pages && Array.isArray(data.pages) && data.pages.length > 0) {
-                    return data.pages.map((p: any) => p.url) as string[];
+                    return data.pages.map((p) => p.url);
                 }
 
                 // If API returned empty array but we expect pages, throw to trigger fallback
