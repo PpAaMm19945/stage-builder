@@ -31,6 +31,10 @@ export interface OverrideConstraints {
 
     // Custom notes (passed through, not interpreted)
     custom_note?: string;
+
+    // Specific exclusion (for skipping)
+    exclude_activity_id?: string;
+    date?: string;
 }
 
 export interface ParentOverride {

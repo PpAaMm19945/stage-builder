@@ -58,6 +58,7 @@ export function SwapActivitySheet({
         queryFn: async () => {
             // First get alternatives (this endpoint returns one, but we'll call it multiple times or modify backend)
             // For now, simulate multiple alternatives by calling swap endpoint
+            if (!activityId) throw new Error('Activity ID is required');
             const res = await api.family.swapActivity({ activityId });
             return res;
         },
@@ -160,7 +161,7 @@ export function SwapActivitySheet({
                                                 variant="secondary"
                                                 className={cn(
                                                     'text-[10px] px-1.5 h-5',
-                                                    DOMAIN_COLORS[alternative.activity.domain] || ''
+                                                    DOMAIN_COLORS[alternative.activity.domain || 'Wonder'] || ''
                                                 )}
                                             >
                                                 {alternative.activity.domain}

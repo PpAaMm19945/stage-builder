@@ -479,10 +479,18 @@ export interface MaterialItem {
   status: 'have' | 'willing_to_buy' | 'not_interested' | 'unknown';
 }
 
+export interface ChildTier {
+  childId: string;
+  childName: string;
+  childAge: number;
+  tier: string;
+  expectation: string;
+}
+
 // Legacy Family Session (often just wraps a Formation)
 export interface FamilySession {
   activity: Formation;
-  childTiers: Record<string, unknown>[];
+  childTiers: ChildTier[];
   reasoning?: string;
 }
 

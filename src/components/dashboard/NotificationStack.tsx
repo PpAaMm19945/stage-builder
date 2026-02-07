@@ -4,14 +4,7 @@ import { notifications } from '@/lib/api';
 import { AnimatePresence, motion } from 'framer-motion';
 import { X, Sparkle, WarningCircle, CheckCircle, Info } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
-
-interface Notification {
-    id: string;
-    type: 'milestone' | 'alert' | 'encouragement' | 'info';
-    title: string;
-    message: string;
-    date: string;
-}
+import { Notification } from '@/types/api-responses';
 
 export function NotificationStack() {
     const { data: notifs, isLoading } = useQuery({
@@ -38,7 +31,7 @@ export function NotificationStack() {
 
     if (isLoading || !visibleNotifs.length) return null;
 
-    const getIcon = (type: Notification['type']) => {
+    const getIcon = (type: string) => {
         switch (type) {
             case 'milestone': return <Sparkle weight="duotone" className="text-amber-500" />;
             case 'alert': return <WarningCircle weight="duotone" className="text-red-500" />;
@@ -47,7 +40,7 @@ export function NotificationStack() {
         }
     };
 
-    const getBgColor = (type: Notification['type']) => {
+    const getBgColor = (type: string) => {
         switch (type) {
             case 'milestone': return 'bg-amber-50 dark:bg-amber-950/30 border-amber-200 dark:border-amber-800';
             case 'alert': return 'bg-red-50 dark:bg-red-950/30 border-red-200 dark:border-red-800';

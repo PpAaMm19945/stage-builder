@@ -1,6 +1,6 @@
 import { Student } from '@/types';
 
-type RawChild = Partial<Student> & {
+type RawChild = Omit<Partial<Student>, 'independence_settings'> & {
     id?: string;
     household_id?: string;
     householdId?: string;
@@ -38,7 +38,7 @@ export function normalizeChild(raw: RawChild): Student {
         currentStage: raw.current_stage || raw.currentStage || 'early-years',
         avatarUrl: raw.avatar_url || raw.avatarUrl || undefined,
         pendingLoginEmail: raw.pending_login_email || raw.pendingLoginEmail || undefined,
-        independence_settings: raw.independence_settings || undefined,
+        independence_settings: (raw.independence_settings as Student['independence_settings']) || undefined,
         pace_overrides: raw.pace_overrides || undefined,
         is_graduated: raw.is_graduated || raw.isGraduated || false,
         graduation_date: raw.graduation_date || raw.graduationDate || undefined,
