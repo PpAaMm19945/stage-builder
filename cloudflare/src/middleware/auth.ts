@@ -17,12 +17,14 @@ export const authMiddleware = async (c: Context<{ Bindings: Env, Variables: { us
     if (token) {
         const payload = await verifyJWT(token, c.env.JWT_SECRET);
 
-        if (payload) {
+        if (payload?.sub) {
             const user = await c.env.DB.prepare(
                 'SELECT * FROM users WHERE id = ?'
             ).bind(payload.sub).first<User>();
 
             c.set('user', user);
+        } else if (payload) {
+            console.warn('[authMiddleware] JWT payload missing sub; skipping user lookup.');
         }
     }
 
