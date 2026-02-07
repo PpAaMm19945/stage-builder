@@ -457,6 +457,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
      * Store anchor in database
      */
     private async storeAnchor(householdId: string, arcId: string, date: string, anchor: DailyAnchor): Promise<void> {
+        const generationReasoning = anchor.reasoning ?? 'Generated anchor';
         await safeRun(this.db, `
             INSERT INTO daily_anchors (id, household_id, arc_id, anchor_date, anchor_data, generation_reasoning, status, regeneration_count)
             VALUES (?, ?, ?, ?, ?, ?, 'active', 0)
@@ -468,7 +469,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
             arcId,
             date,
             JSON.stringify(anchor),
-            anchor.reasoning
+            generationReasoning
         ]);
 
         console.log('[AnchorGenerator] Stored anchor:', anchor.id);
