@@ -359,3 +359,101 @@ The architecture is now **correct and unified**. The original audit's core criti
 3. Implement feedback summary aggregation → enables data-driven arc improvement
 
 The system is **demo-ready** in its current state. The AI generates anchors, the chat companion understands them, progress is tracked, and feedback is captured. The remaining work is about making the curriculum deterministic rather than generative — an improvement, not a fix.
+
+---
+
+## 9. Lovable.dev Review
+
+**Date:** 2026-02-08
+**Scope:** Verify all Section 7 build fixes, assess new work completed since the original audit, evaluate the Curriculum Management Dashboard, and provide an updated score.
+
+---
+
+### A. Build Health — All 13 TypeScript Errors Resolved ✅
+
+Every fix listed in Section 7 has been confirmed in the source code:
+
+| File | Fix Applied | Verified |
+|------|-------------|----------|
+| `api-responses.ts` | Added `mode?` and `page?` to `ChatContext`; `onboarding_mode?` to `FamilyProfile`; `apprenticeship_title?`, `student_name?`, `student_avatar?` to `WorkEntry` | ✅ |
+| `AIInteractionLog.tsx` | Cast `log.context.activityTitle as string` | ✅ |
+| `AiLogViewer.tsx` | Cast `log.context.activityTitle as string` | ✅ |
+| `BookReader.tsx` | Cast `res.progress.data.current_page as number` | ✅ |
+| `StudentAiChat.tsx` | Resolved via `ChatContext.mode?` addition | ✅ |
+| `FrontdeskChat.tsx` | Resolved via `ChatContext.page?` addition | ✅ |
+| `MomentumRings.tsx` | Typed `slots` as `Array<{ day: string; activityId?: string }>` | ✅ |
+| `WorkApprovals.tsx` | Removed `PendingEntry`, uses unified `WorkEntry` | ✅ |
+| `FormationCard.tsx` | Removed unused `@ts-expect-error` directive | ✅ |
+| `WelcomeFlow.tsx` | Removed `JSON.stringify()` wrappers; passes arrays directly | ✅ |
+| `PortfolioGallery.tsx` | Imports `PortfolioItem` from `api-responses` | ✅ |
+| `Today.tsx` | Fixed `familyActivities.map()` to treat items as flat `Formation` | ✅ |
+
+The frontend build is **clean** with zero TypeScript errors.
+
+---
+
+### B. Progress on Section 6 Remaining Work
+
+Three items from the original Section 6 checklist have been completed since the last audit:
+
+| # | Task | Original Status | Current Status |
+|---|------|----------------|----------------|
+| 6 | Clean up `ai.ts` legacy actions | ⚠️ Dead code | ✅ **Done** — `confirm`/`reject` endpoints return HTTP 410 with deprecation message |
+| 8 | Production gate debug routes | ⚠️ None | ✅ **Done** — `ENVIRONMENT === 'production'` guard blocks all `/debug/*` routes |
+| — | Curriculum Management Dashboard | Not in original plan | ✅ **Done** — Full admin UI for spine generation, conflict resolution, and approval |
+
+---
+
+### C. Curriculum Management Dashboard Assessment
+
+A complete admin interface for managing the curriculum spine has been built at `/admin/ai` under the "Curriculum Spine" tab. Five new components form the dashboard:
+
+| Component | Purpose | Assessment |
+|-----------|---------|------------|
+| `SpineManager.tsx` | State orchestrator (list / generate / resolve / view) | Clean, minimal state management with proper view transitions |
+| `SpineGenerationForm.tsx` | Subject, stage, and week range inputs | Triggers 3-draft AI consensus pipeline via `api.adminAi.generateSpine()` |
+| `SpineList.tsx` | Version history with status badges | Displays draft/approved status, surfaces conflict indicators |
+| `ConflictResolver.tsx` | Side-by-side draft comparison | Radio selection per conflict, "Resolve & Next" flow |
+| `SpineViewer.tsx` | Read-only curriculum table | Displays week, focus area, skill targets, and faith framing |
+
+**Integration:** All components connect through `api.adminAi.*` methods to backend `/api/admin/spine/*` routes. The dashboard enables the full workflow described in Section 6A Phase 1: generate spine data → review conflicts → approve versions.
+
+**Quality:** Components are focused and single-responsibility. No monolithic files. The `SpineManager` orchestrator is 80 lines. State management is local (no global store needed for this admin flow).
+
+---
+
+### D. Updated Remaining Work
+
+| # | Task | Status | Blocker / Notes |
+|---|------|--------|-----------------|
+| 1 | Seed curriculum spine data | **Not started** | Dashboard exists to generate it; no data seeded yet |
+| 2 | Auto-advance curriculum position | **Not started** | `advanceCurriculumPosition()` exists, no trigger wired |
+| 3 | Feedback aggregation | **Not started** | `anchor_feedback_summary` table exists, no aggregation logic |
+| 4 | Runtime age validation | **Not started** | Prompt-only enforcement; low risk |
+| 5 | Tighten material matching | **Not started** | `includes()` substring matching still used |
+| 7 | Frontend context passing | **Not started** | No mood/weather/materials sent to `/api/anchor/today` |
+| 9 | Delete `_legacy_rhythm-generator.ts` | **Blocked** | Still imported by `family.ts`; requires dependency removal first |
+
+---
+
+### E. Updated Score
+
+**Score: 8.75/10** (up from 8.5)
+
+**What improved:**
+- Build is fully clean (was listed as "clean" but had 13 unverified fixes — now confirmed)
+- Legacy `ai.ts` cruft removed (410 deprecation)
+- Debug routes production-gated
+- Curriculum Management Dashboard provides the admin tooling to seed spine data (the #1 remaining gap)
+
+**What prevents a 9.5/10:**
+1. No seeded curriculum data — the pipeline is complete end-to-end but empty
+2. No automatic curriculum advancement trigger
+3. Feedback aggregation table remains unused
+4. `_legacy_rhythm-generator.ts` still exists (blocked by import)
+
+**Path from 8.75 to 9.5/10:**
+1. Use the new dashboard to generate and approve 4–8 weeks of spine data → activates deterministic curriculum
+2. Wire `advanceCurriculumPosition()` to arc completion → closes the progression loop
+3. Implement feedback summary aggregation → enables data-driven iteration
+4. Untangle `_legacy_rhythm-generator.ts` from `family.ts` and delete it
