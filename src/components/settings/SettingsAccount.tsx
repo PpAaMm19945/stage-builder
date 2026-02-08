@@ -71,7 +71,7 @@ export function SettingsAccount() {
                         Appearance
                     </CardTitle>
                     <CardDescription>
-                        Customize how SchoolOS looks
+                        Customize how FamilyPath looks
                     </CardDescription>
                 </CardHeader>
                 <CardContent>
@@ -87,7 +87,7 @@ export function SettingsAccount() {
                 </CardContent>
             </Card>
 
-            {/* Support SchoolOS */}
+            {/* Support FamilyPath */}
             <FundingWidget
                 id="support"
                 variant="full"
@@ -128,7 +128,7 @@ export function SettingsAccount() {
                             className="text-destructive hover:bg-destructive/10 hover:text-destructive border-destructive/20"
                         >
                             <a
-                                href="mailto:antmwes104.1@gmail.com?subject=SchoolOS%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data."
+                                href="mailto:antmwes104.1@gmail.com?subject=FamilyPath%20Account%20Deletion%20Request&body=Please%20delete%20my%20account%20and%20all%20associated%20data."
                                 onClick={() => {
                                     toast.info('Account deletion request', {
                                         description: 'Your email client should open. Send the email to complete your request.'

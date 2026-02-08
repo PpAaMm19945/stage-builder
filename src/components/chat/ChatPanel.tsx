@@ -340,7 +340,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                 <CardHeader className="h-14 flex flex-row items-center justify-between p-0 px-4 border-b border-border/50 space-y-0 shrink-0">
                     <CardTitle className="flex items-center gap-2 text-lg">
                         <Robot className="w-5 h-5 text-primary" />
-                        Anchor Companion
+                        Your Guide
                     </CardTitle>
                     <div className="flex items-center gap-1">
                         <TooltipProvider>
@@ -385,8 +385,8 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         {messages.length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <Robot className="w-12 h-12 mx-auto mb-3 text-primary/30" />
-                                <p className="text-sm">Good morning! I'm your Anchor Companion.</p>
-                                <p className="text-xs mt-1">I'll help guide your family through today's learning anchor.</p>
+                                <p className="text-sm">Good morning! I'm your daily guide.</p>
+                                <p className="text-xs mt-1">I'll help your family make the most of today's learning.</p>
                             </div>
                         )}
 

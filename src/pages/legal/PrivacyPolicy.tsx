@@ -12,7 +12,7 @@ export default function PrivacyPolicy() {
                 <section className="space-y-4">
                     <h2 className="text-2xl font-bold">1. Introduction</h2>
                     <p>
-                        Welcome to SchoolOS ("we," "our," or "us"). We are committed to protecting your privacy
+                        Welcome to FamilyPath ("we," "our," or "us"). We are committed to protecting your privacy
                         and ensuring the security of your data, especially considering the sensitive nature of
                         educational and child-related information. This Privacy Policy explains how we collect,
                         use, and safeguard your information when you use our application.
@@ -42,7 +42,7 @@ export default function PrivacyPolicy() {
                     <h2 className="text-2xl font-bold">3. Data Usage & Stewardship</h2>
                     <p>We view your family's data as a stewardship trust. We use your data solely for the following purposes:</p>
                     <ul className="list-disc pl-6 space-y-2">
-                        <li>Providing and improving the SchoolOS educational platform.</li>
+                        <li>Providing and improving the FamilyPath educational platform.</li>
                         <li>Personalizing activity recommendations based on child age and progress.</li>
                         <li>Tracking developmental milestones.</li>
                         <li>Authenticating your account and securing your data.</li>
@@ -58,7 +58,7 @@ export default function PrivacyPolicy() {
                 <section className="space-y-4">
                     <h2 className="text-2xl font-bold">4. Children's Privacy & Parental Ownership</h2>
                     <p>
-                        We take children's privacy seriously. SchoolOS is designed for use by parents and guardians.
+                        We take children's privacy seriously. FamilyPath is designed for use by parents and guardians.
                         We do not knowingly collect personal information directly from children under 13. All data
                         about children is provided and managed by the parent or guardian account holder.
                     </p>
@@ -88,7 +88,7 @@ export default function PrivacyPolicy() {
                     <h2 className="text-2xl font-bold">7. Contact Us</h2>
                     <p>
                         If you have any questions about this Privacy Policy, please contact us at
-                        support@schoolos.app.
+                        support@familypath.app.
                     </p>
                 </section>
             </div>

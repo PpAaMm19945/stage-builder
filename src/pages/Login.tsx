@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'; // Added useEffect
+import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { auth } from '@/lib/api';
 import { Users, CalendarDots, TrendUp, Path, CircleNotch, LockKey, DownloadSimple, ShieldCheck, ArrowRight, Warning } from '@phosphor-icons/react';
@@ -40,7 +40,7 @@ export default function Login() {
               Unlock Your Family's Learning Path
             </h1>
             <p className="text-base md:text-lg text-muted-foreground">
-              Sign in to create personalized rhythms for your children, track their growth,
+              Sign in to create personalized learning paths for your children, track their growth,
               and get age-specific suggestions from our library.
             </p>
           </div>
@@ -66,9 +66,9 @@ export default function Login() {
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-cognitive/10 flex items-center justify-center">
-                <CalendarDots className="h-6 w-6 text-domain-cognitive" weight="duotone" />
+               <CalendarDots className="h-6 w-6 text-domain-cognitive" weight="duotone" />
               </div>
-              <p className="text-sm text-muted-foreground">Weekly Planner</p>
+              <p className="text-sm text-muted-foreground">Learning Paths</p>
             </div>
             <div className="space-y-2">
               <div className="h-12 w-12 mx-auto rounded-full bg-domain-social/10 flex items-center justify-center">
@@ -156,7 +156,7 @@ export default function Login() {
       {/* Footer */}
       <footer className="p-4 md:p-6 text-center space-y-2">
         <p className="text-sm text-muted-foreground">
-          © 2024 FamilyPath. Made with love for families.
+          © 2025 FamilyPath. Made with love for families.
         </p>
         <div>
           <Link to="/trust" className="text-xs text-muted-foreground hover:text-foreground underline underline-offset-2">

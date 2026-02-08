@@ -2,28 +2,29 @@ import React from 'react';
 import AnchorCard from './AnchorCard';
 import { Loader2 } from 'lucide-react';
 import { useAnchor } from '@/hooks/useAnchor';
+import { WelcomeFlow } from '@/components/onboarding/WelcomeFlow';
 
 export const DailyAnchorView: React.FC = () => {
     const { data: anchor, isLoading, error, refetch } = useAnchor();
 
     if (isLoading) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-                <Loader2 className="animate-spin text-indigo-600" size={48} />
-                <p className="text-slate-500 font-medium animate-pulse">Preparing today's anchor...</p>
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <Loader2 className="animate-spin text-primary" size={48} />
+                <p className="text-muted-foreground font-medium animate-pulse">Preparing today's learning...</p>
             </div>
         );
     }
 
     if (error || !anchor) {
         return (
-            <div className="min-h-screen flex flex-col items-center justify-center bg-slate-50 gap-4">
-                <p className="text-red-500">
-                    {error?.message || "Could not retrieve today's anchor. Please try again."}
+            <div className="min-h-screen flex flex-col items-center justify-center gap-4">
+                <p className="text-destructive">
+                    {error?.message || "Could not load today's learning. Please try again."}
                 </p>
                 <button
                     onClick={() => refetch()}
-                    className="bg-indigo-600 text-white px-6 py-2 rounded-lg hover:bg-indigo-700"
+                    className="bg-primary text-primary-foreground px-6 py-2 rounded-lg hover:bg-primary/90"
                 >
                     Retry
                 </button>
@@ -56,7 +57,8 @@ export const DailyAnchorView: React.FC = () => {
     };
 
     return (
-        <div className="min-h-screen bg-slate-50/50">
+        <div className="min-h-screen">
+            <WelcomeFlow onComplete={() => refetch()} />
             <AnchorCard anchor={anchor} onComplete={handleComplete} />
         </div>
     );

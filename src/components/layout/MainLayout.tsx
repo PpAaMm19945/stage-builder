@@ -1,11 +1,11 @@
-import { Navigate, Outlet, Link } from 'react-router-dom';
+import { Outlet, Link } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
 import { BottomNav } from './BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
-import { TomorrowsPrepModal } from '@/components/evening/TomorrowsPrepModal';
+
 import { ChatSidebar } from '@/components/chat';
 import { checkWeeklyReportNotification } from '@/hooks/useNotifications';
 import { useEffect, useState } from 'react';
@@ -81,7 +81,7 @@ export function MainLayout() {
             {' · '}
             <Link to="/terms" className="hover:underline">Terms of Service</Link>
             {' · '}
-            © 2024 SchoolOS
+            © 2025 FamilyPath
           </footer>
         </main>
 
@@ -101,8 +101,6 @@ export function MainLayout() {
       {/* Mobile Bottom Navigation */}
       <BottomNav />
 
-      {/* Evening Prep Modal - Only for authenticated users */}
-      {isAuthenticated && <TomorrowsPrepModal />}
 
       {/* Mobile Chat - ChatSidebar handles its own floating button internally */}
       {isAuthenticated && (
