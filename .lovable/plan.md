@@ -1,120 +1,116 @@
 
 
-# Plan: Fix All Remaining Issues to 9.5/10
+# Onboarding, Messaging, and "Tomorrow's Table" Audit
 
-Based on the JUDGEMENT.md analysis, there are **5 concrete fixes** remaining. The legacy file deletion is already done. Here is the exact work.
+## What I Found
 
----
+### 1. The Onboarding Flow is Broken
 
-## Fix 1: Feedback Aggregation Schema Mismatch (Critical)
+The `WelcomeFlow` dialog (the actual onboarding) is mounted inside `src/pages/early-years/Today.tsx` -- a **legacy page that no one visits anymore**. The current dashboard route (`/dashboard`) renders `DailyAnchorView`, which has **no onboarding at all**.
 
-**File:** `cloudflare/src/ai/arc-generator.ts` (lines 501-514)
+There is also a separate `/onboarding` page (`src/pages/Onboarding.tsx`) that is a protected route, but **nothing links to it or redirects new users there**.
 
-The INSERT statement uses column names that don't match the migration. This causes silent failures -- no feedback data is ever saved.
+**Result:** A new user signs in via Google, lands on `/dashboard`, and sees the raw Anchor card (or an error if no anchor exists) with zero onboarding.
 
-| Current (wrong) | Migration (correct) |
-|---|---|
-| `total_anchors` | remove -- no such column |
-| `completed_count` | `total_completed` |
-| `skipped_count` | `total_skipped` (already correct) |
-| `average_rating` | `avg_rating` |
+### 2. The "Tomorrow's Table" Popup is a Dead Feature
 
-**Change:** Rewrite the INSERT to:
-```sql
-INSERT INTO anchor_feedback_summary (
-    id, household_id, arc_id, total_completed,
-    total_skipped, avg_rating, created_at
-) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
-```
+The `TomorrowsPrepModal` calls `family.getToday()` which hits `/api/family/today`. This endpoint returns data from the **legacy weekly planner system** (`weekly_plans_v2` table). Since the app has pivoted to the Anchor system, this table is likely empty for new users and possibly stale for existing ones.
 
-Remove the `total` parameter from the values array (6 params instead of 7).
+The popup will almost always show "No specific prep needed for tomorrow!" because there is no data to display. It is **not connected to the Anchor pipeline** at all.
 
----
+**Recommendation:** Remove it. It adds visual noise without delivering value.
 
-## Fix 2: Arc `spine_version` Placeholder (Critical)
+### 3. Branding Inconsistencies
 
-**File:** `cloudflare/src/ai/arc-generator.ts` (line 367)
+Multiple places still say "SchoolOS" instead of "FamilyPath":
+- Footer in `MainLayout.tsx`: "2024 SchoolOS"
+- Privacy Policy and Terms of Service pages
+- Settings page descriptions
+- Hymnal reader title
+- PDF export footers
+- `localStorage` keys (`schoolos_token`, `schoolos_onboarding_complete`, etc.)
+- Data archive filenames
+- Copyright year says 2024 (should be 2025)
 
-Currently: `spine_version: targets[0]?.week ? \`week_\${targets[0].week}\` : 'default'`
+### 4. Messaging Evaluation
 
-This stores meaningless strings like `week_1`. The fix is to pass the resolved `spineVersion` through from `getWeeklyTargets()`.
+**What works well:**
+- `GuestHome.tsx` (landing page) -- "Your Family's Library" with hymns, books, activities counts. Clean, inviting, no AI language. The "Free to browse. Sign in to personalize." copy is excellent.
+- `Login.tsx` -- "Unlock Your Family's Learning Path" is warm and parent-friendly.
+- Sidebar has "Support FamilyPath" with a funding widget -- good for the free/donation model.
 
-**Changes:**
-1. Add `spineVersion?: string` to the `WeeklyTargets` interface (line ~72 area)
-2. In `getWeeklyTargets()`, include the resolved `spineVersion` in each target object pushed to the array
-3. In `createUnifiedArc()`, extract the first non-null spine version from targets and use it:
-   ```typescript
-   spine_version: targets.find(t => t.spineVersion)?.spineVersion || 'default'
-   ```
+**What needs adjustment:**
+- Login page says "personalized rhythms" and "Weekly Planner" -- these are legacy concepts. Should say "daily learning anchor" or simply "personalized learning paths."
+- The "Anchor Companion" chat sidebar title and "I'll help guide your family through today's learning anchor" language exposes the AI engine. Should be softer -- "Your daily guide" or similar.
+- The `DailyAnchorView` loading state says "Preparing today's anchor..." -- the word "anchor" is internal jargon that may confuse parents.
 
 ---
 
-## Fix 3: Frontend Context Wiring (Important)
+## The Plan
 
-**File:** `cloudflare/src/routes/anchor.ts` (lines 9-28)
+### Phase 1: Fix the Auth and Landing Flow
 
-The `/api/anchor/today` route passes `undefined` as context. The `AnchorContext` interface already supports `weather`, `parentMood`, `materialsOnHand`, and `timeAvailable`.
+**Goal:** Make Google Auth the very first thing a visitor encounters (as requested).
 
-**Change:** Parse query parameters and build a context object:
-```typescript
-const weather = c.req.query('weather');
-const mood = c.req.query('mood');
-const materials = c.req.query('materials');
-const context = (weather || mood || materials) ? {
-    weather,
-    parentMood: mood,
-    materialsOnHand: materials?.split(','),
-} : undefined;
+**Changes to `src/App.tsx`:**
+- Change the root route (`/`) so that it either:
+  - Shows `GuestHome` for unauthenticated users (current behavior, this is fine)
+  - OR redirects directly to `/login` (if you want Google Auth front and center)
+- Keep `GuestHome` as-is but make the "Sign In to Personalize" button more prominent (swap CTA order -- sign-in first, browse second)
 
-const anchor = await generator.getTodayAnchor(householdId, context, ...);
-```
+**Changes to `src/pages/Login.tsx`:**
+- Update copy: "Weekly Planner" becomes "Learning Paths" or "Daily Rhythm"
+- Update copy: "personalized rhythms" becomes "personalized learning paths"
+- Update copyright year to 2025
 
-Also update `/api/anchor/regenerate` (lines 30-50) to parse `weather`, `mood`, `materials` from the POST body alongside `adjustments`.
+### Phase 2: Wire Up Onboarding to the Dashboard
+
+**Changes to `src/components/anchor/DailyAnchorView.tsx`:**
+- Import and render `WelcomeFlow` so first-time users get the onboarding dialog
+- The dialog already checks `localStorage` for completion status, so it will only show once
+
+**Changes to `src/components/onboarding/WelcomeFlow.tsx`:**
+- Fix Step 0 routing: currently all three modes go to `setStep(1)`. Wire "quick" to go directly to add-child (step 2), "guided" to preferences (step 1), "chat" to conversational (step 5)
+- Update the generate mutation to call `anchor` API instead of `weeklyPlan.regenerate` (legacy)
+- Remove the redirect to `/early-years/planner` (dead route) -- stay on `/dashboard`
+
+### Phase 3: Remove "Tomorrow's Table" Popup
+
+**Files changed:**
+- `src/components/layout/MainLayout.tsx` -- Remove the `TomorrowsPrepModal` import and render
+- Optionally delete `src/components/evening/TomorrowsPrepModal.tsx` and `src/hooks/useEveningPrompt.ts` entirely
+
+**Reasoning:** The popup queries a legacy API endpoint that returns empty data. It will always say "No specific prep needed." It is not connected to the Anchor system, and wiring it up would require building a "tomorrow's anchor preview" feature that does not exist yet. Better to remove it now and add a proper version later if needed.
+
+### Phase 4: Branding Cleanup
+
+**Scope:** Find-and-replace "SchoolOS" with "FamilyPath" in user-facing strings across these files:
+- `src/components/layout/MainLayout.tsx` (footer)
+- `src/pages/legal/PrivacyPolicy.tsx`
+- `src/pages/legal/TermsOfService.tsx`
+- `src/components/settings/SettingsAccount.tsx`
+- `src/components/library/HymnalReader.tsx`
+- `src/components/pdf/documents/ActivityDocument.tsx`
+
+**Note:** `localStorage` keys like `schoolos_token` should NOT be renamed (would log everyone out). Only user-visible text changes.
+
+### Phase 5: Soften AI Language
+
+**Changes across dashboard components:**
+- "Anchor Companion" becomes "Daily Guide" or "Your Guide"
+- "today's learning anchor" becomes "today's learning"
+- "Preparing today's anchor..." becomes "Preparing today's learning..."
+- Any references to "Beast engine," "AI engine," or "Gemini" in user-facing UI should be removed or softened
 
 ---
 
-## Fix 4: Auto-Detect Spine Persistence (Important)
+## Technical Summary
 
-**File:** `cloudflare/src/ai/arc-generator.ts` (lines 194-197)
-
-When `getWeeklyTargets()` auto-detects the latest approved spine for a new family, it currently discards the discovery with a comment "allow it to be dynamic for now." This means the auto-advance check (anchor-generator.ts line 669) will skip advancement because no `spine_version` exists in `family_curriculum_position`.
-
-**Change:** Replace the comment with a self-healing write:
-```typescript
-if (latestSpine) {
-    spineVersion = latestSpine.spine_version;
-    // Self-heal: persist so auto-advance works later
-    await safeRun(this.db, `
-        INSERT INTO family_curriculum_position (id, household_id, subject, current_week, spine_version)
-        VALUES (?, ?, ?, 1, ?)
-        ON CONFLICT(household_id, subject) DO NOTHING
-    `, [crypto.randomUUID(), householdId, subject, spineVersion]);
-}
-```
-
-The `ON CONFLICT DO NOTHING` ensures this only seeds the first time.
-
----
-
-## Fix 5: Update JUDGEMENT.md (Final)
-
-After all fixes are applied, update JUDGEMENT.md:
-- Mark all 5 critical/important items as resolved
-- Note that `_legacy_rhythm-generator.ts` is already deleted (confirmed: not in file listing)
-- Keep `planner.ts` / `getSmartWeekStart()` extraction as a nice-to-have (it is active utility code used by 3 routes)
-- Adjust score to **9.5 / 10**
-
----
-
-## Summary
-
-| # | Fix | File | Complexity |
-|---|-----|------|------------|
-| 1 | Feedback schema column names | `arc-generator.ts` | Low (rename 3 columns, remove 1 param) |
-| 2 | Arc spine_version from targets | `arc-generator.ts` | Low (add field to interface, pass through) |
-| 3 | Context query params in anchor route | `anchor.ts` | Low (parse 3 query params) |
-| 4 | Persist auto-detected spine version | `arc-generator.ts` | Low (add one INSERT) |
-| 5 | Update JUDGEMENT.md | `JUDGEMENT.md` | Trivial |
-
-**Total: 2 files changed + 1 doc updated. No new tables, no new dependencies, no architectural changes.**
+| Phase | Files Changed | Risk |
+|-------|--------------|------|
+| 1. Auth flow | `Login.tsx` | Low -- copy changes only |
+| 2. Onboarding wiring | `DailyAnchorView.tsx`, `WelcomeFlow.tsx` | Medium -- logic changes to step routing and API calls |
+| 3. Remove popup | `MainLayout.tsx`, delete 2 files | Low -- removing unused feature |
+| 4. Branding | 6 files | Low -- string replacements |
+| 5. AI language | 3-4 files in anchor/chat components | Low -- copy changes |
 
