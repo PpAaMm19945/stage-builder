@@ -194,6 +194,23 @@ export class AnchorGenerator {
             }, waitUntil);
         }
 
+        // 4b. Runtime Safety Check
+        const safetyCheck = this.validateSafety(anchor);
+        if (!safetyCheck.isSafe) {
+            this.telemetry.logTelemetry({
+                feature: 'anchor_guardrails',
+                status: 'error',
+                latency_ms: 0,
+                error_type: 'safety_violation',
+                metadata: { violations: safetyCheck.violations }
+            }, waitUntil);
+
+            // In a real scenario, we might retry generation here.
+            // For now, we append a warning to the reasoning so the parent sees it.
+            anchor.reasoning += ` [SAFETY WARNING: ${safetyCheck.violations.join(', ')}]`;
+        }
+
+
         // 5. Store anchor
         await this.storeAnchor(householdId, activeArc.id, date, anchor);
         await this.telemetry.logContentAudit({
@@ -413,22 +430,91 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
     }
 
     /**
-     * Validate materials against whitelist
+     * Validate materials against whitelist with strict token matching
      */
     private validateMaterials(materials: string[]): { materials: string[]; violations: string[] } {
         const violations: string[] = [];
+        const DISALLOWED_MODIFIERS = ['sharp', 'hot', 'electric', 'toxic', 'glass', 'knife', 'needle'];
+
         const filtered = materials.filter(m => {
             const normalized = m.toLowerCase().trim();
-            const allowed = MATERIAL_WHITELIST.some(allowedItem =>
-                normalized.includes(allowedItem) || allowedItem.includes(normalized)
-            );
-            if (!allowed) {
-                violations.push(normalized);
+
+            // 1. Check for dangerous modifiers
+            if (DISALLOWED_MODIFIERS.some(mod => normalized.includes(mod))) {
+                // Exception for "child-safe"
+                if (!normalized.includes('child-safe')) {
+                    violations.push(normalized);
+                    return false;
+                }
             }
-            return allowed;
+
+            // 2. Strict Whitelist Matching
+            // We want to ensure the material *is* a whitelisted item, or is substantially just that item.
+            // E.g. "red construction paper" is fine because "construction paper" is whitelisted.
+            // But "sharp scissors" is NOT fine even if "scissors" is whitelisted (handled by modifier check above).
+
+            const isWhitelisted = MATERIAL_WHITELIST.some(allowedItem => {
+                // Exact match
+                if (normalized === allowedItem) return true;
+                // Ends with match (e.g. "blue construction paper")
+                if (normalized.endsWith(allowedItem)) return true;
+                // Starts with match (e.g. "construction paper strips")
+                if (normalized.startsWith(allowedItem)) return true;
+
+                return false;
+            });
+
+            if (!isWhitelisted) {
+                violations.push(normalized);
+                return false;
+            }
+
+            return true;
         });
+
         return { materials: filtered, violations };
     }
+
+    /**
+     * Validate safety based on child age
+     */
+    private validateSafety(anchor: DailyAnchor): { isSafe: boolean; violations: string[] } {
+        const violations: string[] = [];
+        const activity = anchor.family_activity;
+
+        // Find youngest participant
+        const youngestAgeMonths = Math.min(
+            ...activity.levels
+                .filter(l => l.age_months)
+                .map(l => l.age_months!)
+        );
+
+        // Rule 1: Choking Hazards (Under 3 years / 36 months)
+        if (youngestAgeMonths < 36) {
+            const CHOKING_HAZARDS = ['beads', 'buttons', 'marbles', 'coins', 'balloon', 'pen cap', 'batteries'];
+            const hasHazard = activity.materials.some(m =>
+                CHOKING_HAZARDS.some(h => m.includes(h))
+            );
+            if (hasHazard) {
+                violations.push('Choking hazard detected for child under 3');
+            }
+        }
+
+        // Rule 2: Sharp Objects (Under 6 years / 72 months) without supervision logic (simplified)
+        // Note: 'scissors' is in whitelist, but we enforce 'child-safe' in materials check.
+        // This is a double-check for descriptions.
+        if (youngestAgeMonths < 72) {
+            const SHARP_KEYWORDS = ['knife', 'needle', 'carving', 'whittle'];
+            const description = (activity.description + activity.levels.map(l => l.instruction).join(' ')).toLowerCase();
+
+            if (SHARP_KEYWORDS.some(k => description.includes(k))) {
+                violations.push('Sharp object/action detected for child under 6');
+            }
+        }
+
+        return { isSafe: violations.length === 0, violations };
+    }
+
 
     private buildAnchorAuditExcerpt(anchor: DailyAnchor): string {
         const lines = [

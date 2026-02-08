@@ -113,98 +113,13 @@ app.get('/api/chat/actions', async (c) => {
 });
 
 app.post('/api/chat/confirm', async (c) => {
-    try {
-        const user = requireHouseholdMember(c);
-
-        // Rate limiting: 20 confirmations per minute per user
-        const rateCheck = checkRateLimit(user.id, 20, 60000);
-        if (!rateCheck.allowed) {
-            return c.json({
-                error: 'Rate limit exceeded. Please wait a moment.',
-                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
-            }, 429);
-        }
-
-        const { actionId } = await c.req.json();
-
-        // Retrieve action
-        const action = await c.env.DB.prepare('SELECT * FROM ai_action_log WHERE id = ?').bind(actionId).first<any>();
-        if (!action) return c.json({ error: 'Action not found' }, 404);
-
-        // Security: Verify ownership
-        if (action.family_id !== user.household_id) {
-            return c.json({ error: 'Unauthorized' }, 403);
-        }
-
-        // Execute action logic (simplified switching)
-        const data = JSON.parse(action.action_data);
-
-        if (action.action_type === 'schedule_change') {
-            // Deprecated path? Or maybe explicitly requested in some legacy flows
-            // Ideally we map this to updatePreferences too if the payload matches
-        } else if (action.action_type === 'skip_activity') {
-            await c.env.DB.prepare(`
-                INSERT INTO activity_progress (id, family_id, activity_type, content_id, scheduled_date, status)
-                VALUES (?, ?, 'unknown', ?, ?, 'skipped')
-            `).bind(crypto.randomUUID(), user.household_id, data.activity_id, new Date().toISOString().split('T')[0]).run();
-        } else if (action.action_type === 'UPDATE_PREFERENCES') {
-            // Execute preference update directly
-            await c.env.DB.prepare(`
-                UPDATE family_preferences SET overrides_json = ? WHERE parent_id = ?
-            `).bind(JSON.stringify(data), user.id).run();
-        } else if (action.action_type === 'TOGGLE_BASKET_ITEM') {
-            // Execute basket toggle directly
-            if (data.action === 'add') {
-                await c.env.DB.prepare(`
-                    INSERT OR IGNORE INTO family_basket (id, parent_id, formation_id, created_at)
-                    VALUES (?, ?, ?, datetime('now'))
-                `).bind(crypto.randomUUID(), user.id, data.formationId).run();
-            } else {
-                await c.env.DB.prepare(`
-                    DELETE FROM family_basket WHERE parent_id = ? AND formation_id = ?
-                `).bind(user.id, data.formationId).run();
-            }
-        }
-
-        // Update log status
-        await c.env.DB.prepare(
-            'UPDATE ai_action_log SET status = "confirmed", confirmed_at = datetime("now"), confirmed_by = ? WHERE id = ?'
-        ).bind(user.id, actionId).run();
-
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
+    return c.json({ error: 'Endpoint deprecated. Use Cortex chat instead.' }, 410);
 });
 
 app.post('/api/chat/reject', async (c) => {
-    try {
-        const user = requireHouseholdMember(c);
-
-        // Rate limiting: 20 rejections per minute per user
-        const rateCheck = checkRateLimit(user.id, 20, 60000);
-        if (!rateCheck.allowed) {
-            return c.json({
-                error: 'Rate limit exceeded. Please wait a moment.',
-                retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
-            }, 429);
-        }
-
-        const { actionId } = await c.req.json();
-
-        // Retrieve action
-        const action = await c.env.DB.prepare('SELECT * FROM ai_action_log WHERE id = ?').bind(actionId).first<any>();
-        if (!action) return c.json({ error: 'Action not found' }, 404);
-
-        // Security: Verify ownership
-        if (action.family_id !== user.household_id) {
-            return c.json({ error: 'Unauthorized' }, 403);
-        }
-
-        await c.env.DB.prepare(
-            'UPDATE ai_action_log SET status = "rejected", confirmed_at = datetime("now") WHERE id = ?'
-        ).bind(actionId).run();
-        return c.json({ success: true });
-    } catch (e: any) { return c.json({ error: e.message }, 500); }
+    return c.json({ error: 'Endpoint deprecated. Use Cortex chat instead.' }, 410);
 });
+
 
 
 app.get('/api/ai/interactions', async (c) => {

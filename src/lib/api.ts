@@ -798,6 +798,34 @@ export const adminAi = {
 
   getActivities: () =>
     apiRequest<{ totalAnalyzed: number; totalActivities: number; domainCounts: Record<string, number>; topMaterials: { name: string; count: number }[] }>('/api/admin/ai/activities'),
+
+  // Spine Management
+  generateSpine: (data: { subject: string; startWeek: number; endWeek: number; stage: string }) =>
+    apiRequest<{ success: boolean; version: string; message: string; conflicts: any[] }>('/api/admin/spine/generate', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  getSpineConflicts: (version: string) =>
+    apiRequest<{ version: string; conflicts: any[] }>(`/api/admin/spine/conflicts?version=${version}`),
+
+  resolveSpineConflict: (data: { version: string; weekNumber: number; selectedDraftId: string; resolvedBy?: string }) =>
+    apiRequest<{ success: boolean; message: string }>('/api/admin/spine/resolve', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  approveSpine: (data: { version: string; approvedBy?: string }) =>
+    apiRequest<{ success: boolean; message: string }>('/api/admin/spine/approve', {
+      method: 'POST',
+      body: JSON.stringify(data)
+    }),
+
+  getSpineVersions: () =>
+    apiRequest<{ versions: any[] }>('/api/admin/spine/list'),
+
+  getSpineEntries: (version: string, subject?: string) =>
+    apiRequest<{ version: string; entries: any[] }>(`/api/admin/spine/entries?version=${version}${subject ? `&subject=${subject}` : ''}`),
 };
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor, adminAi };

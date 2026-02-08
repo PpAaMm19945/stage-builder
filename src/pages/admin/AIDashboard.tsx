@@ -7,6 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Loader2, AlertTriangle, CheckCircle, BarChart3, Database, Key } from "lucide-react";
 import api from '@/lib/api';
 
+import SpineManager from '@/components/admin/spine/SpineManager';
+
 const AIDashboard = () => {
     const [stats, setStats] = useState<any>(null);
     const [telemetry, setTelemetry] = useState<any[]>([]);
@@ -23,7 +25,7 @@ const AIDashboard = () => {
         try {
             setLoading(true);
             const [spineRes, telRes, anchorRes, activityRes, overviewRes] = await Promise.all([
-                api.adminAi.getSpineStats(),
+                api.adminAi.getSpineStats().catch(() => ({ stats: {}, pendingConflicts: [] })), // Handle fail gracefully
                 api.adminAi.getTelemetry({ limit: 50 }),
                 api.adminAi.getAnchors(20),
                 api.adminAi.getActivities(),
@@ -44,7 +46,7 @@ const AIDashboard = () => {
     };
 
     if (loading) return <div className="flex justify-center p-8"><Loader2 className="animate-spin h-8 w-8 text-blue-500" /></div>;
-    if (error) return <Alert variant="destructive" className="m-4"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
+    // if (error) return <Alert variant="destructive" className="m-4"><AlertTriangle className="h-4 w-4" /><AlertTitle>Error</AlertTitle><AlertDescription>{error}</AlertDescription></Alert>;
 
     return (
         <div className="p-6 max-w-7xl mx-auto space-y-6">
@@ -102,14 +104,18 @@ const AIDashboard = () => {
                 </Card>
             </div>
 
-            <Tabs defaultValue="telemetry">
+            <Tabs defaultValue="spine">
                 <TabsList>
+                    <TabsTrigger value="spine">Curriculum Spine</TabsTrigger>
                     <TabsTrigger value="overview">Overview</TabsTrigger>
                     <TabsTrigger value="telemetry">Telemetry Log</TabsTrigger>
                     <TabsTrigger value="anchors">Anchor Monitor</TabsTrigger>
-                    <TabsTrigger value="spine">Spine Conflicts</TabsTrigger>
                     <TabsTrigger value="activities">Activity Monitoring</TabsTrigger>
                 </TabsList>
+
+                <TabsContent value="spine" className="space-y-4">
+                    <SpineManager />
+                </TabsContent>
 
                 <TabsContent value="overview" className="space-y-4">
                     <Card>
@@ -198,39 +204,6 @@ const AIDashboard = () => {
                                     ))}
                                 </TableBody>
                             </Table>
-                        </CardContent>
-                    </Card>
-                </TabsContent>
-
-                <TabsContent value="spine" className="space-y-4">
-                    <Card>
-                        <CardHeader><CardTitle>Draft Conflicts</CardTitle><CardDescription>Spine generations pending review</CardDescription></CardHeader>
-                        <CardContent>
-                            {stats?.pendingConflicts?.length === 0 ? (
-                                <div className="text-center py-8 text-muted-foreground flex flex-col items-center">
-                                    <CheckCircle className="h-8 w-8 mb-2 text-green-500" />
-                                    No conflicts found. All systems nominal.
-                                </div>
-                            ) : (
-                                <Table>
-                                    <TableHeader>
-                                        <TableRow>
-                                            <TableHead>Version</TableHead>
-                                            <TableHead>Conflict Count</TableHead>
-                                            <TableHead>Details</TableHead>
-                                        </TableRow>
-                                    </TableHeader>
-                                    <TableBody>
-                                        {stats?.pendingConflicts?.map((c: any, i: number) => (
-                                            <TableRow key={i}>
-                                                <TableCell className="font-mono">{c.version}</TableCell>
-                                                <TableCell>{c.conflictCount}</TableCell>
-                                                <TableCell>{JSON.stringify(c.conflicts)}</TableCell>
-                                            </TableRow>
-                                        ))}
-                                    </TableBody>
-                                </Table>
-                            )}
                         </CardContent>
                     </Card>
                 </TabsContent>

@@ -10,6 +10,15 @@ import { ArcGenerator } from '../ai/arc-generator';
  */
 const debug = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
+// Production Guard: Block all debug routes in production
+debug.use('*', async (c, next) => {
+    if (c.env.ENVIRONMENT === 'production') {
+        return c.json({ error: 'Debug routes are disabled in production' }, 403);
+    }
+    await next();
+});
+
+
 // GET /api/debug/status - Overall system status
 debug.get('/status', async (c) => {
     try {
