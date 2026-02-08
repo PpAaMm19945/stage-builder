@@ -109,7 +109,7 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
     }
 
     return (
-    <Document title={activity.title} author="SchoolOS">
+    <Document title={activity.title} author="FamilyPath">
         <Page size="A4" style={styles.page}>
             {/* Header */}
             <View style={styles.header}>
@@ -177,7 +177,7 @@ export const ActivityDocument = ({ activity, childName, date }: ActivityDocument
 
             {/* Footer */}
             <Text style={styles.footer}>
-                SchoolOS • {date || new Date().toLocaleDateString()} {childName ? `• Prepared for ${childName}` : ''}
+                FamilyPath • {date || new Date().toLocaleDateString()} {childName ? `• Prepared for ${childName}` : ''}
             </Text>
         </Page>
     </Document>

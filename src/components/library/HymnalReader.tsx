@@ -149,7 +149,7 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
                 {/* Header */}
                 <div className="flex items-center justify-between p-2 sm:p-4 text-white z-10 bg-gradient-to-b from-black/80 to-transparent">
                     <div>
-                        <DialogTitle className="text-lg font-medium font-serif">The SchoolOS Hymnal</DialogTitle>
+                        <DialogTitle className="text-lg font-medium font-serif">The FamilyPath Hymnal</DialogTitle>
                         <DialogDescription className="text-gray-400 text-xs">
                             Hymn {current - 1 > 0 ? current - 1 : 'Cover'} of {hymns.length}
                         </DialogDescription>
@@ -176,7 +176,7 @@ export function HymnalReader({ open, onOpenChange }: HymnalReaderProps) {
                                             <p className="text-[#eecfa1]/80 font-serif italic text-lg">of Grace & Glory</p>
                                         </div>
                                         <div className="mt-8 pt-8 border-t border-[#eecfa1]/20 w-32 mx-auto">
-                                            <p className="text-[#eecfa1]/60 text-xs uppercase tracking-widest">SchoolOS Edition</p>
+                                            <p className="text-[#eecfa1]/60 text-xs uppercase tracking-widest">FamilyPath Edition</p>
                                         </div>
                                     </div>
                                 </div>

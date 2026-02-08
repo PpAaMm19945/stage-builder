@@ -11,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { InlineAddChildForm } from '@/components/children/InlineAddChildForm';
 import { useAuth } from '@/contexts/AuthContext';
 import { useMutation } from '@tanstack/react-query';
-import { weeklyPlan, profile } from '@/lib/api';
+import { profile } from '@/lib/api';
 import {
     Sparkles,
     Calendar,
@@ -64,7 +64,7 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
 
     // Generate Mutation
     const generateMutation = useMutation({
-        mutationFn: async (prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused' }) => {
+        mutationFn: async (_prefs: { balancePreference: 'baby_focused' | 'mixed' | 'older_focused' }) => {
             await profile.update({
                 morning_minutes: morningMinutes,
                 evening_minutes: eveningMinutes,
@@ -72,11 +72,9 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                 goals: selectedGoals,
                 onboarding_mode: onboardingMode || 'guided'
             });
-            return weeklyPlan.regenerate(prefs);
         },
         onSuccess: () => {
             handleComplete();
-            navigate('/early-years/planner'); // Redirect to planner to see the result
         }
     });
 
@@ -151,11 +149,11 @@ export function WelcomeFlow({ onComplete }: WelcomeFlowProps) {
                     <OnboardingModeSelector onSelect={(mode) => {
                         setOnboardingMode(mode);
                         if (mode === 'quick') {
-                            setStep(1); // Go to Add Child directly
+                            setStep(2); // Go to Add Child directly
                         } else if (mode === 'guided') {
-                            setStep(1); // Go to Identity Questions (Need to reorder steps or handle dynamically)
+                            setStep(1); // Go to Identity/Preferences
                         } else if (mode === 'chat') {
-                            setStep(1); // Go to Chat
+                            setStep(5); // Go to Conversational Onboarding
                         }
                     }} />
                 </div>

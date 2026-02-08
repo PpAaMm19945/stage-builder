@@ -12,7 +12,7 @@ export default function TermsOfService() {
                 <section className="space-y-4">
                     <h2 className="text-2xl font-bold">1. Acceptance of Terms</h2>
                     <p>
-                        By accessing or using SchoolOS ("the Service"), you agree to be bound by these Terms of
+                        By accessing or using FamilyPath ("the Service"), you agree to be bound by these Terms of
                         Service. If you disagree with any part of the terms, you may not access the Service.
                     </p>
                 </section>
@@ -20,7 +20,7 @@ export default function TermsOfService() {
                 <section className="space-y-4">
                     <h2 className="text-2xl font-bold">2. Description of Service</h2>
                     <p>
-                        SchoolOS is an educational management tool designed to help parents track their children's
+                        FamilyPath is an educational management tool designed to help parents track their children's
                         developmental progress and access educational activities.
                     </p>
                 </section>
@@ -40,7 +40,7 @@ export default function TermsOfService() {
                     <h2 className="text-2xl font-bold">4. Intellectual Property</h2>
                     <p>
                         The Service and its original content, features, and functionality are and will remain
-                        the exclusive property of SchoolOS and its licensors. The Service is protected by
+                        the exclusive property of FamilyPath and its licensors. The Service is protected by
                         copyright, trademark, and other laws.
                     </p>
                 </section>
@@ -85,7 +85,7 @@ export default function TermsOfService() {
                     <h2 className="text-2xl font-bold">8. Contact Us</h2>
                     <p>
                         If you have any questions about these Terms, please contact us at
-                        support@schoolos.app.
+                        support@familypath.app.
                     </p>
                 </section>
             </div>
