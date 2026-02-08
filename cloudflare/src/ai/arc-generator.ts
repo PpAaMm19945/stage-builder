@@ -74,6 +74,7 @@ interface WeeklyTargets {
     focus_area: string;
     skill_targets: string[];
     faith_framing?: string;
+    spineVersion?: string;
 }
 
 export class ArcGenerator {
@@ -193,7 +194,12 @@ export class ArcGenerator {
 
                 if (latestSpine) {
                     spineVersion = latestSpine.spine_version;
-                    // Optional: We could self-heal here and save this position, but allow it to be dynamic for now
+                    // Self-heal: persist so auto-advance works for first-cycle families
+                    await safeRun(this.db, `
+                        INSERT INTO family_curriculum_position (id, household_id, subject, current_week, spine_version)
+                        VALUES (?, ?, ?, 1, ?)
+                        ON CONFLICT(household_id, subject) DO NOTHING
+                    `, [crypto.randomUUID(), householdId, subject, spineVersion]);
                 }
             }
 
@@ -214,7 +220,8 @@ export class ArcGenerator {
                     week: currentWeek,
                     focus_area: spineEntry.focus_area,
                     skill_targets: JSON.parse(spineEntry.skill_targets || '[]'),
-                    faith_framing: spineEntry.faith_framing
+                    faith_framing: spineEntry.faith_framing,
+                    spineVersion: spineVersion || undefined
                 });
             } else {
                 // Default targets when no spine is available
@@ -364,7 +371,7 @@ Materials should be common household items only.`;
             const arc: FormationArc = {
                 id: crypto.randomUUID(),
                 household_id: householdId,
-                spine_version: targets[0]?.week ? `week_${targets[0].week}` : 'default',
+                spine_version: targets.find(t => t.spineVersion)?.spineVersion || 'default',
                 duration_weeks: 2,
                 arc_start_date: new Date().toISOString().split('T')[0],
                 daily_plans: responseData.daily_plans || responseData.dailyPlans || [],
@@ -496,18 +503,17 @@ Materials should be common household items only.`;
 
         const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(2) : null;
 
-        // 2. Write to summary table (create if expecting it to exist, or log)
+        // 2. Write to summary table
         try {
             await safeRun(this.db, `
                 INSERT INTO anchor_feedback_summary (
-                    id, household_id, arc_id, total_anchors, completed_count, 
-                    skipped_count, average_rating, created_at
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+                    id, household_id, arc_id, total_completed, 
+                    total_skipped, avg_rating, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             `, [
                 crypto.randomUUID(),
                 householdId,
                 arcId,
-                total,
                 completed,
                 skipped,
                 avgRating

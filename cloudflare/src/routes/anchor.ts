@@ -17,8 +17,18 @@ anchor.get('/today', async (c) => {
 
     const generator = new AnchorGenerator(c.env);
 
+    // Parse optional context from query params
+    const weather = c.req.query('weather');
+    const mood = c.req.query('mood');
+    const materials = c.req.query('materials');
+    const context = (weather || mood || materials) ? {
+        weather,
+        parentMood: mood,
+        materialsOnHand: materials?.split(',').map(m => m.trim()),
+    } : undefined;
+
     try {
-        const anchor = await generator.getTodayAnchor(householdId, undefined, c.executionCtx.waitUntil.bind(c.executionCtx));
+        const anchor = await generator.getTodayAnchor(householdId, context, c.executionCtx.waitUntil.bind(c.executionCtx));
         console.log('[API] Anchor retrieved:', anchor ? anchor.id : 'null');
         return c.json(anchor);
     } catch (e: any) {
@@ -37,8 +47,12 @@ anchor.post('/regenerate', async (c) => {
     }
 
     const body = await c.req.json().catch(() => ({}));
-    const adjustments = body.adjustments || undefined;
-    const context = adjustments ? { adjustments } : undefined;
+    const { adjustments, weather, mood, materials } = body;
+    const context: Record<string, any> = {};
+    if (adjustments) context.adjustments = adjustments;
+    if (weather) context.weather = weather;
+    if (mood) context.parentMood = mood;
+    if (materials) context.materialsOnHand = Array.isArray(materials) ? materials : materials?.split(',').map((m: string) => m.trim());
 
     const generator = new AnchorGenerator(c.env);
     const date = new Date().toISOString().split('T')[0];
