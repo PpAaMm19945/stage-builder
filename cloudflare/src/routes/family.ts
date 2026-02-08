@@ -612,28 +612,6 @@ app.post('/api/rhythm/regenerate', async (c) => {
 
         const generator = new RhythmGenerator(c.env);
         */
-        const context = await generator.loadFamilyContext(user.id);
-
-        // Generate Plan
-        const plan = await generator.generateWeeklyRhythm(context, weekStart, body.frozenDays || []);
-
-        // Save to DB (weekly_plans_v2)
-        await safeRun(c.env.DB, `
-                INSERT INTO weekly_plans_v2 (id, family_id, week_start, plan_data, generated_at, generated_by)
-                VALUES (?, ?, ?, ?, datetime('now'), 'ai')
-                ON CONFLICT(family_id, week_start) DO UPDATE SET
-                plan_data = excluded.plan_data,
-                generated_at = excluded.generated_at,
-                regenerated_at = datetime('now')
-             `, [
-            plan.id,
-            user.household_id,
-            weekStart,
-            JSON.stringify(plan),
-        ]);
-
-        return c.json({ success: true, plan });
-
     } catch (e: any) {
         console.error("Regeneration failed", e);
         return c.json({ error: e.message }, 500);
