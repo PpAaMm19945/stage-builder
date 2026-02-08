@@ -10,6 +10,16 @@ import {
   ExplainResponse, WorkEntry, Apprenticeship, Notification, Hymn, CatechismQuestion,
   PortfolioItem
 } from '@/types/api-responses';
+import {
+  AIOverviewResponse,
+  TelemetryResponse,
+  AnchorLogResponse,
+  SpineStatsResponse,
+  ActivityAnalysisResponse,
+  SpineVersionsResponse,
+  SpineConflict,
+  SpineEntriesResponse
+} from '@/types/admin-ai';
 
 export interface WeeklyReport {
   week_start: string;
@@ -790,7 +800,7 @@ export const anchor = {
 
 export const adminAi = {
   getOverview: (days?: number) =>
-    apiRequest<{ overview: any; topFeatures: { feature: string; count: number }[]; startDate: string; days: number }>(
+    apiRequest<AIOverviewResponse>(
       `/api/admin/ai/overview${days ? `?days=${days}` : ''}`
     ),
 
@@ -800,27 +810,27 @@ export const adminAi = {
     if (params?.startDate) query.set('startDate', params.startDate);
     if (params?.endDate) query.set('endDate', params.endDate);
     if (params?.limit) query.set('limit', String(params.limit));
-    return apiRequest<{ telemetry: any[] }>(`/api/admin/ai/telemetry?${query}`);
+    return apiRequest<TelemetryResponse>(`/api/admin/ai/telemetry?${query}`);
   },
 
   getAnchors: (limit?: number) =>
-    apiRequest<{ anchors: any[] }>(`/api/admin/ai/anchors?limit=${limit || 20}`),
+    apiRequest<AnchorLogResponse>(`/api/admin/ai/anchors?limit=${limit || 20}`),
 
   getSpineStats: () =>
-    apiRequest<{ stats: any; pendingConflicts: any[] }>('/api/admin/ai/spine/telemetry'),
+    apiRequest<SpineStatsResponse>('/api/admin/ai/spine/telemetry'),
 
   getActivities: () =>
-    apiRequest<{ totalAnalyzed: number; totalActivities: number; domainCounts: Record<string, number>; topMaterials: { name: string; count: number }[] }>('/api/admin/ai/activities'),
+    apiRequest<ActivityAnalysisResponse>('/api/admin/ai/activities'),
 
   // Spine Management
   generateSpine: (data: { subject: string; startWeek: number; endWeek: number; stage: string }) =>
-    apiRequest<{ success: boolean; version: string; message: string; conflicts: any[] }>('/api/admin/spine/generate', {
+    apiRequest<{ success: boolean; version: string; message: string; conflicts: SpineConflict[] }>('/api/admin/spine/generate', {
       method: 'POST',
       body: JSON.stringify(data)
     }),
 
   getSpineConflicts: (version: string) =>
-    apiRequest<{ version: string; conflicts: any[] }>(`/api/admin/spine/conflicts?version=${version}`),
+    apiRequest<{ version: string; conflicts: SpineConflict[] }>(`/api/admin/spine/conflicts?version=${version}`),
 
   resolveSpineConflict: (data: { version: string; weekNumber: number; selectedDraftId: string; resolvedBy?: string }) =>
     apiRequest<{ success: boolean; message: string }>('/api/admin/spine/resolve', {
@@ -835,10 +845,10 @@ export const adminAi = {
     }),
 
   getSpineVersions: () =>
-    apiRequest<{ versions: any[] }>('/api/admin/spine/list'),
+    apiRequest<SpineVersionsResponse>('/api/admin/spine/list'),
 
   getSpineEntries: (version: string, subject?: string) =>
-    apiRequest<{ version: string; entries: any[] }>(`/api/admin/spine/entries?version=${version}${subject ? `&subject=${subject}` : ''}`),
+    apiRequest<SpineEntriesResponse>(`/api/admin/spine/entries?version=${version}${subject ? `&subject=${subject}` : ''}`),
 };
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor, adminAi };
