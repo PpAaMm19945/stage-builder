@@ -1,4 +1,5 @@
 import { useState, useCallback } from 'react';
+import { ChatActionPayload } from '@/types/api-responses';
 
 export type ChatMode = 'IDLE' | 'THINKING' | 'STREAMING' | 'ACTION' | 'EXECUTING' | 'FEEDBACK';
 
@@ -13,7 +14,7 @@ export interface ChatState {
 export interface PendingAction {
     id?: string;
     type: string;
-    data: any;
+    data: ChatActionPayload;
     reason: string;
 }
 

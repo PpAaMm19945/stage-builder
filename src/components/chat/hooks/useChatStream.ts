@@ -3,6 +3,7 @@ import { ai } from '@/lib/api';
 import { UseChatStateReturn, PendingAction, ExecutionStep } from './useChatState';
 
 import { Message } from '@/types/ChatTypes';
+import { ChatContext } from '@/types/api-responses';
 
 const STREAM_TIMEOUT = 30000;
 
@@ -21,7 +22,7 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
 
     const sendMessage = useCallback(async (
         messages: Message[],
-        context: Record<string, any> = {}
+        context: ChatContext = {}
     ) => {
         // Cancel any existing stream
         if (abortControllerRef.current) {
@@ -40,7 +41,6 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
 
             const aiMessage: Message = { role: 'assistant', content: '' };
             let hasStartedStreaming = false;
-            let isInThoughtMode = false;
 
             const readWithTimeout = async () => {
                 const timeoutPromise = new Promise<ReadableStreamReadResult<Uint8Array>>((_, reject) =>
