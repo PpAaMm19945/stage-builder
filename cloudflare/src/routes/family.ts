@@ -3,7 +3,7 @@ import { Env, User } from '../types';
 import { requireHouseholdMember, requireParent, requireAuth } from '../lib/middleware';
 import { generateId } from '../lib/utils';
 import { getSmartWeekStart } from '../planner';
-import { RhythmGenerator } from '../ai/_legacy_rhythm-generator';
+// import { RhythmGenerator } from '../ai/_legacy_rhythm-generator';
 import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
@@ -602,11 +602,16 @@ app.get('/api/rhythm/week', async (c) => {
 
 app.post('/api/rhythm/regenerate', async (c) => {
     try {
+        // LEGACY CLEANUP (Phase 6): Deprecated
+        return c.json({ error: 'This endpoint is deprecated. Use the new curriculum planner.' }, 410);
+
+        /*
         const user = requireHouseholdMember(c);
         const body = await c.req.json(); // { frozenDays: string[] } optionally
         const weekStart = getSmartWeekStart(); // Ensure consistent week start
 
         const generator = new RhythmGenerator(c.env);
+        */
         const context = await generator.loadFamilyContext(user.id);
 
         // Generate Plan

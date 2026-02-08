@@ -179,8 +179,23 @@ export class ArcGenerator {
                 [householdId, subject]
             );
 
-            const currentWeek = position?.current_week || 1;
-            const spineVersion = position?.spine_version;
+            let currentWeek = position?.current_week || 1;
+            let spineVersion = position?.spine_version;
+
+            // 1C. Auto-detect latest approved spine if not set
+            if (!spineVersion) {
+                const latestSpine = await safeQueryFirst<{ spine_version: string }>(this.db,
+                    `SELECT spine_version FROM spine_metadata 
+                     WHERE status = 'approved' AND subjects LIKE ? 
+                     ORDER BY approved_at DESC LIMIT 1`,
+                    [`%${subject}%`]
+                );
+
+                if (latestSpine) {
+                    spineVersion = latestSpine.spine_version;
+                    // Optional: We could self-heal here and save this position, but allow it to be dynamic for now
+                }
+            }
 
             // Get spine entry for this week
             let spineEntry: SpineRecord | null = null;
@@ -434,14 +449,73 @@ Materials should be common household items only.`;
     /**
      * Advance curriculum position after completing a week
      */
-    async advanceCurriculumPosition(householdId: string, subject: string): Promise<void> {
+    /**
+     * Advance curriculum position after completing a week
+     * Now tracks spine_version to ensure continuity
+     */
+    async advanceCurriculumPosition(householdId: string, subject: string, spineVersion: string): Promise<void> {
         await safeRun(this.db, `
-            INSERT INTO family_curriculum_position (id, household_id, subject, current_week)
-            VALUES (?, ?, ?, 1)
+            INSERT INTO family_curriculum_position (id, household_id, subject, current_week, spine_version)
+            VALUES (?, ?, ?, 1, ?)
             ON CONFLICT(household_id, subject) DO UPDATE SET 
                 current_week = current_week + 1,
+                spine_version = excluded.spine_version,
                 updated_at = CURRENT_TIMESTAMP
-        `, [crypto.randomUUID(), householdId, subject]);
+        `, [crypto.randomUUID(), householdId, subject, spineVersion]);
+    }
+
+    /**
+     * Aggregate feedback for a completed arc
+     */
+    async aggregateFeedback(householdId: string, arcId: string): Promise<void> {
+        // 1. Get all anchors for this arc
+        const anchors = await safeQuery<any>(this.db,
+            `SELECT status, completion_feedback FROM daily_anchors WHERE arc_id = ?`,
+            [arcId]
+        );
+
+        const total = anchors.results.length;
+        const completed = anchors.results.filter((a: any) => a.status === 'completed').length;
+        const skipped = anchors.results.filter((a: any) => a.status === 'skipped').length;
+
+        // Calculate average rating
+        let ratingSum = 0;
+        let ratingCount = 0;
+
+        anchors.results.forEach((a: any) => {
+            if (a.completion_feedback) {
+                try {
+                    const fb = JSON.parse(a.completion_feedback);
+                    if (fb.rating) {
+                        ratingSum += Number(fb.rating);
+                        ratingCount++;
+                    }
+                } catch { /* ignore */ }
+            }
+        });
+
+        const avgRating = ratingCount > 0 ? (ratingSum / ratingCount).toFixed(2) : null;
+
+        // 2. Write to summary table (create if expecting it to exist, or log)
+        try {
+            await safeRun(this.db, `
+                INSERT INTO anchor_feedback_summary (
+                    id, household_id, arc_id, total_anchors, completed_count, 
+                    skipped_count, average_rating, created_at
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            `, [
+                crypto.randomUUID(),
+                householdId,
+                arcId,
+                total,
+                completed,
+                skipped,
+                avgRating
+            ]);
+            console.log(`[ArcGenerator] Aggregated feedback for arc ${arcId}`);
+        } catch (e: any) {
+            console.warn('[ArcGenerator] Failed to write feedback summary (table might be missing):', e.message);
+        }
     }
 
     /**

@@ -476,7 +476,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
     }
 
     /**
-     * Validate safety based on child age
+     * Validate safety based on child age and enforce role constraints
      */
     private validateSafety(anchor: DailyAnchor): { isSafe: boolean; violations: string[] } {
         const violations: string[] = [];
@@ -509,6 +509,24 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
 
             if (SHARP_KEYWORDS.some(k => description.includes(k))) {
                 violations.push('Sharp object/action detected for child under 6');
+            }
+        }
+
+        // Rule 3: Role Safety Enforcements (Phase 4)
+        for (const level of activity.levels) {
+            if (!level.age_months) continue;
+
+            // Seedlings (0-24m) must be "Observer"
+            if (level.age_months < 24 && level.role !== 'Observer') {
+                console.log(`[AnchorGenerator] Downgrading ${level.child_name} from ${level.role} to Observer (Safety)`);
+                level.role = 'Observer';
+                level.instruction = 'Watch and listen as the family calculates/explores.';
+            }
+
+            // Sprouts (2-4y) cannot be "Leader"
+            if (level.age_months >= 24 && level.age_months < 48 && level.role === 'Leader') {
+                console.log(`[AnchorGenerator] Downgrading ${level.child_name} from Leader to Helper (Safety)`);
+                level.role = 'Helper';
             }
         }
 
@@ -572,7 +590,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
         // Get anchor data to extract skills practiced
         const anchorRow = await safeQueryFirst<any>(
             this.db,
-            "SELECT anchor_data FROM daily_anchors WHERE id = ? AND household_id = ?",
+            "SELECT anchor_data, arc_id FROM daily_anchors WHERE id = ? AND household_id = ?",
             [anchorId, householdId]
         );
 
@@ -591,14 +609,13 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
 
         console.log('[AnchorGenerator] Marked anchor complete:', anchorId);
 
-        // Record progress for each child if we have anchor data
+        // Record progress for each child
         if (anchorRow?.anchor_data) {
             try {
                 const anchor: DailyAnchor = JSON.parse(anchorRow.anchor_data);
                 const activity = anchor.family_activity;
 
                 if (activity?.levels && activity.targets_covered?.length) {
-                    // Parse targets into subject:skill pairs
                     const skillsPracticed = activity.targets_covered
                         .map(target => {
                             const [subject, skill_target] = target.split(':');
@@ -606,7 +623,6 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
                         })
                         .filter((s): s is { subject: string; skill_target: string } => s !== null);
 
-                    // Record progress for each child
                     for (const level of activity.levels) {
                         if (level.child_id && skillsPracticed.length) {
                             await this.arcGenerator.recordChildProgress(
@@ -621,6 +637,45 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
                 }
             } catch (e) {
                 console.warn('[AnchorGenerator] Could not record child progress:', e);
+            }
+        }
+
+        // PHASE 2 & 3: Auto-Advance Check
+        if (anchorRow?.arc_id) {
+            const arcId = anchorRow.arc_id;
+
+            // Count completed anchors for this arc
+            const stats = await safeQueryFirst<{ count: number }>(this.db,
+                `SELECT COUNT(*) as count FROM daily_anchors WHERE arc_id = ? AND status = 'completed'`,
+                [arcId]
+            );
+
+            // If 14 completed (2 weeks), close the arc and advance
+            if (stats && stats.count >= 14) {
+                console.log(`[AnchorGenerator] Arc ${arcId} complete! Advancing curriculum...`);
+
+                // 1. Aggregate Feedback (Phase 3)
+                await this.arcGenerator.aggregateFeedback(householdId, arcId);
+
+                // 2. Advance Curriculum Position (Phase 2)
+                const subjects = ['literacy', 'numeracy', 'formation', 'african_history'];
+                for (const subject of subjects) {
+                    // Get current spine version to persist it
+                    const pos = await safeQueryFirst<{ spine_version: string }>(this.db,
+                        `SELECT spine_version FROM family_curriculum_position WHERE household_id = ? AND subject = ?`,
+                        [householdId, subject]
+                    );
+
+                    if (pos?.spine_version) {
+                        await this.arcGenerator.advanceCurriculumPosition(householdId, subject, pos.spine_version);
+                    } else {
+                        // Fallback: Use arc's spine version if available, or just skip update (prevent corruption)
+                        console.warn(`[AnchorGenerator] Could not find current spine version for ${subject}, skipping advance.`);
+                    }
+                }
+
+                // 3. Close the Arc
+                await safeRun(this.db, `UPDATE formation_arcs SET status = 'completed' WHERE id = ?`, [arcId]);
             }
         }
     }

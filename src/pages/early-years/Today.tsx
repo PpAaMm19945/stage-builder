@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -61,10 +62,51 @@ export default function Today() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
 
+  const [context, setContext] = useState<{
+    weather?: string;
+    timeAvailable?: number;
+    parentMood?: string;
+  }>({});
+
   // Fetch today's activities from API
   const { data, isLoading, isError, error, refetch } = useQuery({
-    queryKey: ['today', selectedChild?.id],
-    queryFn: () => students.getToday(selectedChild!.id),
+    queryKey: ['today', selectedChild?.id, context], // specific context triggers refetch
+    queryFn: () => students.getToday(selectedChild!.id, context),
+    // Note: students.getToday wraps the response but doesn't usually accept context. 
+    // The requirement was to use `anchor.getToday` for the new "Anchor" system.
+    // However, this page currently uses `students.getToday` (Legacy/Current).
+    // The user plan says "File: src/pages/early-years/Today.tsx (or the hook that calls /api/anchor/today)".
+    // Currently `students.getToday` calls `/api/students/:id/today`.
+    // The `anchor` feature seems to be the "new" way.
+    // I should check if I should SWITCH to `anchor.getToday` or if `students.getToday` is the one to update.
+    // The `Archive` shows `Today.tsx` uses `students.getToday`.
+    // But `api.ts` has `anchor.getToday`.
+    // The plan says "Fix the Spine-to-Arc Link" and "Phase 5: Frontend Context Passing".
+    // If I switch to `anchor.getToday`, I might break the existing UI if the response shape is different.
+    // `students.getToday` returns `TodaysLearningResponse`.
+    // `anchor.getToday` returns `AnchorPayload`.
+    // `AnchorPayload` (from `AnchorGenerator`) has `family_activity` etc.
+    // `TodaysLearningResponse` has `activities`.
+    // I should probably KEEP `students.getToday` if that's what the page expects, OR update `students.getToday` to pass context, OR switch the page to use `anchor.getToday` and adapt the UI.
+    // Given the "Phase 1: Fix Spine-to-Arc Link" implies we are moving TO the new system.
+    // But `Today.tsx` is the main page.
+    // The `students.getToday` normalization (lines 159-162 in api.ts) handles `formations` or `activities`.
+    // I suspect the intention is to use the `anchor` endpoints for the "Unified Anchor Model".
+    // Let's stick to the plan: "Add optional inputs... Send as query params".
+    // I will assume for now I should update `Today.tsx` to use the context. 
+    // If the plan implies `api/anchor/today`, I should verify if `Today.tsx` should call that. 
+    // The user prompt in Phase 5 says: "File: src/pages/early-years/Today.tsx (or the hook that calls /api/anchor/today)".
+    // This implies `Today.tsx` *might* not be calling it yet, or I should find the hook that does.
+    // Since `Today.tsx` calls `students.getToday`, and I modified `anchor.getToday` in `api.ts`...
+    // I should probably use `anchor.getToday` inside `Today.tsx` IF the UI is ready for it. 
+    // OR I should update `students.getToday` to also accept context.
+    // Let's look at `students.getToday` in `api.ts`. It calls `/api/students/${studentId}/today`.
+    // `anchor.getToday` calls `/api/anchor/today`.
+    // The `AnchorGenerator` is the new hotness.
+    // I will try to switch `Today.tsx` to use `anchor.getToday` BUT `Today.tsx` is heavily coupled to `TodaysLearningResponse`.
+
+    // DECISION: I will update `students.getToday` in `api.ts` to ALSO accept context, and pass it through.
+    // AND I will update `Today.tsx` to use state and pass it.
     enabled: !!selectedChild,
     staleTime: 5 * 60 * 1000, // 5 minutes
   });
@@ -144,6 +186,54 @@ export default function Today() {
             Activities tailored for {selectedChild.name} ({selectedChild.ageInMonths} months)
           </p>
         </div>
+
+        {/* Context Controls (Phase 5) */}
+        <Card className="p-4 bg-muted/30 border-dashed">
+          <div className="flex flex-wrap gap-4 items-end">
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Weather</label>
+              <select
+                className="flex h-9 w-32 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={context.weather || ''}
+                onChange={(e) => setContext(prev => ({ ...prev, weather: e.target.value || undefined }))}
+              >
+                <option value="">Any</option>
+                <option value="sunny">Sunny</option>
+                <option value="rainy">Rainy</option>
+                <option value="cloudy">Cloudy</option>
+                <option value="cold">Cold</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">My Energy</label>
+              <select
+                className="flex h-9 w-32 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={context.parentMood || ''}
+                onChange={(e) => setContext(prev => ({ ...prev, parentMood: e.target.value || undefined }))}
+              >
+                <option value="">Normal</option>
+                <option value="energetic">High Energy</option>
+                <option value="tired">Low Energy</option>
+              </select>
+            </div>
+            <div className="space-y-1">
+              <label className="text-xs font-medium text-muted-foreground">Time (min)</label>
+              <select
+                className="flex h-9 w-32 rounded-md border border-input bg-background px-3 py-1 text-sm shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring"
+                value={context.timeAvailable || ''}
+                onChange={(e) => setContext(prev => ({ ...prev, timeAvailable: Number(e.target.value) || undefined }))}
+              >
+                <option value="">Flexible</option>
+                <option value="15">15 min</option>
+                <option value="30">30 min</option>
+                <option value="60">1 hour</option>
+              </select>
+            </div>
+            <Button variant="ghost" size="sm" onClick={() => setContext({})} disabled={!Object.keys(context).length}>
+              Reset
+            </Button>
+          </div>
+        </Card>
 
         {/* Main Recommendation */}
         {recommendedActivity ? (

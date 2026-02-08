@@ -1,4 +1,4 @@
-import { safeQuery, safeRun } from '../lib/db';
+import { safeQuery, safeRun, safeQueryFirst } from '../lib/db';
 import { GeminiService, GeminiContent } from './gemini';
 import { Env } from '../types';
 import { AITelemetryService } from '../services/ai-telemetry';
@@ -288,7 +288,7 @@ Generate one entry per week. Each entry should have:
         `, [
             crypto.randomUUID(),
             version,
-            JSON.stringify({ drafts: drafts.map(d => d.draft_id), conflicts }),
+            JSON.stringify({ drafts, conflicts }), // STORE FULL DRAFTS
             entries.length,
             JSON.stringify([subject])
         ]);
@@ -343,9 +343,59 @@ Generate one entry per week. Each entry should have:
         selectedDraftId: string,
         resolvedBy: string
     ): Promise<void> {
-        // Update the entry for this week with the selected draft's data
-        // This would require storing draft data separately, simplified for now
-        console.log(`[SpineGenerator] Resolved conflict for week ${weekNumber} using ${selectedDraftId}`);
+        console.log(`[SpineGenerator] Resolving conflict for week ${weekNumber} using ${selectedDraftId}`);
+
+        // 1. Get generation log to access the draft data
+        const meta = await safeQueryFirst<{ generation_log: string }>(this.db,
+            `SELECT generation_log FROM spine_metadata WHERE spine_version = ?`,
+            [version]
+        );
+
+        if (!meta?.generation_log) {
+            throw new Error(`Spine metadata not found for version ${version}`);
+        }
+
+        const log = JSON.parse(meta.generation_log) as { drafts: SpineDraft[]; conflicts: ConflictReport[] };
+
+        // 2. Find the selected draft
+        const draft = log.drafts.find(d => d.draft_id === selectedDraftId);
+        if (!draft) {
+            throw new Error(`Draft ${selectedDraftId} not found in metadata`);
+        }
+
+        // 3. Find the entry for this week in the selected draft
+        const entry = draft.entries.find(e => e.week_number === weekNumber);
+        if (!entry) {
+            throw new Error(`Entry for week ${weekNumber} not found in draft ${selectedDraftId}`);
+        }
+
+        // 4. Update the experimental/conflict entry in curriculum_spine
+        // We look for the entry with the SAME spine_version and week_number.
+        // It should currently exist but be marked 'experimental' or have conflict flags (if we had them).
+        // Since we are "resolving", we overwrite the fields with the selected draft's data.
+
+        await safeRun(this.db, `
+            UPDATE curriculum_spine
+            SET 
+                focus_area = ?,
+                skill_targets = ?,
+                faith_framing = ?,
+                resources = ?,
+                confidence = 'consensus',
+                manual_approval_note = ?
+            WHERE spine_version = ? AND week_number = ? AND subject = ?
+        `, [
+            entry.focus_area,
+            JSON.stringify(entry.skill_targets),
+            entry.faith_framing || null,
+            JSON.stringify(entry.resources || []),
+            `Resolved by ${resolvedBy} selecting ${selectedDraftId}`,
+            version,
+            weekNumber,
+            entry.subject
+        ]);
+
+        console.log(`[SpineGenerator] Conflict resolved for week ${weekNumber}: updated to ${selectedDraftId}`);
     }
 
     /**

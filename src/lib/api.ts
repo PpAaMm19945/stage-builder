@@ -153,8 +153,13 @@ export const students = {
       body: JSON.stringify(data),
     }),
 
-  getToday: async (studentId: string) => {
-    const data = await apiRequest<TodaysLearningResponse>(`/api/students/${studentId}/today`);
+  getToday: async (studentId: string, context?: { weather?: string; timeAvailable?: number; parentMood?: string }) => {
+    const query = new URLSearchParams();
+    if (context?.weather) query.set('weather', context.weather);
+    if (context?.timeAvailable) query.set('timeAvailable', String(context.timeAvailable));
+    if (context?.parentMood) query.set('parentMood', context.parentMood);
+
+    const data = await apiRequest<TodaysLearningResponse>(`/api/students/${studentId}/today?${query.toString()}`);
     // Normalize response for legacy compatibility
     return {
       ...data,
@@ -767,7 +772,15 @@ export const reports = {
 
 // Daily Anchor
 export const anchor = {
-  getToday: () => apiRequest<AnchorPayload>('/api/anchor/today'),
+  getToday: (context?: { weather?: string; timeAvailable?: number; parentMood?: string; materialsOnHand?: string[] }) => {
+    const query = new URLSearchParams();
+    if (context?.weather) query.set('weather', context.weather);
+    if (context?.timeAvailable) query.set('timeAvailable', String(context.timeAvailable));
+    if (context?.parentMood) query.set('parentMood', context.parentMood);
+    if (context?.materialsOnHand?.length) query.set('materialsOnHand', context.materialsOnHand.join(','));
+
+    return apiRequest<AnchorPayload>(`/api/anchor/today?${query.toString()}`);
+  },
   regenerate: (adjustments: string) =>
     apiRequest<AnchorPayload>('/api/anchor/regenerate', {
       method: 'POST',
