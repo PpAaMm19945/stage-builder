@@ -1,98 +1,155 @@
 
 
-# Audit: Issues Found in the Spine-Arc-Anchor Pipeline
+# Fix: Chat Adjustment Detection, Anchor Context, Loading UX, and AI Studio Docs
 
-After reading every file in the chain, here is what will break or waste tokens, and the fixes needed.
+## What's Wrong Today
+
+1. **Chat misses adjustment requests.** The frontend (`ChatPanel.tsx` line 247) only catches messages containing the exact words "adjust" or "regenerate." A parent saying "Can we do something indoors instead?" or "This is too hard" is never caught. It falls through to regular streaming chat, which cannot call the anchor generator.
+
+2. **Cortex's own ADJUST regex also has gaps.** It includes "can we|instead|different" but misses common phrases like "too hard," "too easy," "indoor," "simpler," "shorter." And even when it DOES fire, it conflicts with the FEEDBACK regex (which catches "too hard" and "too easy" first, treating them as completion feedback instead of adjustment requests).
+
+3. **Anchor generator is blind during adjustments.** When Cortex calls `generateAnchor` with adjustments, the prompt only says `Parent Adjustment Request: {text}`. It does NOT include the current anchor being modified, the children's names/ages/stages, available books, hymns, or catechism data. So the AI invents non-existent books and hymns.
+
+4. **No loading timer.** `ThinkingMessage` shows a spinner but no elapsed time.
+
+5. **AI Studio doc is stale.** The system prompts in `docs/AI_STUDIO_SETUP.md` don't reflect the current code (e.g., missing the constrained books/hymns/catechism lists, adjustment context, widened intent patterns).
 
 ---
 
-## Issue 1: Stage Transition Logic Will ALWAYS Fall Back to "sprout" (Critical)
+## The Fix (5 Parts)
 
-**The bug:** `getStageFromSpineVersion()` in `arc-generator.ts` (line 524-535) tries to extract the stage by checking if the version string contains "seedling", "sprout", etc. But `spine-generator.ts` generates versions as `v${Date.now()}` (e.g., `v1707500000000`). That string never contains a stage name, so every lookup returns the default `'sprout'`.
+### Part A: Remove the frontend shortcut, route everything through Cortex
 
-This means stage transitions will never work correctly. A family finishing Seedling will look for "the next stage after sprout" instead of "the next stage after seedling."
+**File: `src/components/chat/ChatPanel.tsx`**
 
-**Fix:** Query the `curriculum_spine` table directly to get the stage for a given `spine_version`:
+Delete lines 246-267 (the `isRegen` block). All user messages go to `sendMessage` which streams through Cortex. This eliminates the dual-path problem entirely.
 
-```sql
-SELECT DISTINCT stage FROM curriculum_spine WHERE spine_version = ? LIMIT 1
+### Part B: Widen and reorder intent detection in Cortex
+
+**File: `cloudflare/src/ai/cortex.ts`**
+
+1. Expand the `ADJUST` regex:
+```
+/\[ADJUST\]|adjust|can we do|instead|different|change|modify|something else|too hard|too easy|indoor|outdoor|shorter|longer|simpler|swap|replace|switch/i
 ```
 
-Replace the string-parsing logic entirely.
+2. Move ADJUST detection BEFORE FEEDBACK detection (currently FEEDBACK catches "too hard" / "too easy" first and misroutes them as completion feedback).
 
----
+3. In `handleIntent` for `adjust` and `regenerate`, emit a structured SSE event so the frontend can render the result as an anchor card:
+```
+event: anchor
+data: {full anchor JSON}
 
-## Issue 2: Next-Stage Spine Lookup Will Never Match (Critical)
+data: {"content": "I've adjusted today's plan: ..."}
 
-**The bug:** `advanceCurriculumPosition()` (line 485-491) searches for the next stage's spine with:
-
-```sql
-WHERE sm.spine_version LIKE '%sprout%'
+data: [DONE]
 ```
 
-But again, spine versions are timestamps (`v1707500000000`), never containing stage names. This query will always return zero results, so families will always cap at week 52 and never transition.
+### Part C: Add `event: anchor` handler in the stream parser
 
-**Fix:** Look up the next spine by joining `curriculum_spine` to find versions that actually contain entries for the target stage:
+**File: `src/components/chat/hooks/useChatStream.ts`**
 
-```sql
-SELECT sm.spine_version FROM spine_metadata sm
-JOIN curriculum_spine cs ON cs.spine_version = sm.spine_version
-WHERE sm.status = 'approved' AND cs.subject = ? AND cs.stage = ?
-ORDER BY sm.approved_at DESC LIMIT 1
+In the event type detection block (line 65-76), add:
+```typescript
+else if (eventType === 'anchor') currentEventType = 'anchor';
 ```
 
+And in the data handler, before the standard text handler:
+```typescript
+if (currentEventType === 'anchor') {
+    try {
+        const anchorData = JSON.parse(data);
+        aiMessage.anchorPayload = anchorData;
+        onMessageUpdate({ ...aiMessage });
+    } catch (e) { console.warn('Anchor parse error', e); }
+    continue;
+}
+```
+
+### Part D: Feed real data into the anchor generator prompt
+
+**File: `cloudflare/src/ai/anchor-generator.ts`**
+
+Update the `generateWithAI` method (around line 280-336) to inject:
+
+1. **Children data** -- query `children` table for the household
+2. **Current anchor** -- if adjusting, include the full current anchor JSON as "CURRENT PLAN (modify this)"
+3. **Available books** -- from `BOOKS_DATA`, filtered for published (same filter as arc-generator)
+4. **Available hymns** -- the 5 hardcoded hymns (same list as arc-generator line 323-329)
+5. **Catechism range** -- from `CATECHISM_DATA`
+
+Add to the system prompt:
+```
+CHILDREN IN THIS FAMILY:
+- Samuel Nakamya, 56 months, stage: sapling
+- Esther Nakamya, 27 months, stage: sprout
+- Baby Joel Nakamya, 5 months, stage: seedling
+
+AVAILABLE BOOKS (you MUST choose from this list):
+- "Athanasius" (id: athanasius)
+- "Augustine" (id: augustine)
+...
+
+AVAILABLE HYMNS (you MUST choose from this list):
+- A Mighty Fortress (id: hymn_mighty_fortress)
+- Amazing Grace (id: hymn_amazing_grace)
+- Great Is Thy Faithfulness (id: hymn_great_is_thy)
+- How Great Thou Art (id: hymn_how_great)
+- Holy, Holy, Holy (id: hymn_holy_holy)
+
+CATECHISM QUESTIONS (use from this range):
+Q1: "Who made you?" / A: "God."
+Q2: "What else did God make?" / A: "God made all things."
+...
+```
+
+If adjusting, add:
+```
+CURRENT PLAN (the parent wants to change this):
+{current anchor JSON}
+
+Parent's request: "Can we do something indoors instead?"
+```
+
+### Part E: Add elapsed timer to ThinkingMessage
+
+**File: `src/components/chat/messages/ThinkingMessage.tsx`**
+
+Add a `useState` + `useEffect` with `setInterval(100ms)` that displays elapsed time as `0.0s`, `1.2s`, `14.7s` next to the spinner text.
+
+### Part F: Update AI Studio Setup document
+
+**File: `docs/AI_STUDIO_SETUP.md`**
+
+Rewrite all 4 sections to reflect the actual current prompts:
+
+**Section 1 -- Cortex (Parent Companion):**
+- Update system prompt to match `buildAnchorSystemPrompt` exactly
+- Add test chats that exercise the widened ADJUST detection (e.g., "This is too hard, can we do something simpler indoors?")
+- Add a test for COMPLETE, SKIP, and a plain question
+
+**Section 2 -- Anchor Generator:**
+- Update system prompt to include the constrained books list, hymns list, catechism range, and children data
+- Add a test user prompt that includes `CURRENT PLAN (modify this)` for adjustment testing
+- Add a second test user prompt for fresh generation (no adjustment)
+
+**Section 3 -- Formation Arc Generator:**
+- Update to include the human-readable `PROGRESS SUMMARY` that was added in the earlier fix
+- Verify the user prompt includes the correct available resources format
+
+**Section 4 -- Spine Generator:**
+- No changes needed (already accurate)
+
 ---
 
-## Issue 3: Arc Prompt Doesn't Send Children's Stages to the AI (Minor)
+## File Change Summary
 
-**The problem:** The arc system prompt explains stages and says "assign roles based on these," but the `childrenSummary` in the user prompt already includes each child's `stage`. This is fine. However, the prompt does NOT tell the AI which spine week it's on or what the progression target is in a human-readable way. The AI gets a JSON blob like `{"subject":"literacy","week":15,"focus":"phonics_cvc_words","skills":["blending","segmenting"]}` but no sentence explaining "This family is 15 weeks into their literacy journey, currently learning CVC blending."
-
-**Fix:** Add a one-line natural-language summary before the JSON targets so the AI has better context for creating a coherent 2-week plan.
-
----
-
-## Issue 4: Books Have No `series` Field in `BOOKS_DATA` (Minor Data Gap)
-
-**The problem:** The arc generator filters out draft series using `b.path.split('/')[2]`, which works. But `BookData` in `data.ts` doesn't have a `series` field populated — books like "Athanasius" just have `"series": undefined` (the interface has it, but the generated data doesn't populate it). The `extractSeriesFromBook` in anchor-generator.ts falls back to `'library'` for all books.
-
-This is cosmetic (doesn't break anything) but means the anchor's `book_nook.series` field is always "library."
-
-**Fix:** The `BOOKS_DATA` generator script should extract the series from the path. Low priority — no runtime impact.
-
----
-
-## Issue 5: `BOOKS_DATA` Missing `series` Property in Generated Data
-
-Looking at the generated `BOOKS_DATA`, each entry is missing the `series` property even though `BookData` interface requires it. The data was auto-generated and this field was omitted. Since arc-generator uses `b.path.split('/')[2]` to filter draft series, this works at runtime, but TypeScript would flag it if strict checks were enabled.
-
-**Fix:** Add `series` to the generated book entries or make it optional in the interface. Low priority.
-
----
-
-## Issue 6: Database Schema vs. Code Column Mismatch (Potential)
-
-The `daily_anchors` table (migration v2_0051) has columns: `id, household_id, arc_id, anchor_date, anchor_data, generation_reasoning, regeneration_count, status, created_at`. The feedback migration (v2_0054) adds: `completion_feedback, completed_at, skipped_at, skip_reason`.
-
-The `AnchorDbRecord` type references all these columns. This is correct. No mismatch found.
-
-The `curriculum_spine` table has `confidence` and `source_citations` columns from the original migration (v2_0052). The new code writes `'standard'` to `confidence` and doesn't write `source_citations` (it's nullable). This is fine — no schema mismatch.
-
----
-
-## Issue 7: `formation_arcs` Table Missing `spine_version` in Primary Migration
-
-Migration v2_0050 creates `formation_arcs` without `spine_version`. Migration v2_0052 adds it via `ALTER TABLE formation_arcs ADD COLUMN spine_version TEXT`. The code writes to this column. This should work if migrations run in order. Verified: migration numbering is sequential (0050, 0051, 0052). No issue.
-
----
-
-## Summary of Changes Needed
-
-| Issue | Severity | File | Fix |
-|-------|----------|------|-----|
-| 1. Stage lookup parses timestamp string | **Critical** | `arc-generator.ts` line 524-535 | Query `curriculum_spine` table for stage |
-| 2. Next-spine lookup uses LIKE on timestamp | **Critical** | `arc-generator.ts` line 485-491 | Join `curriculum_spine` to find stage-matched versions |
-| 3. Arc prompt lacks human-readable context | Low | `arc-generator.ts` line 336-352 | Add summary sentence to user prompt |
-| 4-5. Books missing series field | Low | `data.ts` / generator script | Cosmetic, no runtime break |
-
-Only issues 1 and 2 need fixing before testing. They are both in `arc-generator.ts` and affect the same method (`advanceCurriculumPosition` and `getStageFromSpineVersion`).
+| File | Change |
+|------|--------|
+| `src/components/chat/ChatPanel.tsx` | Remove `isRegen` shortcut block (lines 246-267) |
+| `cloudflare/src/ai/cortex.ts` | Widen ADJUST regex, reorder before FEEDBACK, emit `event: anchor` SSE |
+| `src/components/chat/hooks/useChatStream.ts` | Add `anchor` event type handler |
+| `cloudflare/src/ai/anchor-generator.ts` | Inject children, books, hymns, catechism, current anchor into AI prompt |
+| `src/components/chat/messages/ThinkingMessage.tsx` | Add elapsed seconds.milliseconds timer |
+| `docs/AI_STUDIO_SETUP.md` | Rewrite all system prompts to match current code |
 
