@@ -293,11 +293,15 @@ export class AnchorGenerator {
         const contextStr = this.buildContextString(context);
 
         // Fetch children for this household
-        const children = await safeQuery<{ id: string; name: string; age_months: number; stage: string }>(
+        const rawChildren = await safeQuery<{ id: string; name: string; date_of_birth: string }>(
             this.db,
-            "SELECT id, name, age_months, stage FROM students WHERE household_id = ?",
+            "SELECT id, name, date_of_birth FROM students WHERE household_id = ?",
             [householdId]
         );
+        const children = (rawChildren.results || []).map(c => {
+            const ageMonths = this.calculateAgeMonths(c.date_of_birth);
+            return { id: c.id, name: c.name, age_months: ageMonths, stage: this.determineStage(ageMonths) };
+        });
 
         // Build children context
         const childrenStr = children.length > 0
@@ -774,5 +778,18 @@ ${context?.adjustments && !currentAnchorStr ? `Parent Adjustment Request: ${cont
         ]);
 
         console.log('[AnchorGenerator] Marked anchor skipped:', anchorId);
+    }
+
+    private calculateAgeMonths(dob: string): number {
+        const birth = new Date(dob);
+        const now = new Date();
+        return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+    }
+
+    private determineStage(ageMonths: number): string {
+        if (ageMonths < 24) return 'seedling';
+        if (ageMonths < 48) return 'sprout';
+        if (ageMonths < 96) return 'sapling';
+        return 'tree';
     }
 }
