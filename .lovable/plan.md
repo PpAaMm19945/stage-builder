@@ -1,111 +1,69 @@
 
+# Fix the Recurring "Lion" Search and Other Chat Issues
 
-# Wire the Seeded Curriculum Spine into the Backend
+## Root Cause
 
-## Context
+The "lion" book search is a real row stored in the `ai_logs` database table. Every day when a new chat session starts (no local session yet), `ChatPanel.tsx` falls back to `ai.getInteractionLog()`, which fetches the last 50 entries from `ai_logs` -- including that old lion search. Since the query has no date filter, it keeps resurfacing forever.
 
-The 9 migration files (v2_0055 through v2_0064) are already generated and sitting in `cloudflare/migrations/`. The data is structurally correct: 832 rows, cycling catechism (1-130), cycling hymns (1-56), scripture refs from proof texts. The next step is making sure the backend code can read and use the new columns.
+## Changes
 
-## Changes Required
+### 1. Add a date filter to the interaction log query
 
-### 1. Update `SpineRecord` type to include new columns
+**File:** `cloudflare/src/routes/ai.ts` (line 128-130)
 
-**File:** `cloudflare/src/ai/types.ts` (line 230-244)
-
-Add the three new fields to the interface:
-
-```typescript
-export interface SpineRecord {
-    id: string;
-    spine_version: string;
-    subject: string;
-    week_number: number;
-    stage: string;
-    focus_area: string;
-    skill_targets: string;
-    faith_framing?: string;
-    resources?: string;
-    confidence: string;
-    source_citations?: string;
-    approved_by?: string;
-    approved_at?: string;
-    catechism_q?: number;      // NEW
-    hymn_number?: number;      // NEW
-    scripture_ref?: string;    // NEW
-}
+Change the query from:
+```sql
+SELECT * FROM ai_logs WHERE parent_id = ? ORDER BY created_at DESC LIMIT 50
+```
+To:
+```sql
+SELECT * FROM ai_logs WHERE parent_id = ? AND created_at >= date('now', '-1 day') ORDER BY created_at DESC LIMIT 20
 ```
 
-### 2. Wire spine liturgy data into arc generator
+This ensures only the last 24 hours of logs are returned as chat history. Old interactions like the lion search will no longer appear.
 
-**File:** `cloudflare/src/ai/arc-generator.ts`
+### 2. Clean up stale ai_logs data
 
-Currently, the arc generator fetches liturgy position separately from `family_profiles` (line 238-262) and uses only 5 hardcoded hymns. After seeding, each spine entry already carries `catechism_q`, `hymn_number`, and `scripture_ref`. The arc generator should prefer these values from the spine when available.
+**New migration file:** `cloudflare/migrations/v2_0065_cleanup_stale_logs.sql`
 
-In `getWeeklyTargets` (around line 216-229), when a `spineEntry` is found, include the theological anchors in the targets:
-
-```typescript
-if (spineEntry) {
-    targets.push({
-        subject,
-        week: currentWeek,
-        focus_area: spineEntry.focus_area,
-        skill_targets: JSON.parse(spineEntry.skill_targets || '[]'),
-        faith_framing: spineEntry.faith_framing,
-        spineVersion: spineVersion || undefined,
-        catechism_q: spineEntry.catechism_q,
-        hymn_number: spineEntry.hymn_number,
-        scripture_ref: spineEntry.scripture_ref
-    });
-}
+```sql
+DELETE FROM ai_logs WHERE created_at < date('now', '-7 days');
 ```
 
-Update the `WeeklyTargets` interface to include these optional fields.
+This one-time cleanup removes old log entries. Going forward, the date filter in the query prevents them from appearing.
 
-In `createUnifiedArc`, use the spine's catechism/hymn data to override the family_profiles-based liturgy position, so the AI prompt gets the spine-directed theological anchors rather than the family's generic position counter.
+### 3. Time-aware greeting
 
-### 3. Expose new columns in spine API response
+**File:** `src/components/chat/ChatPanel.tsx` (around line 367)
 
-**File:** `cloudflare/src/routes/spine.ts` (line 134-143)
+Replace static "Good morning!" with a helper that checks the hour:
+- Before 12pm: "Good morning!"
+- 12pm to 5pm: "Good afternoon!"  
+- After 5pm: "Good evening!"
 
-Add the three new fields to the entries response so the admin UI can display them:
+### 4. Stop token-burning reload loop
 
-```typescript
-entries: (result.results || []).map((row: any) => ({
-    id: row.id,
-    subject: row.subject,
-    weekNumber: row.week_number,
-    stage: row.stage,
-    focusArea: row.focus_area,
-    skillTargets: JSON.parse(row.skill_targets || '[]'),
-    faithFraming: row.faith_framing,
-    approvedBy: row.approved_by,
-    catechismQ: row.catechism_q,       // NEW
-    hymnNumber: row.hymn_number,       // NEW
-    scriptureRef: row.scripture_ref    // NEW
-}))
+**File:** `src/components/chat/ChatPanel.tsx` (around lines 131-147)
+
+Add a guard so that if the anchor fetch fails, it records the failure in localStorage with today's date (e.g., `today_failed`) and does not retry on subsequent reloads. Add a small "Retry" button in the UI so you can manually trigger it when ready, instead of burning tokens on every page load.
+
+```
+Before call:  localStorage.setItem(key, today + '_pending')
+On success:   localStorage.setItem(key, today)  
+On failure:   localStorage.setItem(key, today + '_failed')
+Guard check:  skip if value starts with today
 ```
 
-### 4. Clean up: delete the generator script (optional)
+Show a gentle fallback message: "Could not load today's plan. Tap to retry." with a button.
 
-**File:** `scripts/generate_spine_seeds.cjs`
+## What stays the same
 
-This script has served its purpose. It can be deleted or kept for reference. No code depends on it.
+- The `ai.getInteractionLog()` fallback logic in ChatPanel stays -- it is needed for chat persistence across reloads
+- The local session storage (IndexedDB) remains the primary source
+- No changes to the anchor generation pipeline
 
----
+## Files touched
 
-## What This Does NOT Change
-
-- The migration files themselves -- they are ready to apply as-is
-- The admin UI -- that is a separate future task for browsing/filtering/regenerating
-- The anchor generator -- it already reads from arcs which read from the spine
-
-## Applying the Migrations
-
-After these code changes, you apply the migrations to D1 in order:
-
-```bash
-wrangler d1 migrations apply DB --remote
-```
-
-This will run v2_0055 (schema update) first, then v2_0056-v2_0063 (seed data), then v2_0064 (metadata).
-
+1. `cloudflare/src/routes/ai.ts` -- date filter on interaction query
+2. `cloudflare/migrations/v2_0065_cleanup_stale_logs.sql` -- one-time cleanup
+3. `src/components/chat/ChatPanel.tsx` -- time greeting + retry guard
