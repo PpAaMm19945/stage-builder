@@ -175,9 +175,8 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                         const extractResponse = (jsonStr: string): string => {
                             try {
                                 const parsed = JSON.parse(jsonStr);
-                                if (parsed.response && typeof parsed.response === 'string') {
-                                    return parsed.response;
-                                }
+                                if (parsed.response && typeof parsed.response === 'string') return parsed.response;
+                                if (parsed.content && typeof parsed.content === 'string') return parsed.content;
                             } catch { /* ignore */ }
                             return '';
                         };
@@ -192,6 +191,8 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                                     const parsed = JSON.parse(data);
                                     if (parsed.response && typeof parsed.response === 'string') {
                                         textToAdd = parsed.response;
+                                    } else if (parsed.content && typeof parsed.content === 'string') {
+                                        textToAdd = parsed.content;
                                     }
                                 } catch {
                                     // 2. Parse failed, might be concatenated JSON objects (e.g. {response:...}{usage:...})
