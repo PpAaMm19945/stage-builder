@@ -12,6 +12,7 @@ import type { Book as BookType } from '@/types';
 
 // Types derived from our AI Payload (synced with cortex.ts)
 export interface AnchorPayload {
+    id: string;
     date: string;
     theme: string;
     liturgy: {
