@@ -311,12 +311,13 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     }, [isFullscreen]);
 
     const handleCloseRequest = async () => {
-        if (current === count || current === totalPages) {
+        const totalSlides = totalPages + 2;
+        if (current >= totalSlides) {
             handleCloseStandard();
             return;
         }
 
-        if (current > 1 && current < (count || totalPages)) {
+        if (current > 1 && current < totalSlides) {
             setShowFinishDialog(true);
         } else {
             handleCloseStandard();
@@ -384,11 +385,11 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                     hideCloseButton
                 >
                     {/* Progress Bar */}
-                    {!isPdf && count > 0 && (
+                    {!isPdf && totalPages > 0 && (
                         <div className="absolute top-0 left-0 right-0 h-1 bg-white/10 z-[60]">
                             <div
                                 className="h-full bg-primary transition-all duration-300"
-                                style={{ width: `${(current / count) * 100}%` }}
+                                style={{ width: `${((current - 1) / (totalPages + 1)) * 100}%` }}
                             />
                         </div>
                     )}
@@ -414,8 +415,8 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     ) : (
                                         <>
                                             {current === 1 ? "Cover" : (
-                                                current === (count || totalPages + 2) ? "The End" : (
-                                                    `Page ${current - 1} of ${validImagePages.length > 0 ? validImagePages.length : totalPages}`
+                                                current > totalPages + 1 ? "The End" : (
+                                                    `Page ${current - 1} of ${totalPages}`
                                                 )
                                             )}
                                         </>
