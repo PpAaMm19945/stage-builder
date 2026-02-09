@@ -282,6 +282,19 @@ app.post('/api/progress/save', async (c) => {
 
         // Upsert
         // We use a safe upsert pattern compatible with SQLite
+        // Ensure table exists (lazy init for D1)
+        await safeRun(c.env.DB, `
+            CREATE TABLE IF NOT EXISTS content_progress (
+                id TEXT PRIMARY KEY,
+                user_id TEXT NOT NULL,
+                content_type TEXT DEFAULT 'book',
+                content_id TEXT NOT NULL,
+                data TEXT NOT NULL,
+                created_at TEXT NOT NULL,
+                updated_at TEXT NOT NULL
+            )
+        `, []);
+
         const existing = await safeQueryFirst<{ id: string }>(c.env.DB,
             'SELECT id FROM content_progress WHERE user_id = ? AND content_id = ?',
             [user.id, contentId]

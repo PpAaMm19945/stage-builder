@@ -795,10 +795,10 @@ export const anchor = {
       method: 'POST',
       body: JSON.stringify({ adjustments }),
     }),
-  complete: (date: string, feedback?: string) =>
+  complete: (anchorId: string, feedback?: { rating?: number; notes?: string; lovedIt?: boolean }) =>
     apiRequest<{ success: boolean }>('/api/anchor/complete', {
       method: 'POST',
-      body: JSON.stringify({ date, feedback }),
+      body: JSON.stringify({ anchorId, ...feedback }),
     }),
 };
 
