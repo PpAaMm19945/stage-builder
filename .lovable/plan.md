@@ -1,85 +1,65 @@
 
-# Fix: D1_TYPE_ERROR from undefined arc ID
 
-## Root Cause
+# Anchor Card: Hymn Player + Book Cover & Reader Fixes
 
-The error `D1_TYPE_ERROR: Type 'undefined' not supported for value 'undefined'` happens because `activeArc.id` is `undefined` when passed to `storeAnchor`.
+## Current Status
 
-Here's why: `getActiveArc()` in `arc-generator.ts` (line 660) does `return JSON.parse(result.arc_data)` -- it returns ONLY the parsed JSON blob. If the stored `arc_data` JSON doesn't contain an `id` field (e.g., from an older generation run, or if the AI response didn't include one), then `activeArc.id` is `undefined`.
+**Hymn Player**: Already integrated in the Liturgy section and hooked to the global audio player. It shows when `hymn_audio_url` is provided by the AI. No changes needed here -- it's working.
 
-When `storeAnchor` tries to bind this `undefined` value to the SQL INSERT, D1 throws the type error.
+**Book Cover**: Not loading because the AI-generated anchor never includes `cover_image` in its output (the AI prompt doesn't ask for it, and the pre-built plan path doesn't set it either). The cover placeholder icon shows instead.
 
-The fix: `getActiveArc()` should always merge the DB row's `id` into the returned object, since the `id` column always exists on the `formation_arcs` table row.
+**Book Reader Pages**: Not loading because the `BookReader` needs a valid `series` and `pageCount` to resolve page images from R2. The anchor card hardcodes `pageCount: 12` and defaults `series` to `'library'`, which doesn't match actual R2 paths.
 
-## Changes
+## Plan
 
-### 1. Fix `getActiveArc` to include DB row ID (arc-generator.ts)
+### 1. Resolve book covers dynamically (AnchorCard.tsx)
 
-**File:** `cloudflare/src/ai/arc-generator.ts` (lines 650-665)
+Instead of relying on `book.cover_image` (which the AI never provides), use the existing `useBookAssetUrl` hook to resolve the cover from R2 -- the same way `BookReader` and `BookLibrary` do.
 
-Change from:
-```typescript
-async getActiveArc(householdId: string): Promise<FormationArc | null> {
-    const result = await safeQueryFirst<any>(
-        this.db,
-        "SELECT * FROM formation_arcs WHERE household_id = ? AND status = 'active' ORDER BY arc_start_date DESC",
-        [householdId]
-    );
-    if (!result) return null;
-    try {
-        return JSON.parse(result.arc_data);
-    } catch {
-        console.error('[ArcGenerator] Failed to parse stored arc');
-        return null;
-    }
-}
-```
+- Import `useBookAssetUrl` into the `BookContent` component
+- Call `useBookAssetUrl(series, bookId, 'cover')` to get the actual R2 cover URL
+- Use the resolved URL in the `<img>` tag
+- Change the cover container from portrait (`w-20 h-28`) to landscape (`w-32 h-24`) since all picture books have landscape covers
 
-To:
-```typescript
-async getActiveArc(householdId: string): Promise<FormationArc | null> {
-    const result = await safeQueryFirst<any>(
-        this.db,
-        "SELECT * FROM formation_arcs WHERE household_id = ? AND status = 'active' ORDER BY arc_start_date DESC",
-        [householdId]
-    );
-    if (!result) return null;
-    try {
-        const arc = JSON.parse(result.arc_data);
-        // Ensure DB row fields are always present (arc_data JSON may not have them)
-        arc.id = arc.id || result.id;
-        arc.household_id = arc.household_id || result.household_id;
-        arc.arc_start_date = arc.arc_start_date || result.arc_start_date;
-        return arc;
-    } catch {
-        console.error('[ArcGenerator] Failed to parse stored arc');
-        return null;
-    }
-}
-```
+### 2. Set cover_image and series in the backend (anchor-generator.ts)
 
-This ensures `activeArc.id` is never undefined, regardless of what's in the JSON blob.
+When the anchor generator builds the `book_nook` object (both from pre-built plans and AI generation), enrich it with:
 
-### 2. Add null-guard in storeAnchor (anchor-generator.ts)
+- `cover_image`: constructed from the book's data (e.g., the `cover_image` field from `data.ts`)
+- `series`: already extracted via `extractSeriesFromBook` for pre-built plans; for AI-generated ones, look it up from the books list
 
-**File:** `cloudflare/src/ai/anchor-generator.ts` (line 640-654)
+This ensures the frontend always has the data it needs even without the R2 hook fallback.
 
-Add a fallback for `arcId` to prevent `undefined` from ever reaching D1:
+### 3. Fix BookReader page loading from anchor (AnchorCard.tsx)
 
-```typescript
-private async storeAnchor(householdId: string, arcId: string, date: string, anchor: DailyAnchor): Promise<void> {
-    const generationReasoning = anchor.reasoning ?? 'Generated anchor';
-    const safeArcId = arcId || 'unknown';  // Prevent undefined from reaching D1
-    // ... rest unchanged, use safeArcId in bind params
-```
+The `bookForReader` object hardcodes `pageCount: 12`. Instead:
 
-## Files Changed
+- Look up the book in the static book data (or pass through from the anchor payload) to get the correct page count
+- Ensure `series` is correctly passed through so `useBookPageUrls` can resolve pages from R2
 
-1. `cloudflare/src/ai/arc-generator.ts` -- Merge DB row `id` into parsed arc object
-2. `cloudflare/src/ai/anchor-generator.ts` -- Null-guard on `arcId` bind parameter
+### 4. Enrich AI prompt to return series with book_nook
 
-## Impact
+Update the AI prompt's `book_nook` schema to include `series` so the AI returns it alongside `id` and `title`. This data is already in the AVAILABLE BOOKS list context.
 
-- Fixes the 500 error on `/api/anchor/today`
-- Prevents `undefined` from ever reaching D1 bind parameters
-- No schema changes needed
+## Technical Details
+
+### Files to Change
+
+1. **`src/components/anchor/AnchorCard.tsx`**
+   - `BookContent`: Add `useBookAssetUrl` hook for cover resolution
+   - Change cover container to landscape aspect ratio
+   - Look up pageCount from book data or use a sensible default
+
+2. **`cloudflare/src/ai/anchor-generator.ts`**
+   - In `generateWithAI` response mapping (line 466): enrich `book_nook` with `cover_image` and `series` from the books data list
+   - In `buildFromPlan` (line 267): add `cover_image` from `plan.book.cover_image`
+   - Update AI prompt schema to include `"series": "string"` in book_nook
+
+3. **`cloudflare/src/ai/data.ts`**
+   - Add `series` field to each book entry (derived from the path, e.g., `my_first_books`, `african_men_of_faith`) so the AI can return it
+
+## Expected Result
+
+- Book covers will display as landscape thumbnails in the anchor card
+- The BookReader opened from the anchor will load all page images correctly from R2
+- The hymn player continues to work as-is in the Liturgy section
