@@ -23,7 +23,7 @@ anchor.get('/today', async (c) => {
     const materials = c.req.query('materials');
     const context = (weather || mood || materials) ? {
         weather: weather as 'sunny' | 'rainy' | 'cloudy' | 'cold' | undefined,
-        parentMood: mood,
+        parentMood: mood as 'energetic' | 'tired' | 'normal' | undefined,
         materialsOnHand: materials?.split(',').map(m => m.trim()),
     } : undefined;
 
