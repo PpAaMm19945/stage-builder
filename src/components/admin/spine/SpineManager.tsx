@@ -1,28 +1,18 @@
 
 import React, { useState } from 'react';
-import { Card } from "@/components/ui/card";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { PlusCircle, List, LayoutDashboard } from "lucide-react";
+import { PlusCircle } from "lucide-react";
 import SpineList from './SpineList';
 import SpineGenerationForm from './SpineGenerationForm';
-import ConflictResolver from './ConflictResolver';
 import SpineViewer from './SpineViewer';
 
 const SpineManager = () => {
-    const [view, setView] = useState<'list' | 'generate' | 'resolve' | 'view'>('list');
+    const [view, setView] = useState<'list' | 'generate' | 'view'>('list');
     const [selectedVersion, setSelectedVersion] = useState<string | null>(null);
     const [selectedSubject, setSelectedSubject] = useState<string>('literacy');
 
-    const handleGenerationSuccess = (version: string) => {
-        // After generation, we might want to check conflicts immediately
-        // For now, go back to list to see status
+    const handleGenerationSuccess = () => {
         setView('list');
-    };
-
-    const handleReviewConflicts = (version: string) => {
-        setSelectedVersion(version);
-        setView('resolve');
     };
 
     const handleViewEntries = (version: string, subject: string) => {
@@ -44,10 +34,7 @@ const SpineManager = () => {
             )}
 
             {view === 'list' && (
-                <SpineList
-                    onReviewConflicts={handleReviewConflicts}
-                    onViewEntries={handleViewEntries}
-                />
+                <SpineList onViewEntries={handleViewEntries} />
             )}
 
             {view === 'generate' && (
@@ -59,13 +46,6 @@ const SpineManager = () => {
                     </div>
                     <SpineGenerationForm onSuccess={handleGenerationSuccess} />
                 </div>
-            )}
-
-            {view === 'resolve' && selectedVersion && (
-                <ConflictResolver
-                    version={selectedVersion}
-                    onComplete={() => setView('list')}
-                />
             )}
 
             {view === 'view' && selectedVersion && (

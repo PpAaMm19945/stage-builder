@@ -66,22 +66,15 @@ export interface SpineVersionsResponse {
   versions: SpineVersion[];
 }
 
-export interface SpineConflict {
-  id: string;
-  version: string;
-  week: number;
-  description: string;
-  severity: 'low' | 'medium' | 'high';
-  resolved: boolean;
-}
-
 export interface SpineEntry {
   id: string;
-  version: string;
-  week: number;
-  topic: string;
-  description: string;
-  standards_alignment?: string;
+  subject: string;
+  weekNumber: number;
+  stage: string;
+  focusArea: string;
+  skillTargets: string[];
+  faithFraming?: string;
+  approvedBy?: string;
 }
 
 export interface SpineEntriesResponse {
