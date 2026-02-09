@@ -667,15 +667,21 @@ app.get('/api/family/materials', async (c) => {
         // 3. Aggregate
         const materialCounts: Record<string, number> = {};
 
-        formations.forEach((f: any) => {
+        formations.forEach((f: { id: string | number; materials: string | null }) => {
             try {
                 const list = JSON.parse(f.materials || '[]');
-                list.forEach((m: string) => {
-                    // Simple normalization
-                    const name = m.trim();
-                    materialCounts[name] = (materialCounts[name] || 0) + 1;
-                });
-            } catch (e) { }
+                if (Array.isArray(list)) {
+                    list.forEach((m: string) => {
+                        // Simple normalization
+                        const name = m.trim();
+                        if (name) {
+                            materialCounts[name] = (materialCounts[name] || 0) + 1;
+                        }
+                    });
+                }
+            } catch (e) {
+                console.error(`Failed to parse materials for formation ${f.id}`, e);
+            }
         });
 
         // 4. Format
