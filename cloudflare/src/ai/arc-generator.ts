@@ -292,7 +292,7 @@ SUBJECT WEIGHTING (activities should implicitly cover):
 - Literacy: 5x/week (rhyme, phonics, letters, vocabulary)
 - Formation: daily (woven into liturgy + character during activity)
 - Numeracy: 3-4x/week (counting, patterns, shapes)
-- African History: 1-2x/week (stories, heritage connections)
+- Motor Skills: 2-3x/week (gross motor, fine motor, pre-writing)
 
 Output ONLY valid JSON matching the FormationArc interface.`;
 
@@ -466,14 +466,79 @@ Materials should be common household items only.`;
      * Now tracks spine_version to ensure continuity
      */
     async advanceCurriculumPosition(householdId: string, subject: string, spineVersion: string): Promise<void> {
+        // Get current position
+        const current = await safeQueryFirst<CurriculumPositionRecord>(this.db,
+            `SELECT current_week, spine_version FROM family_curriculum_position 
+             WHERE household_id = ? AND subject = ?`,
+            [householdId, subject]
+        );
+
+        const currentWeek = current?.current_week || 1;
+        const newWeek = currentWeek + 2; // Each arc covers 2 weeks
+
+        if (newWeek > 52) {
+            // Stage transition: find the next stage's approved spine
+            const currentStage = await this.getStageFromSpineVersion(spineVersion);
+            const nextStage = this.getNextStage(currentStage);
+
+            if (nextStage) {
+                const nextSpine = await safeQueryFirst<{ spine_version: string }>(this.db,
+                    `SELECT sm.spine_version FROM spine_metadata sm
+                     WHERE sm.status = 'approved' AND sm.subjects LIKE ?
+                     AND sm.spine_version LIKE ?
+                     ORDER BY sm.approved_at DESC LIMIT 1`,
+                    [`%${subject}%`, `%${nextStage}%`]
+                );
+
+                if (nextSpine) {
+                    console.log(`[ArcGenerator] Stage transition: ${currentStage} → ${nextStage} for ${subject}`);
+                    await safeRun(this.db, `
+                        UPDATE family_curriculum_position 
+                        SET current_week = 1, spine_version = ?, updated_at = CURRENT_TIMESTAMP
+                        WHERE household_id = ? AND subject = ?
+                    `, [nextSpine.spine_version, householdId, subject]);
+                    return;
+                } else {
+                    console.warn(`[ArcGenerator] No approved spine for ${subject}/${nextStage}. Capping at week 52.`);
+                    await safeRun(this.db, `
+                        UPDATE family_curriculum_position 
+                        SET current_week = 52, updated_at = CURRENT_TIMESTAMP
+                        WHERE household_id = ? AND subject = ?
+                    `, [householdId, subject]);
+                    return;
+                }
+            }
+        }
+
+        // Normal advancement
         await safeRun(this.db, `
             INSERT INTO family_curriculum_position (id, household_id, subject, current_week, spine_version)
-            VALUES (?, ?, ?, 1, ?)
+            VALUES (?, ?, ?, ?, ?)
             ON CONFLICT(household_id, subject) DO UPDATE SET 
-                current_week = current_week + 1,
+                current_week = ?,
                 spine_version = excluded.spine_version,
                 updated_at = CURRENT_TIMESTAMP
-        `, [crypto.randomUUID(), householdId, subject, spineVersion]);
+        `, [crypto.randomUUID(), householdId, subject, newWeek, spineVersion, newWeek]);
+    }
+
+    private async getStageFromSpineVersion(spineVersion: string): Promise<string> {
+        const meta = await safeQueryFirst<{ spine_version: string }>(this.db,
+            `SELECT spine_version FROM spine_metadata WHERE spine_version = ?`,
+            [spineVersion]
+        );
+        // Extract stage from version string (e.g., "literacy_sprout_v1" → "sprout")
+        const version = meta?.spine_version || spineVersion;
+        for (const stage of ['seedling', 'sprout', 'sapling', 'tree']) {
+            if (version.toLowerCase().includes(stage)) return stage;
+        }
+        return 'sprout'; // default fallback
+    }
+
+    private getNextStage(current: string): string | null {
+        const stages = ['seedling', 'sprout', 'sapling', 'tree'];
+        const idx = stages.indexOf(current);
+        if (idx < 0 || idx >= stages.length - 1) return null;
+        return stages[idx + 1];
     }
 
     /**
@@ -585,11 +650,11 @@ Materials should be common household items only.`;
                 focus_area: 'character_development',
                 skill_targets: ['obedience', 'kindness', 'gratitude']
             },
-            african_history: {
-                subject: 'african_history',
+            motor: {
+                subject: 'motor',
                 week,
-                focus_area: 'heritage_stories',
-                skill_targets: ['african_proverbs', 'historical_figures', 'cultural_traditions']
+                focus_area: 'motor_development',
+                skill_targets: ['gross_motor', 'fine_motor', 'coordination']
             }
         };
 

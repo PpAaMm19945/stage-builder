@@ -673,7 +673,7 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
                 await this.arcGenerator.aggregateFeedback(householdId, arcId);
 
                 // 2. Advance Curriculum Position (Phase 2)
-                const subjects = ['literacy', 'numeracy', 'formation', 'african_history'];
+                const subjects = ['literacy', 'numeracy', 'formation', 'motor'];
                 for (const subject of subjects) {
                     // Get current spine version to persist it
                     const pos = await safeQueryFirst<{ spine_version: string }>(this.db,
