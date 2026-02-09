@@ -70,12 +70,22 @@ const SpineList: React.FC<SpineListProps> = ({ onViewEntries }) => {
                     </TableHeader>
                     <TableBody>
                         {versions.map((v) => {
-                            const subject = Array.isArray(v.subjects) ? v.subjects[0] : (typeof v.subjects === 'string' ? JSON.parse(v.subjects)[0] : 'Unknown');
+                            const subjects: string[] = Array.isArray(v.subjects) 
+                                ? v.subjects 
+                                : (typeof v.subjects === 'string' ? JSON.parse(v.subjects) : []);
 
                             return (
                                 <TableRow key={v.version}>
                                     <TableCell className="font-mono text-xs">{v.version}</TableCell>
-                                    <TableCell className="capitalize">{subject}</TableCell>
+                                    <TableCell>
+                                        <div className="flex flex-wrap gap-1">
+                                            {subjects.map((s: string) => (
+                                                <Badge key={s} variant="outline" className="capitalize text-xs">
+                                                    {s}
+                                                </Badge>
+                                            ))}
+                                        </div>
+                                    </TableCell>
                                     <TableCell>
                                         <Badge variant={v.status === 'approved' ? 'default' : 'secondary'}>
                                             {v.status}
@@ -83,7 +93,7 @@ const SpineList: React.FC<SpineListProps> = ({ onViewEntries }) => {
                                     </TableCell>
                                     <TableCell>{v.totalWeeks}</TableCell>
                                     <TableCell className="text-right space-x-2">
-                                        <Button size="sm" variant="outline" onClick={() => onViewEntries(v.version, subject)}>
+                                        <Button size="sm" variant="outline" onClick={() => onViewEntries(v.version, subjects[0] || 'literacy')}>
                                             <Eye className="h-4 w-4 mr-1" />
                                             View
                                         </Button>
