@@ -128,21 +128,24 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
                 let anchorMessage: Message | null = null;
 
-                if (lastFetch !== today) {
+                const anchorKey = `anchor_fetch_${user.id}`;
+                if (!lastFetch?.startsWith(today)) {
                     try {
+                        localStorage.setItem(anchorKey, today + '_pending');
                         console.log('[Chat] Fetching Daily Anchor...');
                         const anchorData = await anchor.getToday();
                         if (anchorData) {
                             anchorMessage = {
                                 role: 'assistant',
-                                content: '', // Content is in the payload
+                                content: '',
                                 anchorPayload: anchorData
                             };
-                            localStorage.setItem(`anchor_fetch_${user.id}`, today);
+                            localStorage.setItem(anchorKey, today);
                             console.log('[Chat] Received Anchor:', anchorData);
                         }
                     } catch (err) {
                         console.error('[Chat] Failed to fetch daily anchor:', err);
+                        localStorage.setItem(anchorKey, today + '_failed');
                     }
                 }
 
@@ -364,8 +367,11 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         {messages.length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
                                 <Robot className="w-12 h-12 mx-auto mb-3 text-primary/30" />
-                                <p className="text-sm">Good morning! I'm your daily guide.</p>
-                                <p className="text-xs mt-1">I'll help your family make the most of today's learning.</p>
+                                <p className="text-sm">{(() => {
+                                    const h = new Date().getHours();
+                                    return h < 12 ? 'Good morning!' : h < 17 ? 'Good afternoon!' : 'Good evening!';
+                                })()} I'm your daily guide.</p>
+                                <p className="text-xs mt-1">Ask me anything about today's learning plan.</p>
                             </div>
                         )}
 

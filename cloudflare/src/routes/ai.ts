@@ -126,7 +126,7 @@ app.get('/api/ai/interactions', async (c) => {
     try {
         const user = requireHouseholdMember(c);
         const { results } = await c.env.DB.prepare(
-            'SELECT * FROM ai_logs WHERE parent_id = ? ORDER BY created_at DESC LIMIT 50'
+            "SELECT * FROM ai_logs WHERE parent_id = ? AND created_at >= date('now', '-1 day') ORDER BY created_at DESC LIMIT 20"
         ).bind(user.id).all();
 
         // Map to camelCase
