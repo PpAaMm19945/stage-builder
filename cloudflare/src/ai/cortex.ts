@@ -20,8 +20,8 @@ import { ChatHistoryMessage, ChatContext, ChildRecord } from './types';
 const FEEDBACK_PATTERNS = {
     COMPLETE: /\[COMPLETE\]|we did it|done|finished|completed|✓/i,
     SKIP: /\[SKIP\]|skip today|skip this|not today|can't do|too busy/i,
-    ADJUST: /\[ADJUST\]|adjust the plan|can we|instead|different|change|modify|something else/i,
-    FEEDBACK: /\[FEEDBACK:([^\]]+)\]|loved it|didn't work|too hard|too easy/i,
+    ADJUST: /\[ADJUST\]|adjust|can we do|can we|instead|different|change|modify|something else|too hard|too easy|indoor|outdoor|shorter|longer|simpler|swap|replace|switch/i,
+    FEEDBACK: /\[FEEDBACK:([^\]]+)\]|loved it|didn't work/i,
     REGENERATE: /\[REGENERATE\]|give me a new plan|new activity|try again|regenerate/i
 };
 
@@ -98,13 +98,14 @@ export class Cortex {
             return { type: 'regenerate' };
         }
 
+        // ADJUST must be checked BEFORE FEEDBACK to avoid misrouting "too hard"/"too easy"
+        if (FEEDBACK_PATTERNS.ADJUST.test(message)) {
+            return { type: 'adjust', payload: message };
+        }
+
         const feedbackMatch = message.match(FEEDBACK_PATTERNS.FEEDBACK);
         if (feedbackMatch) {
             return { type: 'feedback', payload: feedbackMatch[1] || message };
-        }
-
-        if (FEEDBACK_PATTERNS.ADJUST.test(message)) {
-            return { type: 'adjust', payload: message };
         }
 
         return { type: 'chat' };
@@ -150,21 +151,27 @@ export class Cortex {
                             break;
 
                         case 'regenerate': {
+                            controller.enqueue(encoder.encode(`event: thought\ndata: "Generating a fresh plan..."\n\n`));
                             const newAnchor = await this.anchorGenerator.generateAnchor(
                                 householdId,
                                 new Date().toISOString().split('T')[0],
                                 { adjustments: 'Generate a completely different activity' }
                             );
+                            // Emit structured anchor event
+                            controller.enqueue(encoder.encode(`event: anchor\ndata: ${JSON.stringify(newAnchor)}\n\n`));
                             response = `Here's a fresh activity for today:\n\n**${newAnchor.theme}**\n\n${newAnchor.family_activity.description}\n\nMaterials: ${newAnchor.family_activity.materials?.join(', ') || 'None needed'}`;
                             break;
                         }
 
                         case 'adjust': {
+                            controller.enqueue(encoder.encode(`event: thought\ndata: "Adjusting today's plan..."\n\n`));
                             const adjustedAnchor = await this.anchorGenerator.generateAnchor(
                                 householdId,
                                 new Date().toISOString().split('T')[0],
                                 { adjustments: intent.payload }
                             );
+                            // Emit structured anchor event
+                            controller.enqueue(encoder.encode(`event: anchor\ndata: ${JSON.stringify(adjustedAnchor)}\n\n`));
                             response = `I've adjusted today's anchor based on your request:\n\n**${adjustedAnchor.theme}**\n\n${adjustedAnchor.family_activity.description}`;
                             break;
                         }

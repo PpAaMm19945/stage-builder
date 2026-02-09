@@ -66,6 +66,7 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                         const eventType = line.slice(7).trim();
                         if (eventType === 'thought') currentEventType = 'thought';
                         else if (eventType === 'step') currentEventType = 'step';
+                        else if (eventType === 'anchor') currentEventType = 'anchor';
                         else if (eventType === 'done') currentEventType = 'done';
                         else currentEventType = 'message';
 
@@ -80,7 +81,21 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                         const data = line.slice(6);
                         if (data === '[DONE]') continue;
 
-                        // 1. Handle Steps
+                        // 1. Handle Anchor payload
+                        if (currentEventType === 'anchor') {
+                            try {
+                                const anchorData = JSON.parse(data);
+                                aiMessage.anchorPayload = anchorData;
+                                if (!hasStartedStreaming) {
+                                    hasStartedStreaming = true;
+                                    chatState.startStreaming();
+                                }
+                                onMessageUpdate({ ...aiMessage });
+                            } catch (e) { console.warn('[ChatStream] Anchor parse error', e); }
+                            continue;
+                        }
+
+                        // 2. Handle Steps
                         if (currentEventType === 'step') {
                             try {
                                 const stepData = JSON.parse(data);
