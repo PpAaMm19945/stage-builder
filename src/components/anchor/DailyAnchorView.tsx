@@ -35,7 +35,7 @@ export const DailyAnchorView: React.FC = () => {
 
     const handleComplete = async () => {
         try {
-            await anchorApi.complete(anchor.date);
+            await anchorApi.complete(anchor.id);
             refetch();
         } catch (e) {
             console.error("Completion failed", e);

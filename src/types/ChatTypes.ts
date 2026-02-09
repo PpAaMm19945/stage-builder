@@ -9,6 +9,7 @@ export type ChatActionType =
     | 'ANCHOR_GENERATED'; // [NEW]
 
 export interface AnchorPayload {
+    id: string;
     date: string;
     dayOfSequence: number;
     totalDays: number;
