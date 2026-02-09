@@ -6,7 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardFooter } from '@/componen
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
-import { PaperPlaneRight, CircleNotch, Robot, User, Check, X } from '@phosphor-icons/react';
+import { PaperPlaneRight, CircleNotch, Check, X } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 
@@ -202,21 +202,15 @@ export function FrontdeskChat() {
     return (
         <Card className="h-full flex flex-col border-0 shadow-none bg-transparent">
             <CardHeader className="pb-3 border-b">
-                <CardTitle className="flex items-center gap-2 text-lg">
-                    <Robot className="w-5 h-5 text-primary" />
-                    Frontdesk Officer
+                <CardTitle className="text-lg">
+                    Your Guide
                 </CardTitle>
             </CardHeader>
 
             <CardContent className="flex-1 p-0 overflow-hidden relative">
                 <div ref={scrollRef} className="h-full overflow-y-auto p-4 space-y-4">
                     {messages.map((msg, i) => (
-                        <div key={i} className={cn("flex gap-3", msg.role === 'user' ? "justify-end" : "justify-start")}>
-                            {msg.role === 'assistant' && (
-                                <div className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0">
-                                    <Robot className="w-5 h-5 text-primary" />
-                                </div>
-                            )}
+                        <div key={i} className={cn("flex", msg.role === 'user' ? "justify-end" : "justify-start")}>
                             <div className={cn(
                                 "max-w-[80%] rounded-2xl px-4 py-2 text-sm",
                                 msg.role === 'user'
@@ -225,17 +219,12 @@ export function FrontdeskChat() {
                             )}>
                                 {msg.content}
                             </div>
-                            {msg.role === 'user' && (
-                                <div className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-primary-foreground">
-                                    <User className="w-5 h-5" />
-                                </div>
-                            )}
                         </div>
                     ))}
 
                     {/* Render Action Card separately if it belongs to the last message (or any message) */}
                     {messages.map((msg, i) => msg.actionCard && (
-                        <div key={`action-${i}`} className="flex justify-start mb-4 pl-11">
+                        <div key={`action-${i}`} className="flex justify-start mb-4">
                             {msg.actionCard.type === 'PLAN_PROPOSAL' ? (
                                 <PlanProposalCard type={msg.actionCard.type} data={msg.actionCard.data} />
                             ) : (

@@ -5,7 +5,7 @@ import { sanitizeMessage, validateMessage } from '@/lib/chat-utils';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { PaperPlaneRight, Robot, User, X, Trash } from '@phosphor-icons/react';
+import { PaperPlaneRight, X, Trash } from '@phosphor-icons/react';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -145,7 +145,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         }
                     } catch (err) {
                         console.error('[Chat] Failed to fetch daily anchor:', err);
-                        localStorage.setItem(anchorKey, today + '_failed');
+                        localStorage.removeItem(anchorKey);
                     }
                 }
 
@@ -320,8 +320,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         <>
             <Card className={cn("h-full flex flex-col border-0 shadow-none bg-transparent", className)}>
                 <CardHeader className="h-14 flex flex-row items-center justify-between p-0 px-4 border-b border-border/50 space-y-0 shrink-0">
-                    <CardTitle className="flex items-center gap-2 text-lg">
-                        <Robot className="w-5 h-5 text-primary" />
+                    <CardTitle className="text-lg">
                         Your Guide
                     </CardTitle>
                     <div className="flex items-center gap-1">
@@ -366,7 +365,6 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         {/* Welcome message if no messages */}
                         {messages.length === 0 && (
                             <div className="text-center py-8 text-muted-foreground">
-                                <Robot className="w-12 h-12 mx-auto mb-3 text-primary/30" />
                                 <p className="text-sm">{(() => {
                                     const h = new Date().getHours();
                                     return h < 12 ? 'Good morning!' : h < 17 ? 'Good afternoon!' : 'Good evening!';
@@ -383,12 +381,6 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     "flex gap-3",
                                     msg.role === 'user' ? "justify-end" : "justify-start"
                                 )}>
-                                    {msg.role === 'assistant' && (
-                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary/10 flex items-center justify-center shrink-0 self-start mt-1">
-                                            <Robot className="w-5 h-5 text-primary" />
-                                        </div>
-                                    )}
-
                                     <div className="flex flex-col gap-1 min-w-0 max-w-[85%]">
                                         {/* Activity Log (Thinking Steps) - Above Message */}
                                         {msg.role === 'assistant' && msg.steps && msg.steps.length > 0 && (
@@ -399,17 +391,11 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                             <TextMessage content={msg.content} role={msg.role === 'system' ? 'assistant' : msg.role} />
                                         )}
                                     </div>
-
-                                    {msg.role === 'user' && (
-                                        <div aria-hidden="true" className="w-8 h-8 rounded-full bg-primary flex items-center justify-center shrink-0 text-primary-foreground">
-                                            <User className="w-5 h-5" />
-                                        </div>
-                                    )}
                                 </div>
 
                                 {/* Custom Payload Messages (Anchor, etc) */}
                                 {msg.anchorPayload && (
-                                    <div className="mt-3 pl-11">
+                                <div className="mt-3">
                                         <AnchorBriefingMessage
                                             data={msg.anchorPayload}
                                             onAdjust={() => {
@@ -439,7 +425,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                                     }
 
                                     return (
-                                        <div className="mt-3 pl-11">
+                                        <div className="mt-3">
                                             {bookResults && (
                                                 <BookCardMessage
                                                     books={bookResults}
