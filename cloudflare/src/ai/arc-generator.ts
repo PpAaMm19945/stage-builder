@@ -333,12 +333,21 @@ Output ONLY valid JSON matching the FormationArc interface.`;
             liturgyPosition.catechism_q + 13
         ).map(q => ({ number: q.number, question: q.question }));
 
+        // Build human-readable progress summary for AI context
+        const progressLines = targetsSummary.map((t: any) => 
+            `- ${t.subject}: Week ${t.week}/52, focus on "${t.focus_area}" (skills: ${Array.isArray(t.skill_targets) ? t.skill_targets.join(', ') : t.skill_targets})`
+        ).join('\n');
+
         const userPrompt = `Generate a 2-week Formation Arc:
 
 FAMILY:
 ${JSON.stringify(childrenSummary, null, 2)}
 
-CURRENT WEEK TARGETS:
+PROGRESS SUMMARY:
+This family is at the following points in their curriculum:
+${progressLines}
+
+CURRENT WEEK TARGETS (structured):
 ${JSON.stringify(targetsSummary, null, 2)}
 
 AVAILABLE RESOURCES:
@@ -484,10 +493,10 @@ Materials should be common household items only.`;
             if (nextStage) {
                 const nextSpine = await safeQueryFirst<{ spine_version: string }>(this.db,
                     `SELECT sm.spine_version FROM spine_metadata sm
-                     WHERE sm.status = 'approved' AND sm.subjects LIKE ?
-                     AND sm.spine_version LIKE ?
+                     JOIN curriculum_spine cs ON cs.spine_version = sm.spine_version
+                     WHERE sm.status = 'approved' AND cs.subject = ? AND cs.stage = ?
                      ORDER BY sm.approved_at DESC LIMIT 1`,
-                    [`%${subject}%`, `%${nextStage}%`]
+                    [subject, nextStage]
                 );
 
                 if (nextSpine) {
@@ -522,16 +531,14 @@ Materials should be common household items only.`;
     }
 
     private async getStageFromSpineVersion(spineVersion: string): Promise<string> {
-        const meta = await safeQueryFirst<{ spine_version: string }>(this.db,
-            `SELECT spine_version FROM spine_metadata WHERE spine_version = ?`,
+        // Query curriculum_spine directly — spine versions are timestamps, not stage names
+        const result = await safeQueryFirst<{ stage: string }>(this.db,
+            `SELECT DISTINCT stage FROM curriculum_spine WHERE spine_version = ? LIMIT 1`,
             [spineVersion]
         );
-        // Extract stage from version string (e.g., "literacy_sprout_v1" → "sprout")
-        const version = meta?.spine_version || spineVersion;
-        for (const stage of ['seedling', 'sprout', 'sapling', 'tree']) {
-            if (version.toLowerCase().includes(stage)) return stage;
-        }
-        return 'sprout'; // default fallback
+        if (result?.stage) return result.stage;
+        console.warn(`[ArcGenerator] No stage found in curriculum_spine for version ${spineVersion}, defaulting to sprout`);
+        return 'sprout';
     }
 
     private getNextStage(current: string): string | null {
