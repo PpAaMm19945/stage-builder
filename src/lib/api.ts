@@ -795,6 +795,11 @@ export const anchor = {
       method: 'POST',
       body: JSON.stringify({ adjustments }),
     }),
+  complete: (date: string, feedback?: string) =>
+    apiRequest<{ success: boolean }>('/api/anchor/complete', {
+      method: 'POST',
+      body: JSON.stringify({ date, feedback }),
+    }),
 };
 
 export const adminAi = {
