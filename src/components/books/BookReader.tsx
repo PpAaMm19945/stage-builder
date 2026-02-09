@@ -14,8 +14,6 @@ import {
     Carousel,
     CarouselContent,
     CarouselItem,
-    CarouselNext,
-    CarouselPrevious,
     type CarouselApi,
 } from '@/components/ui/carousel';
 import { AspectRatio } from '@/components/ui/aspect-ratio';
@@ -655,56 +653,25 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                                     </CarouselItem>
                                 </CarouselContent>
 
-                                {/* Tap zones for navigation - Hidden in fullscreen if controls hidden? Or always active? */}
-                                {/* In fullscreen, tap center to toggle controls. Left/Right to nav. */}
-                                <div
-                                    className="absolute left-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                {/* Tap zones for mobile navigation */}
+                                <button
+                                    className="absolute left-0 top-0 bottom-0 w-[25%] z-30 cursor-pointer bg-transparent border-none outline-none active:bg-white/5 transition-colors"
                                     onClick={() => api?.scrollPrev()}
-                                    aria-hidden="true"
+                                    aria-label="Previous page"
+                                    type="button"
                                 />
-                                <div
-                                    className="absolute right-0 top-0 bottom-0 w-[20%] z-10 cursor-pointer"
+                                <button
+                                    className="absolute right-0 top-0 bottom-0 w-[25%] z-30 cursor-pointer bg-transparent border-none outline-none active:bg-white/5 transition-colors"
                                     onClick={() => api?.scrollNext()}
-                                    aria-hidden="true"
+                                    aria-label="Next page"
+                                    type="button"
                                 />
-                                {/* Center tap zone for controls */}
+                                {/* Center tap zone for fullscreen controls toggle */}
                                 <div
-                                    className="absolute left-[20%] right-[20%] top-0 bottom-0 z-10 cursor-pointer"
+                                    className="absolute left-[25%] right-[25%] top-0 bottom-0 z-20 cursor-pointer"
                                     onClick={() => isFullscreen && setShowControls(prev => !prev)}
                                     aria-hidden="true"
                                 />
-
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <CarouselPrevious
-                                            className={cn(
-                                                "left-2 sm:left-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
-                                                "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
-                                                isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
-                                            )}
-                                            aria-label="Previous Page (←)"
-                                        />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="right" className="z-[60]">
-                                        <p>Previous Page (←)</p>
-                                    </TooltipContent>
-                                </Tooltip>
-
-                                <Tooltip>
-                                    <TooltipTrigger asChild>
-                                        <CarouselNext
-                                            className={cn(
-                                                "right-2 sm:right-4 h-12 w-12 bg-white/20 border-none hover:bg-white/30 text-white z-20 transition-opacity duration-300",
-                                                "focus-visible:opacity-100 focus-visible:pointer-events-auto", // Show on focus
-                                                isFullscreen && !showControls ? "opacity-0 pointer-events-none" : "opacity-100"
-                                            )}
-                                            aria-label="Next Page (→)"
-                                        />
-                                    </TooltipTrigger>
-                                    <TooltipContent side="left" className="z-[60]">
-                                        <p>Next Page (→)</p>
-                                    </TooltipContent>
-                                </Tooltip>
                             </Carousel>
                         )}
                     </div>
@@ -724,7 +691,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                     <DialogHeader>
                         <DialogTitle>Finished for now?</DialogTitle>
                         <DialogDescription>
-                            You're on page {current} of {count}.
+                            You're on page {current - 1} of {totalPages}.
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-3 mt-4">
