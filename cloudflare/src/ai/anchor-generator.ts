@@ -87,9 +87,11 @@ export interface DailyAnchor {
     };
     book_nook?: {
         id: string;
+        series?: string;
         title: string;
         author?: string;
         cover_image?: string;
+        render_format?: string;
         discussion_prompt: string;
     };
     reasoning: string;
@@ -264,8 +266,10 @@ export class AnchorGenerator {
             },
             book_nook: plan.book ? {
                 id: plan.book.id,
+                series: this.extractSeriesFromBook(plan.book),
                 title: plan.book.title,
                 author: plan.book.author,
+                render_format: 'images',
                 discussion_prompt: 'What did you notice in this story?'
             } : undefined,
             reasoning: 'Generated from pre-built arc plan',
@@ -555,6 +559,17 @@ ${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : '
             'tree': 'Leader'
         };
         return roleMap[stage] || 'Participant';
+    }
+
+    /**
+     * Extract series from book data (path format: /books/{series}/{bookId}/content.md)
+     */
+    private extractSeriesFromBook(book: { id: string; path?: string; [key: string]: any }): string {
+        if (book.path) {
+            const parts = book.path.split('/');
+            if (parts.length >= 3) return parts[2]; // /books/{series}/...
+        }
+        return 'library';
     }
 
     /**

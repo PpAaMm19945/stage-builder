@@ -412,8 +412,19 @@ const ActivityContent = ({ activity }: { activity: AnchorPayload['family_activit
     </div>
 );
 
+// Picture book series that use image-based rendering
+const PICTURE_BOOK_SERIES = [
+    'african_men_of_faith', 'the_gospel_series', 'my_first_books',
+    'working_fathers_of_soroti', 'sanyus_growing_heart'
+];
+
 const BookContent = ({ book }: { book: AnchorPayload['book_nook'] }) => {
     const [readerOpen, setReaderOpen] = useState(false);
+
+    // Detect render format based on series
+    const seriesId = book.series || '';
+    const isPictureBook = PICTURE_BOOK_SERIES.includes(seriesId);
+    const renderFormat = isPictureBook ? 'images' : (book.content_path ? 'markdown' : 'images');
 
     // Convert AnchorPayload book to Book type for BookReader
     const bookForReader: BookType | null = book ? {
@@ -424,10 +435,10 @@ const BookContent = ({ book }: { book: AnchorPayload['book_nook'] }) => {
         description: book.discussion_prompt,
         minAgeMonths: 0,
         maxAgeMonths: 144,
-        pageCount: 10,
+        pageCount: 12,
         coverUrl: book.cover_image,
         contentPath: book.content_path,
-        renderFormat: 'markdown',
+        renderFormat,
     } : null;
 
     return (
@@ -452,16 +463,14 @@ const BookContent = ({ book }: { book: AnchorPayload['book_nook'] }) => {
                 </div>
             </div>
 
-            {/* Read Now Button - THE KEY ADDITION */}
-            {book.content_path && (
-                <Button
-                    onClick={() => setReaderOpen(true)}
-                    className="w-full bg-violet-600 hover:bg-violet-500 text-white"
-                >
-                    <BookOpenText className="w-4 h-4 mr-2" />
-                    Read This Book
-                </Button>
-            )}
+            {/* Read Now Button - always shown */}
+            <Button
+                onClick={() => setReaderOpen(true)}
+                className="w-full bg-violet-600 hover:bg-violet-500 text-white"
+            >
+                <BookOpenText className="w-4 h-4 mr-2" />
+                Read This Book
+            </Button>
 
             {/* Discussion Prompt */}
             <div className="bg-violet-100/50 dark:bg-violet-500/20 rounded-xl p-4 border border-violet-200 dark:border-violet-500/30">

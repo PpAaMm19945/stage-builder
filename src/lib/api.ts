@@ -676,8 +676,8 @@ export const progress = {
   transfer: (activityId: string, toDate: string, type?: string, fromDate?: string) =>
     apiRequest<{ success: boolean }>('/api/progress/transfer', { method: 'POST', body: JSON.stringify({ activityId, toDate, type, fromDate }) }),
 
-  save: (activityId: string, progressData: Record<string, unknown>, type?: string, date?: string) =>
-    apiRequest<{ success: boolean }>('/api/progress/save', { method: 'POST', body: JSON.stringify({ activityId, progressData, type, date }) }),
+  save: (contentId: string, data: Record<string, unknown>, contentType?: string, date?: string) =>
+    apiRequest<{ success: boolean }>('/api/progress/save', { method: 'POST', body: JSON.stringify({ contentId, data, contentType, date }) }),
 
   get: (activityId: string) =>
     apiRequest<{ progress: { status: string; data: Record<string, unknown>; updatedAt: string } | null }>(`/api/progress/${activityId}`),
