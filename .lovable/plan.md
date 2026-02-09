@@ -1,69 +1,76 @@
 
-# Fix the Recurring "Lion" Search and Other Chat Issues
 
-## Root Cause
+# Fix: Anchor Generator Querying Non-Existent Columns
 
-The "lion" book search is a real row stored in the `ai_logs` database table. Every day when a new chat session starts (no local session yet), `ChatPanel.tsx` falls back to `ai.getInteractionLog()`, which fetches the last 50 entries from `ai_logs` -- including that old lion search. Since the query has no date filter, it keeps resurfacing forever.
+## The Problem
 
-## Changes
-
-### 1. Add a date filter to the interaction log query
-
-**File:** `cloudflare/src/routes/ai.ts` (line 128-130)
-
-Change the query from:
-```sql
-SELECT * FROM ai_logs WHERE parent_id = ? ORDER BY created_at DESC LIMIT 50
-```
-To:
-```sql
-SELECT * FROM ai_logs WHERE parent_id = ? AND created_at >= date('now', '-1 day') ORDER BY created_at DESC LIMIT 20
-```
-
-This ensures only the last 24 hours of logs are returned as chat history. Old interactions like the lion search will no longer appear.
-
-### 2. Clean up stale ai_logs data
-
-**New migration file:** `cloudflare/migrations/v2_0065_cleanup_stale_logs.sql`
+The `/api/anchor/today` endpoint is failing with `D1_ERROR: no such column: age_months` because `anchor-generator.ts` (line 296-299) runs:
 
 ```sql
-DELETE FROM ai_logs WHERE created_at < date('now', '-7 days');
+SELECT id, name, age_months, stage FROM students WHERE household_id = ?
 ```
 
-This one-time cleanup removes old log entries. Going forward, the date filter in the query prevents them from appearing.
+But the `students` table has **no** `age_months` or `stage` columns. It only has `date_of_birth`. This is the root cause of every 500 error on page load.
 
-### 3. Time-aware greeting
+The sibling file `arc-generator.ts` does this correctly -- it selects `date_of_birth` and computes `age_months` and `stage` in JavaScript.
 
-**File:** `src/components/chat/ChatPanel.tsx` (around line 367)
+## The Fix
 
-Replace static "Good morning!" with a helper that checks the hour:
-- Before 12pm: "Good morning!"
-- 12pm to 5pm: "Good afternoon!"  
-- After 5pm: "Good evening!"
+**File: `cloudflare/src/ai/anchor-generator.ts`** (lines 295-305)
 
-### 4. Stop token-burning reload loop
+1. Change the SQL query from selecting `age_months, stage` to selecting `id, name, date_of_birth`
+2. Add a helper function to calculate age in months from `date_of_birth` (same logic as `arc-generator.ts`)
+3. Add a helper to determine stage from age (same as `arc-generator.ts`)
+4. Map the raw DB results to compute `age_months` and `stage` in code
 
-**File:** `src/components/chat/ChatPanel.tsx` (around lines 131-147)
-
-Add a guard so that if the anchor fetch fails, it records the failure in localStorage with today's date (e.g., `today_failed`) and does not retry on subsequent reloads. Add a small "Retry" button in the UI so you can manually trigger it when ready, instead of burning tokens on every page load.
-
-```
-Before call:  localStorage.setItem(key, today + '_pending')
-On success:   localStorage.setItem(key, today)  
-On failure:   localStorage.setItem(key, today + '_failed')
-Guard check:  skip if value starts with today
+Before:
+```typescript
+const children = await safeQuery<{ id: string; name: string; age_months: number; stage: string }>(
+    this.db,
+    "SELECT id, name, age_months, stage FROM students WHERE household_id = ?",
+    [householdId]
+);
 ```
 
-Show a gentle fallback message: "Could not load today's plan. Tap to retry." with a button.
+After:
+```typescript
+const rawChildren = await safeQuery<{ id: string; name: string; date_of_birth: string }>(
+    this.db,
+    "SELECT id, name, date_of_birth FROM students WHERE household_id = ?",
+    [householdId]
+);
+const children = (rawChildren.results || []).map(c => {
+    const ageMonths = this.calculateAgeMonths(c.date_of_birth);
+    return { id: c.id, name: c.name, age_months: ageMonths, stage: this.determineStage(ageMonths) };
+});
+```
 
-## What stays the same
+Add two private helper methods to the `AnchorGenerator` class (matching arc-generator's logic):
 
-- The `ai.getInteractionLog()` fallback logic in ChatPanel stays -- it is needed for chat persistence across reloads
-- The local session storage (IndexedDB) remains the primary source
-- No changes to the anchor generation pipeline
+```typescript
+private calculateAgeMonths(dob: string): number {
+    const birth = new Date(dob);
+    const now = new Date();
+    return (now.getFullYear() - birth.getFullYear()) * 12 + (now.getMonth() - birth.getMonth());
+}
 
-## Files touched
+private determineStage(ageMonths: number): string {
+    if (ageMonths < 24) return 'seedling';
+    if (ageMonths < 48) return 'sprout';
+    if (ageMonths < 96) return 'sapling';
+    return 'tree';
+}
+```
 
-1. `cloudflare/src/routes/ai.ts` -- date filter on interaction query
-2. `cloudflare/migrations/v2_0065_cleanup_stale_logs.sql` -- one-time cleanup
-3. `src/components/chat/ChatPanel.tsx` -- time greeting + retry guard
+Also update the `childrenStr` builder (line 303-304) to use the mapped results -- no change needed there since the mapped objects still have `age_months` and `stage`.
+
+## Files Changed
+
+1. `cloudflare/src/ai/anchor-generator.ts` -- Fix the SQL query, add helper methods
+
+## Impact
+
+- Fixes the 500 error on every page load
+- Stops burning AI tokens on failed requests
+- No schema changes needed -- this is purely a backend code fix
+- The retry button we added in the last change will work once this is deployed
