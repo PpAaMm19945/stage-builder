@@ -3,7 +3,7 @@ import { safeQuery, safeQueryFirst, safeRun } from '../lib/db';
 import { GeminiService } from './gemini';
 import { Env } from '../types';
 import { ArcGenerator, DailyPlan, FormationArc } from './arc-generator';
-import { CATECHISM_DATA } from './data';
+import { CATECHISM_DATA, BOOKS_DATA } from './data';
 import { AnchorDbRecord } from './types';
 import { AITelemetryService } from '../services/ai-telemetry';
 
@@ -292,6 +292,49 @@ export class AnchorGenerator {
         // Build context string
         const contextStr = this.buildContextString(context);
 
+        // Fetch children for this household
+        const children = await safeQuery<{ id: string; name: string; age_months: number; stage: string }>(
+            this.db,
+            "SELECT id, name, age_months, stage FROM children WHERE household_id = ?",
+            [householdId]
+        );
+
+        // Build children context
+        const childrenStr = children.length > 0
+            ? children.map(c => `- ${c.name}, ${c.age_months} months old, stage: ${c.stage}`).join('\n')
+            : '- No children data available';
+
+        // Build available books (published only, same filter as arc-generator)
+        const DRAFT_SERIES = ['working_fathers_of_soroti', 'sanyus_growing_heart', 'young_historians_africa', 'the_a_to_z_picture_books_for_kids', 'african_history'];
+        const publishedBooks = BOOKS_DATA.filter(b => {
+            const series = b.path.split('/')[2] || '';
+            return !DRAFT_SERIES.includes(series);
+        });
+        const booksStr = publishedBooks.slice(0, 20).map(b => `- "${b.title}" (id: ${b.id})`).join('\n');
+
+        // Available hymns (same list as arc-generator)
+        const hymnsStr = `- A Mighty Fortress (id: hymn_mighty_fortress)
+- Amazing Grace (id: hymn_amazing_grace)
+- Great Is Thy Faithfulness (id: hymn_great_is_thy)
+- How Great Thou Art (id: hymn_how_great)
+- Holy, Holy, Holy (id: hymn_holy_holy)`;
+
+        // Catechism range
+        const catechismStr = CATECHISM_DATA.map(q => `Q${q.number}: "${q.question}" / A: "${q.answer}"`).join('\n');
+
+        // If adjusting, get current anchor
+        let currentAnchorStr = '';
+        if (context?.adjustments) {
+            const currentAnchor = await safeQueryFirst<AnchorDbRecord>(
+                this.db,
+                "SELECT anchor_data FROM daily_anchors WHERE household_id = ? AND anchor_date = ? AND status = 'active'",
+                [householdId, date]
+            );
+            if (currentAnchor?.anchor_data) {
+                currentAnchorStr = `\nCURRENT PLAN (the parent wants to change this):\n${currentAnchor.anchor_data}\n\nParent's request: "${context.adjustments}"`;
+            }
+        }
+
         const systemPrompt = `You are a creative Christian homeschooling assistant generating a Daily Anchor.
 
 ${AGE_SAFETY_RULES}
@@ -299,15 +342,29 @@ ${AGE_SAFETY_RULES}
 MATERIAL CONSTRAINTS:
 Only suggest materials from this list: ${MATERIAL_WHITELIST.slice(0, 30).join(', ')}
 
+CHILDREN IN THIS FAMILY:
+${childrenStr}
+
+AVAILABLE BOOKS (you MUST choose from this list):
+${booksStr}
+
+AVAILABLE HYMNS (you MUST choose from this list):
+${hymnsStr}
+
+CATECHISM QUESTIONS (use from this range):
+${catechismStr}
+
 ${basePlan ? `BASE PLAN (enhance this):\n${JSON.stringify(basePlan, null, 2)}` : 'Create a fresh plan.'}
 
 ${contextStr}
+${currentAnchorStr}
 
 Output ONLY valid JSON matching this schema:
 {
   "theme": "string - short, inspiring title",
   "liturgy": {
-    "hymn": "string",
+    "hymn": "string - MUST be from the AVAILABLE HYMNS list",
+    "hymn_id": "string - the id from the AVAILABLE HYMNS list",
     "catechism_q": number,
     "catechism_question": "string",
     "catechism_a": "string",
@@ -325,7 +382,8 @@ Output ONLY valid JSON matching this schema:
     "levels": [{"child_name": "string", "stage": "string", "role": "Observer|Participant|Helper|Leader", "instruction": "string"}]
   },
   "book_nook": {
-    "title": "string",
+    "id": "string - MUST be from the AVAILABLE BOOKS list",
+    "title": "string - MUST be from the AVAILABLE BOOKS list",
     "discussion_prompt": "string"
   },
   "reasoning": "string - brief explanation for parent"
@@ -333,7 +391,7 @@ Output ONLY valid JSON matching this schema:
 
         const userPrompt = `Generate Daily Anchor for Day ${dayInArc} of 14.
 Date: ${date}
-${context?.adjustments ? `Parent Adjustment Request: ${context.adjustments}` : ''}`;
+${context?.adjustments && !currentAnchorStr ? `Parent Adjustment Request: ${context.adjustments}` : ''}`;
 
         console.log('[AnchorGenerator] Calling Gemini with guardrails...');
         const startTime = Date.now();

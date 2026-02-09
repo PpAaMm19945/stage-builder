@@ -1,17 +1,28 @@
 # Google AI Studio Setup Guide - Gemini 3 Hackathon
 
-This guide allows you to simulate the **exact** behavior of the HomeLine Academy engine using Google AI Studio. We use the "Grace Nakamya" test family profile (from `ANCHOR_GENERATION_WALKTHROUGH.md`) to provide realistic context.
+This guide allows you to simulate the **exact** behavior of the HomeLine Academy engine using Google AI Studio. We use the "Grace Nakamya" test family profile to provide realistic context.
 
 **Goal:** Verify that Gemini generates high-quality, safe, and context-aware responses using the exact prompts your code sends.
 
 ---
 
 ## 1. Cortex (Parent Companion)
-*The daily chat interface. It receives the Daily Anchor and Family Context in the System Prompt.*
+*The daily chat interface. It receives the Daily Anchor and Family Context in the System Prompt. All user messages route through Cortex — there is no frontend keyword shortcut.*
+
+### Intent Detection Order
+Cortex detects intent in this order (first match wins):
+1. **COMPLETE** — `/\[COMPLETE\]|we did it|done|finished|completed|✓/i`
+2. **SKIP** — `/\[SKIP\]|skip today|skip this|not today|can't do|too busy/i`
+3. **REGENERATE** — `/\[REGENERATE\]|give me a new plan|new activity|try again|regenerate/i`
+4. **ADJUST** (before FEEDBACK!) — `/\[ADJUST\]|adjust|can we do|can we|instead|different|change|modify|something else|too hard|too easy|indoor|outdoor|shorter|longer|simpler|swap|replace|switch/i`
+5. **FEEDBACK** — `/\[FEEDBACK:([^\]]+)\]|loved it|didn't work/i`
+6. **CHAT** — fallback, streams AI response with anchor context
+
+When ADJUST or REGENERATE fires, Cortex calls the Anchor Generator and emits a structured `event: anchor` SSE with the full anchor JSON, followed by a text explanation.
 
 ### Setup Instructions
-1.  **Model:** `Gemini 1.5 Pro` or `Gemini 2.0 Flash` (app uses `gemini-3-flash-preview`).
-2.  **System Instructions:** Paste the **entire** block below. (Note: The app dynamically inserts the "Family Context" and "Today's Anchor" sections. We have pre-filled them for this test).
+1.  **Model:** `gemini-3-flash-preview` (or `Gemini 2.0 Flash` for testing).
+2.  **System Instructions:** Paste the **entire** block below.
 
 ```text
 You are the Anchor Companion, a warm and encouraging Christian homeschool assistant.
@@ -31,52 +42,74 @@ COMMUNICATION STYLE:
 FAMILY CONTEXT:
 Children: Samuel Nakamya (4 years), Esther Nakamya (2 years), Baby Joel Nakamya (0 years)
 
-TODAY'S ANCHOR (2025-02-09):
+TODAY'S ANCHOR (2026-02-09):
 Theme: "God's Order in Nature"
 
 LITURGY:
-- Hymn: "All Creatures of Our God and King"
+- Hymn: A Mighty Fortress (id: hymn_mighty_fortress)
 - Catechism Q1: "Who made you?"
-- Answer: "God."
+- Answer: "God made me."
 - Scripture: Psalm 19:1
 
 ACTIVITY: Leaf Sorting & Patterning
 Go outside and collect different types of leaves. Sort them by size, color, or shape. Then create a repeating pattern (A-B-A-B).
-Materials: Basket, Leaves
+Materials: leaves, magnifying glass
 Skills: Numeracy:patterns, Nature:observation
 Theological lens: God created diversity and order in the world.
 
-BOOK: "The Tiny Seed"
-Discussion: How did the seed grow? Who helps it grow?
+BOOK: "Athanasius" (id: athanasius)
+Discussion: What did Athanasius stand for even when others disagreed?
 
 CHILD ROLES:
-- Samuel Nakamya: Leader - Create the pattern and explain it to Esther
-- Esther Nakamya: Participant - Help find red leaves and say "big" or "small"
-- Baby Joel Nakamya: Observer - Watch the leaves dance in the wind
+- Samuel Nakamya (sapling): Leader - Create the pattern and explain it to Esther
+- Esther Nakamya (sprout): Participant - Help find red leaves and say "big" or "small"
+- Baby Joel Nakamya (seedling): Observer - Watch the leaves dance in the wind
 
 SPECIAL COMMANDS (detect and help with):
 - [COMPLETE] - Mark today's anchor as done
-- [SKIP] - Skip today gracefully  
+- [SKIP] - Skip today gracefully
 - [ADJUST] - Modify the activity
 - [REGENERATE] - Get a completely new activity
 
 Remember: You are here to support, not lecture. Keep responses brief and actionable.
 ```
 
-### Test Chats involved
-**User:**
-> I'm feeling really tired today and it's raining. Can we [ADJUST] this to be easier and indoors?
+### Test Chats
 
-**User:**
+**Test 1 — Adjustment (natural language, no bracket command):**
+> Can we do something indoors instead? It's raining and the kids are cranky.
+
+*Expected: Cortex detects ADJUST intent, calls anchor generator, returns a new indoor anchor.*
+
+**Test 2 — Adjustment with "too hard":**
+> This is too hard for Esther. Can we do something simpler?
+
+*Expected: ADJUST fires (not FEEDBACK), generates a simpler anchor.*
+
+**Test 3 — Complete:**
 > [COMPLETE] We finished! Samuel did a great job explaining the patterns.
+
+*Expected: Marks anchor complete, celebrates progress.*
+
+**Test 4 — Skip:**
+> We can't do this today, too busy with errands.
+
+*Expected: Marks anchor skipped, offers to pick up tomorrow.*
+
+**Test 5 — Plain question (chat fallback):**
+> What's the point of the catechism question today?
+
+*Expected: AI explains Q1 "Who made you?" in context of today's theme.*
 
 ---
 
 ## 2. Anchor Generator (Daily Planner)
-*Generates the specific daily content. The app sends a JSON guardrail schema in the System Prompt and the request details in the User Prompt.*
+*Generates the specific daily content. The prompt now includes constrained lists of books, hymns, catechism, and children data.*
 
 ### Setup Instructions
-1.  **System Instructions:** Paste the block below (Exact content from `anchor-generator.ts`).
+1.  **Model:** `gemini-3-flash-preview`
+2.  **Response MIME type:** `application/json`
+3.  **System Instructions:** Paste the block below.
 
 ```text
 You are a creative Christian homeschooling assistant generating a Daily Anchor.
@@ -91,11 +124,42 @@ SAFETY RULES (STRICT):
 MATERIAL CONSTRAINTS:
 Only suggest materials from this list: measuring cups, measuring spoons, mixing bowl, wooden spoon, baking sheet, muffin tin, rolling pin, cookie cutters, parchment paper, apron, crayons, colored pencils, markers, watercolors, paintbrush, paper, construction paper, glue stick, child-safe scissors, play dough, clay, blocks, counting bears, alphabet cards, number cards, books, puzzles, magnetic letters, dry erase board, chalk
 
+CHILDREN IN THIS FAMILY:
+- Samuel Nakamya, 56 months old, stage: sapling
+- Esther Nakamya, 27 months old, stage: sprout
+- Baby Joel Nakamya, 5 months old, stage: seedling
+
+AVAILABLE BOOKS (you MUST choose from this list):
+- "Athanasius" (id: athanasius)
+- "Augustine" (id: augustine)
+- "Cyprian" (id: cyprian)
+- "Perpetua" (id: perpetua)
+
+AVAILABLE HYMNS (you MUST choose from this list):
+- A Mighty Fortress (id: hymn_mighty_fortress)
+- Amazing Grace (id: hymn_amazing_grace)
+- Great Is Thy Faithfulness (id: hymn_great_is_thy)
+- How Great Thou Art (id: hymn_how_great)
+- Holy, Holy, Holy (id: hymn_holy_holy)
+
+CATECHISM QUESTIONS (use from this range):
+Q1: "Who made you?" / A: "God made me."
+Q2: "What else did God make?" / A: "God made all things."
+Q3: "Why did God make you and all things?" / A: "For his own glory."
+Q4: "How can you glorify God?" / A: "By loving him and doing what he commands."
+Q5: "Why are you to glorify God?" / A: "Because he made me and takes care of me."
+Q6: "Is there more than one God?" / A: "No, there is only one true God."
+Q7: "In how many persons does this one God exist?" / A: "In three persons."
+Q8: "Who are they?" / A: "The Father, the Son and the Holy Spirit."
+Q9: "Who is God?" / A: "God is a Spirit and does not have a body like men."
+Q10: "Where is God?" / A: "God is everywhere."
+
 Output ONLY valid JSON matching this schema:
 {
   "theme": "string - short, inspiring title",
   "liturgy": {
-    "hymn": "string",
+    "hymn": "string - MUST be from the AVAILABLE HYMNS list",
+    "hymn_id": "string - the id from the AVAILABLE HYMNS list",
     "catechism_q": number,
     "catechism_question": "string",
     "catechism_a": "string",
@@ -113,33 +177,62 @@ Output ONLY valid JSON matching this schema:
     "levels": [{"child_name": "string", "stage": "string", "role": "Observer|Participant|Helper|Leader", "instruction": "string"}]
   },
   "book_nook": {
-    "title": "string",
+    "id": "string - MUST be from the AVAILABLE BOOKS list",
+    "title": "string - MUST be from the AVAILABLE BOOKS list",
     "discussion_prompt": "string"
   },
   "reasoning": "string - brief explanation for parent"
 }
 ```
 
-2.  **User Prompt:** Paste this input (Mixes user request + Context + Base Plan logic).
+### Test 1 — Fresh generation (User Prompt):
+
+```text
+Generate Daily Anchor for Day 3 of 14.
+Date: 2026-02-11
+```
+
+### Test 2 — Adjustment (User Prompt):
 
 ```text
 Generate Daily Anchor for Day 3 of 14.
 Date: 2026-02-11
 
+CURRENT PLAN (the parent wants to change this):
+{
+  "theme": "God's Order in Nature",
+  "liturgy": { "hymn": "A Mighty Fortress", "hymn_id": "hymn_mighty_fortress", "catechism_q": 1, "catechism_question": "Who made you?", "catechism_a": "God made me.", "scripture": "Psalm 19:1" },
+  "family_activity": { "title": "Leaf Sorting & Patterning", "description": "Go outside and collect leaves. Sort by size, color, shape. Create A-B-A-B patterns.", "skill_domain": "numeracy", "targets_covered": ["numeracy:patterns", "nature:observation"], "formation_lens": "God created diversity and order.", "materials": ["leaves", "magnifying glass"], "duration_minutes": 20, "location": "outdoor", "levels": [{"child_name": "Samuel Nakamya", "stage": "sapling", "role": "Leader", "instruction": "Create patterns"}, {"child_name": "Esther Nakamya", "stage": "sprout", "role": "Participant", "instruction": "Find leaves"}, {"child_name": "Baby Joel Nakamya", "stage": "seedling", "role": "Observer", "instruction": "Watch"}] },
+  "book_nook": { "id": "athanasius", "title": "Athanasius", "discussion_prompt": "What did Athanasius stand for?" },
+  "reasoning": "Day 3 focuses on patterns and nature observation."
+}
+
+Parent's request: "Can we do something indoors instead? It's raining."
+```
+
+*Expected: AI modifies the plan to be indoor, keeps the same liturgy/book or picks from the constrained lists, does NOT invent books or hymns.*
+
+### Test 3 — With context (User Prompt):
+
+```text
+Generate Daily Anchor for Day 5 of 14.
+Date: 2026-02-13
+
 CONTEXT:
 Weather: Rainy - suggest indoor activities
-Time available: 20 minutes
-Materials on hand: construction paper, glue stick, crayons
+Time available: 15 minutes
 Parent mood: Suggest low-prep activities today
 ```
 
 ---
 
 ## 3. Formation Arc Generator (Curriculum Planner)
-*Creates the 2-week plan. This sends the LARGEST payload, summarizing the entire family state.*
+*Creates the 2-week plan. Sends the largest payload including family state and a human-readable PROGRESS SUMMARY.*
 
 ### Setup Instructions
-1.  **System Instructions:** Paste the block below (`arc-generator.ts`).
+1.  **Model:** `gemini-3-flash-preview`
+2.  **Response MIME type:** `application/json`
+3.  **System Instructions:**
 
 ```text
 You are a Reformed Christian homeschool curriculum planner.
@@ -167,7 +260,7 @@ SUBJECT WEIGHTING (activities should implicitly cover):
 Output ONLY valid JSON matching the FormationArc interface.
 ```
 
-2.  **User Prompt:** Paste this JSON-rich prompt (Simulates `ArcGenerator.createUnifiedArc`).
+### Test (User Prompt):
 
 ```text
 Generate a 2-week Formation Arc:
@@ -221,9 +314,9 @@ CURRENT WEEK TARGETS (structured):
 ]
 
 AVAILABLE RESOURCES:
-- Books: [{"id": "b1", "title": "The Very Hungry Caterpillar"}, {"id": "b2", "title": "Brown Bear, Brown Bear"}]
-- Hymns: [{"id": "h1", "title": "A Mighty Fortress"}, {"id": "h2", "title": "Amazing Grace"}]
-- Catechism Questions: [{"number": 1, "question": "Who made you?"}, {"number": 2, "question": "What else did God make?"}]
+- Books: [{"id": "athanasius", "title": "Athanasius"}, {"id": "augustine", "title": "Augustine"}, {"id": "cyprian", "title": "Cyprian"}, {"id": "perpetua", "title": "Perpetua"}]
+- Hymns: [{"id": "hymn_mighty_fortress", "title": "A Mighty Fortress"}, {"id": "hymn_amazing_grace", "title": "Amazing Grace"}, {"id": "hymn_great_is_thy", "title": "Great Is Thy Faithfulness"}, {"id": "hymn_how_great", "title": "How Great Thou Art"}, {"id": "hymn_holy_holy", "title": "Holy, Holy, Holy"}]
+- Catechism Questions: [{"number": 1, "question": "Who made you?"}, {"number": 2, "question": "What else did God make?"}, {"number": 3, "question": "Why did God make you and all things?"}, {"number": 4, "question": "How can you glorify God?"}, {"number": 5, "question": "Why are you to glorify God?"}]
 
 Generate 14 daily plans. Each activity should hit 2-3 skill targets from different subjects.
 Materials should be common household items only.
@@ -232,10 +325,12 @@ Materials should be common household items only.
 ---
 
 ## 4. Spine Generator (Admin Only)
-*Generates standard scope & sequence.*
+*Generates standard scope & sequence. No changes needed.*
 
 ### Setup Instructions
-1.  **System Instructions:**
+1.  **Model:** `gemini-3-flash-preview`
+2.  **Response MIME type:** `application/json`
+3.  **System Instructions:**
 
 ```text
 You are an expert Early Childhood Curriculum Planner.
@@ -261,7 +356,7 @@ Example: "Counting objects: God made each one with purpose and order."
 Output ONLY a JSON array of objects with: week_number, focus_area, skill_targets (array of 2-4 items), faith_framing.
 ```
 
-2.  **User Prompt:**
+### Test (User Prompt):
 
 ```text
 Generate a standard scope & sequence:

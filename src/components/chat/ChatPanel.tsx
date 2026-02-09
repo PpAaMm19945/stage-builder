@@ -243,28 +243,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
         setInput('');
 
-        // Check for anchor adjustment
-        const isRegen = trimmedInput.toLowerCase().includes("adjust") || trimmedInput.toLowerCase().includes("regenerate");
-
-        if (isRegen && trimmedInput.length < 200) { // Safety check to not trap long unrelated queries
-            try {
-                chatState.startThinking();
-                const newAnchor = await anchor.regenerate(trimmedInput);
-
-                const resultMsg: Message = {
-                    role: 'assistant',
-                    content: "I've updated the plan based on your request.",
-                    anchorPayload: newAnchor
-                };
-
-                handleMessageUpdate(resultMsg);
-                chatState.goIdle();
-                return;
-            } catch (e) {
-                console.error("Failed to regenerate, falling back to chat", e);
-                // Fall through to normal chat
-            }
-        }
+        // All messages route through Cortex — no frontend keyword shortcut
 
         const outboundMessages = [...messages, userMessage]
             .filter(message => message.content && message.content.trim().length > 0)

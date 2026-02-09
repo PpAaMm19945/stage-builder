@@ -1,3 +1,4 @@
+import { useState, useEffect } from 'react';
 import { CircleNotch } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 
@@ -12,10 +13,19 @@ interface ThinkingMessageProps {
 }
 
 /**
- * Displays a thinking/loading indicator with stage text and optional steps.
- * Shows "Searching library...", "Finding activities...", etc.
+ * Displays a thinking/loading indicator with stage text, elapsed timer, and optional steps.
  */
 export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps) {
+    const [elapsed, setElapsed] = useState(0);
+
+    useEffect(() => {
+        const start = Date.now();
+        const interval = setInterval(() => {
+            setElapsed((Date.now() - start) / 1000);
+        }, 100);
+        return () => clearInterval(interval);
+    }, []);
+
     if (steps && steps.length > 0) {
         return (
             <div
@@ -24,6 +34,10 @@ export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps
                 aria-live="polite"
             >
                 <div className="bg-muted/50 rounded-2xl px-4 py-3 max-w-[80%]">
+                    <div className="flex items-center gap-2 mb-2 text-xs text-muted-foreground">
+                        <CircleNotch className="w-3 h-3 animate-spin text-primary" />
+                        <span>{elapsed.toFixed(1)}s</span>
+                    </div>
                     <ExecutionSteps steps={steps} />
                 </div>
             </div>
@@ -43,6 +57,9 @@ export function ThinkingMessage({ text, steps, className }: ThinkingMessageProps
                 <CircleNotch className="w-4 h-4 animate-spin text-primary shrink-0" />
                 <span className="text-sm text-muted-foreground animate-pulse">
                     {text}
+                </span>
+                <span className="text-xs text-muted-foreground/60 tabular-nums">
+                    {elapsed.toFixed(1)}s
                 </span>
             </div>
         </div>
