@@ -657,7 +657,12 @@ Materials should be common household items only.`;
         if (!result) return null;
 
         try {
-            return JSON.parse(result.arc_data);
+            const arc = JSON.parse(result.arc_data);
+            // Ensure DB row fields are always present (arc_data JSON may not have them)
+            arc.id = arc.id || result.id;
+            arc.household_id = arc.household_id || result.household_id;
+            arc.arc_start_date = arc.arc_start_date || result.arc_start_date;
+            return arc;
         } catch {
             console.error('[ArcGenerator] Failed to parse stored arc');
             return null;
