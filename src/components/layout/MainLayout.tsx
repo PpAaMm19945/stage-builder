@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import { Outlet, Link } from 'react-router-dom';
 import { SidebarProvider, SidebarTrigger } from '@/components/ui/sidebar';
 import { AppSidebar } from './AppSidebar';
@@ -5,6 +6,7 @@ import { BottomNav } from './BottomNav';
 import { useAuth } from '@/contexts/AuthContext';
 import { FeedbackButton } from '@/components/feedback/FeedbackButton';
 import { ThemeToggle } from '@/components/theme/ThemeToggle';
+import { ContentLoader } from '@/components/ui/ContentLoader';
 
 import { ChatSidebar } from '@/components/chat';
 import { checkWeeklyReportNotification } from '@/hooks/useNotifications';
@@ -72,7 +74,9 @@ export function MainLayout() {
             tabIndex={-1}
             className="flex-1 p-4 md:p-6 pb-20 lg:pb-6 overflow-y-auto overflow-x-hidden focus:outline-none"
           >
-            <Outlet />
+            <Suspense fallback={<ContentLoader />}>
+              <Outlet />
+            </Suspense>
           </div>
 
           {/* Footer with legal links */}
