@@ -1,85 +1,89 @@
 
-# Fix Chat Messages, Remove Icons, and Show Anchor Summary
+# Fix Completion, Regeneration, and Add Thinking Indicator
 
-## Issues Found
+## Issue 1: Completion returns 405 (Method Not Allowed)
 
-### 1. Chat messages appear empty (Critical)
-The backend (Cortex/Gemini) sends streamed data as `{"content":"Hi there! "}`, but the frontend parser in `useChatStream.ts` only extracts text from `parsed.response`. Since `parsed.content` is never checked, the text is silently discarded and messages render as empty bubbles.
+**Root Cause**: In `DailyAnchorView.tsx` (line 37), the completion call uses a relative URL:
+```typescript
+fetch('/api/anchor/complete', { method: 'POST', ... })
+```
+This sends the POST to the Pages domain (e.g., `stage-builder-9hh.pages.dev/api/anchor/complete`), not to the Worker (`stage-builder.antmwes104-1.workers.dev/api/anchor/complete`). Pages doesn't have this route, so it returns 405.
 
-### 2. Robot icon looks "scary"
-The chat header, assistant messages, user messages, and empty state all use the Phosphor `Robot` icon. The user wants a cleaner look with no icons, similar to Lovable's chat interface.
+Additionally, the body sends `{ date: anchor?.date }` but the backend expects `{ anchorId }`.
 
-### 3. Anchor summary not appearing
-The anchor fetch calls `/api/anchor/today`, which was previously failing with a D1 error (now fixed). Additionally, the `localStorage` guard (`anchor_fetch_{userId}`) may have cached a failed state from earlier attempts, preventing re-fetch. The anchor summary should now work once the cache is cleared on error.
+**Fix**: Use the `API_URL` constant and send the correct `anchorId` field:
+```typescript
+import { API_URL } from '@/lib/api';
+
+const res = await fetch(`${API_URL}/api/anchor/complete`, {
+    method: 'POST',
+    headers: {
+        'Content-Type': 'application/json',
+        Authorization: `Bearer ${localStorage.getItem('schoolos_token')}`,
+    },
+    body: JSON.stringify({ anchorId: anchor.id }),
+});
+```
+
+Alternatively, add a `complete` method to the `anchor` API object in `src/lib/api.ts` for consistency, then call it from `DailyAnchorView`.
+
+**Files**: `src/lib/api.ts` (add `complete` method), `src/components/anchor/DailyAnchorView.tsx` (use it)
 
 ---
 
-## Changes
+## Issue 2: Regeneration creates empty card in chat, anchor view unchanged
 
-### File 1: `src/components/chat/hooks/useChatStream.ts`
-**Fix the JSON content extraction to also check for `content` field**
+**Root Cause**: When the user asks for an adjustment in chat, Cortex sends back an `event: anchor` SSE with new anchor JSON. The chat stream handler (`useChatStream.ts` line 88) attaches it to the message as `anchorPayload`, which renders a new `AnchorBriefingMessage` in the chat. However:
+- The main `DailyAnchorView` uses `useAnchor()` (React Query with key `['daily-anchor']`), and this query is never invalidated after the chat-based regeneration.
+- The `localStorage` anchor cache (`anchor_fetch_{userId}`) blocks re-fetch.
 
-In the standard text parsing block (~line 192), change:
-```typescript
-if (parsed.response && typeof parsed.response === 'string') {
-    textToAdd = parsed.response;
-}
-```
-To:
-```typescript
-if (parsed.response && typeof parsed.response === 'string') {
-    textToAdd = parsed.response;
-} else if (parsed.content && typeof parsed.content === 'string') {
-    textToAdd = parsed.content;
-}
-```
+**Fix**: After a chat-based regeneration (anchor SSE received), invalidate the `daily-anchor` query so the main view refreshes:
 
-Apply the same fix to the `extractResponse` helper (~line 178):
+In `ChatPanel.tsx`, when anchor payload is received via `handleMessageUpdate`, check if the message has an `anchorPayload` and invalidate:
 ```typescript
-const extractResponse = (jsonStr: string): string => {
-    try {
-        const parsed = JSON.parse(jsonStr);
-        if (parsed.response && typeof parsed.response === 'string') return parsed.response;
-        if (parsed.content && typeof parsed.content === 'string') return parsed.content;
-    } catch { /* ignore */ }
-    return '';
-};
+const handleMessageUpdate = useCallback((message: Message) => {
+    setMessages(prev => { ... });
+    
+    // If this message contains a new anchor, refresh the main anchor view
+    if (message.anchorPayload) {
+        queryClient.invalidateQueries({ queryKey: ['daily-anchor'] });
+        // Clear localStorage cache so useAnchor re-fetches
+        if (userId) {
+            localStorage.removeItem(`anchor_fetch_${userId}`);
+        }
+    }
+}, [userId, queryClient]);
 ```
 
-### File 2: `src/components/chat/ChatPanel.tsx`
-**Remove all Robot/User icons and simplify the layout**
-
-- Remove the `Robot` and `User` imports from `@phosphor-icons/react`
-- Remove the Robot icon from the header title (just show "Your Guide" text)
-- Remove the 8x8 avatar circles next to assistant and user messages
-- Remove the Robot icon from the empty-state welcome section
-- Remove the `pl-11` left padding on anchor/action cards (no longer needed without avatar column)
-- Keep the clean bubble layout for messages
-
-### File 3: `src/components/coach/FrontdeskChat.tsx`
-**Same icon removal for the legacy Frontdesk chat**
-
-- Remove the `Robot` and `User` icons from message avatars and header
-- Update header to just show "Your Guide" without the Robot icon
-
-### File 4: `src/components/chat/ChatPanel.tsx` (Anchor cache fix)
-**Clear failed anchor cache so it retries**
-
-In the anchor fetch error handler (~line 148), change:
-```typescript
-localStorage.setItem(anchorKey, today + '_failed');
-```
-To:
-```typescript
-localStorage.removeItem(anchorKey);
-```
-
-This ensures a failed anchor fetch doesn't permanently block retries for the rest of the day.
+**Files**: `src/components/chat/ChatPanel.tsx`
 
 ---
 
-## Expected Result
+## Issue 3: No "thinking" indicator with timer
 
-- Chat messages will display the streamed text content correctly
-- No icons/avatars next to messages or in the header -- clean, minimal look
-- Anchor summary will appear once the API responds successfully (the D1 error was fixed previously)
+**Root Cause**: The `ThinkingMessage` component exists and has a working `seconds.milliseconds` timer, but it's commented out in `ChatPanel.tsx` (lines 451-457).
+
+**Fix**: Uncomment the `ThinkingMessage` and import it:
+
+```tsx
+{chatState.mode === 'THINKING' && chatState.thinkingText && (
+    <ThinkingMessage
+        text={chatState.thinkingText}
+        steps={chatState.streamingSteps}
+    />
+)}
+```
+
+Also add `ThinkingMessage` to the imports from `./messages`.
+
+**Files**: `src/components/chat/ChatPanel.tsx`
+
+---
+
+## Summary of Changes
+
+| File | Change |
+|------|--------|
+| `src/lib/api.ts` | Add `complete(anchorId, feedback?)` method to `anchor` object |
+| `src/components/anchor/DailyAnchorView.tsx` | Use `anchor.complete()` instead of raw `fetch` with wrong URL |
+| `src/components/chat/ChatPanel.tsx` | Invalidate `daily-anchor` query when anchor SSE arrives; uncomment ThinkingMessage |
