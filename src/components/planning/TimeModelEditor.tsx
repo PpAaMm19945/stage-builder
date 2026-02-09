@@ -17,22 +17,22 @@ import { WeeklyTimeModel, DayOfWeek } from '@/types';
 
 type ExtendedTimeModel = Partial<WeeklyTimeModel> & { eveningMinutes?: number };
 
-const DAYS: { id: DayOfWeek; label: string }[] = [
-    { id: 'Mon', label: 'Monday' },
-    { id: 'Tue', label: 'Tuesday' },
-    { id: 'Wed', label: 'Wednesday' },
-    { id: 'Thu', label: 'Thursday' },
-    { id: 'Fri', label: 'Friday' },
-    { id: 'Sat', label: 'Saturday' },
-    { id: 'Sun', label: 'Sunday' }
+const DAYS: { id: DayOfWeek; label: string; short: string }[] = [
+    { id: 'Mon', label: 'Monday', short: 'Mon' },
+    { id: 'Tue', label: 'Tuesday', short: 'Tue' },
+    { id: 'Wed', label: 'Wednesday', short: 'Wed' },
+    { id: 'Thu', label: 'Thursday', short: 'Thu' },
+    { id: 'Fri', label: 'Friday', short: 'Fri' },
+    { id: 'Sat', label: 'Saturday', short: 'Sat' },
+    { id: 'Sun', label: 'Sunday', short: 'Sun' }
 ];
 
 export function TimeModelEditor() {
     const queryClient = useQueryClient();
     const [model, setModel] = useState<Partial<WeeklyTimeModel> & { eveningMinutes?: number }>({
         availableDays: ['Mon', 'Tue', 'Wed', 'Thu', 'Fri'],
-        minutesPerDay: 45, // Morning Minutes
-        eveningMinutes: 0,
+        minutesPerDay: 30,
+        eveningMinutes: 15,
         maxSessionsPerDay: 4,
         preferredTimes: ['morning'],
         fieldTripDays: []
@@ -92,7 +92,7 @@ export function TimeModelEditor() {
                                 key={day.id}
                                 htmlFor={`day-${day.id}`}
                                 className={`
-                  flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:border-primary/50
+                  flex items-center gap-2 p-2 rounded-lg border cursor-pointer transition-all hover:border-primary/50 min-w-0
                   ${model.availableDays?.includes(day.id) ? 'bg-primary/5 border-primary text-primary' : 'bg-background border-dashed'}
                 `}
                             >
@@ -100,8 +100,9 @@ export function TimeModelEditor() {
                                     id={`day-${day.id}`}
                                     checked={model.availableDays?.includes(day.id)}
                                     onCheckedChange={() => handleDayToggle(day.id)}
+                                    className="shrink-0"
                                 />
-                                <span className="text-sm font-medium">{day.label}</span>
+                                <span className="text-sm font-medium truncate">{day.short}</span>
                             </label>
                         ))}
                     </div>
@@ -153,26 +154,6 @@ export function TimeModelEditor() {
                         <p className="text-xs text-muted-foreground">Optional: For family reading, history, or bedtime routines.</p>
                     </div>
 
-                    {/* Max Sessions */}
-                    <div className="space-y-3 pt-2">
-                        <div className="flex items-center justify-between">
-                            <Label className="text-sm font-medium">Max Limit (Blocks per Day)</Label>
-                            <span className="text-xs text-muted-foreground">{model.maxSessionsPerDay} blocks</span>
-                        </div>
-                        <div className="flex gap-2">
-                            {[2, 3, 4, 5, 6].map(num => (
-                                <Button
-                                    key={num}
-                                    size="sm"
-                                    variant={model.maxSessionsPerDay === num ? 'default' : 'outline'}
-                                    onClick={() => setModel(prev => ({ ...prev, maxSessionsPerDay: num }))}
-                                    className="h-8 w-8 p-0"
-                                >
-                                    {num}
-                                </Button>
-                            ))}
-                        </div>
-                    </div>
                 </div>
             </div>
 
