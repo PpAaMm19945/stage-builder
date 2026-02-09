@@ -1,99 +1,98 @@
 
 
-# Fix the Spine-Arc-Anchor Chain for End-to-End Continuity
+# Audit: Issues Found in the Spine-Arc-Anchor Pipeline
 
-## Problems Found
+After reading every file in the chain, here is what will break or waste tokens, and the fixes needed.
 
-1. **Stale `african_history` references**: The arc generator prompt and anchor advancement loop still reference `african_history` instead of `motor` (the new spine subject).
-2. **Missing `motor` defaults**: No fallback targets for `motor` in the arc generator, and auto-advance skips it.
-3. **No stage transition logic**: When a family finishes week 52 of "sprout," the system just goes to week 53 (which doesn't exist). There's no mechanism to move them to "sapling" week 1.
-4. **Arc advances only 1 week instead of 2**: A 14-day arc covers 2 weeks of spine content, but `advanceCurriculumPosition` only increments by 1.
-5. **Arc system prompt mentions "African History"** in subject weighting but should reference "Motor Skills."
+---
 
-## Fixes
+## Issue 1: Stage Transition Logic Will ALWAYS Fall Back to "sprout" (Critical)
 
-### Fix 1: Update subject lists everywhere
+**The bug:** `getStageFromSpineVersion()` in `arc-generator.ts` (line 524-535) tries to extract the stage by checking if the version string contains "seedling", "sprout", etc. But `spine-generator.ts` generates versions as `v${Date.now()}` (e.g., `v1707500000000`). That string never contains a stage name, so every lookup returns the default `'sprout'`.
 
-**File: `cloudflare/src/ai/arc-generator.ts`**
+This means stage transitions will never work correctly. A family finishing Seedling will look for "the next stage after sprout" instead of "the next stage after seedling."
 
-- Line 172: Already correct (`['literacy', 'numeracy', 'formation', 'motor']`)
-- Line 291-295: Change the system prompt's SUBJECT WEIGHTING section:
-  - Remove: `- African History: 1-2x/week (stories, heritage connections)`
-  - Add: `- Motor Skills: 2-3x/week (gross motor, fine motor, pre-writing)`
-- Lines 568-597 (`getDefaultTargets`): Replace the `african_history` entry with a `motor` entry:
-  ```
-  motor: { subject: 'motor', week, focus_area: 'motor_development',
-           skill_targets: ['gross_motor', 'fine_motor', 'coordination'] }
-  ```
+**Fix:** Query the `curriculum_spine` table directly to get the stage for a given `spine_version`:
 
-**File: `cloudflare/src/ai/anchor-generator.ts`**
-
-- Line 676: Change `['literacy', 'numeracy', 'formation', 'african_history']` to `['literacy', 'numeracy', 'formation', 'motor']`
-
-### Fix 2: Advance by 2 weeks (not 1)
-
-**File: `cloudflare/src/ai/arc-generator.ts`**
-
-- `advanceCurriculumPosition` (line 468-477): Change the SQL from `current_week + 1` to `current_week + 2` since each arc covers 2 weeks of spine content.
-
-### Fix 3: Add stage transition logic
-
-**File: `cloudflare/src/ai/arc-generator.ts`**
-
-- In `advanceCurriculumPosition`, after incrementing the week, check if the new week exceeds 52. If it does:
-  - Determine the next stage (seedling->sprout->sapling->tree)
-  - Reset `current_week` to 1
-  - Update `spine_version` to point to the next stage's approved spine (if one exists)
-  - If no next-stage spine exists, log a warning but keep the position at week 52 (don't advance into a void)
-
-- In `getWeeklyTargets`, after fetching the spine entry, if no entry is found for the current week AND the week is greater than 52, attempt to auto-transition by looking up the next stage's spine.
-
-Logic summary:
-```text
-advanceCurriculumPosition(household, subject, spineVersion):
-  new_week = current_week + 2
-  if new_week > 52:
-    current_stage = lookup stage from spine_version
-    next_stage = seedling->sprout->sapling->tree
-    next_spine = find approved spine for (subject, next_stage)
-    if next_spine exists:
-      set current_week = 1, spine_version = next_spine
-    else:
-      cap at week 52 (stay put, admin needs to generate next stage)
-  else:
-    set current_week = new_week
+```sql
+SELECT DISTINCT stage FROM curriculum_spine WHERE spine_version = ? LIMIT 1
 ```
 
-### Fix 4: Add `motor` to the anchor generator's activity domain list
+Replace the string-parsing logic entirely.
 
-**File: `cloudflare/src/ai/anchor-generator.ts`**
+---
 
-- Line 319 in the system prompt schema already lists `motor` as a valid `skill_domain` -- this is correct, no change needed.
+## Issue 2: Next-Stage Spine Lookup Will Never Match (Critical)
 
-## Files to Change
+**The bug:** `advanceCurriculumPosition()` (line 485-491) searches for the next stage's spine with:
 
-| File | Changes |
-|------|---------|
-| `cloudflare/src/ai/arc-generator.ts` | Fix system prompt subjects, fix `getDefaultTargets`, fix `advanceCurriculumPosition` to +2 and handle stage transitions |
-| `cloudflare/src/ai/anchor-generator.ts` | Fix advancement subject list from `african_history` to `motor` |
-
-## What This Enables
-
-After these fixes, a family's journey looks like this:
-
-```text
-Week 1 (Sprout) --> Spine targets fed to Arc --> 14 daily anchors
-                                                   |
-                                            Complete all 14
-                                                   |
-                                            Advance to Week 3
-                                                   |
-Week 3 (Sprout) --> Next Arc --> ... --> Week 51 --> Complete --> Week 53?
-                                                                    |
-                                                              Auto-transition
-                                                                    |
-                                                          Sapling, Week 1
-                                                          (if spine exists)
+```sql
+WHERE sm.spine_version LIKE '%sprout%'
 ```
 
-Each year (52 weeks) maps to roughly 26 arcs (each arc = 2 weeks). Completing all arcs in a stage automatically transitions to the next stage's spine.
+But again, spine versions are timestamps (`v1707500000000`), never containing stage names. This query will always return zero results, so families will always cap at week 52 and never transition.
+
+**Fix:** Look up the next spine by joining `curriculum_spine` to find versions that actually contain entries for the target stage:
+
+```sql
+SELECT sm.spine_version FROM spine_metadata sm
+JOIN curriculum_spine cs ON cs.spine_version = sm.spine_version
+WHERE sm.status = 'approved' AND cs.subject = ? AND cs.stage = ?
+ORDER BY sm.approved_at DESC LIMIT 1
+```
+
+---
+
+## Issue 3: Arc Prompt Doesn't Send Children's Stages to the AI (Minor)
+
+**The problem:** The arc system prompt explains stages and says "assign roles based on these," but the `childrenSummary` in the user prompt already includes each child's `stage`. This is fine. However, the prompt does NOT tell the AI which spine week it's on or what the progression target is in a human-readable way. The AI gets a JSON blob like `{"subject":"literacy","week":15,"focus":"phonics_cvc_words","skills":["blending","segmenting"]}` but no sentence explaining "This family is 15 weeks into their literacy journey, currently learning CVC blending."
+
+**Fix:** Add a one-line natural-language summary before the JSON targets so the AI has better context for creating a coherent 2-week plan.
+
+---
+
+## Issue 4: Books Have No `series` Field in `BOOKS_DATA` (Minor Data Gap)
+
+**The problem:** The arc generator filters out draft series using `b.path.split('/')[2]`, which works. But `BookData` in `data.ts` doesn't have a `series` field populated — books like "Athanasius" just have `"series": undefined` (the interface has it, but the generated data doesn't populate it). The `extractSeriesFromBook` in anchor-generator.ts falls back to `'library'` for all books.
+
+This is cosmetic (doesn't break anything) but means the anchor's `book_nook.series` field is always "library."
+
+**Fix:** The `BOOKS_DATA` generator script should extract the series from the path. Low priority — no runtime impact.
+
+---
+
+## Issue 5: `BOOKS_DATA` Missing `series` Property in Generated Data
+
+Looking at the generated `BOOKS_DATA`, each entry is missing the `series` property even though `BookData` interface requires it. The data was auto-generated and this field was omitted. Since arc-generator uses `b.path.split('/')[2]` to filter draft series, this works at runtime, but TypeScript would flag it if strict checks were enabled.
+
+**Fix:** Add `series` to the generated book entries or make it optional in the interface. Low priority.
+
+---
+
+## Issue 6: Database Schema vs. Code Column Mismatch (Potential)
+
+The `daily_anchors` table (migration v2_0051) has columns: `id, household_id, arc_id, anchor_date, anchor_data, generation_reasoning, regeneration_count, status, created_at`. The feedback migration (v2_0054) adds: `completion_feedback, completed_at, skipped_at, skip_reason`.
+
+The `AnchorDbRecord` type references all these columns. This is correct. No mismatch found.
+
+The `curriculum_spine` table has `confidence` and `source_citations` columns from the original migration (v2_0052). The new code writes `'standard'` to `confidence` and doesn't write `source_citations` (it's nullable). This is fine — no schema mismatch.
+
+---
+
+## Issue 7: `formation_arcs` Table Missing `spine_version` in Primary Migration
+
+Migration v2_0050 creates `formation_arcs` without `spine_version`. Migration v2_0052 adds it via `ALTER TABLE formation_arcs ADD COLUMN spine_version TEXT`. The code writes to this column. This should work if migrations run in order. Verified: migration numbering is sequential (0050, 0051, 0052). No issue.
+
+---
+
+## Summary of Changes Needed
+
+| Issue | Severity | File | Fix |
+|-------|----------|------|-----|
+| 1. Stage lookup parses timestamp string | **Critical** | `arc-generator.ts` line 524-535 | Query `curriculum_spine` table for stage |
+| 2. Next-spine lookup uses LIKE on timestamp | **Critical** | `arc-generator.ts` line 485-491 | Join `curriculum_spine` to find stage-matched versions |
+| 3. Arc prompt lacks human-readable context | Low | `arc-generator.ts` line 336-352 | Add summary sentence to user prompt |
+| 4-5. Books missing series field | Low | `data.ts` / generator script | Cosmetic, no runtime break |
+
+Only issues 1 and 2 need fixing before testing. They are both in `arc-generator.ts` and affect the same method (`advanceCurriculumPosition` and `getStageFromSpineVersion`).
+
