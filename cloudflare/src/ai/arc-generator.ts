@@ -169,7 +169,7 @@ export class ArcGenerator {
      * Get current week targets from all subject spines
      */
     private async getWeeklyTargets(householdId: string): Promise<WeeklyTargets[]> {
-        const subjects = ['literacy', 'numeracy', 'formation', 'african_history'];
+        const subjects = ['literacy', 'numeracy', 'formation', 'motor'];
         const targets: WeeklyTargets[] = [];
 
         for (const subject of subjects) {

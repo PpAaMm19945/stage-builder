@@ -17,7 +17,6 @@ import {
   SpineStatsResponse,
   ActivityAnalysisResponse,
   SpineVersionsResponse,
-  SpineConflict,
   SpineEntriesResponse
 } from '@/types/admin-ai';
 
@@ -824,16 +823,7 @@ export const adminAi = {
 
   // Spine Management
   generateSpine: (data: { subject: string; startWeek: number; endWeek: number; stage: string }) =>
-    apiRequest<{ success: boolean; version: string; message: string; conflicts: SpineConflict[] }>('/api/admin/spine/generate', {
-      method: 'POST',
-      body: JSON.stringify(data)
-    }),
-
-  getSpineConflicts: (version: string) =>
-    apiRequest<{ version: string; conflicts: SpineConflict[] }>(`/api/admin/spine/conflicts?version=${version}`),
-
-  resolveSpineConflict: (data: { version: string; weekNumber: number; selectedDraftId: string; resolvedBy?: string }) =>
-    apiRequest<{ success: boolean; message: string }>('/api/admin/spine/resolve', {
+    apiRequest<{ success: boolean; version: string; message: string }>('/api/admin/spine/generate', {
       method: 'POST',
       body: JSON.stringify(data)
     }),

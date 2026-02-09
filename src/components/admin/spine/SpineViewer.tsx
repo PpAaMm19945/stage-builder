@@ -3,8 +3,7 @@ import React, { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { ArrowLeft, BookOpen, Loader2 } from "lucide-react";
+import { ArrowLeft, Loader2 } from "lucide-react";
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 
@@ -59,7 +58,6 @@ const SpineViewer: React.FC<SpineViewerProps> = ({ version, subject, onBack }) =
                             <TableHead className="w-[200px]">Focus Area</TableHead>
                             <TableHead>Skill Targets</TableHead>
                             <TableHead>Faith Framing</TableHead>
-                            <TableHead className="w-[100px]">Status</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
@@ -76,13 +74,6 @@ const SpineViewer: React.FC<SpineViewerProps> = ({ version, subject, onBack }) =
                                 </TableCell>
                                 <TableCell className="italic text-muted-foreground text-xs border-l pl-4">
                                     "{entry.faithFraming}"
-                                </TableCell>
-                                <TableCell>
-                                    <Badge variant="outline" className={
-                                        entry.confidence === 'consensus' ? 'text-green-600 bg-green-50' : 'text-blue-600 bg-blue-50'
-                                    }>
-                                        {entry.confidence}
-                                    </Badge>
                                 </TableCell>
                             </TableRow>
                         ))}

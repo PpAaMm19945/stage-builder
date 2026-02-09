@@ -4,16 +4,15 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/com
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { AlertTriangle, CheckCircle, Eye, History, Loader2, Play } from "lucide-react";
+import { CheckCircle, Eye, History, Loader2 } from "lucide-react";
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
 
 interface SpineListProps {
-    onReviewConflicts: (version: string) => void;
     onViewEntries: (version: string, subject: string) => void;
 }
 
-const SpineList: React.FC<SpineListProps> = ({ onReviewConflicts, onViewEntries }) => {
+const SpineList: React.FC<SpineListProps> = ({ onViewEntries }) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
     const [versions, setVersions] = useState<any[]>([]);
@@ -29,10 +28,7 @@ const SpineList: React.FC<SpineListProps> = ({ onReviewConflicts, onViewEntries 
             setVersions(res.versions);
         } catch (error) {
             console.error(error);
-            toast({
-                title: "Failed to load history",
-                variant: "destructive"
-            });
+            toast({ title: "Failed to load history", variant: "destructive" });
         } finally {
             setLoading(false);
         }
@@ -58,7 +54,7 @@ const SpineList: React.FC<SpineListProps> = ({ onReviewConflicts, onViewEntries 
                     Generation History
                 </CardTitle>
                 <CardDescription>
-                    Manage past generations, review conflicts, and publish content.
+                    Review generated sequences and approve them to make them live.
                 </CardDescription>
             </CardHeader>
             <CardContent>
@@ -69,22 +65,12 @@ const SpineList: React.FC<SpineListProps> = ({ onReviewConflicts, onViewEntries 
                             <TableHead>Subject</TableHead>
                             <TableHead>Status</TableHead>
                             <TableHead>Weeks</TableHead>
-                            <TableHead>Conflicts</TableHead>
                             <TableHead className="text-right">Actions</TableHead>
                         </TableRow>
                     </TableHeader>
                     <TableBody>
                         {versions.map((v) => {
-                            // Parse subject if it's an array string
                             const subject = Array.isArray(v.subjects) ? v.subjects[0] : (typeof v.subjects === 'string' ? JSON.parse(v.subjects)[0] : 'Unknown');
-
-                            // Check for conflict count logic - if not returned directly we might need to verify stats
-                            // The API `safeQuery` select might need adjustment if we want conflict count here?
-                            // `spineRoutes.get('/api/admin/spine/list')` returns mostly metadata.
-                            // See `spineGenerator.ts` `storeDraftSpine` stores `generation_log`.
-
-                            // Just showing what we have:
-                            const hasConflicts = v.status === 'draft'; // Simplified assumption if we don't have exact count here without parsing JSON log
 
                             return (
                                 <TableRow key={v.version}>
@@ -96,25 +82,7 @@ const SpineList: React.FC<SpineListProps> = ({ onReviewConflicts, onViewEntries 
                                         </Badge>
                                     </TableCell>
                                     <TableCell>{v.totalWeeks}</TableCell>
-                                    <TableCell>
-                                        {/* Ideally we'd show exact count, but let's assume if it's draft it might have issues */}
-                                        {v.status === 'draft' ? (
-                                            <Badge variant="outline" className="text-yellow-600 border-yellow-200 bg-yellow-50">
-                                                Review Needed
-                                            </Badge>
-                                        ) : (
-                                            <Badge variant="outline" className="text-green-600 border-green-200 bg-green-50">
-                                                Resolved
-                                            </Badge>
-                                        )}
-                                    </TableCell>
                                     <TableCell className="text-right space-x-2">
-                                        {v.status === 'draft' && (
-                                            <Button size="sm" variant="outline" onClick={() => onReviewConflicts(v.version)}>
-                                                <AlertTriangle className="h-4 w-4 mr-1 text-yellow-500" />
-                                                Review
-                                            </Button>
-                                        )}
                                         <Button size="sm" variant="outline" onClick={() => onViewEntries(v.version, subject)}>
                                             <Eye className="h-4 w-4 mr-1" />
                                             View

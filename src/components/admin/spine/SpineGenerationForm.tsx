@@ -19,7 +19,7 @@ const SpineGenerationForm: React.FC<SpineGenerationFormProps> = ({ onSuccess }) 
     const [subject, setSubject] = useState<string>('literacy');
     const [stage, setStage] = useState<string>('sprout');
     const [startWeek, setStartWeek] = useState<number>(1);
-    const [endWeek, setEndWeek] = useState<number>(4);
+    const [endWeek, setEndWeek] = useState<number>(52);
 
     const handleGenerate = async () => {
         try {
@@ -33,7 +33,7 @@ const SpineGenerationForm: React.FC<SpineGenerationFormProps> = ({ onSuccess }) 
 
             if (res.success) {
                 toast({
-                    title: "Generation triggered",
+                    title: "Sequence generated",
                     description: res.message,
                 });
                 onSuccess(res.version);
@@ -54,10 +54,10 @@ const SpineGenerationForm: React.FC<SpineGenerationFormProps> = ({ onSuccess }) 
             <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                     <Sparkles className="h-5 w-5 text-purple-500" />
-                    Generate Curriculum Spine
+                    Generate Standard Sequence
                 </CardTitle>
                 <CardDescription>
-                    Trigger multi-draft AI generation. This will create 3 drafts and attempt to merge them.
+                    Generate a research-backed scope & sequence for a subject and stage. One AI call retrieves standard developmental milestones.
                 </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -72,7 +72,7 @@ const SpineGenerationForm: React.FC<SpineGenerationFormProps> = ({ onSuccess }) 
                                 <SelectItem value="literacy">Literacy</SelectItem>
                                 <SelectItem value="numeracy">Numeracy</SelectItem>
                                 <SelectItem value="formation">Formation</SelectItem>
-                                <SelectItem value="african_history">African History</SelectItem>
+                                <SelectItem value="motor">Motor Skills</SelectItem>
                             </SelectContent>
                         </Select>
                     </div>
@@ -122,19 +122,19 @@ const SpineGenerationForm: React.FC<SpineGenerationFormProps> = ({ onSuccess }) 
                     {loading ? (
                         <>
                             <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Generating 3 Drafts...
+                            Generating sequence...
                         </>
                     ) : (
                         <>
                             <Sparkles className="mr-2 h-4 w-4" />
-                            Start AI Consensus Process
+                            Generate Sequence
                         </>
                     )}
                 </Button>
 
                 {loading && (
                     <p className="text-xs text-center text-muted-foreground animate-pulse">
-                        This may take 30-60 seconds. The AI is debating with itself.
+                        Retrieving standard developmental milestones...
                     </p>
                 )}
             </CardContent>

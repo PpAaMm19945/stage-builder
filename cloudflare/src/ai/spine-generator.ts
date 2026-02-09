@@ -1,48 +1,28 @@
-import { safeQuery, safeRun, safeQueryFirst } from '../lib/db';
-import { GeminiService, GeminiContent } from './gemini';
+import { safeQuery, safeRun } from '../lib/db';
+import { GeminiService } from './gemini';
 import { Env } from '../types';
 import { AITelemetryService } from '../services/ai-telemetry';
 
 /**
- * SpineGenerator: Multi-call consensus pipeline for AI-first curriculum generation
+ * SpineGenerator: Single-call sequence retriever for standard developmental milestones
  * 
  * Flow:
- * 1. Ingest sources (phonics frameworks, catechism, etc.)
- * 2. Parallel drafting: 3 independent AI calls
- * 3. Consensus merge: AI merges drafts, flags disagreements
- * 4. Human review: Only conflicts surface for approval
- * 5. Freeze: Lock as versioned spine
+ * 1. Admin selects subject, stage, and year (52 weeks)
+ * 2. One AI call retrieves a standard, research-backed scope & sequence
+ * 3. Admin reviews the table
+ * 4. Admin approves → spine is frozen as source of truth
  */
 
 export interface SpineEntry {
     id: string;
     spine_version: string;
-    subject: 'literacy' | 'numeracy' | 'formation' | 'african_history';
+    subject: 'literacy' | 'numeracy' | 'formation' | 'motor';
     week_number: number;
     stage: 'seedling' | 'sprout' | 'sapling' | 'tree';
     focus_area: string;
-    skill_targets: string[];  // Measurable skills/knowledge
-    faith_framing?: string;   // Theological reflection prompts
-    resources?: string[];     // Book/activity IDs
-    confidence: 'research' | 'consensus' | 'experimental';
-    source_citations?: string[];
-}
-
-export interface SpineDraft {
-    draft_id: string;
-    entries: SpineEntry[];
-    reasoning: string;
-}
-
-export interface ConflictReport {
-    week_number: number;
-    subject: string;
-    conflicting_entries: {
-        draft_id: string;
-        focus_area: string;
-        skill_targets: string[];
-    }[];
-    suggested_resolution?: string;
+    skill_targets: string[];
+    faith_framing?: string;
+    resources?: string[];
 }
 
 export class SpineGenerator {
@@ -57,95 +37,50 @@ export class SpineGenerator {
     }
 
     /**
-     * Generate a curriculum spine for a range of weeks
-     * Uses multi-call consensus: 3 independent drafts → merge → conflicts
+     * Generate a standard scope & sequence for a subject/stage/week range.
+     * Single AI call — no drafts, no conflicts.
      */
     async generateSpine(
         subject: SpineEntry['subject'],
         startWeek: number,
         endWeek: number,
         stage: SpineEntry['stage'],
-        sources: { name: string; content: string }[],
         waitUntil?: (p: Promise<any>) => void
-    ): Promise<{
-        version: string;
-        drafts: SpineDraft[];
-        consensusEntries: SpineEntry[];
-        conflicts: ConflictReport[];
-    }> {
+    ): Promise<{ version: string; entries: SpineEntry[] }> {
         const version = `v${Date.now()}`;
-        console.log(`[SpineGenerator] Starting generation for ${subject}, weeks ${startWeek}-${endWeek}, stage ${stage}`);
+        const totalWeeks = endWeek - startWeek + 1;
+        console.log(`[SpineGenerator] Generating ${subject} sequence, weeks ${startWeek}-${endWeek}, stage ${stage}`);
 
-        // 1. Generate 3 independent drafts
-        const drafts: SpineDraft[] = [];
-        for (let i = 0; i < 3; i++) {
-            console.log(`[SpineGenerator] Generating draft ${i + 1}/3...`);
-            const draft = await this.generateDraft(subject, startWeek, endWeek, stage, sources, i, waitUntil);
-            drafts.push(draft);
-        }
-
-        // 2. Merge drafts and identify conflicts
-        console.log('[SpineGenerator] Merging drafts...');
-        const { consensusEntries, conflicts } = await this.mergeDrafts(drafts, version);
-
-        // 3. Store in database (as draft status)
-        await this.storeDraftSpine(version, subject, consensusEntries, drafts, conflicts);
-        await this.telemetry.logContentAudit({
-            feature: 'spine',
-            content_id: version,
-            content_excerpt: this.buildSpineAuditExcerpt(subject, startWeek, endWeek, stage, consensusEntries)
-        }, waitUntil);
-
-        return { version, drafts, consensusEntries, conflicts };
-    }
-
-    /**
-     * Generate a single draft using Gemini
-     */
-    private async generateDraft(
-        subject: SpineEntry['subject'],
-        startWeek: number,
-        endWeek: number,
-        stage: SpineEntry['stage'],
-        sources: { name: string; content: string }[],
-        draftIndex: number,
-        waitUntil?: (p: Promise<any>) => void
-    ): Promise<SpineDraft> {
-        const sourcesSummary = sources.map(s => `[${s.name}]: ${s.content}`).join('\n\n');
-
-        const systemPrompt = `You are a Reformed Christian curriculum specialist creating a ${subject} sequence.
-You are generating DRAFT ${draftIndex + 1} - aim for variety while staying research-based.
+        const systemPrompt = `You are an expert Early Childhood Curriculum Planner.
+Output a standard, research-backed scope and sequence for ${subject} for a child at the ${stage} stage.
+Output a linear weekly progression. Do not invent new pedagogies; use standard developmental norms.
 
 STAGE DEFINITIONS:
-- Seedling (0-24 mos): Sensory exploration, observation, parental modeling
-- Sprout (2-4 yrs): Participation, habit formation, simple truths
-- Sapling (4-7 yrs): Understanding, memory work, narration
-- Tree (7+ yrs): Leadership, theological depth, service
+- Seedling (0-24 months): Sensory exploration, observation, parental modeling
+- Sprout (2-4 years): Participation, habit formation, simple truths
+- Sapling (4-7 years): Understanding, memory work, narration
+- Tree (7+ years): Leadership, theological depth, service
 
-FAITH FRAMING POLICY:
-Each entry should include a brief theological reflection that connects the skill to Christian formation.
-Example: "Phoneme /m/: God gave us mouths to speak His truth and praise His name."
+SUBJECT GUIDELINES:
+- Literacy: Phonological Awareness → Phonics → Fluency
+- Numeracy: Rote counting → 1-to-1 correspondence → Number recognition → Simple operations
+- Motor: Gross motor → Fine motor → Pre-writing skills
+- Formation: Obedience → Kindness → Self-control → Gratitude
 
-Output JSON only. Return an array of SpineEntry objects.`;
+FAITH FRAMING:
+Each entry should include a brief theological reflection connecting the skill to Christian formation.
+Example: "Counting objects: God made each one with purpose and order."
 
-        const userPrompt = `Generate curriculum entries for:
+Output ONLY a JSON array of objects with: week_number, focus_area, skill_targets (array of 2-4 items), faith_framing.`;
+
+        const userPrompt = `Generate a standard scope & sequence:
 - Subject: ${subject}
-- Weeks: ${startWeek} to ${endWeek}
 - Stage: ${stage}
+- Weeks: ${startWeek} to ${endWeek} (${totalWeeks} weeks total)
 
-AUTHORITATIVE SOURCES (constrain your recommendations to these):
-${sourcesSummary}
-
-Generate one entry per week. Each entry should have:
-- focus_area: specific focus for the week
-- skill_targets: array of 2-4 measurable skills
-- faith_framing: theological connection
-- confidence: 'research' if directly from sources, 'consensus' if inferred, 'experimental' if novel
-- source_citations: which sources support this entry`;
+Return a JSON array with one entry per week.`;
 
         const startTime = Date.now();
-        let response: string;
-        let usage: any;
 
         try {
             const result = await this.gemini.generateContent(
@@ -154,18 +89,48 @@ Generate one entry per week. Each entry should have:
                 null,
                 'application/json'
             );
-            response = result.text;
-            usage = result.usage;
 
             this.telemetry.logTelemetry({
                 feature: 'spine_generation',
                 model: 'gemini-3-flash-preview',
-                request_tokens: usage?.promptTokenCount,
-                response_tokens: usage?.candidatesTokenCount,
+                request_tokens: result.usage?.promptTokenCount,
+                response_tokens: result.usage?.candidatesTokenCount,
                 latency_ms: Date.now() - startTime,
                 status: 'success',
-                metadata: { subject, stage, week: startWeek, draftIndex }
+                metadata: { subject, stage, startWeek, endWeek }
             }, waitUntil);
+
+            let rawEntries: any[];
+            try {
+                const parsed = JSON.parse(result.text);
+                rawEntries = Array.isArray(parsed) ? parsed : parsed.entries || parsed.sequence || [];
+            } catch {
+                console.error('[SpineGenerator] Failed to parse AI response');
+                throw new Error('Failed to parse AI response as JSON');
+            }
+
+            const entries: SpineEntry[] = rawEntries.map((e: any, idx: number) => ({
+                id: crypto.randomUUID(),
+                spine_version: version,
+                subject,
+                week_number: e.week_number || (startWeek + idx),
+                stage,
+                focus_area: e.focus_area || '',
+                skill_targets: e.skill_targets || [],
+                faith_framing: e.faith_framing || undefined,
+                resources: []
+            }));
+
+            // Store as draft
+            await this.storeDraftSpine(version, subject, entries);
+
+            await this.telemetry.logContentAudit({
+                feature: 'spine',
+                content_id: version,
+                content_excerpt: this.buildAuditExcerpt(subject, startWeek, endWeek, stage, entries)
+            }, waitUntil);
+
+            return { version, entries };
         } catch (error) {
             this.telemetry.logTelemetry({
                 feature: 'spine_generation',
@@ -173,102 +138,10 @@ Generate one entry per week. Each entry should have:
                 latency_ms: Date.now() - startTime,
                 status: 'error',
                 error_type: error instanceof Error ? error.message : 'Unknown error',
-                metadata: { subject, stage, week: startWeek, draftIndex }
+                metadata: { subject, stage, startWeek, endWeek }
             }, waitUntil);
             throw error;
         }
-
-        let entries: SpineEntry[] = [];
-        try {
-            const parsed = JSON.parse(response) as { entries?: SpineEntry[] } | SpineEntry[];
-            entries = (Array.isArray(parsed) ? parsed : parsed.entries || []).map((e, idx: number) => ({
-                id: crypto.randomUUID(),
-                spine_version: '', // Will be set during storage
-                subject,
-                week_number: startWeek + idx,
-                stage,
-                focus_area: (e as { focus_area?: string }).focus_area || '',
-                skill_targets: (e as { skill_targets?: string[] }).skill_targets || [],
-                faith_framing: (e as { faith_framing?: string }).faith_framing || undefined,
-                resources: (e as { resources?: string[] }).resources || [],
-                confidence: ((e as { confidence?: string }).confidence || 'experimental') as 'research' | 'consensus' | 'experimental',
-                source_citations: (e as { source_citations?: string[] }).source_citations || []
-            }));
-        } catch {
-            // Empty catch - AI response parsing failed, continue with empty entries
-            console.error('[SpineGenerator] Failed to parse draft');
-        }
-
-        return {
-            draft_id: `draft_${draftIndex + 1}`,
-            entries,
-            reasoning: `Draft ${draftIndex + 1} generated for ${subject} stage ${stage}`
-        };
-    }
-
-    /**
-     * Merge drafts using consensus logic
-     */
-    private async mergeDrafts(
-        drafts: SpineDraft[],
-        version: string
-    ): Promise<{ consensusEntries: SpineEntry[]; conflicts: ConflictReport[] }> {
-        const conflicts: ConflictReport[] = [];
-        const consensusEntries: SpineEntry[] = [];
-
-        // Group entries by week
-        const weekMap = new Map<number, { draft_id: string; entry: SpineEntry }[]>();
-
-        for (const draft of drafts) {
-            for (const entry of draft.entries) {
-                const week = entry.week_number;
-                if (!weekMap.has(week)) {
-                    weekMap.set(week, []);
-                }
-                weekMap.get(week)!.push({ draft_id: draft.draft_id, entry });
-            }
-        }
-
-        // For each week, check for consensus or conflict
-        for (const [week, entries] of weekMap) {
-            const focusAreas = new Set(entries.map(e => e.entry.focus_area.toLowerCase().trim()));
-
-            if (focusAreas.size === 1) {
-                // Consensus! Merge skill_targets from all drafts
-                const mergedEntry: SpineEntry = {
-                    ...entries[0].entry,
-                    id: crypto.randomUUID(),
-                    spine_version: version,
-                    skill_targets: [...new Set(entries.flatMap(e => e.entry.skill_targets))],
-                    confidence: 'consensus',
-                    source_citations: [...new Set(entries.flatMap(e => e.entry.source_citations || []))]
-                };
-                consensusEntries.push(mergedEntry);
-            } else {
-                // Conflict! Flag for human review
-                conflicts.push({
-                    week_number: week,
-                    subject: entries[0].entry.subject,
-                    conflicting_entries: entries.map(e => ({
-                        draft_id: e.draft_id,
-                        focus_area: e.entry.focus_area,
-                        skill_targets: e.entry.skill_targets
-                    })),
-                    suggested_resolution: `Multiple focus areas proposed: ${[...focusAreas].join(', ')}`
-                });
-
-                // Still add first entry as tentative, marked experimental
-                const tentativeEntry: SpineEntry = {
-                    ...entries[0].entry,
-                    id: crypto.randomUUID(),
-                    spine_version: version,
-                    confidence: 'experimental'
-                };
-                consensusEntries.push(tentativeEntry);
-            }
-        }
-
-        return { consensusEntries, conflicts };
     }
 
     /**
@@ -277,29 +150,25 @@ Generate one entry per week. Each entry should have:
     private async storeDraftSpine(
         version: string,
         subject: string,
-        entries: SpineEntry[],
-        drafts: SpineDraft[],
-        conflicts: ConflictReport[]
+        entries: SpineEntry[]
     ): Promise<void> {
-        // Insert spine metadata
         await safeRun(this.db, `
             INSERT INTO spine_metadata (id, spine_version, status, generation_log, total_weeks, subjects)
             VALUES (?, ?, 'draft', ?, ?, ?)
         `, [
             crypto.randomUUID(),
             version,
-            JSON.stringify({ drafts, conflicts }), // STORE FULL DRAFTS
+            JSON.stringify({ generated_at: new Date().toISOString() }),
             entries.length,
             JSON.stringify([subject])
         ]);
 
-        // Insert each entry
         for (const entry of entries) {
             await safeRun(this.db, `
                 INSERT INTO curriculum_spine (
                     id, spine_version, subject, week_number, stage, focus_area,
-                    skill_targets, faith_framing, resources, confidence, source_citations
-                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                    skill_targets, faith_framing, resources, confidence
+                ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'standard')
             `, [
                 entry.id,
                 version,
@@ -309,93 +178,27 @@ Generate one entry per week. Each entry should have:
                 entry.focus_area,
                 JSON.stringify(entry.skill_targets),
                 entry.faith_framing || null,
-                JSON.stringify(entry.resources || []),
-                entry.confidence,
-                JSON.stringify(entry.source_citations || [])
+                JSON.stringify(entry.resources || [])
             ]);
         }
 
         console.log(`[SpineGenerator] Stored ${entries.length} entries as version ${version}`);
     }
 
-    private buildSpineAuditExcerpt(
+    private buildAuditExcerpt(
         subject: SpineEntry['subject'],
         startWeek: number,
         endWeek: number,
         stage: SpineEntry['stage'],
         entries: SpineEntry[]
     ): string {
-        const focusAreas = entries.slice(0, 5).map(entry => `${entry.week_number}: ${entry.focus_area}`);
+        const focusAreas = entries.slice(0, 5).map(e => `${e.week_number}: ${e.focus_area}`);
         return [
             `Subject: ${subject}`,
             `Stage: ${stage}`,
             `Weeks: ${startWeek}-${endWeek}`,
             `Focus areas: ${focusAreas.join('; ')}`
         ].join(' | ').slice(0, 1000);
-    }
-
-    /**
-     * Resolve a conflict by selecting the preferred option
-     */
-    async resolveConflict(
-        version: string,
-        weekNumber: number,
-        selectedDraftId: string,
-        resolvedBy: string
-    ): Promise<void> {
-        console.log(`[SpineGenerator] Resolving conflict for week ${weekNumber} using ${selectedDraftId}`);
-
-        // 1. Get generation log to access the draft data
-        const meta = await safeQueryFirst<{ generation_log: string }>(this.db,
-            `SELECT generation_log FROM spine_metadata WHERE spine_version = ?`,
-            [version]
-        );
-
-        if (!meta?.generation_log) {
-            throw new Error(`Spine metadata not found for version ${version}`);
-        }
-
-        const log = JSON.parse(meta.generation_log) as { drafts: SpineDraft[]; conflicts: ConflictReport[] };
-
-        // 2. Find the selected draft
-        const draft = log.drafts.find(d => d.draft_id === selectedDraftId);
-        if (!draft) {
-            throw new Error(`Draft ${selectedDraftId} not found in metadata`);
-        }
-
-        // 3. Find the entry for this week in the selected draft
-        const entry = draft.entries.find(e => e.week_number === weekNumber);
-        if (!entry) {
-            throw new Error(`Entry for week ${weekNumber} not found in draft ${selectedDraftId}`);
-        }
-
-        // 4. Update the experimental/conflict entry in curriculum_spine
-        // We look for the entry with the SAME spine_version and week_number.
-        // It should currently exist but be marked 'experimental' or have conflict flags (if we had them).
-        // Since we are "resolving", we overwrite the fields with the selected draft's data.
-
-        await safeRun(this.db, `
-            UPDATE curriculum_spine
-            SET 
-                focus_area = ?,
-                skill_targets = ?,
-                faith_framing = ?,
-                resources = ?,
-                confidence = 'consensus',
-                manual_approval_note = ?
-            WHERE spine_version = ? AND week_number = ? AND subject = ?
-        `, [
-            entry.focus_area,
-            JSON.stringify(entry.skill_targets),
-            entry.faith_framing || null,
-            JSON.stringify(entry.resources || []),
-            `Resolved by ${resolvedBy} selecting ${selectedDraftId}`,
-            version,
-            weekNumber,
-            entry.subject
-        ]);
-
-        console.log(`[SpineGenerator] Conflict resolved for week ${weekNumber}: updated to ${selectedDraftId}`);
     }
 
     /**
@@ -441,24 +244,7 @@ Generate one entry per week. Each entry should have:
             focus_area: row.focus_area,
             skill_targets: JSON.parse(row.skill_targets || '[]'),
             faith_framing: row.faith_framing,
-            resources: JSON.parse(row.resources || '[]'),
-            confidence: row.confidence,
-            source_citations: JSON.parse(row.source_citations || '[]')
+            resources: JSON.parse(row.resources || '[]')
         }));
-    }
-
-    /**
-     * Get pending conflicts for review
-     */
-    async getPendingConflicts(version: string): Promise<ConflictReport[]> {
-        const meta = await safeQuery<any>(this.db,
-            `SELECT generation_log FROM spine_metadata WHERE spine_version = ?`,
-            [version]
-        );
-
-        if (!meta.results?.[0]?.generation_log) return [];
-
-        const log = JSON.parse(meta.results[0].generation_log);
-        return log.conflicts || [];
     }
 }
