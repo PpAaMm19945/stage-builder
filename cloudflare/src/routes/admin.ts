@@ -40,7 +40,7 @@ function slugify(text: string): string {
 }
 
 // Reindex R2 bucket to generate manifest.json
-app.get('/api/admin/reindex', async (c) => {
+app.get('/reindex', async (c) => {
   const secret = c.env.ADMIN_SECRET;
   const authHeader = c.req.header('Authorization');
   const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
