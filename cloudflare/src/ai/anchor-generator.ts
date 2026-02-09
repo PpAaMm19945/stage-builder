@@ -295,7 +295,7 @@ export class AnchorGenerator {
         // Fetch children for this household
         const children = await safeQuery<{ id: string; name: string; age_months: number; stage: string }>(
             this.db,
-            "SELECT id, name, age_months, stage FROM children WHERE household_id = ?",
+            "SELECT id, name, age_months, stage FROM students WHERE household_id = ?",
             [householdId]
         );
 
