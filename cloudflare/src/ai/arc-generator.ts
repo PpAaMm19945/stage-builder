@@ -313,8 +313,13 @@ Output ONLY valid JSON matching the FormationArc interface.`;
             skills: t.skill_targets.slice(0, 3)
         }));
 
-        // Get available books and hymns
-        const availableBooks = BOOKS_DATA.slice(0, 20).map(b => ({ id: b.id, title: b.title, theme: b.theme }));
+        // Get available books and hymns (filter out draft series)
+        const DRAFT_SERIES = ['working_fathers_of_soroti', 'sanyus_growing_heart', 'young_historians_africa', 'the_a_to_z_picture_books_for_kids', 'african_history'];
+        const publishedBooks = BOOKS_DATA.filter(b => {
+            const series = b.path.split('/')[2] || ''; // path: /books/{series}/{bookId}/content.md
+            return !DRAFT_SERIES.includes(series);
+        });
+        const availableBooks = publishedBooks.slice(0, 20).map(b => ({ id: b.id, title: b.title, theme: b.theme }));
         const availableHymns = [
             { id: 'hymn_mighty_fortress', title: 'A Mighty Fortress' },
             { id: 'hymn_amazing_grace', title: 'Amazing Grace' },

@@ -185,6 +185,15 @@ async function findMetadataKey(bucket: R2Bucket, bookPrefix: string): Promise<st
     return metadataKey || null;
 }
 
+// Draft series blocklist - remove series from here when they're finished
+const DRAFT_SERIES = [
+    'working_fathers_of_soroti',
+    'sanyus_growing_heart',
+    'young_historians_africa',
+    'the_a_to_z_picture_books_for_kids',
+    'african_history'
+];
+
 // Helper: Fetch All Books
 async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<BookMetadata[]> {
     const now = Date.now();
@@ -387,10 +396,13 @@ async function fetchAllBooks(bucket: R2Bucket, r2PublicUrl?: string): Promise<Bo
 
             books.push(...legacyBooks.filter((b): b is BookMetadata => b !== null));
 
-            // Update Cache
-            BOOKS_CACHE = { data: books, timestamp: Date.now() };
+            // Filter out draft series
+            const publishedBooks = books.filter(b => !DRAFT_SERIES.includes(b.series));
 
-            return books;
+            // Update Cache
+            BOOKS_CACHE = { data: publishedBooks, timestamp: Date.now() };
+
+            return publishedBooks;
         } catch (error: any) {
             console.error('Books list error:', error);
             throw error;
@@ -1113,18 +1125,8 @@ app.post('/api/reading/complete', async (c) => {
             return c.json({ error: 'Series and bookId are required' }, 400);
         }
 
-        const book = await safeQueryFirst<{ id: string }>(c.env.DB,
-            "SELECT id FROM formations WHERE (id = ? OR id = ?) AND formation_type = 'reading'",
-            [bookId, `${series}/${bookId}`]
-        );
-
-        if (!book) {
-            return c.json({
-                error: 'Book not found',
-                tried: [bookId, `${series}/${bookId}`],
-                help: 'Ensure the book is seeded in the formations table with a matching id'
-            }, 404);
-        }
+        // Use composite ID directly - no formations table lookup required
+        const compositeBookId = `${series}/${bookId}`;
 
         const sessionId = generateId('read');
         const childrenJson = childrenPresent ? JSON.stringify(childrenPresent) : null;
@@ -1132,7 +1134,7 @@ app.post('/api/reading/complete', async (c) => {
         await safeRun(c.env.DB, `
       INSERT INTO reading_sessions (id, parent_id, book_id, children_present, notes, completed_at)
       VALUES (?, ?, ?, ?, ?, datetime('now'))
-    `, [sessionId, user.id, book.id, childrenJson, notes || null]);
+    `, [sessionId, user.id, compositeBookId, childrenJson, notes || null]);
 
         const session = await safeQueryFirst(c.env.DB, 'SELECT * FROM reading_sessions WHERE id = ?', [sessionId]);
 
@@ -1161,6 +1163,24 @@ app.get('/api/reading/history', async (c) => {
         }));
 
         return c.json(sessions);
+    } catch (error: any) {
+        return safeError(c, error);
+    }
+});
+
+// Get per-book read counts
+app.get('/api/reading/counts', async (c) => {
+    try {
+        const user = requireAuth(c);
+
+        const { results } = await safeQuery(c.env.DB, `
+      SELECT book_id, COUNT(*) as times_read 
+      FROM reading_sessions 
+      WHERE parent_id = ? 
+      GROUP BY book_id
+    `, [user.id]);
+
+        return c.json(results);
     } catch (error: any) {
         return safeError(c, error);
     }

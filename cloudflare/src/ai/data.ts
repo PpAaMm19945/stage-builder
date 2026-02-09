@@ -7,6 +7,7 @@
 
 export interface BookData {
     id: string;
+    series: string;
     title: string;
     author: string;
     theme: string;

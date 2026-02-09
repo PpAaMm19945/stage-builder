@@ -89,17 +89,58 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     });
 
 
-    // Fetch progress
+    // Helper: localStorage progress key
+    const localProgressKey = book ? `fp_book_progress_${book.series}_${book.id}` : '';
+
+    // Helper: save progress to localStorage
+    const saveLocalProgress = useCallback((currentPage: number, totalPgs: number) => {
+        if (!book) return;
+        localStorage.setItem(localProgressKey, JSON.stringify({
+            current_page: currentPage,
+            total_pages: totalPgs,
+            timestamp: Date.now()
+        }));
+    }, [book, localProgressKey]);
+
+    // Helper: get progress from localStorage
+    const getLocalProgress = useCallback((): { current_page: number; total_pages: number } | null => {
+        try {
+            const stored = localStorage.getItem(localProgressKey);
+            if (!stored) return null;
+            return JSON.parse(stored);
+        } catch { return null; }
+    }, [localProgressKey]);
+
+    // Fetch progress (API for signed-in, localStorage for guests)
     useQuery({
-        queryKey: ['book-progress', book?.id],
+        queryKey: ['book-progress', book?.id, !!user],
         queryFn: async () => {
             if (!book) return null;
-            const res = await progress.get(book.id);
-            if (res.progress && res.progress.status === 'in_progress' && res.progress.data?.current_page) {
-                setRestoredPage(res.progress.data.current_page as number);
+
+            // Check localStorage first (works for both)
+            const localProg = getLocalProgress();
+
+            if (user) {
+                // Signed-in: try API
+                try {
+                    const res = await progress.get(book.id);
+                    if (res.progress && res.progress.status === 'in_progress' && res.progress.data?.current_page) {
+                        setRestoredPage(res.progress.data.current_page as number);
+                        setInitialProgressChecked(true);
+                        return res.progress;
+                    }
+                } catch {
+                    // API failed, fall through to localStorage
+                }
             }
+
+            // Use localStorage fallback
+            if (localProg && localProg.current_page > 1) {
+                setRestoredPage(localProg.current_page);
+            }
+
             setInitialProgressChecked(true);
-            return res.progress;
+            return localProg;
         },
         enabled: !!book && open && !initialProgressChecked
     });
@@ -115,14 +156,20 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     const saveProgressMutation = useMutation({
         mutationFn: async () => {
             if (!book) return;
-            // Debounce check handled by effect, but we can double check here
-            await progress.save(book.id, {
-                current_page: current,
-                total_pages: count || 0
-            }, 'book');
+
+            // Always save to localStorage (works for everyone)
+            saveLocalProgress(current, count || 0);
+
+            // If signed in, also save to API
+            if (user) {
+                await progress.save(book.id, {
+                    current_page: current,
+                    total_pages: count || 0
+                }, 'book');
+            }
         },
         onSuccess: () => {
-            // calculated "quiet" save, no toast needed for auto-save
+            // quiet save, no toast needed for auto-save
         }
     });
 
@@ -695,32 +742,45 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                         </DialogDescription>
                     </DialogHeader>
                     <div className="flex flex-col gap-3 mt-4">
-                        <Button
-                            className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
-                            onClick={() => {
-                                if (needsChildSelection) {
-                                    setShowChildSelection(true);
-                                    setShowFinishDialog(false);
-                                } else {
-                                    completeMutation.mutate(undefined);
-                                }
-                            }}
-                            disabled={completeMutation.isPending}
-                        >
-                            {completeMutation.isPending ? (
-                                <>
-                                    <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
-                                    Saving...
-                                </>
-                            ) : (
-                                "Yes, mark complete"
-                            )}
-                        </Button>
+                        {user ? (
+                            <Button
+                                className="w-full bg-emerald-600 hover:bg-emerald-700 text-white"
+                                onClick={() => {
+                                    if (needsChildSelection) {
+                                        setShowChildSelection(true);
+                                        setShowFinishDialog(false);
+                                    } else {
+                                        completeMutation.mutate(undefined);
+                                    }
+                                }}
+                                disabled={completeMutation.isPending}
+                            >
+                                {completeMutation.isPending ? (
+                                    <>
+                                        <CircleNotch className="mr-2 h-4 w-4 animate-spin" />
+                                        Saving...
+                                    </>
+                                ) : (
+                                    "Yes, mark complete"
+                                )}
+                            </Button>
+                        ) : (
+                            <div className="text-center space-y-2 py-2">
+                                <p className="text-sm text-muted-foreground">
+                                    <a href="/login" className="text-primary font-medium hover:underline">Sign in</a> to save completion and track reading history.
+                                </p>
+                            </div>
+                        )}
                         <Button
                             variant="outline"
                             className="w-full"
                             onClick={() => {
                                 saveProgressMutation.mutate();
+                                if (!user) {
+                                    toast.info("Progress saved on this device", {
+                                        description: "Sign in to sync across devices."
+                                    });
+                                }
                                 handleCloseComplete();
                             }}
                         >

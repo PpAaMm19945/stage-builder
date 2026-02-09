@@ -114,8 +114,9 @@ function getBooks() {
 
         return {
             id: dirName,
+            series: parentDir,
             title: dirName.replace(/_/g, ' ').replace(/\b\w/g, l => l.toUpperCase()),
-            author: "HomeLine Library", // Placeholder
+            author: "Anthony Mwesigwa",
             theme: theme,
             age_range: "All",
             cover_image: `/books/${parentDir}/${dirName}/cover.jpg`,
@@ -139,6 +140,7 @@ function generateDataFile() {
 
 export interface BookData {
     id: string;
+    series: string;
     title: string;
     author: string;
     theme: string;
