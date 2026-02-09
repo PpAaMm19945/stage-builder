@@ -7,6 +7,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { useHymnContent } from '@/hooks/useHymnContent';
 import { HymnPlayer } from '@/components/liturgy/HymnPlayer';
 import { InlineBookSheet } from './InlineBookSheet';
+import { useBookAssetUrl } from '@/hooks/useBookAssetUrl';
 import type { Book as BookType } from '@/types';
 
 // Types derived from our AI Payload (synced with cortex.ts)
@@ -422,21 +423,28 @@ const BookContent = ({ book }: { book: AnchorPayload['book_nook'] }) => {
     const [readerOpen, setReaderOpen] = useState(false);
 
     // Detect render format based on series
-    const seriesId = book.series || '';
+    const bookId = book.id || book.title.toLowerCase().replace(/\s+/g, '_');
+    const seriesId = book.series || 'library';
     const isPictureBook = PICTURE_BOOK_SERIES.includes(seriesId);
     const renderFormat = isPictureBook ? 'images' : (book.content_path ? 'markdown' : 'images');
 
+    // Resolve cover dynamically from R2
+    const { data: resolvedCoverUrl } = useBookAssetUrl(seriesId, bookId, 'cover', {
+        enabled: !!seriesId && !!bookId,
+    });
+    const coverUrl = resolvedCoverUrl || book.cover_image || '';
+
     // Convert AnchorPayload book to Book type for BookReader
     const bookForReader: BookType | null = book ? {
-        id: book.id || book.title.toLowerCase().replace(/\s+/g, '_'),
-        series: book.series || 'library',
+        id: bookId,
+        series: seriesId,
         title: book.title,
         author: book.author,
         description: book.discussion_prompt,
         minAgeMonths: 0,
         maxAgeMonths: 144,
-        pageCount: 12,
-        coverUrl: book.cover_image,
+        pageCount: 20,
+        coverUrl,
         contentPath: book.content_path,
         renderFormat,
     } : null;
@@ -445,10 +453,10 @@ const BookContent = ({ book }: { book: AnchorPayload['book_nook'] }) => {
         <div className="space-y-4">
             {/* Book Preview */}
             <div className="flex gap-4">
-                {/* Book Cover */}
-                <div className="w-20 h-28 bg-slate-200 dark:bg-slate-700 rounded-lg shrink-0 overflow-hidden shadow-md">
-                    {book.cover_image && !book.cover_image.includes('placeholder') ? (
-                        <img src={book.cover_image} className="w-full h-full object-cover" alt={book.title} />
+                {/* Book Cover - landscape for picture books */}
+                <div className="w-32 h-24 bg-slate-200 dark:bg-slate-700 rounded-lg shrink-0 overflow-hidden shadow-md">
+                    {coverUrl ? (
+                        <img src={coverUrl} className="w-full h-full object-cover" alt={book.title} />
                     ) : (
                         <div className="w-full h-full flex items-center justify-center">
                             <Book className="w-8 h-8 text-slate-400 dark:text-slate-500" />

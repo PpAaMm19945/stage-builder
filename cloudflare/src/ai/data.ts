@@ -43,6 +43,7 @@ export interface CatechismQuestion {
 export const BOOKS_DATA: BookData[] = [
     {
         "id": "athanasius",
+        "series": "african_men_of_faith",
         "title": "Athanasius",
         "author": "HomeLine Library",
         "theme": "Story",
@@ -53,6 +54,7 @@ export const BOOKS_DATA: BookData[] = [
     },
     {
         "id": "augustine",
+        "series": "african_men_of_faith",
         "title": "Augustine",
         "author": "HomeLine Library",
         "theme": "Story",
@@ -63,6 +65,7 @@ export const BOOKS_DATA: BookData[] = [
     },
     {
         "id": "cyprian",
+        "series": "african_men_of_faith",
         "title": "Cyprian",
         "author": "HomeLine Library",
         "theme": "Story",
@@ -73,6 +76,7 @@ export const BOOKS_DATA: BookData[] = [
     },
     {
         "id": "moses",
+        "series": "african_men_of_faith",
         "title": "Moses",
         "author": "HomeLine Library",
         "theme": "Story",
@@ -83,6 +87,7 @@ export const BOOKS_DATA: BookData[] = [
     },
     {
         "id": "perpetua",
+        "series": "african_men_of_faith",
         "title": "Perpetua",
         "author": "HomeLine Library",
         "theme": "Story",
@@ -93,6 +98,7 @@ export const BOOKS_DATA: BookData[] = [
     },
     {
         "id": "animal_friends",
+        "series": "my_first_books",
         "title": "Animal Friends",
         "author": "HomeLine Library",
         "theme": "Story",

@@ -266,9 +266,10 @@ export class AnchorGenerator {
             },
             book_nook: plan.book ? {
                 id: plan.book.id,
-                series: this.extractSeriesFromBook(plan.book),
+                series: plan.book.series || this.extractSeriesFromBook(plan.book),
                 title: plan.book.title,
                 author: plan.book.author,
+                cover_image: plan.book.cover_image,
                 render_format: 'images',
                 discussion_prompt: 'What did you notice in this story?'
             } : undefined,
@@ -314,7 +315,7 @@ export class AnchorGenerator {
             const series = b.path.split('/')[2] || '';
             return !DRAFT_SERIES.includes(series);
         });
-        const booksStr = publishedBooks.slice(0, 20).map(b => `- "${b.title}" (id: ${b.id})`).join('\n');
+        const booksStr = publishedBooks.slice(0, 20).map(b => `- "${b.title}" (id: ${b.id}, series: ${b.series || b.path.split('/')[2] || 'library'})`).join('\n');
 
         // Available hymns (same list as arc-generator)
         const hymnsStr = `- A Mighty Fortress (id: hymn_mighty_fortress)
@@ -387,6 +388,7 @@ Output ONLY valid JSON matching this schema:
   },
   "book_nook": {
     "id": "string - MUST be from the AVAILABLE BOOKS list",
+    "series": "string - MUST be the series value from the AVAILABLE BOOKS list",
     "title": "string - MUST be from the AVAILABLE BOOKS list",
     "discussion_prompt": "string"
   },
@@ -463,7 +465,16 @@ ${context?.adjustments && !currentAnchorStr ? `Parent Adjustment Request: ${cont
                 location: anchor.family_activity?.location || 'either',
                 levels: anchor.family_activity?.levels || []
             },
-            book_nook: anchor.book_nook,
+            book_nook: anchor.book_nook ? (() => {
+                // Enrich AI-generated book_nook with series and cover_image from static data
+                const bookMatch = BOOKS_DATA.find(b => b.id === anchor.book_nook?.id);
+                return {
+                    ...anchor.book_nook,
+                    series: anchor.book_nook.series || bookMatch?.series || this.extractSeriesFromBook(bookMatch || { id: anchor.book_nook.id }),
+                    cover_image: bookMatch?.cover_image || anchor.book_nook.cover_image,
+                    author: anchor.book_nook.author || bookMatch?.author,
+                };
+            })() : undefined,
             reasoning: anchor.reasoning || 'Generated with AI assistance',
             confidence: basePlan ? 'medium' : 'experimental'
         };
