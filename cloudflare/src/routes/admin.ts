@@ -4,6 +4,29 @@ import { safeCompare } from '../lib/security';
 
 const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 
+// Admin-only middleware for all routes in this file
+app.use('*', async (c, next) => {
+    // 1. API Key strategy
+    const apiKey = c.req.header('X-Admin-Api-Key');
+    const validApiKey = c.env.ADMIN_TEST_API_KEY;
+    if (apiKey && validApiKey && await safeCompare(apiKey, validApiKey)) return next();
+
+    // 2. Check ADMIN_SECRET (legacy reindex route)
+    const authHeader = c.req.header('Authorization');
+    const headerToken = authHeader?.startsWith('Bearer ') ? authHeader.substring(7) : null;
+    const secret = c.env.ADMIN_SECRET;
+    if (secret && headerToken && await safeCompare(headerToken, secret)) return next();
+
+    // 3. Email allowlist
+    const user = c.get('user');
+    if (user?.email) {
+        const allowlist = (c.env.ADMIN_EMAIL_ALLOWLIST || '').split(',').map((e: string) => e.trim());
+        if (allowlist.includes(user.email)) return next();
+    }
+
+    return c.json({ error: 'Unauthorized Admin Access' }, 403);
+});
+
 function slugify(text: string): string {
   return text
     .toString()

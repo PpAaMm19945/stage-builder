@@ -22,6 +22,7 @@ import { PageLoader } from "@/components/ui/PageLoader";
 import { MainLayout } from "@/components/layout/MainLayout";
 import { PublicLayout } from "@/components/layout/PublicLayout";
 import { ProtectedRoute } from "@/components/auth/ProtectedRoute";
+import { AdminRoute } from "@/components/auth/AdminRoute";
 
 // Pages - Lazy Loaded
 const GuestHome = lazy(() => import("./components/guest/GuestHome"));
@@ -97,7 +98,7 @@ const App = () => (
                       <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
                     </Route>
 
-                    <Route path="/admin/ai" element={<ProtectedRoute><AIDashboard /></ProtectedRoute>} />
+                    <Route path="/admin/ai" element={<AdminRoute><AIDashboard /></AdminRoute>} />
                   </Route>
 
                   {/* Backward Compatibility Redirects */}

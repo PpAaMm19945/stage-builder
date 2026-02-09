@@ -120,17 +120,8 @@ app.get('/auth/google/callback', async (c) => {
 
         console.log(`[Auth] Authenticated email: ${email}`);
 
-        // Security: Whitelist Check
-        const ALLOWED_EMAILS = [
-            'antmwes104.1@gmail.com',
-            'test@gmail.com',
-            'test_parent@example.com' // Allow mock user email if needed
-        ];
-
-        if (!ALLOWED_EMAILS.includes(email)) {
-            console.warn(`[Auth] Access denied for: ${email}`);
-            return c.redirect(`${frontendUrl}/login?error=access_denied&message=Beta access is currently limited.`);
-        }
+        // All authenticated Google users can sign in
+        console.log(`[Auth] User authenticated: ${email}`);
 
         // Find or Create User
         let user = await safeQueryFirst<User>(c.env.DB, 'SELECT * FROM users WHERE email = ?', [email]);

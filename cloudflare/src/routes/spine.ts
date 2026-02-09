@@ -1,13 +1,28 @@
 import { Hono } from 'hono';
-import { Env } from '../types';
+import { Env, User } from '../types';
 import { SpineGenerator } from '../ai/spine-generator';
 import { safeQuery } from '../lib/db';
+import { safeCompare } from '../lib/security';
 
 /**
  * Admin routes for curriculum spine management
  * Simplified: Generate → Review → Approve
  */
-export const spineRoutes = new Hono<{ Bindings: Env }>();
+export const spineRoutes = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
+
+// Admin-only middleware
+spineRoutes.use('*', async (c, next) => {
+    const apiKey = c.req.header('X-Admin-Api-Key');
+    const validApiKey = c.env.ADMIN_TEST_API_KEY;
+    if (apiKey && validApiKey && await safeCompare(apiKey, validApiKey)) return next();
+
+    const user = c.get('user');
+    if (user?.email) {
+        const allowlist = (c.env.ADMIN_EMAIL_ALLOWLIST || '').split(',').map((e: string) => e.trim());
+        if (allowlist.includes(user.email)) return next();
+    }
+    return c.json({ error: 'Unauthorized Admin Access' }, 403);
+});
 
 /**
  * POST /api/admin/spine/generate
