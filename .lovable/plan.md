@@ -1,89 +1,65 @@
 
-# Fix Completion, Regeneration, and Add Thinking Indicator
+# Fix Completion, Progress Saving, and Reading Completion
 
-## Issue 1: Completion returns 405 (Method Not Allowed)
+## Issue 1: Anchor Completion Still Failing (400 Bad Request)
 
-**Root Cause**: In `DailyAnchorView.tsx` (line 37), the completion call uses a relative URL:
+**Root Cause**: The `anchor.complete()` API method sends `{ date, feedback }` but the backend expects `{ anchorId }`. The fix from the last round changed the URL routing (fixing the 405) but the payload is still wrong.
+
+In `src/lib/api.ts` line 798:
 ```typescript
-fetch('/api/anchor/complete', { method: 'POST', ... })
-```
-This sends the POST to the Pages domain (e.g., `stage-builder-9hh.pages.dev/api/anchor/complete`), not to the Worker (`stage-builder.antmwes104-1.workers.dev/api/anchor/complete`). Pages doesn't have this route, so it returns 405.
-
-Additionally, the body sends `{ date: anchor?.date }` but the backend expects `{ anchorId }`.
-
-**Fix**: Use the `API_URL` constant and send the correct `anchorId` field:
-```typescript
-import { API_URL } from '@/lib/api';
-
-const res = await fetch(`${API_URL}/api/anchor/complete`, {
-    method: 'POST',
-    headers: {
-        'Content-Type': 'application/json',
-        Authorization: `Bearer ${localStorage.getItem('schoolos_token')}`,
-    },
-    body: JSON.stringify({ anchorId: anchor.id }),
-});
+complete: (date: string, feedback?: string) =>
+    apiRequest('/api/anchor/complete', {
+      method: 'POST',
+      body: JSON.stringify({ date, feedback }),  // WRONG - backend expects anchorId
+    }),
 ```
 
-Alternatively, add a `complete` method to the `anchor` API object in `src/lib/api.ts` for consistency, then call it from `DailyAnchorView`.
+**Fix**: Change the `complete` method to accept and send `anchorId`:
+```typescript
+complete: (anchorId: string, feedback?: { rating?: number; notes?: string; lovedIt?: boolean }) =>
+    apiRequest('/api/anchor/complete', {
+      method: 'POST',
+      body: JSON.stringify({ anchorId, ...feedback }),
+    }),
+```
 
-**Files**: `src/lib/api.ts` (add `complete` method), `src/components/anchor/DailyAnchorView.tsx` (use it)
+Then in `DailyAnchorView.tsx` line 38, change:
+```typescript
+await anchorApi.complete(anchor.date);
+```
+To:
+```typescript
+await anchorApi.complete(anchor.id);
+```
+
+## Issue 2: Progress Save 500 (Internal Server Error)
+
+**Root Cause**: The `content_progress` table likely doesn't exist in D1. The backend tries to SELECT/INSERT into it and crashes with a 500.
+
+**Fix**: Add a `CREATE TABLE IF NOT EXISTS` guard in the progress save route (`cloudflare/src/routes/reading_progress.ts`) before the SELECT/INSERT, or ensure the table is created during deployment. Since this is a backend Cloudflare Worker file, we will add a safe table creation check at the start of the save handler.
+
+## Issue 3: Reading Complete 400 (Bad Request)
+
+**Root Cause**: When the BookReader is opened from the Anchor card, `book.series` is set to the `seriesId` extracted from the anchor payload. If the AI didn't return a `series` field, the fallback logic may produce an incorrect value. The backend's `/api/reading/complete` requires both `series` and `bookId` to be non-empty strings, so if `series` is empty/undefined, it returns 400.
+
+**Fix**: Ensure `seriesId` in `AnchorCard.tsx` always has a valid fallback. The `BookContent` component already extracts it, but we need to verify it never passes an empty string. Add a guard so the reading complete call only fires when series is valid.
+
+## Issue 4: CORS error on manifest.json (Non-critical)
+
+The console shows a CORS error fetching `manifest.json` directly from the R2 public bucket URL. This happens because R2 public access doesn't include CORS headers. The book pages themselves load fine because they go through the Worker proxy. This error comes from a direct R2 fetch (likely in the `useBookPageUrls` hook). This is a pre-existing issue and not blocking -- the pages load correctly via the proxy.
 
 ---
 
-## Issue 2: Regeneration creates empty card in chat, anchor view unchanged
-
-**Root Cause**: When the user asks for an adjustment in chat, Cortex sends back an `event: anchor` SSE with new anchor JSON. The chat stream handler (`useChatStream.ts` line 88) attaches it to the message as `anchorPayload`, which renders a new `AnchorBriefingMessage` in the chat. However:
-- The main `DailyAnchorView` uses `useAnchor()` (React Query with key `['daily-anchor']`), and this query is never invalidated after the chat-based regeneration.
-- The `localStorage` anchor cache (`anchor_fetch_{userId}`) blocks re-fetch.
-
-**Fix**: After a chat-based regeneration (anchor SSE received), invalidate the `daily-anchor` query so the main view refreshes:
-
-In `ChatPanel.tsx`, when anchor payload is received via `handleMessageUpdate`, check if the message has an `anchorPayload` and invalidate:
-```typescript
-const handleMessageUpdate = useCallback((message: Message) => {
-    setMessages(prev => { ... });
-    
-    // If this message contains a new anchor, refresh the main anchor view
-    if (message.anchorPayload) {
-        queryClient.invalidateQueries({ queryKey: ['daily-anchor'] });
-        // Clear localStorage cache so useAnchor re-fetches
-        if (userId) {
-            localStorage.removeItem(`anchor_fetch_${userId}`);
-        }
-    }
-}, [userId, queryClient]);
-```
-
-**Files**: `src/components/chat/ChatPanel.tsx`
-
----
-
-## Issue 3: No "thinking" indicator with timer
-
-**Root Cause**: The `ThinkingMessage` component exists and has a working `seconds.milliseconds` timer, but it's commented out in `ChatPanel.tsx` (lines 451-457).
-
-**Fix**: Uncomment the `ThinkingMessage` and import it:
-
-```tsx
-{chatState.mode === 'THINKING' && chatState.thinkingText && (
-    <ThinkingMessage
-        text={chatState.thinkingText}
-        steps={chatState.streamingSteps}
-    />
-)}
-```
-
-Also add `ThinkingMessage` to the imports from `./messages`.
-
-**Files**: `src/components/chat/ChatPanel.tsx`
-
----
-
-## Summary of Changes
+## Files to Change
 
 | File | Change |
 |------|--------|
-| `src/lib/api.ts` | Add `complete(anchorId, feedback?)` method to `anchor` object |
-| `src/components/anchor/DailyAnchorView.tsx` | Use `anchor.complete()` instead of raw `fetch` with wrong URL |
-| `src/components/chat/ChatPanel.tsx` | Invalidate `daily-anchor` query when anchor SSE arrives; uncomment ThinkingMessage |
+| `src/lib/api.ts` | Fix `anchor.complete()` to send `anchorId` instead of `date` |
+| `src/components/anchor/DailyAnchorView.tsx` | Pass `anchor.id` instead of `anchor.date` to `complete()` |
+| `cloudflare/src/routes/reading_progress.ts` | Add table creation guard for `content_progress` table |
+
+## Expected Result
+
+- "Complete Today's Anchor" button works and marks the day complete
+- Book progress saves without 500 errors
+- Reading completion logs correctly when series data is present
