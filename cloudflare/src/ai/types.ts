@@ -241,6 +241,9 @@ export interface SpineRecord {
     source_citations?: string; // JSON array string
     approved_by?: string;
     approved_at?: string;
+    catechism_q?: number;
+    hymn_number?: number;
+    scripture_ref?: string;
 }
 
 // ============================================

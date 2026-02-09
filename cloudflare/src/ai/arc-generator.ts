@@ -75,6 +75,9 @@ interface WeeklyTargets {
     skill_targets: string[];
     faith_framing?: string;
     spineVersion?: string;
+    catechism_q?: number;
+    hymn_number?: number;
+    scripture_ref?: string;
 }
 
 export class ArcGenerator {
@@ -221,7 +224,10 @@ export class ArcGenerator {
                     focus_area: spineEntry.focus_area,
                     skill_targets: JSON.parse(spineEntry.skill_targets || '[]'),
                     faith_framing: spineEntry.faith_framing,
-                    spineVersion: spineVersion || undefined
+                    spineVersion: spineVersion || undefined,
+                    catechism_q: spineEntry.catechism_q,
+                    hymn_number: spineEntry.hymn_number,
+                    scripture_ref: spineEntry.scripture_ref
                 });
             } else {
                 // Default targets when no spine is available
@@ -310,7 +316,10 @@ Output ONLY valid JSON matching the FormationArc interface.`;
             subject: t.subject,
             week: t.week,
             focus: t.focus_area,
-            skills: t.skill_targets.slice(0, 3)
+            skills: t.skill_targets.slice(0, 3),
+            catechism_q: t.catechism_q,
+            hymn_number: t.hymn_number,
+            scripture_ref: t.scripture_ref
         }));
 
         // Get available books and hymns (filter out draft series)
@@ -320,22 +329,56 @@ Output ONLY valid JSON matching the FormationArc interface.`;
             return !DRAFT_SERIES.includes(series);
         });
         const availableBooks = publishedBooks.slice(0, 20).map(b => ({ id: b.id, title: b.title, theme: b.theme }));
-        const availableHymns = [
-            { id: 'hymn_mighty_fortress', title: 'A Mighty Fortress' },
-            { id: 'hymn_amazing_grace', title: 'Amazing Grace' },
-            { id: 'hymn_great_is_thy', title: 'Great Is Thy Faithfulness' },
-            { id: 'hymn_how_great', title: 'How Great Thou Art' },
-            { id: 'hymn_holy_holy', title: 'Holy, Holy, Holy' }
-        ];
 
-        const catechismRange = CATECHISM_DATA.slice(
-            liturgyPosition.catechism_q - 1,
-            liturgyPosition.catechism_q + 13
-        ).map(q => ({ number: q.number, question: q.question }));
+        // Prefer spine-directed theological anchors over family_profiles fallback
+        const spineTheology = targets
+            .filter(t => t.catechism_q != null)
+            .map(t => ({ catechism_q: t.catechism_q!, hymn_number: t.hymn_number, scripture_ref: t.scripture_ref }));
+
+        let catechismRange;
+        let availableHymns;
+
+        if (spineTheology.length > 0) {
+            // Use spine-directed anchors: gather unique catechism questions for the 14-day window
+            const startQ = spineTheology[0].catechism_q;
+            catechismRange = CATECHISM_DATA.slice(startQ - 1, startQ + 13)
+                .map(q => ({ number: q.number, question: q.question }));
+            // Wrap if we exceed the array
+            if (catechismRange.length < 14) {
+                catechismRange = catechismRange.concat(
+                    CATECHISM_DATA.slice(0, 14 - catechismRange.length)
+                        .map(q => ({ number: q.number, question: q.question }))
+                );
+            }
+
+            // Map hymn numbers to actual hymn data
+            const hymnNumbers = [...new Set(spineTheology.map(t => t.hymn_number).filter(Boolean))];
+            availableHymns = hymnNumbers.map(n => ({
+                id: `hymn_${n}`,
+                number: n,
+                title: `Hymn #${n}` // The arc generator doesn't need exact titles; the anchor generator resolves them
+            }));
+            if (availableHymns.length === 0) {
+                availableHymns = [{ id: 'hymn_1', number: 1, title: 'A Mighty Fortress Is Our God' }];
+            }
+        } else {
+            // Fallback: use family_profiles-based liturgy position
+            availableHymns = [
+                { id: 'hymn_mighty_fortress', number: 1, title: 'A Mighty Fortress' },
+                { id: 'hymn_amazing_grace', number: 3, title: 'Amazing Grace' },
+                { id: 'hymn_great_is_thy', number: 10, title: 'Great Is Thy Faithfulness' },
+                { id: 'hymn_how_great', number: 4, title: 'How Great Thou Art' },
+                { id: 'hymn_holy_holy', number: 4, title: 'Holy, Holy, Holy' }
+            ];
+            catechismRange = CATECHISM_DATA.slice(
+                liturgyPosition.catechism_q - 1,
+                liturgyPosition.catechism_q + 13
+            ).map(q => ({ number: q.number, question: q.question }));
+        }
 
         // Build human-readable progress summary for AI context
         const progressLines = targetsSummary.map((t: any) => 
-            `- ${t.subject}: Week ${t.week}/52, focus on "${t.focus_area}" (skills: ${Array.isArray(t.skill_targets) ? t.skill_targets.join(', ') : t.skill_targets})`
+            `- ${t.subject}: Week ${t.week}/52, focus on "${t.focus_area}" (skills: ${Array.isArray(t.skill_targets) ? t.skill_targets.join(', ') : t.skill_targets})${t.scripture_ref ? ` [Scripture: ${t.scripture_ref}]` : ''}`
         ).join('\n');
 
         const userPrompt = `Generate a 2-week Formation Arc:

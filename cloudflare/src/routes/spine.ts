@@ -139,7 +139,10 @@ spineRoutes.get('/api/admin/spine/entries', async (c) => {
             focusArea: row.focus_area,
             skillTargets: JSON.parse(row.skill_targets || '[]'),
             faithFraming: row.faith_framing,
-            approvedBy: row.approved_by
+            approvedBy: row.approved_by,
+            catechismQ: row.catechism_q,
+            hymnNumber: row.hymn_number,
+            scriptureRef: row.scripture_ref
         }))
     });
 });
