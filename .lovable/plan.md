@@ -1,65 +1,85 @@
 
+# Fix Chat Messages, Remove Icons, and Show Anchor Summary
 
-# Anchor Card: Hymn Player + Book Cover & Reader Fixes
+## Issues Found
 
-## Current Status
+### 1. Chat messages appear empty (Critical)
+The backend (Cortex/Gemini) sends streamed data as `{"content":"Hi there! "}`, but the frontend parser in `useChatStream.ts` only extracts text from `parsed.response`. Since `parsed.content` is never checked, the text is silently discarded and messages render as empty bubbles.
 
-**Hymn Player**: Already integrated in the Liturgy section and hooked to the global audio player. It shows when `hymn_audio_url` is provided by the AI. No changes needed here -- it's working.
+### 2. Robot icon looks "scary"
+The chat header, assistant messages, user messages, and empty state all use the Phosphor `Robot` icon. The user wants a cleaner look with no icons, similar to Lovable's chat interface.
 
-**Book Cover**: Not loading because the AI-generated anchor never includes `cover_image` in its output (the AI prompt doesn't ask for it, and the pre-built plan path doesn't set it either). The cover placeholder icon shows instead.
+### 3. Anchor summary not appearing
+The anchor fetch calls `/api/anchor/today`, which was previously failing with a D1 error (now fixed). Additionally, the `localStorage` guard (`anchor_fetch_{userId}`) may have cached a failed state from earlier attempts, preventing re-fetch. The anchor summary should now work once the cache is cleared on error.
 
-**Book Reader Pages**: Not loading because the `BookReader` needs a valid `series` and `pageCount` to resolve page images from R2. The anchor card hardcodes `pageCount: 12` and defaults `series` to `'library'`, which doesn't match actual R2 paths.
+---
 
-## Plan
+## Changes
 
-### 1. Resolve book covers dynamically (AnchorCard.tsx)
+### File 1: `src/components/chat/hooks/useChatStream.ts`
+**Fix the JSON content extraction to also check for `content` field**
 
-Instead of relying on `book.cover_image` (which the AI never provides), use the existing `useBookAssetUrl` hook to resolve the cover from R2 -- the same way `BookReader` and `BookLibrary` do.
+In the standard text parsing block (~line 192), change:
+```typescript
+if (parsed.response && typeof parsed.response === 'string') {
+    textToAdd = parsed.response;
+}
+```
+To:
+```typescript
+if (parsed.response && typeof parsed.response === 'string') {
+    textToAdd = parsed.response;
+} else if (parsed.content && typeof parsed.content === 'string') {
+    textToAdd = parsed.content;
+}
+```
 
-- Import `useBookAssetUrl` into the `BookContent` component
-- Call `useBookAssetUrl(series, bookId, 'cover')` to get the actual R2 cover URL
-- Use the resolved URL in the `<img>` tag
-- Change the cover container from portrait (`w-20 h-28`) to landscape (`w-32 h-24`) since all picture books have landscape covers
+Apply the same fix to the `extractResponse` helper (~line 178):
+```typescript
+const extractResponse = (jsonStr: string): string => {
+    try {
+        const parsed = JSON.parse(jsonStr);
+        if (parsed.response && typeof parsed.response === 'string') return parsed.response;
+        if (parsed.content && typeof parsed.content === 'string') return parsed.content;
+    } catch { /* ignore */ }
+    return '';
+};
+```
 
-### 2. Set cover_image and series in the backend (anchor-generator.ts)
+### File 2: `src/components/chat/ChatPanel.tsx`
+**Remove all Robot/User icons and simplify the layout**
 
-When the anchor generator builds the `book_nook` object (both from pre-built plans and AI generation), enrich it with:
+- Remove the `Robot` and `User` imports from `@phosphor-icons/react`
+- Remove the Robot icon from the header title (just show "Your Guide" text)
+- Remove the 8x8 avatar circles next to assistant and user messages
+- Remove the Robot icon from the empty-state welcome section
+- Remove the `pl-11` left padding on anchor/action cards (no longer needed without avatar column)
+- Keep the clean bubble layout for messages
 
-- `cover_image`: constructed from the book's data (e.g., the `cover_image` field from `data.ts`)
-- `series`: already extracted via `extractSeriesFromBook` for pre-built plans; for AI-generated ones, look it up from the books list
+### File 3: `src/components/coach/FrontdeskChat.tsx`
+**Same icon removal for the legacy Frontdesk chat**
 
-This ensures the frontend always has the data it needs even without the R2 hook fallback.
+- Remove the `Robot` and `User` icons from message avatars and header
+- Update header to just show "Your Guide" without the Robot icon
 
-### 3. Fix BookReader page loading from anchor (AnchorCard.tsx)
+### File 4: `src/components/chat/ChatPanel.tsx` (Anchor cache fix)
+**Clear failed anchor cache so it retries**
 
-The `bookForReader` object hardcodes `pageCount: 12`. Instead:
+In the anchor fetch error handler (~line 148), change:
+```typescript
+localStorage.setItem(anchorKey, today + '_failed');
+```
+To:
+```typescript
+localStorage.removeItem(anchorKey);
+```
 
-- Look up the book in the static book data (or pass through from the anchor payload) to get the correct page count
-- Ensure `series` is correctly passed through so `useBookPageUrls` can resolve pages from R2
+This ensures a failed anchor fetch doesn't permanently block retries for the rest of the day.
 
-### 4. Enrich AI prompt to return series with book_nook
-
-Update the AI prompt's `book_nook` schema to include `series` so the AI returns it alongside `id` and `title`. This data is already in the AVAILABLE BOOKS list context.
-
-## Technical Details
-
-### Files to Change
-
-1. **`src/components/anchor/AnchorCard.tsx`**
-   - `BookContent`: Add `useBookAssetUrl` hook for cover resolution
-   - Change cover container to landscape aspect ratio
-   - Look up pageCount from book data or use a sensible default
-
-2. **`cloudflare/src/ai/anchor-generator.ts`**
-   - In `generateWithAI` response mapping (line 466): enrich `book_nook` with `cover_image` and `series` from the books data list
-   - In `buildFromPlan` (line 267): add `cover_image` from `plan.book.cover_image`
-   - Update AI prompt schema to include `"series": "string"` in book_nook
-
-3. **`cloudflare/src/ai/data.ts`**
-   - Add `series` field to each book entry (derived from the path, e.g., `my_first_books`, `african_men_of_faith`) so the AI can return it
+---
 
 ## Expected Result
 
-- Book covers will display as landscape thumbnails in the anchor card
-- The BookReader opened from the anchor will load all page images correctly from R2
-- The hymn player continues to work as-is in the Liturgy section
+- Chat messages will display the streamed text content correctly
+- No icons/avatars next to messages or in the header -- clean, minimal look
+- Anchor summary will appear once the API responds successfully (the D1 error was fixed previously)
