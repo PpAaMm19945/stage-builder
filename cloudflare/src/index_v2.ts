@@ -70,7 +70,7 @@ app.route('/', workRoutes);
 app.route('/', analyticsRoutes);
 app.route('/', exportRoutes);
 app.route('/', reportsRoutes);
-app.route('/', adminRoutes);
+app.route('/api/admin', adminRoutes);
 app.route('/', pathsRoutes);
 app.route('/', aiRoutes);           // [NEW]
 app.route('/api/anchor', anchorRoutes); // [NEW]
