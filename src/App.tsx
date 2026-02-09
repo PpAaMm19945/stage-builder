@@ -57,61 +57,60 @@ const App = () => (
             <TooltipProvider>
               <GlobalAudioPlayer />
               <BrowserRouter>
-                <Suspense fallback={<PageLoader />}>
-                  <Routes>
-                    {/* Auth Callback - Must be outside layouts */}
-                    <Route path="/auth/callback" element={<AuthCallback />} />
+                <Routes>
+                  {/* Auth Callback - Must be outside layouts */}
+                  <Route path="/auth/callback" element={<Suspense fallback={<PageLoader />}><AuthCallback /></Suspense>} />
 
-                    {/* Public Auth Routes */}
-                    <Route element={<PublicLayout />}>
-                      <Route path="/login" element={<Login />} />
+                  {/* Public Auth Routes */}
+                  <Route element={<PublicLayout />}>
+                    <Route path="/login" element={<Suspense fallback={<PageLoader />}><Login /></Suspense>} />
+                  </Route>
+
+                  {/* Main App Shell - Wraps both Public and Protected Routes */}
+                  {/* Suspense is inside MainLayout so sidebar stays visible */}
+                  <Route element={<MainLayout />}>
+                    {/* Public Routes */}
+                    <Route path="/" element={<GuestHome />} />
+
+                    <Route path="/library" element={<LibraryPage />} />
+                    <Route path="/library/activities" element={<LibraryPage />} />
+                    <Route path="/library/books" element={<LibraryPage />} />
+                    <Route path="/library/hymns" element={<LibraryPage />} />
+                    <Route path="/library/activities/:id" element={<ActivityViewer />} />
+
+                    <Route path="/privacy" element={<PrivacyPolicy />} />
+                    <Route path="/terms" element={<TermsOfService />} />
+                    <Route path="/support" element={<SupportPage />} />
+                    <Route path="/trust" element={<TrustCovenant />} />
+
+                    {/* Protected Routes */}
+                    <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
+                      {/* THE ANCHOR: Main View */}
+                      <Route path="/dashboard" element={<DailyAnchorView />} />
+
+                      <Route path="/progress" element={<ProgressPage />} />
+                      <Route path="/settings" element={<Settings />} />
+                      <Route path="/onboarding" element={<Onboarding />} />
+
+                      {/* Early Years - Legacy routes kept for portfolio */}
+                      <Route path="/early-years/reading" element={<Reading />} />
+                      <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
                     </Route>
 
-                    {/* Main App Shell - Wraps both Public and Protected Routes */}
-                    <Route element={<MainLayout />}>
-                      {/* Public Routes */}
-                      <Route path="/" element={<GuestHome />} />
+                    <Route path="/admin/ai" element={<ProtectedRoute><AIDashboard /></ProtectedRoute>} />
+                  </Route>
 
-                      <Route path="/library" element={<LibraryPage />} />
-                      <Route path="/library/activities" element={<LibraryPage />} />
-                      <Route path="/library/books" element={<LibraryPage />} />
-                      <Route path="/library/hymns" element={<LibraryPage />} />
-                      <Route path="/library/activities/:id" element={<ActivityViewer />} />
+                  {/* Backward Compatibility Redirects */}
+                  <Route path="/early-years/*" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/planner" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/lower-primary" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/middle-school" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/upper-school" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/student" element={<Navigate to="/dashboard" replace />} />
 
-                      <Route path="/privacy" element={<PrivacyPolicy />} />
-                      <Route path="/terms" element={<TermsOfService />} />
-                      <Route path="/support" element={<SupportPage />} />
-                      <Route path="/trust" element={<TrustCovenant />} />
-
-                      {/* Protected Routes */}
-                      <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
-                        {/* THE ANCHOR: Main View */}
-                        <Route path="/dashboard" element={<DailyAnchorView />} />
-
-                        <Route path="/progress" element={<ProgressPage />} />
-                        <Route path="/settings" element={<Settings />} />
-                        <Route path="/onboarding" element={<Onboarding />} />
-
-                        {/* Early Years - Legacy routes kept for portfolio */}
-                        <Route path="/early-years/reading" element={<Reading />} />
-                        <Route path="/early-years/portfolio/:studentId" element={<PortfolioPage />} />
-                      </Route>
-
-                      <Route path="/admin/ai" element={<ProtectedRoute><AIDashboard /></ProtectedRoute>} />
-                    </Route>
-
-                    {/* Backward Compatibility Redirects */}
-                    <Route path="/early-years/*" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/planner" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/lower-primary" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/middle-school" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/upper-school" element={<Navigate to="/dashboard" replace />} />
-                    <Route path="/student" element={<Navigate to="/dashboard" replace />} />
-
-                    {/* Catch-all */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </Suspense>
+                  {/* Catch-all */}
+                  <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
+                </Routes>
               </BrowserRouter>
             </TooltipProvider>
           </AudioPlayerProvider>
