@@ -22,6 +22,7 @@ import { useKeyboardHeight } from './hooks/useKeyboardHeight';
 import {
     TextMessage,
     BotActivityLog,
+    ThinkingMessage,
     BookCardMessage,
     ActivityCardMessage,
     ActionConfirmCard,
@@ -94,7 +95,15 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
             return newMessages;
         });
-    }, [userId]);
+
+        // If this message contains a new anchor, refresh the main anchor view
+        if (message.anchorPayload) {
+            queryClient.invalidateQueries({ queryKey: ['daily-anchor'] });
+            if (userId) {
+                localStorage.removeItem(`anchor_fetch_${userId}`);
+            }
+        }
+    }, [userId, queryClient]);
 
     const handleError = useCallback((error: Error) => {
         toast.error('Chat error', { description: error.message });
@@ -448,13 +457,13 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                             </div>
                         ))}
 
-                        {/* Thinking indicator - REMOVED: Steps are now attached to messages */}
-                        {/* {chatState.mode === 'THINKING' && chatState.thinkingText && (
+                        {/* Thinking indicator with timer */}
+                        {chatState.mode === 'THINKING' && (
                             <ThinkingMessage
-                                text={chatState.thinkingText}
+                                text={chatState.thinkingText || 'Thinking...'}
                                 steps={chatState.streamingSteps}
                             />
-                        )} */}
+                        )}
 
                         {/* Pending action card */}
                         {chatState.mode === 'ACTION' && chatState.pendingAction && (

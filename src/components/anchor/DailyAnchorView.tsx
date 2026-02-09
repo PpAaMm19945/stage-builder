@@ -3,6 +3,7 @@ import AnchorCard from './AnchorCard';
 import { Loader2 } from 'lucide-react';
 import { useAnchor } from '@/hooks/useAnchor';
 import { WelcomeFlow } from '@/components/onboarding/WelcomeFlow';
+import { anchor as anchorApi } from '@/lib/api';
 
 export const DailyAnchorView: React.FC = () => {
     const { data: anchor, isLoading, error, refetch } = useAnchor();
@@ -34,22 +35,8 @@ export const DailyAnchorView: React.FC = () => {
 
     const handleComplete = async () => {
         try {
-            const res = await fetch('/api/anchor/complete', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ date: anchor?.date }) // Send explicit date if available
-            });
-
-            if (!res.ok) throw new Error('Failed to complete anchor');
-
-            // Re-fetch to get updated status (or we could optimistically update local state here)
-            // For now, simple re-fetch or just letting the user know is enough.
-            // Ideally, the AnchorCard would handle the "completed" visual state if we passed `isCompleted` prop,
-            // but AnchorCard seems to only take `onComplete`. 
-            // We can just rely on the button action for now.
-            // A better UX might be to force a refresh or show a toast.
+            await anchorApi.complete(anchor.date);
             refetch();
-
         } catch (e) {
             console.error("Completion failed", e);
             alert("Failed to mark as complete. Please try again.");
