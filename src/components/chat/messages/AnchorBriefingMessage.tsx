@@ -33,7 +33,7 @@ interface AnchorBriefingMessageProps {
 export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBriefingMessageProps) {
     const [isOpen, setIsOpen] = useState(false);
 
-    // Helper to render liturgy items if they exist
+    // Helper to render liturgy items
     const renderLiturgyItem = (
         icon: React.ReactNode,
         label: string,
@@ -46,6 +46,9 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                 <div className="flex-1">
                     <span className="font-medium text-foreground/80">{label}: </span>
                     <span className="text-foreground">{item.title}</span>
+                    {item.content && (
+                        <p className="text-xs text-muted-foreground mt-0.5">{item.content}</p>
+                    )}
                     {item.reference && (
                         <span className="text-muted-foreground ml-1">({item.reference})</span>
                     )}
@@ -66,7 +69,7 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                         </CardTitle>
                     </div>
                     <Badge variant="outline" className="text-xs font-normal border-primary/20 text-primary/80 bg-background/50">
-                        Day {data.dayOfSequence} of {data.totalDays}
+                        Day {data.day_in_arc || 1}
                     </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground mt-1 font-medium">
@@ -83,9 +86,24 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                         Morning Liturgy
                     </h4>
                     <div className="space-y-2.5 bg-background/40 p-3 rounded-lg border border-border/40">
-                        {renderLiturgyItem(<MusicNotes className="w-4 h-4" />, "Hymn", data?.liturgy?.hymn)}
-                        {renderLiturgyItem(<Scroll className="w-4 h-4" />, "Proverb", data?.liturgy?.scripture)}
-                        {renderLiturgyItem(<BookOpen className="w-4 h-4" />, "Catechism", data?.liturgy?.catechism)}
+                        {renderLiturgyItem(
+                            <MusicNotes className="w-4 h-4" />,
+                            "Hymn",
+                            data.liturgy.hymn ? { title: data.liturgy.hymn } : undefined
+                        )}
+                        {renderLiturgyItem(
+                            <Scroll className="w-4 h-4" />,
+                            "Scripture",
+                            data.liturgy.scripture ? { title: data.liturgy.scripture } : undefined
+                        )}
+                        {renderLiturgyItem(
+                            <BookOpen className="w-4 h-4" />,
+                            "Catechism",
+                            data.liturgy.catechism_question ? {
+                                title: data.liturgy.catechism_question,
+                                content: data.liturgy.catechism_a
+                            } : undefined
+                        )}
                     </div>
                 </div>
 
@@ -98,9 +116,8 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                         Family Activity
                     </h4>
 
-                    {/* Support both field names for safety */}
                     {(() => {
-                        const activity = data.activity || (data as any).family_activity;
+                        const activity = data.family_activity;
                         if (!activity) return <div className="text-sm text-muted-foreground italic">No activity scheduled today.</div>;
 
                         return (
@@ -124,17 +141,17 @@ export function AnchorBriefingMessage({ data, onLooksGood, onAdjust }: AnchorBri
                                 )}
 
                                 {/* Child Roles */}
-                                {activity.roles && activity.roles.length > 0 && (
+                                {activity.levels && activity.levels.length > 0 && (
                                     <div className="mt-3 grid grid-cols-2 gap-2">
-                                        {activity.roles.map((role: any, i: number) => (
+                                        {activity.levels.map((level, i: number) => (
                                             <div key={i} className="flex items-center gap-2 text-xs bg-background/30 p-1.5 rounded border border-border/30">
                                                 <div className="w-5 h-5 rounded-full bg-primary/10 flex items-center justify-center text-primary font-bold text-[9px]">
-                                                    {role.childName ? role.childName.charAt(0) : '?'}
+                                                    {level.child_name ? level.child_name.charAt(0) : '?'}
                                                 </div>
                                                 <div className="flex flex-col">
-                                                    <span className="font-medium text-foreground/90">{role.childName || (role as any).child_name}</span>
-                                                    <span className="text-[10px] text-muted-foreground">{role.role}</span>
-                                                    {role.instruction && <span className="text-[9px] text-muted-foreground italic">{role.instruction}</span>}
+                                                    <span className="font-medium text-foreground/90">{level.child_name}</span>
+                                                    <span className="text-[10px] text-muted-foreground">{level.role}</span>
+                                                    {level.instruction && <span className="text-[9px] text-muted-foreground italic">{level.instruction}</span>}
                                                 </div>
                                             </div>
                                         ))}

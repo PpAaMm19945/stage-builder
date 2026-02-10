@@ -8,27 +8,54 @@ export type ChatActionType =
     | 'GET_TODAY_SCHEDULE'
     | 'ANCHOR_GENERATED'; // [NEW]
 
+/**
+ * Daily Anchor Payload (matches backend DailyAnchor from cloudflare/src/ai/anchor-generator.ts)
+ */
 export interface AnchorPayload {
     id: string;
     date: string;
-    dayOfSequence: number;
-    totalDays: number;
+    arc_id: string;
+    day_in_arc: number;
     theme: string;
     liturgy: {
-        hymn?: LiturgyItem;
-        catechism?: LiturgyItem;
-        scripture?: LiturgyItem;
+        hymn: string;
+        hymn_id?: string;
+        hymn_audio_url?: string;
+        catechism_q: number;
+        catechism_question: string;
+        catechism_a: string;
+        scripture: string;
     };
-    activity: {
+    family_activity: {
+        id: string;
         title: string;
         description: string;
+        skill_domain: string;
+        targets_covered: string[];
+        formation_lens: string;
         materials: string[];
-        roles: {
-            childName: string;
-            role: string; // "Observer", "Participant", "Leader"
-        }[];
+        duration_minutes: number;
+        location: 'indoor' | 'outdoor' | 'either';
+        levels: Array<{
+            child_id: string;
+            child_name: string;
+            age_months?: number;
+            stage: string;
+            role: string;
+            instruction: string;
+        }>;
+    };
+    book_nook?: {
+        id: string;
+        series?: string;
+        title: string;
+        author?: string;
+        cover_image?: string;
+        render_format?: string;
+        discussion_prompt: string;
     };
     reasoning: string; // The "AI Insight"
+    confidence?: 'high' | 'medium' | 'experimental';
 }
 
 export interface ActionCard {
