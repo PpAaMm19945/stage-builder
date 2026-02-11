@@ -2,6 +2,24 @@ import type { Env } from './types';
 import { searchBooks, searchActivities } from './ai/tools';
 
 /**
+ * Legacy chat context for AiCoach
+ */
+interface LegacyChatContext {
+    studentId?: string;
+    currentSubject?: string;
+    [key: string]: unknown; // Allow other properties to pass through
+}
+
+interface PlanSlot {
+    activityTitle: string;
+}
+
+interface ChildProfile {
+    name: string;
+    age_in_months: number;
+}
+
+/**
  * AiCoach: Legacy support class
  * Main chat now handled by Cortex; this is for auxiliary functions.
  */
@@ -24,7 +42,7 @@ export class AiCoach {
      * Legacy chat method - simplified
      * Main chat is now handled by Cortex
      */
-    async chat(message: string, context: any, mode: 'parent' | 'student' = 'parent') {
+    async chat(message: string, context: LegacyChatContext, mode: 'parent' | 'student' = 'parent') {
         if (mode === 'student') {
             return this.studentChat(message, context);
         }
@@ -62,7 +80,7 @@ Be warm, brief, and helpful.`;
     /**
      * Student Chat: Socratic approach
      */
-    private async studentChat(message: string, context: any): Promise<ReadableStream> {
+    private async studentChat(message: string, context: LegacyChatContext): Promise<ReadableStream> {
         const socraticPrompt = `You are a wise tutor. NEVER give direct answers. Ask guiding questions. Keep replies to 3 sentences max.`;
 
         try {
@@ -90,18 +108,18 @@ Be warm, brief, and helpful.`;
         try {
             const student = await this.env.DB.prepare(
                 'SELECT household_id FROM students WHERE id = ?'
-            ).bind(studentId).first();
+            ).bind(studentId).first<{ household_id: string }>();
 
             const parent = student ? await this.env.DB.prepare(
                 'SELECT id FROM users WHERE household_id = ? AND role = ? LIMIT 1'
-            ).bind((student as any).household_id, 'parent').first() : null;
+            ).bind(student.household_id, 'parent').first<{ id: string }>() : null;
 
             await this.env.DB.prepare(`
                 INSERT INTO ai_interaction_logs (id, parent_id, student_id, interaction_type, question, answer, context_json, created_at)
                 VALUES (?, ?, ?, 'socratic', ?, ?, ?, datetime('now'))
             `).bind(
                 `slog-${Date.now()}-${crypto.randomUUID().substring(24)}`,
-                parent ? (parent as any).id : 'unknown',
+                parent ? parent.id : 'unknown',
                 studentId,
                 question,
                 '(Socratic response)',
@@ -112,7 +130,7 @@ Be warm, brief, and helpful.`;
         }
     }
 
-    async explainPlan(slot: any, child: any) {
+    async explainPlan(slot: PlanSlot, child: ChildProfile) {
         const prompt = `Explain why "${slot.activityTitle}" is appropriate for ${child.name} (${child.age_in_months} months). Keep it to 2 sentences.`;
         return await this.env.AI.run('@cf/meta/llama-3-8b-instruct', {
             messages: [
