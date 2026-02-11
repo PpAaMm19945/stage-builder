@@ -3,17 +3,13 @@ import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/componen
 import { Check, X, CircleNotch } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { ExecutionSteps } from './ThinkingMessage';
+import { ExecutionStep } from '@/components/chat/hooks/useChatState';
 
 interface ActionConfirmCardProps {
     type: string;
     reason: string;
-    data?: any;
     isExecuting?: boolean;
-    executionSteps?: Array<{
-        id: number;
-        label: string;
-        status: 'pending' | 'active' | 'complete' | 'error';
-    }>;
+    executionSteps?: ExecutionStep[];
     onConfirm: () => void;
     onReject: () => void;
     className?: string;
