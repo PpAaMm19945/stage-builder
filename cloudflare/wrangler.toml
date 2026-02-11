@@ -80,12 +80,12 @@ migrations_dir = "migrations"
 
 [[env.dev.r2_buckets]]
 binding = "BOOKS_BUCKET"
-bucket_name = "schoolos-books-dev"
+bucket_name = "schoolos-books"
 
 [env.dev.ai]
 binding = "AI"
 
 [[env.dev.vectorize]]
 binding = "CURRICULUM_INDEX"
-index_name = "schoolos-curriculum-docs-dev"
+index_name = "schoolos-curriculum-docs"
 

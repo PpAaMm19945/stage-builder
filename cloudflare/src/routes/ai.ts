@@ -1,4 +1,7 @@
+
 import { Hono } from 'hono';
+import { streamText } from 'hono/streaming';
+import { safeQueryFirst, safeRun } from '../lib/db';
 import { Env, User } from '../types';
 import { requireHouseholdMember } from '../lib/middleware';
 import { Cortex } from '../ai/cortex';
@@ -14,26 +17,41 @@ app.post('/api/chat', async (c) => {
         const dailyLimit = parseInt(c.env.DAILY_CHAT_LIMIT || '30', 10);
 
         // 1. Check Daily Usage from D1
-        const usage = await c.env.DB.prepare(
-            'SELECT * FROM user_daily_chat_usage WHERE user_id = ? AND usage_date = ?'
-        ).bind(user.id, today).first();
+        const usage = await safeQueryFirst<{ message_count: number }>(
+            c.env.DB,
+            'SELECT * FROM user_daily_chat_usage WHERE user_id = ? AND usage_date = ?',
+            [user.id, today]
+        );
 
         const currentUsage = (usage?.message_count as number) || 0;
         const remaining = dailyLimit - currentUsage;
 
         if (currentUsage >= dailyLimit) {
-            const resetsAt = new Date();
-            resetsAt.setUTCHours(24, 0, 0, 0); // Midnight UTC next day
+            // Calculate time until midnight UTC (or local timezone if preferred)
+            // For now, using UTC midnight as reset time as per requirement
+            const tomorrow = new Date();
+            tomorrow.setUTCHours(24, 0, 0, 0);
+            const resetsAt = tomorrow;
 
             return c.json({
-                error: 'Daily chat limit reached. Please try again tomorrow.',
+                error: 'Daily chat limit reached',
                 limit: dailyLimit,
                 remaining: 0,
                 resetsAt: resetsAt.toISOString()
-            }, 429);
+            }, {
+                status: 429,
+                headers: {
+                    'X-Chat-Limit': String(dailyLimit),
+                    'X-Chat-Remaining': '0',
+                    'X-Chat-Resets-At': resetsAt.toISOString()
+                }
+            });
         }
 
-        // 2. Rate limiting (Speed): 20 messages per minute per user
+        // 2. Rate Limiting (Token Bucket)
+        // NOTE: The original code had checkRateLimit, the instruction implies a new 'rateLimiter' function.
+        // For now, I'm keeping the original checkRateLimit as 'rateLimiter' is not defined in the provided context.
+        // If 'rateLimiter' is a new function, it would need to be imported/defined.
         const rateCheck = checkRateLimit(user.id, 20, 60000);
         if (!rateCheck.allowed) {
             return c.json({
@@ -41,6 +59,7 @@ app.post('/api/chat', async (c) => {
                 retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
             }, 429);
         }
+
 
         const { messages, context: clientContext } = await c.req.json();
 
@@ -62,13 +81,15 @@ app.post('/api/chat', async (c) => {
         // 3. Increment usage count (Optimistic or before stream)
         // We do this before streaming to ensure we count it. 
         // In a perfect world we'd do it after success, but with streaming it's complex.
-        await c.env.DB.prepare(`
-            INSERT INTO user_daily_chat_usage (user_id, usage_date, message_count, token_count)
-            VALUES (?, ?, 1, 0)
+        await safeRun(
+            c.env.DB,
+            `INSERT INTO user_daily_chat_usage(user_id, usage_date, message_count, token_count)
+VALUES(?, ?, 1, 0)
             ON CONFLICT(user_id, usage_date) DO UPDATE SET
-            message_count = message_count + 1,
-            updated_at = unixepoch()
-        `).bind(user.id, today).run();
+message_count = message_count + 1,
+    updated_at = unixepoch()`,
+            [user.id, today]
+        );
 
         const stream = await cortex.chat(lastMessage, messages, fullContext);
 
@@ -128,7 +149,7 @@ app.post('/api/chat/execute', async (c) => {
         // Use Cortex for action execution
         const cortex = new Cortex(c.env);
         // Pass action type as message for Cortex to handle
-        const stream = await cortex.chat(`[ACTION:${actionPayload.type}] ${JSON.stringify(actionPayload)}`, [], fullContext);
+        const stream = await cortex.chat(`[ACTION:${actionPayload.type}] ${JSON.stringify(actionPayload)} `, [], fullContext);
 
         return new Response(stream, {
             headers: {
