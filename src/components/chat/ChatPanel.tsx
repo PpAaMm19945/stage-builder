@@ -109,10 +109,17 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
         toast.error('Chat error', { description: error.message });
     }, []);
 
+    const [quota, setQuota] = useState<{ limit: number; remaining: number; resetsAt: string } | null>(null);
+
+    const handleQuotaUpdate = useCallback((newQuota: { limit: number; remaining: number; resetsAt: string }) => {
+        setQuota(newQuota);
+    }, []);
+
     const { sendMessage } = useChatStream({
         chatState,
         onMessageUpdate: handleMessageUpdate,
         onError: handleError,
+        onQuotaUpdate: handleQuotaUpdate
     });
 
     // Auto-scroll on new messages
@@ -404,7 +411,7 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
 
                                 {/* Custom Payload Messages (Anchor, etc) */}
                                 {msg.anchorPayload && (
-                                <div className="mt-3">
+                                    <div className="mt-3">
                                         <AnchorBriefingMessage
                                             data={msg.anchorPayload}
                                             onAdjust={() => {
@@ -498,20 +505,34 @@ export function ChatPanel({ className, onClose }: ChatPanelProps) {
                         onSubmit={(e) => { e.preventDefault(); handleSend(); }}
                         className="flex gap-2"
                     >
-                        <Input
-                            ref={inputRef}
-                            value={input}
-                            onChange={e => setInput(e.target.value)}
-                            placeholder="How can I help you today?"
-                            disabled={chatState.isInputDisabled}
-                        />
+                        <div className="flex-1 relative">
+                            <Input
+                                ref={inputRef}
+                                value={input}
+                                onChange={e => setInput(e.target.value)}
+                                placeholder="How can I help you today?"
+                                disabled={chatState.isInputDisabled || (quota && quota.remaining <= 0)}
+                                className={cn(quota && quota.remaining <= 0 && "opacity-50")}
+                            />
+                            {quota && (
+                                <div className={cn(
+                                    "absolute -top-6 right-0 text-[10px] px-2 py-0.5 rounded-full border bg-background/80 backdrop-blur-sm",
+                                    quota.remaining <= 5 ? "text-red-500 border-red-200" : "text-muted-foreground border-border"
+                                )}>
+                                    {quota.remaining <= 0
+                                        ? `Daily limit reached. Resets ${new Date(quota.resetsAt).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`
+                                        : `${quota.remaining}/${quota.limit} messages left`
+                                    }
+                                </div>
+                            )}
+                        </div>
                         <TooltipProvider>
                             <Tooltip>
                                 <TooltipTrigger asChild>
                                     <Button
                                         type="submit"
                                         size="icon"
-                                        disabled={chatState.isInputDisabled || !input.trim()}
+                                        disabled={chatState.isInputDisabled || !input.trim() || (quota && quota.remaining <= 0)}
                                         aria-label="Send message"
                                     >
                                         <PaperPlaneRight className="w-5 h-5" />

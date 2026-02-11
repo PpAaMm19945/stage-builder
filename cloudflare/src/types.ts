@@ -75,6 +75,7 @@ export interface Env {
     R2_PUBLIC_URL?: string;
     ADMIN_TEST_API_KEY?: string;
     ADMIN_EMAIL_ALLOWLIST?: string;
+    DAILY_CHAT_LIMIT?: string;
 }
 
 export interface User {

@@ -844,6 +844,15 @@ export const adminAi = {
 
   getSpineEntries: (version: string, subject?: string) =>
     apiRequest<SpineEntriesResponse>(`/api/admin/spine/entries?version=${version}${subject ? `&subject=${subject}` : ''}`),
+
+  getCosts: (days?: number) =>
+    apiRequest<{ days: number; totalCost: number; dailyCosts: any[] }>(`/api/admin/ai/costs${days ? `?days=${days}` : ''}`),
+
+  getUsageUsers: (days?: number) =>
+    apiRequest<{ results: any[] }>(`/api/admin/ai/usage/users${days ? `?days=${days}` : ''}`),
+
+  getUsageSummary: () =>
+    apiRequest<{ today: { messages: number; activeUsers: number; cost: number } }>('/api/admin/ai/usage/summary'),
 };
 
 export const api = { auth, students, activities, observations, activityCompletions, family, books, reading, feedback, hymns, catechism, overrides, timeModel, weeklyPlan, ai, portfolio, independence, studentView, rhythm, notifications, formation, work, paths, profile, reports, liturgy, anchor, adminAi };

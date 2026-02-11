@@ -10,12 +10,34 @@ const app = new Hono<{ Bindings: Env; Variables: { user: User | null } }>();
 app.post('/api/chat', async (c) => {
     try {
         const user = requireHouseholdMember(c);
+        const today = new Date().toISOString().split('T')[0];
+        const dailyLimit = parseInt(c.env.DAILY_CHAT_LIMIT || '30', 10);
 
-        // Rate limiting: 20 messages per minute per user
+        // 1. Check Daily Usage from D1
+        const usage = await c.env.DB.prepare(
+            'SELECT * FROM user_daily_chat_usage WHERE user_id = ? AND usage_date = ?'
+        ).bind(user.id, today).first();
+
+        const currentUsage = (usage?.message_count as number) || 0;
+        const remaining = dailyLimit - currentUsage;
+
+        if (currentUsage >= dailyLimit) {
+            const resetsAt = new Date();
+            resetsAt.setUTCHours(24, 0, 0, 0); // Midnight UTC next day
+
+            return c.json({
+                error: 'Daily chat limit reached. Please try again tomorrow.',
+                limit: dailyLimit,
+                remaining: 0,
+                resetsAt: resetsAt.toISOString()
+            }, 429);
+        }
+
+        // 2. Rate limiting (Speed): 20 messages per minute per user
         const rateCheck = checkRateLimit(user.id, 20, 60000);
         if (!rateCheck.allowed) {
             return c.json({
-                error: 'Rate limit exceeded. Please wait a moment before sending more messages.',
+                error: 'You are sending messages too fast. Please wait a moment.',
                 retryAfter: Math.ceil((rateCheck.resetAt - Date.now()) / 1000)
             }, 429);
         }
@@ -37,7 +59,22 @@ app.post('/api/chat', async (c) => {
         const cortex = new Cortex(c.env);
         const lastMessage = messages[messages.length - 1].content;
 
+        // 3. Increment usage count (Optimistic or before stream)
+        // We do this before streaming to ensure we count it. 
+        // In a perfect world we'd do it after success, but with streaming it's complex.
+        await c.env.DB.prepare(`
+            INSERT INTO user_daily_chat_usage (user_id, usage_date, message_count, token_count)
+            VALUES (?, ?, 1, 0)
+            ON CONFLICT(user_id, usage_date) DO UPDATE SET
+            message_count = message_count + 1,
+            updated_at = unixepoch()
+        `).bind(user.id, today).run();
+
         const stream = await cortex.chat(lastMessage, messages, fullContext);
+
+        // Calculate Reset Time (Midnight UTC)
+        const resetsAt = new Date();
+        resetsAt.setUTCHours(24, 0, 0, 0);
 
         return new Response(stream, {
             headers: {
@@ -45,7 +82,11 @@ app.post('/api/chat', async (c) => {
                 'Cache-Control': 'no-cache',
                 'Connection': 'keep-alive',
                 'X-RateLimit-Remaining': String(rateCheck.remaining),
-                'X-RateLimit-Reset': String(Math.ceil(rateCheck.resetAt / 1000))
+                'X-RateLimit-Reset': String(Math.ceil(rateCheck.resetAt / 1000)),
+                // Custom headers for daily quota
+                'X-Chat-Limit': String(dailyLimit),
+                'X-Chat-Remaining': String(Math.max(0, remaining - 1)), // Subtract 1 for current message
+                'X-Chat-Resets-At': resetsAt.toISOString()
             }
         });
     } catch (e: any) {

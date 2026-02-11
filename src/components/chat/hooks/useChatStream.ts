@@ -11,13 +11,14 @@ export interface UseChatStreamOptions {
     chatState: UseChatStateReturn;
     onMessageUpdate: (message: Message) => void;
     onError?: (error: Error) => void;
+    onQuotaUpdate?: (quota: { limit: number; remaining: number; resetsAt: string }) => void;
 }
 
 /**
  * Hook to handle SSE streaming from the chat API with proper parsing
  * of thoughts, data blocks, and action pending events.
  */
-export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatStreamOptions) {
+export function useChatStream({ chatState, onMessageUpdate, onError, onQuotaUpdate }: UseChatStreamOptions) {
     const abortControllerRef = useRef<AbortController | null>(null);
 
     const sendMessage = useCallback(async (
@@ -33,7 +34,50 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
         chatState.startThinking();
 
         try {
-            const stream = await ai.chat(messages, context);
+            // Using ai.chat directly for now but we need to access headers.
+            // ai.chat in api.ts returns response.body directly.
+            // We need to fetch ourselves or modify api.ts.
+            // Let's implement fetch here to get headers, similar to api.ts but with header access.
+            const token = localStorage.getItem('schoolos_token');
+            const response = await fetch(`${import.meta.env.VITE_API_URL || 'https://stage-builder.antmwes104-1.workers.dev'}/api/chat`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+                },
+                body: JSON.stringify({ messages, context }),
+                signal: abortControllerRef.current.signal
+            });
+
+            if (!response.ok) {
+                const errorData = await response.json().catch(() => ({}));
+                // Check if it's a quota error
+                if (response.status === 429) {
+                    const resetsAt = errorData.resetsAt || new Date(Date.now() + 86400000).toISOString();
+                    onQuotaUpdate?.({
+                        limit: 30, // Default or from header if available? Header might be on 429 too?
+                        remaining: 0,
+                        resetsAt
+                    });
+                    throw new Error(errorData.error || 'Rate limit exceeded');
+                }
+                throw new Error(errorData.error || 'Chat failed');
+            }
+
+            // Extract Quota Headers
+            const limit = response.headers.get('X-Chat-Limit');
+            const remaining = response.headers.get('X-Chat-Remaining');
+            const resetsAt = response.headers.get('X-Chat-Resets-At');
+
+            if (limit && remaining && onQuotaUpdate) {
+                onQuotaUpdate({
+                    limit: parseInt(limit, 10),
+                    remaining: parseInt(remaining, 10),
+                    resetsAt: resetsAt || ''
+                });
+            }
+
+            const stream = response.body;
             if (!stream) throw new Error('No stream returned');
 
             const reader = stream.getReader();
@@ -172,60 +216,41 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
                         }
 
                         // Helper to extract response text from JSON fragment
-                        const extractResponse = (jsonStr: string): string => {
-                            try {
-                                const parsed = JSON.parse(jsonStr);
-                                if (parsed.response && typeof parsed.response === 'string') return parsed.response;
-                                if (parsed.content && typeof parsed.content === 'string') return parsed.content;
-                            } catch { /* ignore */ }
-                            return '';
-                        };
+                        // Note: Defined inside loop or hook scope
 
+                        let textToAdd = '';
                         try {
-                            let textToAdd = '';
-
                             // Check for JSON wrapper(s)
                             if (data.startsWith('{')) {
                                 try {
-                                    // 1. Try parsing as a single JSON object
                                     const parsed = JSON.parse(data);
-                                    if (parsed.response && typeof parsed.response === 'string') {
-                                        textToAdd = parsed.response;
-                                    } else if (parsed.content && typeof parsed.content === 'string') {
-                                        textToAdd = parsed.content;
-                                    }
+                                    if (parsed.response && typeof parsed.response === 'string') textToAdd = parsed.response;
+                                    else if (parsed.content && typeof parsed.content === 'string') textToAdd = parsed.content;
                                 } catch {
-                                    // 2. Parse failed, might be concatenated JSON objects (e.g. {response:...}{usage:...})
-                                    // This happens with Cloudflare Workers AI streaming sometimes
                                     if (data.includes('}{')) {
                                         const parts = data.split('}{');
-                                        for (let i = 0; i < parts.length; i++) {
-                                            let fragment = parts[i];
-                                            // Reconstruct valid JSON objects
+                                        parts.forEach((fragment, i) => {
                                             if (i > 0) fragment = '{' + fragment;
                                             if (i < parts.length - 1) fragment = fragment + '}';
-
-                                            textToAdd += extractResponse(fragment);
-                                        }
-                                    } else {
-                                        // 3. Just a broken JSON fragment or something else.
-                                        // CRITICAL: Do NOT append raw data if it looks like JSON but failed to parse.
-                                        // This prevents leaking raw JSON strings like {"response":"","usage":...} to the UI.
-                                        console.warn('[ChatStream] Skipping malformed JSON data chunk');
+                                            try {
+                                                const p = JSON.parse(fragment);
+                                                if (p.response) textToAdd += p.response;
+                                                else if (p.content) textToAdd += p.content;
+                                            } catch { }
+                                        });
                                     }
                                 }
                             } else {
-                                // Not JSON, treat as raw text
                                 textToAdd = data;
                             }
 
                             if (textToAdd) {
+                                // Simple append
                                 aiMessage.content += textToAdd;
                                 onMessageUpdate({ ...aiMessage });
                             }
-                        } catch (err) {
-                            console.error('[ChatStream] Error processing data chunk:', err);
-                            // Do not append raw data on error to be safe
+                        } catch (e) {
+                            // console.warn('Chunk processing error', e); 
                         }
                     }
                 }
@@ -238,7 +263,7 @@ export function useChatStream({ chatState, onMessageUpdate, onError }: UseChatSt
             chatState.reset();
             onError?.(error instanceof Error ? error : new Error(String(error)));
         }
-    }, [chatState, onMessageUpdate, onError]);
+    }, [chatState, onMessageUpdate, onError, onQuotaUpdate]);
 
     const cancelStream = useCallback(() => {
         if (abortControllerRef.current) {

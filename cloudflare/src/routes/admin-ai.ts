@@ -271,4 +271,142 @@ app.get('/activities', async (c) => {
     }
 });
 
+/**
+ * GET /api/admin/ai/costs
+ * Daily cost breakdown.
+ */
+app.get('/costs', async (c) => {
+    try {
+        const days = Math.min(Number(c.req.query('days')) || 30, 90);
+        const startDate = new Date(Date.now() - days * 24 * 60 * 60 * 1000).toISOString();
+
+        // Group by Date
+        const { results } = await c.env.DB.prepare(`
+            SELECT 
+                DATE(timestamp) as date,
+                SUM(request_tokens) as total_input_tokens,
+                SUM(response_tokens) as total_output_tokens
+            FROM ai_telemetry 
+            WHERE timestamp >= ?
+            GROUP BY DATE(timestamp)
+            ORDER BY date ASC
+        `).bind(startDate).all();
+
+        // Gemini Flash Pricing (Check official docs, assuming $0.10/1M In, $0.40/1M Out)
+        // Adjust these constants as needed or move to Env/DB
+        const COST_PER_1M_INPUT = 0.10;
+        const COST_PER_1M_OUTPUT = 0.40;
+
+        let totalCost = 0;
+        const dailyCosts = results.map((row: any) => {
+            // Check for nulls
+            const input = row.total_input_tokens || 0;
+            const output = row.total_output_tokens || 0;
+
+            const cost = (input / 1_000_000 * COST_PER_1M_INPUT) +
+                (output / 1_000_000 * COST_PER_1M_OUTPUT);
+
+            totalCost += cost;
+
+            return {
+                date: row.date,
+                inputTokens: input,
+                outputTokens: output,
+                cost: Number(cost.toFixed(4)) // Round to 4 decimals
+            };
+        });
+
+        return c.json({
+            days,
+            totalCost: Number(totalCost.toFixed(4)),
+            dailyCosts
+        });
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+/**
+ * GET /api/admin/ai/usage/users
+ * Top users by usage.
+ */
+app.get('/usage/users', async (c) => {
+    try {
+        const days = Math.min(Number(c.req.query('days')) || 7, 30);
+        // We only have daily snapshots in user_daily_chat_usage.
+        // To get "last 7 days", we sum them up.
+
+        // SQLite date modifier: date('now', '-7 days')
+        const { results } = await c.env.DB.prepare(`
+            SELECT 
+                user_id,
+                SUM(message_count) as total_messages,
+                SUM(token_count) as total_tokens,
+                COUNT(DISTINCT usage_date) as active_days
+            FROM user_daily_chat_usage
+            WHERE usage_date >= date('now', '-' || ? || ' days')
+            GROUP BY user_id
+            ORDER BY total_messages DESC
+            LIMIT 20
+        `).bind(days).all();
+
+        // Fetch User Names (Optional: Join with users table if it exists or fetch from Auth provider)
+        // Assuming we might have a users table or just returning IDs for now.
+        // If 'users' table exists in D1, we could JOIN.
+        // Based on types.ts, User comes from middleware, maybe not a D1 table we can join easily if it's external (Supabase/Auth0).
+        // But the middleware uses `c.env.DB`, so there probably IS a users table or we rely on the ID.
+        // wait, `requireHouseholdMember` checks `user` from request context, populated by `verifyUser` middleware.
+        // Usually auth is handled by an external provider, but we might store profiles.
+        // Let's just return IDs and usage for now.
+
+        return c.json({ results });
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
+/**
+ * GET /api/admin/ai/usage/summary
+ * KPI Cards.
+ */
+app.get('/usage/summary', async (c) => {
+    try {
+        // Today
+        const today = new Date().toISOString().split('T')[0];
+        const { results: todayStats } = await c.env.DB.prepare(`
+            SELECT 
+                SUM(message_count) as messages,
+                COUNT(DISTINCT user_id) as active_users
+            FROM user_daily_chat_usage
+            WHERE usage_date = ?
+        `).bind(today).all();
+
+        const todayMessages = todayStats[0].messages || 0;
+        const todayUsers = todayStats[0].active_users || 0;
+
+        // Cost Today (Estimated from Telemetry)
+        const { results: costStats } = await c.env.DB.prepare(`
+             SELECT 
+                SUM(request_tokens) as total_input,
+                SUM(response_tokens) as total_output
+            FROM ai_telemetry 
+            WHERE DATE(timestamp) = ?
+        `).bind(today).all();
+
+        const input = costStats[0].total_input || 0;
+        const output = costStats[0].total_output || 0;
+        const todayCost = (input / 1_000_000 * 0.10) + (output / 1_000_000 * 0.40);
+
+        return c.json({
+            today: {
+                messages: todayMessages,
+                activeUsers: todayUsers,
+                cost: Number(todayCost.toFixed(4))
+            }
+        });
+    } catch (e: any) {
+        return c.json({ error: e.message }, 500);
+    }
+});
+
 export default app;

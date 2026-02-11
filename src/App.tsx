@@ -46,6 +46,7 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 const TrustCovenant = lazy(() => import("./pages/TrustCovenant"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AIDashboard = lazy(() => import("./pages/admin/AIDashboard"));
+const AICostDashboard = lazy(() => import("./pages/admin/AICostDashboard"));
 
 const queryClient = new QueryClient();
 
@@ -99,6 +100,7 @@ const App = () => (
                     </Route>
 
                     <Route path="/admin/ai" element={<AdminRoute><AIDashboard /></AdminRoute>} />
+                    <Route path="/admin/ai/costs" element={<AdminRoute><AICostDashboard /></AdminRoute>} />
                   </Route>
 
                   {/* Backward Compatibility Redirects */}

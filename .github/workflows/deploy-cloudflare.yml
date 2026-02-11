@@ -4,6 +4,7 @@ on:
   push:
     branches:
       - main
+      - dev  # Also deploy on dev branch
     paths:
       - 'cloudflare/**'
 
@@ -27,8 +28,17 @@ jobs:
       # Run: wrangler d1 migrations apply DB --remote
       # This avoids issues with automatic migrations in CI
       
-      - name: Deploy Worker
+      - name: Deploy Worker (Production)
+        if: github.ref == 'refs/heads/main'
         uses: cloudflare/wrangler-action@v3
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           workingDirectory: ./cloudflare
+
+      - name: Deploy Worker (Dev)
+        if: github.ref == 'refs/heads/dev'
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: ./cloudflare
+          command: deploy --env dev

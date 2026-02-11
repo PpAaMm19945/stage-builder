@@ -41,6 +41,7 @@ index_name = "schoolos-curriculum-docs"
 # ------------------------
 [vars]
 ENVIRONMENT = "production"
+DAILY_CHAT_LIMIT = "30"
 
 
 # App URLs
@@ -58,3 +59,33 @@ AI_GATEWAY_NAME = "schoolos-gateway"
 
 # Derived usage (do NOT hardcode in code):
 # ${AI_GATEWAY_HOST}/v1/${AI_GATEWAY_ACCOUNT_ID}/${AI_GATEWAY_NAME}/compat
+
+# ------------------------
+# Dev Environment
+# ------------------------
+[env.dev]
+name = "stage-builder-dev"
+
+[env.dev.vars]
+ENVIRONMENT = "development"
+FRONTEND_URL = "https://dev.stage-builder-9hh.pages.dev"
+DAILY_CHAT_LIMIT = "30"
+
+[[env.dev.d1_databases]]
+binding = "DB"
+database_name = "schoolos-v2-dev"
+# TODO: USER MUST REPLACE THIS WITH ACTUAL DEV DB ID
+database_id = "3e667789-83bf-477e-86d8-067dfad7c962"
+migrations_dir = "migrations"
+
+[[env.dev.r2_buckets]]
+binding = "BOOKS_BUCKET"
+bucket_name = "schoolos-books-dev"
+
+[env.dev.ai]
+binding = "AI"
+
+[[env.dev.vectorize]]
+binding = "CURRICULUM_INDEX"
+index_name = "schoolos-curriculum-docs-dev"
+

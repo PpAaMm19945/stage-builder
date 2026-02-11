@@ -58,6 +58,9 @@ const AIDashboard = () => {
                 <div className="flex gap-2">
                     <Badge variant="outline" className="gap-1"><Key className="h-3 w-3" /> Admin Access</Badge>
                     <Badge variant="outline" className="gap-1"><Database className="h-3 w-3" /> D1</Badge>
+                    <a href="/admin/ai/costs" className="inline-flex items-center justify-center rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground shadow hover:bg-primary/90 h-9 px-4 py-2">
+                        View Costs
+                    </a>
                 </div>
             </header>
 
