@@ -153,7 +153,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     }, [restoredPage, api, open]);
 
     // Save progress mutation
-    const saveProgressMutation = useMutation({
+    const { mutate: saveProgress } = useMutation({
         mutationFn: async () => {
             if (!book) return;
 
@@ -178,11 +178,11 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
         if (!book || !open || current <= 1) return;
 
         const timer = setTimeout(() => {
-            saveProgressMutation.mutate();
+            saveProgress();
         }, 3000); // 3 second debounce
 
         return () => clearTimeout(timer);
-    }, [current, book, open]);
+    }, [current, book, open, saveProgress]);
 
     const skipMutation = useMutation({
         mutationFn: async () => {
@@ -213,7 +213,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
             setShowChildSelection(false);
             handleCloseComplete();
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             toast.error("Failed to log session", { description: err.message });
         }
     });
@@ -775,7 +775,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                             variant="outline"
                             className="w-full"
                             onClick={() => {
-                                saveProgressMutation.mutate();
+                                saveProgress();
                                 if (!user) {
                                     toast.info("Progress saved on this device", {
                                         description: "Sign in to sync across devices."
