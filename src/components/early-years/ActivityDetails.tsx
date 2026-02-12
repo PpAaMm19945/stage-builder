@@ -46,6 +46,19 @@ const domainColors: Record<string, string> = {
     'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
 };
 
+interface TieredExpectation {
+    tier: string | number;
+    age_min: number;
+    age_max: number;
+    expectation: string;
+}
+
+interface ActivityResult {
+    created_at: string;
+    parent_notes?: string;
+    [key: string]: unknown;
+}
+
 // Interface compatible with both API and simplified objects
 export interface ActivityDetailsProps {
     activity: {
@@ -75,8 +88,8 @@ export interface ActivityDetailsProps {
         max_age_months?: number;
         activityType?: string;
         activity_type?: string;
-        tieredExpectations?: any[];
-        tiered_expectations?: any[];
+        tieredExpectations?: TieredExpectation[];
+        tiered_expectations?: TieredExpectation[];
         safetyNote?: string;
         safety_note?: string;
         culturalNotes?: string;
@@ -91,7 +104,7 @@ export interface ActivityDetailsProps {
     onObservation?: () => void;
     showBack?: boolean;
     onBack?: () => void;
-    previousResult?: any;
+    previousResult?: ActivityResult;
     hideActions?: boolean;
 }
 
