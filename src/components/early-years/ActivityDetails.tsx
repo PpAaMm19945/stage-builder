@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { VIRTUE_LABELS, type PrimaryVirtue, type EarlyYearsDomain, DOMAIN_LABELS } from '@/types';
+import { VIRTUE_LABELS, type PrimaryVirtue, type EarlyYearsDomain } from '@/types';
 import { FormationTimer, useFormationTimer } from '@/components/formations/FormationTimer';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,8 +27,6 @@ import {
 import { cn } from '@/lib/utils';
 import { useNavigate } from 'react-router-dom';
 
-import { ApiActivity } from '@/types';
-
 const virtueColors: Record<PrimaryVirtue, string> = {
     'Wisdom': 'bg-indigo-100 text-indigo-800 border-indigo-200 dark:bg-indigo-900/20 dark:text-indigo-300',
     'Stewardship': 'bg-orange-100 text-orange-800 border-orange-200 dark:bg-orange-900/20 dark:text-orange-300',
@@ -45,6 +43,18 @@ const domainColors: Record<string, string> = {
     'social-emotional': 'bg-domain-social/10 text-domain-social border-domain-social/20',
     'pre-academic': 'bg-domain-academic/10 text-domain-academic border-domain-academic/20',
 };
+
+export interface TieredExpectation {
+    tier: string;
+    age_min: number;
+    age_max: number;
+    expectation: string;
+}
+
+export interface ActivityResult {
+    created_at: string | Date;
+    parent_notes?: string;
+}
 
 // Interface compatible with both API and simplified objects
 export interface ActivityDetailsProps {
@@ -75,8 +85,8 @@ export interface ActivityDetailsProps {
         max_age_months?: number;
         activityType?: string;
         activity_type?: string;
-        tieredExpectations?: any[];
-        tiered_expectations?: any[];
+        tieredExpectations?: TieredExpectation[];
+        tiered_expectations?: TieredExpectation[];
         safetyNote?: string;
         safety_note?: string;
         culturalNotes?: string;
@@ -91,7 +101,7 @@ export interface ActivityDetailsProps {
     onObservation?: () => void;
     showBack?: boolean;
     onBack?: () => void;
-    previousResult?: any;
+    previousResult?: ActivityResult;
     hideActions?: boolean;
 }
 
