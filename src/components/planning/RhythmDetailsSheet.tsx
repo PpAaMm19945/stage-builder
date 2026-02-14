@@ -15,7 +15,7 @@ import { useAudioPlayer } from '@/contexts/AudioPlayerContext';
 import { FormationCard } from '@/components/formations/FormationCard';
 import { ActivityDetails } from '@/components/early-years/ActivityDetails';
 import { getIcon, getTypeColor } from './RhythmItemRow';
-import type { RhythmItem } from './DailyRhythm';
+import type { DailyRhythmItem as RhythmItem } from '@/types';
 
 // Helper to sanitize HTML content for safe rendering
 const sanitizeHtml = (html: string | undefined | null): string => {
@@ -356,7 +356,7 @@ export const RhythmDetailsSheet = memo(function RhythmDetailsSheet({
 
                         {activeItem?.type === 'liturgy' && activeItem.data?.items && (
                             <div className="space-y-4">
-                                {(activeItem.data.items || []).filter((item: any) => item && item.id).map((item: any) => (
+                                {(activeItem.data.items || []).filter((item) => item && item.id).map((item) => (
                                     <FormationCard
                                         key={item.id}
                                         formation={{

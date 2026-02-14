@@ -1,4 +1,4 @@
-import { RhythmItem } from '@/components/planning/DailyRhythm';
+import type { DailyRhythmItem as RhythmItem } from '@/types';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import {

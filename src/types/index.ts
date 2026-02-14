@@ -353,17 +353,69 @@ export interface FamilyPreferences {
 // 7. WEEKLY PLANS & RHYTHM
 // ============================================
 
-export interface DailyRhythmItem {
+export type RhythmType = 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item' | 'hymn' | 'catechism';
+export type RhythmStatus = 'upcoming' | 'current' | 'completed' | 'skipped' | 'transferred';
+
+export interface PathItemData {
+  pathName?: string;
+  path_title?: string;
+  path_type?: string;
+  position?: number;
+  total?: number;
+  item_type: string;
+  content?: {
+    composer?: string;
+    lyrics?: string;
+    content?: string;
+    liturgical_script?: string;
+    audio_url?: string;
+    author?: string;
+    description?: string;
+    id?: string;
+    title?: string;
+  };
+  audio_url?: string;
+  item_data?: {
+    liturgical_script?: string;
+    description?: string;
+  };
+  title?: string;
+  item_id?: string;
+}
+
+export interface LiturgyData {
+  items?: LiturgyItem[];
+  itemType?: string;
+  description?: string;
+  liturgical_script?: string;
+  content?: string;
+  audio_url?: string;
+  allCompleted?: boolean;
+}
+
+export interface BookData {
+  title: string;
+  content?: {
+    author?: string;
+    description?: string;
+  };
+}
+
+export interface RhythmItemBase {
   id: string;
   timeSlot: string;
-  title: string; // The display title
+  title: string;
   description?: string;
-  type: FormationType | 'section_header' | 'book'; // 'book' acts as a specific render type sometimes
-  status: 'upcoming' | 'current' | 'completed';
-
-  // The underlying data
-  data?: Formation;
+  status: RhythmStatus;
+  transferred_from?: string;
 }
+
+export type DailyRhythmItem =
+  | (RhythmItemBase & { type: 'path_item'; data: PathItemData })
+  | (RhythmItemBase & { type: 'liturgy'; data: LiturgyData })
+  | (RhythmItemBase & { type: 'activity'; data: Formation })
+  | (RhythmItemBase & { type: 'book'; data: BookData })
+  | (RhythmItemBase & { type: 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'hymn' | 'catechism'; data?: unknown });
 
 export interface WeeklyPlan {
   id: string;
