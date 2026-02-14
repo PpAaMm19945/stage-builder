@@ -153,18 +153,18 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
     }, [restoredPage, api, open]);
 
     // Save progress mutation
-    const saveProgressMutation = useMutation({
-        mutationFn: async () => {
+    const { mutate: saveProgress } = useMutation({
+        mutationFn: async ({ current, total }: { current: number, total: number }) => {
             if (!book) return;
 
             // Always save to localStorage (works for everyone)
-            saveLocalProgress(current, count || 0);
+            saveLocalProgress(current, total);
 
             // If signed in, also save to API
             if (user) {
                 await progress.save(book.id, {
                     current_page: current,
-                    total_pages: count || 0
+                    total_pages: total
                 }, 'book');
             }
         },
@@ -178,11 +178,11 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
         if (!book || !open || current <= 1) return;
 
         const timer = setTimeout(() => {
-            saveProgressMutation.mutate();
+            saveProgress({ current, total: count || 0 });
         }, 3000); // 3 second debounce
 
         return () => clearTimeout(timer);
-    }, [current, book, open]);
+    }, [current, count, book, open, saveProgress]);
 
     const skipMutation = useMutation({
         mutationFn: async () => {
@@ -213,7 +213,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
             setShowChildSelection(false);
             handleCloseComplete();
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             toast.error("Failed to log session", { description: err.message });
         }
     });
@@ -775,7 +775,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
                             variant="outline"
                             className="w-full"
                             onClick={() => {
-                                saveProgressMutation.mutate();
+                                saveProgress({ current, total: count || 0 });
                                 if (!user) {
                                     toast.info("Progress saved on this device", {
                                         description: "Sign in to sync across devices."
