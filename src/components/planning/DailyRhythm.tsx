@@ -1,17 +1,7 @@
 import { useCallback, memo } from 'react';
 import { Card } from '@/components/ui/card';
 import { RhythmItemRow } from './RhythmItemRow';
-
-export interface RhythmItem {
-    id: string;
-    timeSlot: string; // "08:00", "Morning", etc.
-    title: string;
-    description?: string;
-    type: 'liturgy' | 'activity' | 'book' | 'meal' | 'outdoor' | 'rest' | 'learning' | 'section_header' | 'path_item' | 'hymn' | 'catechism';
-    status: 'upcoming' | 'current' | 'completed' | 'skipped' | 'transferred';
-    data?: any; // The full object (Activity, Book, etc.)
-    transferred_from?: string; // Date string if transferred
-}
+import type { DailyRhythmItem as RhythmItem } from '@/types';
 
 interface DailyRhythmProps {
     items?: RhythmItem[];

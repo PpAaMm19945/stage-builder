@@ -14,7 +14,7 @@ import {
     HandsPraying,
     ArrowsClockwise
 } from '@phosphor-icons/react';
-import type { RhythmItem } from './DailyRhythm';
+import type { DailyRhythmItem as RhythmItem } from '@/types';
 
 interface RhythmItemRowProps {
     item: RhythmItem;
