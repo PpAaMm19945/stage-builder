@@ -172,17 +172,18 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
             // quiet save, no toast needed for auto-save
         }
     });
+    const { mutate: saveProgress } = saveProgressMutation;
 
     // Auto-save effect
     useEffect(() => {
         if (!book || !open || current <= 1) return;
 
         const timer = setTimeout(() => {
-            saveProgressMutation.mutate();
+            saveProgress();
         }, 3000); // 3 second debounce
 
         return () => clearTimeout(timer);
-    }, [current, book, open]);
+    }, [current, book, open, saveProgress]);
 
     const skipMutation = useMutation({
         mutationFn: async () => {
@@ -213,7 +214,7 @@ export const BookReader = memo(function BookReader({ book, open, onOpenChange, c
             setShowChildSelection(false);
             handleCloseComplete();
         },
-        onError: (err: any) => {
+        onError: (err: Error) => {
             toast.error("Failed to log session", { description: err.message });
         }
     });
