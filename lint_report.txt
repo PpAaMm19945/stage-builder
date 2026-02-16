@@ -1,7 +1,15 @@
 
 > vite_react_shadcn_ts@0.0.0 lint /app
-> eslint . cloudflare/src/ai.ts
+> eslint .
 
+
+/app/cloudflare/src/ai.ts
+   27:42  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   65:57  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+   97:32  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  104:37  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:29  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
+  115:41  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
 /app/cloudflare/src/ai/anchor-generator.ts
   117:96   error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
@@ -699,7 +707,7 @@
   135:82  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
   236:96  error  Unexpected any. Specify a different type  @typescript-eslint/no-explicit-any
 
-✖ 516 problems (491 errors, 25 warnings)
+✖ 522 problems (497 errors, 25 warnings)
   9 errors and 0 warnings potentially fixable with the `--fix` option.
 
  ELIFECYCLE  Command failed with exit code 1.
