@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Button } from "@/components/ui/button";
@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { CheckCircle, Eye, History, Loader2 } from "lucide-react";
 import api from '@/lib/api';
 import { useToast } from "@/components/ui/use-toast";
+import { SpineVersion } from '@/types/admin-ai';
 
 interface SpineListProps {
     onViewEntries: (version: string, subject: string) => void;
@@ -15,13 +16,9 @@ interface SpineListProps {
 const SpineList: React.FC<SpineListProps> = ({ onViewEntries }) => {
     const { toast } = useToast();
     const [loading, setLoading] = useState(true);
-    const [versions, setVersions] = useState<any[]>([]);
+    const [versions, setVersions] = useState<SpineVersion[]>([]);
 
-    useEffect(() => {
-        loadVersions();
-    }, []);
-
-    const loadVersions = async () => {
+    const loadVersions = useCallback(async () => {
         try {
             setLoading(true);
             const res = await api.adminAi.getSpineVersions();
@@ -32,7 +29,11 @@ const SpineList: React.FC<SpineListProps> = ({ onViewEntries }) => {
         } finally {
             setLoading(false);
         }
-    };
+    }, [toast]);
+
+    useEffect(() => {
+        loadVersions();
+    }, [loadVersions]);
 
     const handleApprove = async (version: string) => {
         try {
