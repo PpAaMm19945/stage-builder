@@ -46,6 +46,7 @@ const SupportPage = lazy(() => import("./pages/SupportPage"));
 const TrustCovenant = lazy(() => import("./pages/TrustCovenant"));
 const Onboarding = lazy(() => import("./pages/Onboarding"));
 const AIDashboard = lazy(() => import("./pages/admin/AIDashboard"));
+const TodayOverview = lazy(() => import("./pages/TodayOverview"));
 
 const queryClient = new QueryClient();
 
@@ -87,7 +88,8 @@ const App = () => (
                     {/* Protected Routes */}
                     <Route element={<ProtectedRoute><Outlet /></ProtectedRoute>}>
                       {/* THE ANCHOR: Main View */}
-                      <Route path="/dashboard" element={<DailyAnchorView />} />
+                      <Route path="/today" element={<TodayOverview />} />
+                      <Route path="/session" element={<DailyAnchorView />} />
 
                       <Route path="/progress" element={<ProgressPage />} />
                       <Route path="/settings" element={<Settings />} />
@@ -102,12 +104,13 @@ const App = () => (
                   </Route>
 
                   {/* Backward Compatibility Redirects */}
-                  <Route path="/early-years/*" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/planner" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/lower-primary" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/middle-school" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/upper-school" element={<Navigate to="/dashboard" replace />} />
-                  <Route path="/student" element={<Navigate to="/dashboard" replace />} />
+                  <Route path="/dashboard" element={<Navigate to="/today" replace />} />
+                  <Route path="/early-years/*" element={<Navigate to="/today" replace />} />
+                  <Route path="/planner" element={<Navigate to="/today" replace />} />
+                  <Route path="/lower-primary" element={<Navigate to="/today" replace />} />
+                  <Route path="/middle-school" element={<Navigate to="/today" replace />} />
+                  <Route path="/upper-school" element={<Navigate to="/today" replace />} />
+                  <Route path="/student" element={<Navigate to="/today" replace />} />
 
                   {/* Catch-all */}
                   <Route path="*" element={<Suspense fallback={<PageLoader />}><NotFound /></Suspense>} />
@@ -122,4 +125,3 @@ const App = () => (
 );
 
 export default App;
-

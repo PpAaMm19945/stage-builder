@@ -1,12 +1,12 @@
 import { useLocation, Link } from 'react-router-dom';
-import { House, Books, TrendUp, SlidersHorizontal } from '@phosphor-icons/react';
+import { House, Books, SlidersHorizontal, PlayCircle } from '@phosphor-icons/react';
 import { cn } from '@/lib/utils';
 import { useAuth } from '@/contexts/AuthContext';
 
 const navItems = [
-    { icon: House, label: 'Home', path: '/dashboard' },
+    { icon: House, label: 'Today', path: '/today' },
+    { icon: PlayCircle, label: 'Session', path: '/session' },
     { icon: Books, label: 'Library', path: '/library' },
-    { icon: TrendUp, label: 'Progress', path: '/progress' },
     { icon: SlidersHorizontal, label: 'Settings', path: '/settings' },
 ];
 
@@ -26,7 +26,7 @@ export function BottomNav() {
             <div className="flex items-center justify-around h-16">
                 {items.map((item) => {
                     const isActive = location.pathname === item.path ||
-                        (item.path !== '/' && item.path !== '/dashboard' && location.pathname.startsWith(item.path.split('#')[0]));
+                        (item.path !== '/' && item.path !== '/today' && location.pathname.startsWith(item.path.split('#')[0]));
 
                     return (
                         <Link

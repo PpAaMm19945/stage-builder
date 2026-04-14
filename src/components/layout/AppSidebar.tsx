@@ -1,23 +1,17 @@
-import { useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import {
   House,
   Books,
-  TrendUp,
   SlidersHorizontal,
   Path,
   Heart,
   SignOut,
   Baby,
-  Calendar,
-  ListBullets,
-  FileText,
   ShieldCheck,
   ArrowRight,
+  PlayCircle,
 } from '@phosphor-icons/react';
-import { NavLink } from '@/components/NavLink';
 import { useAuth } from '@/contexts/AuthContext';
-import { cn } from '@/lib/utils';
 import {
   Sidebar,
   SidebarContent,
@@ -32,7 +26,6 @@ import {
   useSidebar,
 } from '@/components/ui/sidebar';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
-import type { Student } from '@/types';
 import { FundingWidget } from '@/components/funding/FundingWidget';
 import {
   Tooltip,
@@ -45,10 +38,9 @@ import { Button } from '@/components/ui/button';
 // Simplified primary navigation (stage-agnostic)
 // HACKATHON PIVOT: Simplified Navigation
 const primaryLinks = [
-  { title: 'Home', url: '/dashboard', icon: House },
+  { title: 'Today', url: '/today', icon: House },
+  { title: 'Session', url: '/session', icon: PlayCircle },
   { title: 'Library', url: '/library', icon: Books },
-  // { title: 'Progress', url: '/progress', icon: TrendUp },
-  // { title: 'Reports', url: '/reports', icon: FileText },
 ];
 
 // Guest navigation
@@ -85,10 +77,10 @@ export function AppSidebar() {
     <>
       <Sidebar className="border-r border-border/50" collapsible="offcanvas">
         <SidebarHeader className="h-14 flex flex-row items-center px-4 border-b border-border/50">
-          {/* Logo - Clickable to Dashboard or Home */}
+          {/* Logo - Clickable to Today or Home */}
           <div className="flex items-center justify-between w-full">
             <button
-              onClick={() => handleNavigation(isAuthenticated ? '/dashboard' : '/')}
+              onClick={() => handleNavigation(isAuthenticated ? '/today' : '/')}
               className="flex items-center gap-2 px-2 rounded-lg transition-colors hover:bg-muted/50 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-sidebar-ring"
             >
               <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-primary">
@@ -112,7 +104,7 @@ export function AppSidebar() {
                   const isActive =
                     location.pathname === link.url ||
                     (link.url !== '/' &&
-                      link.url !== '/dashboard' &&
+                      link.url !== '/today' &&
                       location.pathname.startsWith(link.url));
                   return (
                     <SidebarMenuItem key={link.url}>
